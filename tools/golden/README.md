@@ -13,6 +13,15 @@ pnpm golden:compare [--engine stub] [--json report.json] [name | tag:x ...]
 Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to use a local Chromium. The recorder serves `.reference-site/`
 itself (override with `REFERENCE_SITE`), so `pnpm reference:serve` is not needed.
 
+Recording is pinned to one Chromium build (`REFERENCE_BROWSER` in [src/reference.ts](src/reference.ts),
+currently 141.0.7390.37, the one Playwright 1.56.1 installs). The GWT build's floating-point results
+differ slightly between V8 versions, so another Chromium re-records different numbers; the recorder
+refuses to run on any other version unless `GOLDEN_ANY_BROWSER=1` is set. Get the pinned build with
+`pnpm dlx playwright@1.56.1 install chromium` and point `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at it, as the
+reference-build workflow does. Each fixture records the browser in `reference.browser`, and
+`export` holds upstream's own XML save of the circuit right after loading (used by the format
+round-trip tests).
+
 ## How recording works
 
 For each circuit, in a fresh browser context: open the reference with an empty circuit

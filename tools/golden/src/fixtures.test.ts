@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { compareTrace } from './compare.ts';
 import { stubEngine } from './engines/stub.ts';
 import { parseFixture } from './json.ts';
+import { REFERENCE_BROWSER } from './reference.ts';
 import {
   FIXTURE_DIR,
   REPO_ROOT,
@@ -48,6 +49,7 @@ describe('golden fixtures', () => {
         });
         expect(fixture.reference.upstreamSha).toBe(pinnedSha);
         expect(fixture.reference.harnessPatchSha256).toBe(patchSha);
+        expect(fixture.reference.browser).toBe(REFERENCE_BROWSER);
         expect(
           fixture.stop === null ? fixture.samples.length : fixture.samples.length + 1,
         ).toBeLessThanOrEqual(entry.samples);

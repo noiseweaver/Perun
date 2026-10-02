@@ -36,6 +36,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: tools/reference-build/build.sh
       - run: pnpm exec playwright install --with-deps chromium
+      # Fixtures reproduce only in the Chromium they were recorded in (REFERENCE_BROWSER in
+      # tools/golden/src/reference.ts): Playwright 1.56's build 1194, Chromium 141.
+      - name: Install the golden reference Chromium
+        run: |
+          pnpm dlx playwright@1.56.1 install chromium
+          echo "PLAYWRIGHT_CHROMIUM_EXECUTABLE=$HOME/.cache/ms-playwright/chromium-1194/chrome-linux/chrome" >> "$GITHUB_ENV"
       - name: Smoke test
         run: |
           (cd .reference-site && python3 -m http.server 8000 --bind 127.0.0.1 &)

@@ -71,6 +71,11 @@ export interface GoldenFixture {
     harnessPatchSha256: string;
     /** Always `java-master`: goldens are recorded from the Java (GWT) build of upstream master. */
     build: string;
+    /**
+     * Chromium version the reference ran in. Last-bit results of `Math.exp`, `Math.sin` etc. differ
+     * between V8 versions, so a fixture reproduces only in this browser (see REFERENCE_BROWSER).
+     */
+    browser: string;
   };
   settings: RunSettings & {
     /** Values the circuit file set, read back from the reference after loading. */
@@ -81,6 +86,8 @@ export interface GoldenFixture {
   };
   /** The circuit exactly as loaded. */
   circuit: string;
+  /** Upstream's own save of the circuit right after loading (`CircuitJS1.exportCircuit()`, XML). */
+  export: string;
   topology: Topology;
   stop: StopInfo | null;
   samples: Sample[];

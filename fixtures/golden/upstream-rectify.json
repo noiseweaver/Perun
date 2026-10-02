@@ -7,7 +7,8 @@
   "reference": {
     "upstreamSha": "5a707168778216bb6ed01bfdd62e8bbf7ae0a032",
     "harnessPatchSha256": "fa84fc858811ddd78a3e4c757e379392906a47e464b400c92c9d16b902886403",
-    "build": "java-master"
+    "build": "java-master",
+    "browser": "chromium 141.0.7390.37"
   },
   "settings": {
     "seed": 1,
@@ -19,6 +20,7 @@
     "adjustTimeStep": false
   },
   "circuit": "$ 1 5.0E-6 13.2 55 5.0\nv 112 320 112 96 0 1 40.0 5.0 0.0\nr 416 96 416 320 0 640.0\nd 112 96 416 96 0\nw 112 320 416 320 0\no 0 64 0 3 5.0 0.0125\no 1 64 0 3 5.0 0.0125\n",
+  "export": "<cir f=\"1\" ts=\"0.000005\" ic=\"13.097415321081861\" cb=\"55\" pb=\"50\" vr=\"5\" mts=\"5e-11\">\n  <v x=\"112 320 112 96\" f=\"0\" wf=\"1\" fr=\"40\" maxv=\"5\"/>\n  <r x=\"416 96 416 320\" f=\"0\" r=\"640\"/>\n  <d x=\"112 96 416 96\" f=\"0\" mo=\"default\"/>\n  <w x=\"112 320 416 320\" f=\"0\"/>\n  <o en=\"0\" sp=\"64\" f=\"x3\" p=\"0\">\n    <p v=\"0\" sc=\"5\"/>\n    <p v=\"3\" sc=\"0.0125\"/>\n  </o>\n  <o en=\"1\" sp=\"64\" f=\"x3\" p=\"1\">\n    <p v=\"0\" sc=\"5\"/>\n    <p v=\"3\" sc=\"0.0125\"/>\n  </o>\n</cir>\n",
   "topology": {
     "nodeCount": 3,
     "elements": [
