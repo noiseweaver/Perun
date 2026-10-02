@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "name": "convergence-fail-adaptive",
+  "description": "The same with the adaptive timestep: it halves below the minimum timestep, then stops with \"Convergence failed!\"",
+  "source": "circuits/convergence-fail-adaptive.txt",
+  "tags": ["nonlinear"],
+  "reference": {
+    "upstreamSha": "5a707168778216bb6ed01bfdd62e8bbf7ae0a032",
+    "harnessPatchSha256": "fa84fc858811ddd78a3e4c757e379392906a47e464b400c92c9d16b902886403",
+    "build": "java-master",
+    "browser": "chromium 141.0.7390.37"
+  },
+  "settings": {
+    "seed": 1,
+    "stepsPerSample": 40,
+    "samples": 100,
+    "timeStep": 0.000005,
+    "maxTimeStep": 0.000005,
+    "minTimeStep": 5e-11,
+    "adjustTimeStep": true
+  },
+  "circuit": "$ 65 5.0E-6 10 50 5.0 50 5.0E-11\nR 400 96 400 64 0 2 50.0 50000.0 50000.0 4.71238898038469 0.5\nr 400 96 400 288 0 1000.0\nf 288 304 400 304 0 1.5 2.0\ng 400 320 400 352 0\ng 288 304 288 352 0\n",
+  "export": "<cir f=\"65\" ts=\"0.000005\" ic=\"10.20027730826997\" cb=\"50\" pb=\"50\" vr=\"5\" mts=\"5e-11\">\n  <R x=\"400 96 400 64\" f=\"0\" wf=\"2\" fr=\"50\" maxv=\"50000\" bias=\"50000\" phaseShift=\"4.71238898038469\"/>\n  <r x=\"400 96 400 288\" f=\"0\" r=\"1000\"/>\n  <mm nm=\"old-mosfet\" f=\"0\" vt=\"1.5\" be=\"2\" sb=\"1\" dsy=\"0\" bd=\"0\" bt=\"0\" sbd=\"0\"/>\n  <f x=\"288 304 400 304\" f=\"0\" mo=\"old-mosfet\"/>\n  <g x=\"400 320 400 352\" f=\"0\"/>\n  <g x=\"288 304 288 352\" f=\"0\"/>\n</cir>\n",
+  "topology": {
+    "nodeCount": 3,
+    "elements": [
+      {
+        "type": "RailElm",
+        "dumpType": 82,
+        "posts": 1,
+        "nodes": [1]
+      },
+      {
+        "type": "ResistorElm",
+        "dumpType": 114,
+        "posts": 2,
+        "nodes": [1, 2]
+      },
+      {
+        "type": "MosfetElm",
+        "dumpType": 102,
+        "posts": 3,
+        "nodes": [0, 0, 2]
+      },
+      {
+        "type": "GroundElm",
+        "dumpType": 103,
+        "posts": 1,
+        "nodes": [0]
+      },
+      {
+        "type": "GroundElm",
+        "dumpType": 103,
+        "posts": 1,
+        "nodes": [0]
+      }
+    ]
+  },
+  "stop": {
+    "message": "Convergence failed!",
+    "step": 1001,
+    "t": 0.00500499999999988
+  },
+  "samples": [
+    {"step":40,"t":0.0002000000000000002,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":80,"t":0.0004000000000000007,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":120,"t":0.0006000000000000012,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":160,"t":0.0008000000000000018,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":200,"t":0.0010000000000000022,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":240,"t":0.0012000000000000027,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":280,"t":0.0014000000000000032,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":320,"t":0.0016000000000000038,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":360,"t":0.0018000000000000043,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":400,"t":0.0020000000000000026,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":440,"t":0.0021999999999999945,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":480,"t":0.0023999999999999863,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":520,"t":0.002599999999999978,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":560,"t":0.00279999999999997,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":600,"t":0.002999999999999962,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":640,"t":0.0031999999999999537,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":680,"t":0.0033999999999999456,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":720,"t":0.0035999999999999375,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":760,"t":0.0037999999999999293,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":800,"t":0.003999999999999921,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":840,"t":0.004199999999999913,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":880,"t":0.004399999999999905,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":920,"t":0.004599999999999897,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":960,"t":0.0047999999999998886,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]},
+    {"step":1000,"t":0.00499999999999988,"timeStep":0.000005,"nodes":[0,0,0],"elements":[{"volts":[0],"currents":[0],"current":0},{"volts":[0,0],"currents":[0,0],"current":0},{"volts":[0,0,0],"currents":[0,0,0],"current":0},{"volts":[0],"currents":[0],"current":0},{"volts":[0],"currents":[0],"current":0}]}
+  ]
+}
