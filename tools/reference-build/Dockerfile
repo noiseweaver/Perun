@@ -16,8 +16,18 @@ RUN --mount=type=secret,id=extra_ca,required=false \
 COPY reference/circuitjs1 /src
 WORKDIR /src
 
+# Golden-test harness patch (deterministic stepping, seeded Random, state dump).
+# See tools/reference-patch/README.md. The submodule itself is never modified.
+COPY tools/reference-patch/harness.patch /tmp/harness.patch
+# Applied from / (outside any git repo; the submodule's .git file does not resolve here), so the
+# patch's src/... paths are prefixed with the /src build directory.
+RUN cd / && git apply --directory=src /tmp/harness.patch
+
 # Gradle does not read HTTPS_PROXY, so translate it into JVM flags when set.
-RUN set -eu; \
+# The cache mount keeps downloaded dependencies across builds (Maven Central rate-limits repeat
+# downloads); it never ends up in the image.
+RUN --mount=type=cache,target=/root/.gradle,id=circuitjs-next-gradle \
+    set -eu; \
     if [ -n "${HTTPS_PROXY:-}" ]; then \
       hp="${HTTPS_PROXY#*://}"; hp="${hp%/}"; \
       export GRADLE_OPTS="-Dhttps.proxyHost=${hp%:*} -Dhttps.proxyPort=${hp##*:}"; \

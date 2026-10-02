@@ -1,0 +1,170 @@
+diff --git a/src/com/lushprojects/circuitjs1/client/JSInterface.java b/src/com/lushprojects/circuitjs1/client/JSInterface.java
+index dfa3574..636fec0 100644
+--- a/src/com/lushprojects/circuitjs1/client/JSInterface.java
++++ b/src/com/lushprojects/circuitjs1/client/JSInterface.java
+@@ -2,6 +2,8 @@ package com.lushprojects.circuitjs1.client;
+ 
+ import com.google.gwt.core.client.JavaScriptObject;
+ import com.google.gwt.core.client.JsArray;
++import com.google.gwt.core.client.JsArrayNumber;
++import java.util.Random;
+ 
+ public class JSInterface {
+ 
+@@ -50,6 +52,93 @@ public class JSInterface {
+     double getMaxTimeStep() { return app.sim.maxTimeStep; }
+     void setMaxTimeStep(double ts) { app.sim.maxTimeStep = app.sim.timeStep = ts; }
+ 
++    // ---- circuitjs-next golden harness (tools/reference-patch) ----
++
++    // Replace the app's java.util.Random with a seeded one (op-amp, gate and noise paths use it).
++    void harnessSetSeed(double seed) { app.random = new Random((long) seed); }
++
++    // Run exactly n timesteps, independent of wall-clock time and of the run/stop state.
++    // Mirrors the simulation part of one UIManager.updateCircuit() call: analyze if flagged, stamp
++    // if needed, set up scopes, run, then turn a pending DC analysis into a re-analysis for the
++    // next call.
++    // Returns the number of timesteps completed (fewer than n if the simulation stopped).
++    int harnessStep(int n) {
++	SimulationManager sim = app.sim;
++	boolean didAnalyze = app.analyzeFlag;
++	if (app.analyzeFlag || app.dcAnalysisFlag) {
++	    sim.analyzeCircuit();
++	    app.analyzeFlag = false;
++	}
++	if (app.stopMessage != null)
++	    return 0;
++	if (sim.needsStamp)
++	    sim.preStampAndStampCircuit();
++	if (app.stopMessage != null || sim.matrices == null || n <= 0)
++	    return 0;
++	// updateCircuit() does this every frame; scopes sample during each timestep.
++	app.scopeManager.setupScopes();
++	int remaining = n;
++	sim.harnessSteps = n;
++	try {
++	    sim.runCircuit(didAnalyze);
++	} finally {
++	    remaining = sim.harnessSteps;
++	    sim.harnessSteps = -1;
++	}
++	if (app.dcAnalysisFlag) {
++	    app.dcAnalysisFlag = false;
++	    app.analyzeFlag = true;
++	}
++	return n - remaining;
++    }
++
++    String harnessStopMessage() { return app.stopMessage; }
++    double harnessMinTimeStep() { return app.sim.minTimeStep; }
++    boolean harnessAdjustTimeStep() { return app.sim.adjustTimeStep; }
++
++    // Voltage of every circuit node, by node index (0 is ground).
++    JsArrayNumber harnessNodeVoltages() {
++	JsArrayNumber arr = JavaScriptObject.createArray().cast();
++	SimulationManager sim = app.sim;
++	if (sim.nodeList == null)
++	    return arr;
++	for (int i = 0; i != sim.nodeList.size(); i++) {
++	    CircuitNode cn = sim.nodeList.get(i);
++	    double v = 0;
++	    if (cn.matrix != null && cn.row > 0)
++		v = cn.matrix.nodeVoltages[cn.row-1];
++	    arr.push(v);
++	}
++	return arr;
++    }
++
++    // State of every top-level element, in elmList order.
++    JsArray<JavaScriptObject> harnessElements() {
++	JsArray<JavaScriptObject> arr = getJSArray();
++	for (int i = 0; i != app.elmList.size(); i++) {
++	    CircuitElm ce = app.getElm(i);
++	    JsArrayNumber volts = JavaScriptObject.createArray().cast();
++	    JsArrayNumber nodes = JavaScriptObject.createArray().cast();
++	    int nc = ce.volts == null ? 0 : ce.volts.length;
++	    for (int j = 0; j != nc; j++)
++		volts.push(ce.volts[j]);
++	    int ncn = ce.nodes == null ? 0 : ce.nodes.length;
++	    for (int j = 0; j != ncn; j++)
++		nodes.push(ce.nodes[j] == null ? -1 : ce.nodes[j].index);
++	    JsArrayNumber currents = JavaScriptObject.createArray().cast();
++	    int pc = ce.getPostCount();
++	    for (int j = 0; j != pc; j++)
++		currents.push(ce.getCurrentIntoNode(j));
++	    arr.push(makeElmState(ce.getClassName(), ce.getDumpType(), pc, nodes, volts, currents, ce.getCurrent()));
++	}
++	return arr;
++    }
++
++    native JavaScriptObject makeElmState(String type, int dumpType, int posts, JsArrayNumber nodes,
++	    JsArrayNumber volts, JsArrayNumber currents, double current) /*-{
++	return { type: type, dumpType: dumpType, posts: posts, nodes: nodes, volts: volts, currents: currents, current: current };
++    }-*/;
++
+     native void setupJSInterface() /*-{
+ 	var that = this;
+ 	$wnd.CircuitJS1 = {
+@@ -65,7 +154,17 @@ public class JSInterface {
+ 	    getElements: $entry(function() { return that.@com.lushprojects.circuitjs1.client.JSInterface::getJSElements()(); } ),
+ 	    getCircuitAsSVG: $entry(function() { return that.@com.lushprojects.circuitjs1.client.JSInterface::doExportAsSVGFromAPI()(); } ),
+ 	    exportCircuit: $entry(function() { return that.@com.lushprojects.circuitjs1.client.JSInterface::dumpCircuit()(); } ),
+-	    importCircuit: $entry(function(circuit, subcircuitsOnly) { return that.@com.lushprojects.circuitjs1.client.JSInterface::importCircuitFromText(Ljava/lang/String;Z)(circuit, subcircuitsOnly); })
++	    importCircuit: $entry(function(circuit, subcircuitsOnly) { return that.@com.lushprojects.circuitjs1.client.JSInterface::importCircuitFromText(Ljava/lang/String;Z)(circuit, subcircuitsOnly); }),
++	    harness: {
++		version: 1,
++		setSeed: $entry(function(seed) { that.@com.lushprojects.circuitjs1.client.JSInterface::harnessSetSeed(D)(seed); }),
++		step: $entry(function(n) { return that.@com.lushprojects.circuitjs1.client.JSInterface::harnessStep(I)(n); }),
++		stopMessage: $entry(function() { return that.@com.lushprojects.circuitjs1.client.JSInterface::harnessStopMessage()(); }),
++		minTimeStep: $entry(function() { return that.@com.lushprojects.circuitjs1.client.JSInterface::harnessMinTimeStep()(); }),
++		adjustTimeStep: $entry(function() { return that.@com.lushprojects.circuitjs1.client.JSInterface::harnessAdjustTimeStep()(); }),
++		nodeVoltages: $entry(function() { return that.@com.lushprojects.circuitjs1.client.JSInterface::harnessNodeVoltages()(); }),
++		elements: $entry(function() { return that.@com.lushprojects.circuitjs1.client.JSInterface::harnessElements()(); })
++	    }
+ 	};
+ 	var hook = $wnd.oncircuitjsloaded;
+ 	if (hook)
+diff --git a/src/com/lushprojects/circuitjs1/client/SimulationManager.java b/src/com/lushprojects/circuitjs1/client/SimulationManager.java
+index 0e27123..7babf71 100644
+--- a/src/com/lushprojects/circuitjs1/client/SimulationManager.java
++++ b/src/com/lushprojects/circuitjs1/client/SimulationManager.java
+@@ -1278,6 +1278,10 @@ public class SimulationManager {
+ 
+     boolean converged;
+     int subIterations;
++
++    // circuitjs-next golden harness: when >= 0, runCircuit() runs exactly this many timesteps
++    // and ignores wall-clock pacing. Set only by JSInterface.harnessStep(). See tools/reference-patch.
++    int harnessSteps = -1;
+     
+     void runCircuit(boolean didAnalyze) {
+ 	if (matrices == null || elmList.size() == 0) {
+@@ -1291,14 +1295,14 @@ public class SimulationManager {
+ 	long steprate = (long) (160*app.getIterCount());
+ 	long tm = System.currentTimeMillis();
+ 	long lit = lastIterTime;
+-	if (lit == 0) {
++	if (lit == 0 && harnessSteps < 0) {
+ 	    lastIterTime = tm;
+ 	    return;
+ 	}
+ 	
+ 	// Check if we don't need to run simulation (for very slow simulation speeds).
+ 	// If the circuit changed, do at least one iteration to make sure everything is consistent.
+-	if (1000 >= steprate*(tm-lastIterTime) && !didAnalyze)
++	if (1000 >= steprate*(tm-lastIterTime) && !didAnalyze && harnessSteps < 0)
+ 	    return;
+ 	
+ 	boolean delayWireProcessing = app.scopeManager.canDelayWireProcessing();
+@@ -1432,6 +1436,11 @@ public class SimulationManager {
+ 	    }
+ //	    console("set lastrightside at " + t + " " + lastNodeVoltages);
+ 		
++	    if (harnessSteps >= 0) {
++		if (--harnessSteps <= 0)
++		    break;
++		continue;
++	    }
+ 	    tm = System.currentTimeMillis();
+ 	    lit = tm;
+ 	    // Check whether enough time has elapsed to perform an *additional* iteration after

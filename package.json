@@ -10,7 +10,7 @@
     "node": ">=22.13"
   },
   "scripts": {
-    "typecheck": "pnpm -r --parallel typecheck && tsc -p tsconfig.json",
+    "typecheck": "pnpm -r --parallel typecheck && tsc -p tsconfig.json && tsc -p tools/golden",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -18,7 +18,10 @@
     "test:e2e": "playwright test",
     "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test",
     "reference:build": "tools/reference-build/build.sh",
-    "reference:serve": "tools/reference-build/serve.sh"
+    "reference:serve": "tools/reference-build/serve.sh",
+    "golden:record": "node tools/golden/src/record.ts",
+    "golden:check": "node tools/golden/src/record.ts --check",
+    "golden:compare": "node tools/golden/src/compare-cli.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

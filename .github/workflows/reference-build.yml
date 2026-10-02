@@ -1,7 +1,8 @@
 name: Reference build
 
-# Builds the upstream reference app in its pinned Docker image. Manual, since it takes a few minutes
-# and only changes when the upstream pin or the build files change.
+# Builds the upstream reference app (with the golden harness patch) in its pinned Docker image, then
+# checks that a fresh recording reproduces every committed golden fixture. Runs only when the
+# upstream pin, the build, the patch or the golden harness changes, since it takes a few minutes.
 on:
   workflow_dispatch:
   push:
@@ -9,6 +10,16 @@ on:
     paths:
       - reference/**
       - tools/reference-build/**
+      - tools/reference-patch/**
+      - tools/golden/**
+      - fixtures/golden/**
+  pull_request:
+    paths:
+      - reference/**
+      - tools/reference-build/**
+      - tools/reference-patch/**
+      - tools/golden/**
+      - fixtures/golden/**
 
 jobs:
   build:
@@ -30,6 +41,8 @@ jobs:
           (cd .reference-site && python3 -m http.server 8000 --bind 127.0.0.1 &)
           sleep 1
           node tools/reference-build/smoke.mjs
+      - name: Golden fixtures reproduce
+        run: pnpm golden:check
       - uses: actions/upload-artifact@v4
         if: always()
         with:
