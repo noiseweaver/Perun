@@ -12,9 +12,11 @@
   error and warning chips. Shapes, elevation, state layers and the type scale are CSS tokens in
   `packages/app/src/styles.css`, all mixed from the theme's `ui` colors (no literals). Icons are
   inline Material Icons paths (Apache 2.0) in `Icon.tsx`.
-- Fonts: Inter (variable) for UI and canvas text, JetBrains Mono (variable) for readouts, both
-  bundled with `@fontsource-variable` (OFL), so themes still name families only (PLAN.md
-  section 6). Both built-ins use them; Classic keeps its upstream colors.
+- Fonts: Roboto (variable) for UI text and canvas labels, JetBrains Mono (variable) for component
+  values on the canvas (the `value` text style now draws in the theme's `monoFont`; labeled-node
+  names moved to the `units` style) and the time readouts. Both are bundled with
+  `@fontsource-variable`, so themes still name families only (PLAN.md section 6).
+- New built-in Classic Dots (`classic-dots`): Classic colors with a dot grid.
 - Dark is the default (`DEFAULT_THEME_ID = 'dark'`, also the base for themes that name none), and
   its UI colors are now a Material 3 dark scheme from a blue seed. Settings moved to the
   `circuitjs-next.settings.v2` key: version 1 always stored Classic, so its theme is dropped and its
@@ -26,6 +28,11 @@
 
 ### Open issues
 
+- 250 of the 367 bundled examples skip at least one element: they use tier 2 and 3 elements
+  (logic inputs and outputs, gates, flip-flops, 555, transformers, controlled sources,
+  subcircuits ...), which PLAN.md schedules for Phase 8. The most common are logic input `L`
+  (66 examples), logic output `M` (64), inverter `I` (23), variable rail `172` and sweep `170`
+  (20 and 17) and logic gates (`150`, `151`, `152` ...).
 - The production bundle is 578 KB of JS plus about 330 KB of font subsets (only the subsets a
   page uses are downloaded).
 

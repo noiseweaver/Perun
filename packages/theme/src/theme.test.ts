@@ -69,4 +69,10 @@ describe('themes', () => {
     expect(vars['--ui-surface-alt']).toBe(BUILTIN_THEMES['classic']?.ui.surfaceAlt);
     expect(vars['--canvas-background']).toBe(BUILTIN_THEMES['classic']?.canvas.background);
   });
+
+  it('has a Classic Dots built-in: Classic colors on a dot grid', () => {
+    const t = BUILTIN_THEMES['classic-dots'];
+    expect(t?.style.grid).toBe('dots');
+    expect(t?.circuit).toEqual(BUILTIN_THEMES['classic']?.circuit);
+  });
 });

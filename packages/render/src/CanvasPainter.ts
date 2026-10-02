@@ -130,7 +130,8 @@ export class CanvasPainter implements Painter {
 
   private font(style?: TextStyle): string {
     const size = this.fontSize(style);
-    return `${style?.bold ? 'bold ' : ''}${size}px ${this.palette.theme.style.font}`;
+    const { font, monoFont } = this.palette.theme.style;
+    return `${style?.bold ? 'bold ' : ''}${size}px ${style?.font === 'value' ? monoFont : font}`;
   }
 
   fontSize(style?: TextStyle): number {

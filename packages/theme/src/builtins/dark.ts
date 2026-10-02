@@ -47,7 +47,7 @@ export const dark: Theme = {
     strokeWidth: 2.5,
     dotRadius: 2.5,
     grid: 'dots',
-    font: "'Inter Variable', Inter, system-ui, sans-serif",
+    font: "'Roboto Variable', Roboto, system-ui, sans-serif",
     monoFont: "'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace",
   },
 };
