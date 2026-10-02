@@ -34,6 +34,8 @@ export class PotElm extends CircuitElm {
   link = 0;
   sliderValue = 0;
   post3: Point = this.point1;
+  /** Offset of the wiper post from the body, from setPoints() (views draw the wiper with it). */
+  offset = 0;
 
   override getClassName(): string {
     return 'PotElm';
@@ -128,6 +130,7 @@ export class PotElm extends CircuitElm {
     const ddy = this.point2.y - this.point1.y;
     this.dn = Math.sqrt(ddx * ddx + ddy * ddy);
     this.position = this.sliderValue * 0.0099 + 0.005;
+    this.offset = offset;
     this.post3 = this.interpPointPerp(this.point1, this.point2, 0.5, offset);
   }
 

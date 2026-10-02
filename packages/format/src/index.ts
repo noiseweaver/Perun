@@ -19,3 +19,11 @@ export {
   prettyPrint,
   type XmlText,
 } from './xml.ts';
+export {
+  compressCircuit,
+  decompressCircuit,
+  parseQuery,
+  queryBoolean,
+  startCircuitFromQuery,
+  type StartCircuit,
+} from './url.ts';

@@ -74,6 +74,23 @@ export class SwitchElm extends CircuitElm {
     this.resistance = r.parseDoubleAttr('r', 0);
   }
 
+  simpleToggle(): void {
+    this.position++;
+    if (this.position >= this.posCount) this.position = 0;
+  }
+
+  /**
+   * Flip the switch, and every other switch with the same label. The caller must have the
+   * circuit analyzed again (upstream `needAnalyze`).
+   */
+  toggle(): void {
+    this.simpleToggle();
+    if (this.label === null) return;
+    for (const o of this.sim.elmList) {
+      if (o instanceof SwitchElm && o !== this && this.label === o.label) o.simpleToggle();
+    }
+  }
+
   override calculateCurrent(): void {
     if (this.position === 1) this.current = 0;
     else if (this.resistance > 0)

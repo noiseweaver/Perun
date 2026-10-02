@@ -2,6 +2,7 @@
 import js from '@eslint/js';
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
+import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 import noColorLiterals from './tools/eslint-rules/no-color-literals.js';
 
@@ -84,14 +85,27 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.browser } },
   },
   {
+    files: ['packages/app/**/*.tsx'],
+    plugins: { 'react-hooks': reactHooks },
+    rules: {
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'error',
+    },
+  },
+  {
     // Code passed to page.evaluate() runs in the browser.
     files: ['tools/reference-build/**/*.mjs', 'tools/golden/**/*.{ts,mjs}'],
     languageOptions: { globals: { ...globals.browser } },
   },
   ...boundaries(),
   {
-    // The only place color literals may live.
-    files: ['packages/theme/src/builtins/**', 'tools/eslint-rules/**'],
+    // The only place color literals may live, plus the theme package's own tests (they exercise
+    // the color parser and theme validation).
+    files: [
+      'packages/theme/src/builtins/**',
+      'packages/theme/src/**/*.test.ts',
+      'tools/eslint-rules/**',
+    ],
     rules: { 'local/no-color-literals': 'off' },
   },
   prettier,

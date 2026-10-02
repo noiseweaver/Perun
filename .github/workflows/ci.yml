@@ -14,6 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          # the viewer serves upstream's example circuits from the reference submodule
+          submodules: true
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:

@@ -54,9 +54,9 @@ Rebuild Paul Falstad's CircuitJS1 as a modern TypeScript web app with a new UI a
 | Tooling | Vite, pnpm workspaces, Vitest, Playwright, ESLint, Prettier | Decided |
 | Engine strategy | Hand port to TS, using upstream's own TypeScript port (`dev-ts` branch) as the porting source, restructured into our packages. Golden references still come from the Java `master` build. No GWT, no transpiler | Decided (changed 2026-10-02 by owner, was: hand port the Java engine) |
 | Rendering | Canvas 2D behind a painter interface (WebGL possible later) | Decided |
-| UI framework | React with headless components (e.g. Radix) | Default, confirm before Phase 4 |
-| UI state | Zustand for UI state. Circuit model owned by engine/elements packages | Default |
-| Engine thread | Main thread first. Engine package stays DOM-free so it can move to a Web Worker | Decide in Phase 4 |
+| UI framework | React with headless components (Radix) | Decided (confirmed 2026-10-02 by owner) |
+| UI state | Zustand for UI state. Circuit model owned by engine/elements packages | Decided (confirmed 2026-10-02 by owner) |
+| Engine thread | Main thread first. Engine package stays DOM-free so it can move to a Web Worker | Decided (confirmed 2026-10-02 by owner: main thread; revisit with Phase 9 profiling) |
 | License | GPL-2.0-or-later, keep upstream credits | Required |
 | Dev environment | Linux, Node LTS, Docker for the reference build | Default |
 
@@ -238,10 +238,10 @@ Acceptance: all linear golden circuits match within tolerance. Round-trip serial
 Acceptance: all tier-1 golden circuits pass. Non-convergence ends in the same error state as upstream, never a hang.
 
 ### Phase 4: Renderer and viewer
-- [ ] Confirm UI framework and worker decision with the owner.
-- [ ] Theme package v1 with Classic and Dark built-ins (full editor comes in Phase 7).
-- [ ] Canvas renderer: grid, pan and zoom, HiDPI, tier-1 element views, voltage coloring, current dots, labels and values.
-- [ ] App shell: open circuit from file, URL or example list. Run, pause, reset. Speed and current speed sliders.
+- [x] Confirm UI framework and worker decision with the owner.
+- [x] Theme package v1 with Classic and Dark built-ins (full editor comes in Phase 7).
+- [x] Canvas renderer: grid, pan and zoom, HiDPI, tier-1 element views, voltage coloring, current dots, labels and values.
+- [x] App shell: open circuit from file, URL or example list. Run, pause, reset. Speed and current speed sliders.
 
 Acceptance: upstream links using tier-1 elements load and animate correctly. Switching Classic and Dark at runtime restyles everything without reload. No-color-literal lint passes.
 

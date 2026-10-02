@@ -109,6 +109,23 @@ export class Circuit {
     this.sim.gridSize = (this.options.flags & OptionFlag.SMALL_GRID) !== 0 ? 8 : 16;
   }
 
+  /**
+   * Upstream `resetAction()` minus the UI: restart time, zero node voltages and element state, and
+   * analyze again (finding the DC operating point first if the circuit asks for it). Node voltages
+   * are reset as dev-ts does (`SimulationManager.resetNodes`), since they live on the nodes here.
+   */
+  reset(): void {
+    const sim = this.sim;
+    sim.analyzeFlag = true;
+    if ((this.options.flags & OptionFlag.AUTO_DC_ON_RESET) !== 0) sim.dcAnalysisFlag = true;
+    sim.resetTime();
+    sim.resetNodes();
+    for (const ce of this.elements) {
+      for (const n of ce.nodes) if (n.index === -1) n.v = 0;
+      ce.reset();
+    }
+  }
+
   readCircuitFlags(flags: number): void {
     this.options.flags = flags & KEPT_FLAGS;
     this.sim.adjustTimeStep = (flags & OptionFlag.ADJUST_TIMESTEP) !== 0;
