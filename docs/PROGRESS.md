@@ -1,5 +1,56 @@
 # Progress
 
+## 2026-10-02: Phase 3 (nonlinear elements and convergence)
+
+### Done
+
+- `packages/elements`: diode (`DiodeElm` plus the embeddable `Diode` junction used by the MOSFET
+  body diodes), LED, zener, bipolar transistor (`TransistorElm`, `NTransistorElm`,
+  `PTransistorElm`; Gummel-Poon with junction capacitance), MOSFET (`MosfetElm`, `NMosfetElm`,
+  `PMosfetElm`; gate capacitance, body diodes, legacy flags), ideal op-amp (with the seeded
+  `getrand` on its convergence path), rail (`R`), push switch, and text (`x`, load and save only;
+  tier 2, but upstream examples use it). Ported from `master`, with the `dev-ts` node-voltage
+  model; drawing geometry is limited to post positions.
+- Device models: `DiodeModel`, `TransistorModel`, `MosfetModel` with upstream's built-ins, text
+  records `34` and `32`, XML `<dm>`, `<tm>`, `<mm>`, legacy parameter models (`fwdrop=0.6`,
+  `old-mosfet`), and save before the first element that uses them, as upstream does. They live in
+  a `ModelLibrary` per `Simulation` (`modelsFor(sim)`), see docs/DEVIATIONS.md.
+- Element types now get the simulation they join (`create(x, y, sim)`, `load(..., st, sim)`,
+  `createCe(..., sim)`, `constructElement(name, x, y, sim)`), since model lookups happen while
+  loading. Voltages read from a file (transistor junctions, op-amp inputs) are held on placeholder
+  nodes and carried onto the real nodes by `setNode`, the dev-ts mechanism, so the first iteration
+  starts where master's per-element copy would.
+- Iteration, convergence checks and adaptive timestep were ported with the engine in Phase 2; no
+  engine change was needed. Three new golden circuits exercise them:
+  `mosfet-halving` (a 1 kV step on an off MOSFET needs about 1000 subiterations because the MOSFET
+  limits each iteration to 0.5 V, so the adaptive timestep halves ten times to 4.9 ns and doubles
+  back; closes the Phase 1 open issue), `convergence-fail` and `convergence-fail-adaptive`
+  (a 100 kV step on a beta-2 MOSFET; both stop with `Convergence failed!` at step 1001, the
+  adaptive one after halving below the minimum timestep). Recorded locally with the pinned
+  Chromium 141; `pnpm golden:check` reproduces all 35 fixtures.
+- Acceptance: `pnpm golden:compare --engine next tag:nonlinear` passes all 19 nonlinear circuits
+  (the 16 from Phase 1 and the 3 above), most bit for bit, worst 2.7e-5 of tolerance. All 35
+  golden circuits pass, their saved XML matches upstream's export (scopes and sliders aside), and
+  XML load then save is byte-identical. `tools/golden/src/next.test.ts` checks all of it in
+  `pnpm check`. Non-convergence ends in upstream's stop state and message at the same step.
+- docs/ELEMENTS.md port status filled in for tier 1.
+
+### Next
+
+- Phase 4: renderer and viewer. PLAN.md section 3 says to confirm the UI framework (React with
+  headless components) with the owner before starting.
+
+### Open issues
+
+- Loaded element voltages share nodes: if two elements on one node load different voltages (say
+  two transistors with saved junction voltages on a shared node), master starts each from its own
+  copy while here the last one loaded wins. No example circuit seen does this; add a golden
+  circuit if one turns up.
+- Not ported yet (unchanged from Phase 2): rail variants (AC, square, variable, clock), bus-width
+  detection, probe statistics, custom logic and subcircuit models. Relay models (`<rlm>`) are
+  skipped with a warning.
+- The model edit dialogs, `getModelList` and `pickName` wait for the editor (Phase 5).
+
 ## 2026-10-02: Phase 2 (engine core and linear elements)
 
 ### Done

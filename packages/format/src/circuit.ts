@@ -14,9 +14,11 @@ import {
   constructElement,
   createCe,
   javaDoubleToInt,
+  modelsFor,
   parseJavaDouble,
   parseJavaInt,
   type CircuitElm,
+  type XmlDocWriter,
 } from '@circuitjs-next/elements';
 import { AttrReader, AttrWriter } from './attrs.ts';
 import { XmlElement, parseXml, prettyPrint } from './xml.ts';
@@ -163,8 +165,12 @@ export class Circuit {
 
         if (tint >= 48 && tint <= 57) tint = parseJavaInt(type);
 
-        if (tint === 34 || tint === 32) {
-          this.warnings.push(`model record ${tint} is not supported yet`);
+        if (tint === 34) {
+          modelsFor(this.sim).diode.undumpModel(st);
+          continue;
+        }
+        if (tint === 32) {
+          modelsFor(this.sim).transistor.undumpModel(st);
           continue;
         }
         if (tint === 38) {
@@ -181,7 +187,7 @@ export class Circuit {
         const x2 = parseJavaInt(st.nextToken());
         const y2 = parseJavaInt(st.nextToken());
         const f = parseJavaInt(st.nextToken());
-        const ce = createCe(tint, x1, y1, x2, y2, f, st);
+        const ce = createCe(tint, x1, y1, x2, y2, f, st, this.sim);
         if (ce === null) {
           this.warnings.push('unrecognized dump type: ' + type);
           continue;
@@ -243,7 +249,19 @@ export class Circuit {
         };
         continue;
       }
-      if (['dm', 'rlm', 'tm', 'mm', 'clm', 'ccm'].includes(tag)) {
+      if (tag === 'dm') {
+        modelsFor(sim).diode.undumpModelXml(r);
+        continue;
+      }
+      if (tag === 'tm') {
+        modelsFor(sim).transistor.undumpModelXml(r);
+        continue;
+      }
+      if (tag === 'mm') {
+        modelsFor(sim).mosfet.undumpModelXml(r);
+        continue;
+      }
+      if (['rlm', 'clm', 'ccm'].includes(tag)) {
         this.warnings.push(`model element <${tag}> is not supported yet`);
         continue;
       }
@@ -257,7 +275,7 @@ export class Circuit {
         this.warnings.push('unrecognized xml element: ' + tag);
         continue;
       }
-      const elm = constructElement(className, 0, 0);
+      const elm = constructElement(className, 0, 0, sim);
       if (elm === null) continue;
       elm.sim = sim;
       elm.undumpXml(r);
@@ -288,7 +306,17 @@ export class Circuit {
     w.dumpAttr('mts', sim.minTimeStep);
     if (sim.solverType !== 0) w.dumpAttr('st', sim.solverType);
 
+    modelsFor(sim).clearDumpedFlags();
+    const doc: XmlDocWriter = {
+      addElement(tag) {
+        const e = new XmlElement(tag);
+        root.appendChild(e);
+        return new AttrWriter(e);
+      },
+    };
     for (const ce of this.elements) {
+      // upstream elements append their models from inside dumpXml, before the element itself
+      ce.dumpXmlModels(doc);
       const elem = new XmlElement(ce.getXmlDumpType());
       const ew = new AttrWriter(elem);
       ce.dumpXml(ew);

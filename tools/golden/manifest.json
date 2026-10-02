@@ -176,6 +176,26 @@
       "stepsPerSample": 10
     },
     {
+      "name": "mosfet-halving",
+      "description": "Adaptive timestep: a 1 kV step on an off MOSFET's drain needs about 1000 subiterations (its .5 V per-iteration limit), so the step halves down to about 5 ns at 5 ms and doubles back",
+      "source": "circuits/mosfet-halving.txt",
+      "tags": ["nonlinear"],
+      "samples": 220,
+      "stepsPerSample": 5
+    },
+    {
+      "name": "convergence-fail",
+      "description": "A 100 kV step on a high-beta MOSFET cannot converge in 5000 subiterations; the simulation stops with \"Convergence failed!\" at 5 ms",
+      "source": "circuits/convergence-fail.txt",
+      "tags": ["nonlinear"]
+    },
+    {
+      "name": "convergence-fail-adaptive",
+      "description": "The same with the adaptive timestep: it halves below the minimum timestep, then stops with \"Convergence failed!\"",
+      "source": "circuits/convergence-fail-adaptive.txt",
+      "tags": ["nonlinear"]
+    },
+    {
       "name": "upstream-rectify",
       "description": "Upstream example: half-wave rectifier",
       "source": "upstream:src/com/lushprojects/circuitjs1/public/circuits/rectify.txt",

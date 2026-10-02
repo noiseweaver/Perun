@@ -12,10 +12,24 @@ export {
   parseJavaInt,
 } from './java.ts';
 export { StringTokenizer } from './StringTokenizer.ts';
-export type { XmlAttrReader, XmlAttrWriter } from './xml.ts';
+export type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from './xml.ts';
 export { ELEMENT_TYPES, classNameForXmlTag, constructElement, createCe } from './registry.ts';
 
 export { CapacitorElm } from './elm/CapacitorElm.ts';
+export { Diode } from './elm/Diode.ts';
+export { DiodeElm } from './elm/DiodeElm.ts';
+export { LEDElm } from './elm/LEDElm.ts';
+export { MosfetElm, NMosfetElm, PMosfetElm } from './elm/MosfetElm.ts';
+export { OpAmpElm } from './elm/OpAmpElm.ts';
+export { PushSwitchElm } from './elm/PushSwitchElm.ts';
+export { RailElm } from './elm/RailElm.ts';
+export { TextElm } from './elm/TextElm.ts';
+export { NTransistorElm, PTransistorElm, TransistorElm } from './elm/TransistorElm.ts';
+export { ZenerElm } from './elm/ZenerElm.ts';
+export { DiodeModel, DiodeModels } from './models/DiodeModel.ts';
+export { ModelLibrary, modelsFor } from './models/ModelLibrary.ts';
+export { MosfetModel, MosfetModels } from './models/MosfetModel.ts';
+export { TransistorModel, TransistorModels } from './models/TransistorModel.ts';
 export { CurrentElm } from './elm/CurrentElm.ts';
 export { GroundElm } from './elm/GroundElm.ts';
 export { Inductor, InductorElm } from './elm/InductorElm.ts';
