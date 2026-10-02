@@ -52,7 +52,7 @@ Rebuild Paul Falstad's CircuitJS1 as a modern TypeScript web app with a new UI a
 |---|---|---|
 | Language | TypeScript, strict mode | Decided |
 | Tooling | Vite, pnpm workspaces, Vitest, Playwright, ESLint, Prettier | Decided |
-| Engine strategy | Hand port the Java engine to TS. No GWT, no transpiler | Decided |
+| Engine strategy | Hand port to TS, using upstream's own TypeScript port (`dev-ts` branch) as the porting source, restructured into our packages. Golden references still come from the Java `master` build. No GWT, no transpiler | Decided (changed 2026-10-02 by owner, was: hand port the Java engine) |
 | Rendering | Canvas 2D behind a painter interface (WebGL possible later) | Decided |
 | UI framework | React with headless components (e.g. Radix) | Default, confirm before Phase 4 |
 | UI state | Zustand for UI state. Circuit model owned by engine/elements packages | Default |
@@ -66,19 +66,24 @@ Why hand port instead of keeping GWT: it removes the Java toolchain from the pro
 
 Legend: [V] verified in upstream docs or repo, [I] inferred, [G] guess. Phase 0 must confirm or correct every [I] and [G].
 
+Phase 0 checked every item below against upstream at `5a707168` (2026-09-23). File references are to `src/com/lushprojects/circuitjs1/client/` unless stated. Details: `docs/ENGINE-NOTES.md`, `docs/ELEMENTS.md`, `docs/UPSTREAM.md`.
+
 - [V] Upstream is `github.com/pfalstad/circuitjs1`, actively maintained by Paul Falstad. `sharpie7/circuitjs1` is Iain Sharp's original GWT port and is no longer the main line.
 - [V] License is GPL version 2 or (at your option) any later version.
-- [V] Java compiled to JS with GWT. A Maven build exists (`mvn clean install`, `mvn gwt:devmode`). Some forks document needing GWT 2.8.1 and JDK 8.
-- [V] JS interface: `window.CircuitJS1`, available after the `oncircuitjsloaded` callback. Methods include `setSimRunning`, `isRunning`, `getTime`, `getTimeStep`, `getMaxTimeStep`, `setMaxTimeStep`, `getNodeVoltage(label)` (labeled nodes only), `setExtVoltage`, `getElements`, `getCircuitAsSVG`. Same origin is required when driven from an iframe.
-- [V] URL parameters include `cct=` (circuit text), `startCircuit=`, `startCircuitLink=`, `whiteBackground=`, `conventionalCurrent=`, `euroResistors=`, `usResistors=`.
-- [I] A compressed link format (`ctz=`) also exists, probably lz-string. Confirm the exact encoder.
-- [I] Engine is Modified Nodal Analysis: elements stamp into a matrix, LU factorization solves it, nonlinear elements iterate per timestep until convergence. Core logic sits in `CirSim.java` (methods along the lines of `analyzeCircuit`, `stampCircuit`, `runCircuit`) plus per-element `stamp()`, `startIteration()`, `doStep()`, `stepFinished()`, `calculateCurrent()`.
-- [I] Element classes mix simulation, drawing (`draw`, `setPoints`), editing (`getEditInfo`, `setEditValue`) and serialization (`dump`, `getDumpType`).
-- [I] Circuit text format: first line starts with `$` and holds sim options. Then one line per element: dump type, x1 y1 x2 y2, flags, element parameters. Scopes are `o` lines.
-- [I] Example circuits live under `war/circuits/` with an index file (`setuplist.txt`).
-- [I] Recent upstream versions use an adaptive timestep (suggested by `setMaxTimeStep`).
-- [I] UI has separate simulation speed and current speed sliders.
-- [G] Roughly 150 to 250 element types.
+- [V, corrected in Phase 0] Java compiled to JS with GWT 2.8.2. The current build is Gradle 8.7 (`build.gradle`, `gradle compileGwt makeSite`; Gradle 9 breaks the GWT plugin) on JDK 8. There is no Maven build any more. `tools/reference-build/` builds it in a pinned Docker image.
+- [V, new in Phase 0] Upstream is porting CircuitJS1 to TypeScript itself on the `dev-ts` branch: 174 commits since 2026-05-24, last 2026-09-29, no Java left, 262 `.ts` files, built with Vite and tested with Vitest. It is a 1:1 port (simulation, drawing and editing still mixed per class) and is not on `master` yet. On 2026-10-02 the owner chose to port from `dev-ts` (section 3).
+- [V] JS interface: `window.CircuitJS1`, available after the `oncircuitjsloaded` callback. Methods include `setSimRunning`, `isRunning`, `getTime`, `getTimeStep`, `getMaxTimeStep`, `setMaxTimeStep`, `getNodeVoltage(label)` (labeled nodes only), `setExtVoltage`, `getElements`, `getCircuitAsSVG`. Same origin is required when driven from an iframe. Phase 0 adds: `setTimeStep`, `exportCircuit`, `importCircuit(text, subcircuitsOnly)`, and hooks `onupdate`, `onanalyze`, `ontimestep`, `onsvgrendered` (`JSInterface.java:52-96`). There is no single-step API, but calling `setSimRunning(false)` from `ontimestep` stops after the current step (`SimulationManager.java:1441`).
+- [V] URL parameters include `cct=` (circuit text), `startCircuit=`, `startCircuitLink=`, `whiteBackground=`, `conventionalCurrent=`, `euroResistors=`, `usResistors=`. Full list (24): `cct`, `ctz`, `startCircuit`, `startLabel`, `startCircuitLink`, `running`, `positiveColor`, `negativeColor`, `neutralColor`, `selectColor`, `currentColor`, `mouseMode` (`CirSim.java:185-202`); `euroResistors`, `IECGates`, `usResistors`, `showOhm`, `hideSidebar`, `hideMenu`, `whiteBackground`, `conventionalCurrent`, `editable`, `mouseWheelEdit`, `hideInfoBox` (`UIManager.java:134-152`); `lang` (`circuitjs1.java:70`).
+- [V, was I] `ctz=` is lz-string `compressToEncodedURIComponent` (`ExportAsUrlDialog.java:91-101`), read with `decompressFromEncodedURIComponent` (`CirSim.java:138-140`). The payload is now XML (see the format item).
+- [V, was I, corrected] Engine is Modified Nodal Analysis with LU factorization and per-timestep iteration for nonlinear elements, but the engine moved out of `CirSim` into `SimulationManager.java` (`analyzeCircuit`, `preStampCircuit`, `stampCircuit`, `runCircuit`, `lu_factor`, `lu_solve`), with per-element `stamp()`, `startIteration()`, `doStep()`, `stepFinished()`, `calculateCurrent()`. Upstream's `INTERNALS.md` is out of date: `simplifyMatrix`/`RowInfo` are gone. Instead, groups of nodes connected only through ground get separate matrices (`calculateClosures`), and matrices of 150 or more rows use a sparse LU (`SPARSE_THRESHOLD`, `SimulationManager.java:46`); smaller ones use dense Crout LU.
+- [V, was I] Element classes mix simulation (`stamp`, `doStep`), drawing (`draw`, `setPoints`), editing (`getEditInfo`, `setEditValue`) and serialization (`dump`, `getDumpType`, plus `dumpXml`, `undumpXml`, `getXmlDumpType`) in `CircuitElm.java`.
+- [V, was I, corrected] There are two circuit formats. The legacy text format is as guessed: a `$` options line, then `type x1 y1 x2 y2 flags params` per element, scopes as `o` lines, plus `h` (hint), `!` (custom logic model), `34`/`32` (diode/transistor models), `38` (slider), `.` (subcircuit model) records; a type token starting with a digit is parsed as a number, so `82` and `R` are the same element (`CircuitLoader.java:142-200`). But upstream now **saves XML** by default: `<cir f ts ic cb pb vr mts>` with one child element per circuit element (`CirSim.dumpCircuit`, `XMLSerializer.java`). The loader treats text starting with `<` as XML (`CircuitLoader.java:74`). The `format` package must read both and write XML to round-trip with current upstream; whether it also writes the text format is open.
+- [V, was I, corrected] Example circuits live in `src/com/lushprojects/circuitjs1/public/circuits/` (373 files: 335 text, 38 XML), indexed by `src/com/lushprojects/circuitjs1/public/setuplist.txt`. The build serves them from `circuitjs1/circuits/`. `war/` has none.
+- [V, was I, corrected] An adaptive timestep exists but is opt-in (options flag bit 64, `CircuitLoader.java:277`) and only reacts to non-convergence: halve down to `minTimeStep`, double back up to `maxTimeStep` after 3 good steps (`SimulationManager.java:1314-1320`, `1390-1407`). There is no error-based step control.
+- [V, was I] UI has separate simulation speed (0 to 260) and current speed (1 to 100) sliders, plus a power brightness slider (`UIManager.java:330-338`). Steps per second are `160 * 0.1 * exp((speed - 61) / 24)` (`CirSim.java:325`, `SimulationManager.java:1291`).
+- [V, was G] 154 element classes (151 concrete, 3 abstract), 124 distinct text dump types; 10 concrete classes are XML only. Dump types are registered at runtime from the menus (`CirSim.register`), and a build-time generated factory creates elements by class name.
+- [V, new in Phase 0] Upstream randomness is unseeded `java.util.Random` (`CirSim.java:215`) and is used on the ideal op-amp's convergence path (`OpAmpElm.java:176-179`), in gate oscillation breaking (`GateElm.java:352`) and in the noise waveform (`VoltageElm.java:165`). The Phase 1 reference patch must seed it.
+- [V, new in Phase 0] Upstream's own test runner (`TestManager.java`) is commented out, but `auto-tests/*.txt` holds 7 XML circuits with expected scope data and `<switchevent>` timings, useful as extra golden references.
 
 ## 5. Architecture
 
@@ -200,13 +205,13 @@ Classic (matches the upstream look), Light, Dark, High Contrast, Colorblind Safe
 ## 7. Phases
 
 ### Phase 0: Setup and reconnaissance
-- [ ] Init the monorepo per section 5: strict TS, ESLint (including boundary and no-color-literal rules), Prettier, Vitest, Playwright, GitHub Actions CI running typecheck, lint and tests.
-- [ ] Add upstream as a submodule at `reference/circuitjs1`, record the SHA in `docs/UPSTREAM.md`.
-- [ ] Build the reference app in a pinned Docker image (JDK and Maven versions that work) and serve it locally. Document the command. Fallback: the prebuilt `war` directory from the official offline distribution.
-- [ ] Study upstream. Confirm or correct every [I] and [G] in section 4.
-- [ ] Write `docs/ELEMENTS.md`: one row per element class with class name, dump type, linear or nonlinear, special engine hooks, tier (1, 2 or 3), port status.
-- [ ] Write `docs/ENGINE-NOTES.md`: walkthrough of the sim loop with file and method references (analysis, node numbering, stamping, matrix simplification, iteration and convergence, timestep control, current calculation).
-- [ ] Create `CLAUDE.md`.
+- [x] Init the monorepo per section 5: strict TS, ESLint (including boundary and no-color-literal rules), Prettier, Vitest, Playwright, GitHub Actions CI running typecheck, lint and tests.
+- [x] Add upstream as a submodule at `reference/circuitjs1`, record the SHA in `docs/UPSTREAM.md`.
+- [x] Build the reference app in a pinned Docker image (JDK and Maven versions that work) and serve it locally. Document the command. Fallback: the prebuilt `war` directory from the official offline distribution.
+- [x] Study upstream. Confirm or correct every [I] and [G] in section 4.
+- [x] Write `docs/ELEMENTS.md`: one row per element class with class name, dump type, linear or nonlinear, special engine hooks, tier (1, 2 or 3), port status.
+- [x] Write `docs/ENGINE-NOTES.md`: walkthrough of the sim loop with file and method references (analysis, node numbering, stamping, matrix simplification, iteration and convergence, timestep control, current calculation).
+- [x] Create `CLAUDE.md`.
 
 Acceptance: CI green on empty packages. Reference app runs locally. ELEMENTS.md complete. Section 4 updated.
 
