@@ -1,0 +1,191 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Copyright (C) 2026 circuitjs-next contributors
+
+import { BUILTIN_THEMES, DEFAULT_THEME_ID } from '@circuitjs-next/theme';
+import * as Menu from '@radix-ui/react-dropdown-menu';
+import { useRef, useState, type ReactNode } from 'react';
+import type { ExampleMenu } from '../examples.ts';
+import { controller } from '../SimController.ts';
+import { openExample } from '../startup.ts';
+import { updateSettings, useApp, type CircuitDisplay } from '../store.ts';
+import { Icon } from './Icon.tsx';
+import { OpenLinkDialog } from './OpenLinkDialog.tsx';
+
+function ExampleItems({ menu }: { menu: ExampleMenu }) {
+  return (
+    <>
+      {menu.items.map((it, i) =>
+        it.kind === 'menu' ? (
+          <Menu.Sub key={`m${i}`}>
+            <Menu.SubTrigger className="menu-item">
+              {it.title}
+              <Icon name="chevronRight" className="icon menu-trailing" />
+            </Menu.SubTrigger>
+            <Menu.Portal>
+              <Menu.SubContent className="menu-content" sideOffset={4} alignOffset={-8}>
+                <ExampleItems menu={it} />
+              </Menu.SubContent>
+            </Menu.Portal>
+          </Menu.Sub>
+        ) : (
+          <Menu.Item
+            key={it.file}
+            className="menu-item"
+            onSelect={() => void openExample(it.file, it.title)}
+          >
+            {it.title}
+          </Menu.Item>
+        ),
+      )}
+    </>
+  );
+}
+
+/** A top app bar menu: a text button that opens a dropdown menu. */
+function AppMenu(props: {
+  label: string;
+  disabled?: boolean;
+  testId?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Menu.Root>
+      <Menu.Trigger className="menu-trigger" disabled={props.disabled} data-testid={props.testId}>
+        {props.label}
+        <Icon name="dropDown" size={18} />
+      </Menu.Trigger>
+      <Menu.Portal>
+        <Menu.Content className="menu-content" sideOffset={4} align="end">
+          {props.children}
+        </Menu.Content>
+      </Menu.Portal>
+    </Menu.Root>
+  );
+}
+
+/** Top app bar: circuit title and the File, Circuits and Options menus. */
+export function AppBar() {
+  const title = useApp((s) => s.title);
+  const display = useApp((s) => s.display);
+  const settings = useApp((s) => s.settings);
+  const examples = useApp((s) => s.examples);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [linkOpen, setLinkOpen] = useState(false);
+
+  const setDisplay = (patch: Partial<CircuitDisplay>): void =>
+    useApp.setState({ display: { ...useApp.getState().display, ...patch } });
+
+  const openFile = async (f: File): Promise<void> => {
+    controller.load(await f.text(), f.name);
+  };
+
+  return (
+    <header className="app-bar">
+      <div className="app-bar-brand" aria-hidden>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor">
+          <path d="M2 12h4l2-5 4 10 4-10 2 5h4" strokeWidth="2" strokeLinejoin="round" />
+        </svg>
+      </div>
+      <h1 className="app-bar-title" data-testid="circuit-title">
+        {title}
+      </h1>
+      <nav className="app-bar-menus" aria-label="Menus">
+        <AppMenu label="File">
+          <Menu.Item className="menu-item" onSelect={() => fileInput.current?.click()}>
+            Open file…
+          </Menu.Item>
+          <Menu.Item className="menu-item" onSelect={() => setLinkOpen(true)}>
+            Open link…
+          </Menu.Item>
+        </AppMenu>
+
+        <AppMenu label="Circuits" disabled={examples === null} testId="circuits-menu">
+          {examples && <ExampleItems menu={examples.root} />}
+        </AppMenu>
+
+        <AppMenu label="Options" testId="options-menu">
+          <Menu.CheckboxItem
+            className="menu-item"
+            checked={display.showDots}
+            onCheckedChange={(v) => setDisplay({ showDots: v })}
+          >
+            <Check on={display.showDots} /> Show current
+          </Menu.CheckboxItem>
+          <Menu.CheckboxItem
+            className="menu-item"
+            checked={display.voltageColors}
+            onCheckedChange={(v) => setDisplay({ voltageColors: v })}
+          >
+            <Check on={display.voltageColors} /> Show voltage
+          </Menu.CheckboxItem>
+          <Menu.CheckboxItem
+            className="menu-item"
+            checked={display.showValues}
+            onCheckedChange={(v) => setDisplay({ showValues: v })}
+          >
+            <Check on={display.showValues} /> Show values
+          </Menu.CheckboxItem>
+          <Menu.Separator className="menu-separator" />
+          <Menu.CheckboxItem
+            className="menu-item"
+            checked={settings.euroResistors}
+            onCheckedChange={(v) => updateSettings({ euroResistors: v })}
+          >
+            <Check on={settings.euroResistors} /> European resistors
+          </Menu.CheckboxItem>
+          <Menu.CheckboxItem
+            className="menu-item"
+            checked={settings.showOhm}
+            onCheckedChange={(v) => updateSettings({ showOhm: v })}
+          >
+            <Check on={settings.showOhm} /> Show Ω after resistances
+          </Menu.CheckboxItem>
+          <Menu.CheckboxItem
+            className="menu-item"
+            checked={settings.conventionalCurrent}
+            onCheckedChange={(v) => updateSettings({ conventionalCurrent: v })}
+          >
+            <Check on={settings.conventionalCurrent} /> Conventional current motion
+          </Menu.CheckboxItem>
+          <Menu.Separator className="menu-separator" />
+          <Menu.Label className="menu-label">Theme</Menu.Label>
+          <Menu.RadioGroup
+            value={settings.themeId}
+            onValueChange={(v) => updateSettings({ themeId: v })}
+          >
+            {Object.entries(BUILTIN_THEMES).map(([id, t]) => (
+              <Menu.RadioItem key={id} value={id} className="menu-item" data-testid={`theme-${id}`}>
+                <Check on={settings.themeId === id} /> {t.meta.name}
+                {id === DEFAULT_THEME_ID && (
+                  <span className="menu-trailing menu-hint">Default</span>
+                )}
+              </Menu.RadioItem>
+            ))}
+          </Menu.RadioGroup>
+        </AppMenu>
+      </nav>
+
+      <input
+        ref={fileInput}
+        type="file"
+        accept=".txt,.circuitjs,.xml,text/plain"
+        hidden
+        data-testid="file-input"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void openFile(f);
+          e.target.value = '';
+        }}
+      />
+      <OpenLinkDialog open={linkOpen} onOpenChange={setLinkOpen} />
+    </header>
+  );
+}
+
+function Check({ on }: { on: boolean }) {
+  return (
+    <span className="menu-check" aria-hidden>
+      {on && <Icon name="check" size={18} />}
+    </span>
+  );
+}

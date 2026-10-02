@@ -4,7 +4,7 @@
 import { BUILTIN_THEMES, DEFAULT_THEME_ID } from './builtins/index.ts';
 import { MAX_THEME_BYTES, themeInputSchema, type Theme, type ThemeInput } from './schema.ts';
 
-/** Fill the keys a theme leaves out from its base built-in (`meta.base`, default Classic). */
+/** Fill the keys a theme leaves out from its base built-in (`meta.base`, default Dark). */
 export function resolveTheme(input: ThemeInput): Theme {
   const baseId = input.meta?.base ?? DEFAULT_THEME_ID;
   const base = BUILTIN_THEMES[baseId] ?? (BUILTIN_THEMES[DEFAULT_THEME_ID] as Theme);

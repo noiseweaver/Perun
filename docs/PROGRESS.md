@@ -1,5 +1,34 @@
 # Progress
 
+## 2026-10-02: Material restyle, Dark default, bundled fonts (between Phases 4 and 5)
+
+### Done
+
+- The owner asked for a Material Design look, Dark as the default theme and a better font.
+- UI chrome restyled on Material 3 lines while keeping React + Radix + Zustand (no component
+  library, so PLAN.md section 3 is unchanged): a top app bar with the circuit title and the File,
+  Circuits and Options menus; the canvas in a rounded surface; a bottom bar with a filled run
+  button, icon buttons for reset and fit (with tooltips), Material sliders, the time readouts and
+  error and warning chips. Shapes, elevation, state layers and the type scale are CSS tokens in
+  `packages/app/src/styles.css`, all mixed from the theme's `ui` colors (no literals). Icons are
+  inline Material Icons paths (Apache 2.0) in `Icon.tsx`.
+- Fonts: Inter (variable) for UI and canvas text, JetBrains Mono (variable) for readouts, both
+  bundled with `@fontsource-variable` (OFL), so themes still name families only (PLAN.md
+  section 6). Both built-ins use them; Classic keeps its upstream colors.
+- Dark is the default (`DEFAULT_THEME_ID = 'dark'`, also the base for themes that name none), and
+  its UI colors are now a Material 3 dark scheme from a blue seed. Settings moved to the
+  `circuitjs-next.settings.v2` key: version 1 always stored Classic, so its theme is dropped and its
+  other settings carry over. An e2e test covers both.
+
+### Next
+
+- Phase 5: editor (palette, placement, wires, selection, undo, property panel, save and links).
+
+### Open issues
+
+- The production bundle is 578 KB of JS plus about 330 KB of font subsets (only the subsets a
+  page uses are downloaded).
+
 ## 2026-10-02: Phase 4 (renderer and viewer)
 
 ### Done

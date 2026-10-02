@@ -44,7 +44,9 @@ export const classic: Theme = {
     strokeWidth: 3,
     dotRadius: 2,
     grid: 'none',
-    font: 'SansSerif, Arial, Helvetica, sans-serif',
-    monoFont: 'ui-monospace, Menlo, Consolas, monospace',
+    // upstream draws in the browser's SansSerif; the bundled Inter reads better at 12 px
+    font: "'Inter Variable', Inter, Arial, Helvetica, sans-serif",
+    monoFont:
+      "'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace",
   },
 };

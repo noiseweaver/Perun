@@ -120,6 +120,27 @@ test('Classic and Dark restyle the canvas and UI without a reload', async ({ pag
   expect(await page.evaluate(() => (window as unknown as { marker: number }).marker)).toBe(marker);
 });
 
+test('Dark is the default theme, including for settings saved before it was', async ({ page }) => {
+  await page.goto(`/?cct=${cct(RC)}`);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+  // version 1 settings always held a theme, Classic by default; only the other settings carry over
+  await page.evaluate(() => {
+    localStorage.clear();
+    localStorage.setItem(
+      'circuitjs-next.settings',
+      JSON.stringify({ themeId: 'classic', showOhm: true }),
+    );
+  });
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.getByTestId('options-menu').click();
+  await expect(page.getByRole('menuitemcheckbox', { name: /Show Ω/ })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+});
+
 test('run/stop pauses and reset restarts time', async ({ page }) => {
   await page.goto(`/?cct=${cct(RC)}`);
   await expect.poll(() => simTime(page)).not.toBe('t = 0 s');

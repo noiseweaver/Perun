@@ -8,4 +8,5 @@ import { dark } from './dark.ts';
 /** Built-in themes by id. Light, High Contrast and Colorblind Safe arrive in Phase 7. */
 export const BUILTIN_THEMES: Readonly<Record<string, Theme>> = { classic, dark };
 
-export const DEFAULT_THEME_ID = 'classic';
+/** The theme a new user sees, and the base for themes that name none. */
+export const DEFAULT_THEME_ID = 'dark';
