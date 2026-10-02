@@ -612,7 +612,7 @@ export class SimController {
 }
 
 function inRect(r: Rect, x: number, y: number): boolean {
-  return x >= r.x1 && x < r.x2 && y >= r.y1 && y < r.y2;
+  return x >= r.x1 && x <= r.x2 && y >= r.y1 && y <= r.y2;
 }
 
 /** Upstream keeps the clipboard in local storage so it survives reloads and other tabs. */
