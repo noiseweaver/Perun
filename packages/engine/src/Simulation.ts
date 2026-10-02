@@ -99,6 +99,12 @@ export class Simulation {
   converged = false;
   subIterations = 0;
 
+  /**
+   * Grid spacing (upstream `app.gridSize`: 8 with the small-grid option, else 16). Not a
+   * simulation setting, but some elements snap their posts to it (potentiometer).
+   */
+  gridSize = 16;
+
   /** Upstream's `CirSim.random`. Seed it for reproducible noise. */
   random: JavaRandom = new JavaRandom(Date.now());
 
@@ -343,6 +349,9 @@ export class Simulation {
     for (const ce of this.elmList) ce.preStamp();
 
     for (const ce of this.elmList) {
+      // upstream sizes nodes[] in constructors and setters; here once per analysis, since node
+      // counts can depend on state (capacitor series resistance, DC analysis)
+      ce.allocNodes();
       const inodes = ce.getInternalNodeCount();
       const ivs = ce.getVoltageSourceCount();
       const posts = ce.getPostCount();
@@ -747,8 +756,12 @@ export class Simulation {
     (i.matrix as CircuitMatrix).matrix[i.row - 1][j.row - 1] += x;
   }
 
-  /** Independent current x flowing into node n. */
-  stampRightSide(n: CircuitNode, x: number): void {
+  /**
+   * Independent current x flowing into node n. Without `x` this is upstream's marker that the
+   * right side at n changes every step (used by the removed RowInfo optimisation): a no-op.
+   */
+  stampRightSide(n: CircuitNode, x?: number): void {
+    if (x === undefined) return;
     if (n.row > 0) (n.matrix as CircuitMatrix).rightSide[n.row - 1] += x;
   }
 
