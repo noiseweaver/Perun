@@ -7,7 +7,7 @@ Records reference traces from the upstream Java build and compares engines again
 pnpm reference:build                    # Docker build of upstream + tools/reference-patch
 pnpm golden:record [name | tag:x ...]   # record fixtures/golden/<name>.json
 pnpm golden:check                       # record again in memory, fail if any fixture differs
-pnpm golden:compare [--engine stub] [--json report.json] [name | tag:x ...]
+pnpm golden:compare [--engine next|stub] [--json report.json] [name | tag:x ...]
 ```
 
 Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to use a local Chromium. The recorder serves `.reference-site/`
@@ -76,6 +76,7 @@ stop state. The report gives, per circuit, the first divergence (time, step and 
 worst value with its multiple of the tolerance. The exit code is 1 if any circuit fails.
 
 Engines live in [src/engines/](src/engines/) and implement `GoldenEngine`: given the circuit text,
-seed and sample settings, return an `EngineTrace` in the fixture's sample shape. The `stub` engine
-returns zeros in the reference shape and fails every circuit; Phase 2 adds the real engine. Only
-stubs may read `referenceTopology`.
+seed and sample settings, return an `EngineTrace` in the fixture's sample shape. `next` is the
+circuitjs-next engine (`runCircuit` from `@circuitjs-next/format`); `src/next.test.ts` runs it on
+every `linear` circuit in `pnpm check`. The `stub` engine returns zeros in the reference shape and
+fails every circuit. Only stubs may read `referenceTopology`.

@@ -9,6 +9,24 @@
 | Pinned on      | 2026-10-02                                     |
 | License        | GPL-2.0-or-later (`COPYING.txt`)               |
 
+Golden fixtures are recorded from the Java build of the pinned `master` commit above. The engine
+is ported from upstream's TypeScript port on the `dev-ts` branch (PLAN.md section 3), pinned
+separately:
+
+|                |                                                             |
+| -------------- | ----------------------------------------------------------- |
+| Branch         | `dev-ts`                                                    |
+| Pinned commit  | `7ec858d662d8be1d76d54241ba3a5c1d1c524f51`                  |
+| Commit date    | 2026-09-29                                                  |
+| Commit subject | Show scope label/legend in stacked scopes when there's room |
+| Pinned on      | 2026-10-02 (Phase 2)                                        |
+
+To read it: `git -C reference/circuitjs1 fetch origin dev-ts`, then for example
+`git -C reference/circuitjs1 show 7ec858d:ts/SimulationManager.ts`.
+Where `dev-ts` and `master` differ in behaviour, the port follows `master`, since that is what the
+golden fixtures record, and the file header says it was checked against `master`. Element save and
+load code is ported from `master` directly.
+
 The clone lives at `reference/circuitjs1` as a git submodule. It is read-only: never commit changes
 inside it. Harness changes for golden tests go in `tools/reference-patch/` and are applied at build
 time (PLAN.md section 2).
