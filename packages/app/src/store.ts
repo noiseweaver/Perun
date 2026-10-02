@@ -44,7 +44,12 @@ export interface AppState {
   examples: ExampleList | null;
 }
 
-const SETTINGS_KEY = 'circuitjs-next.settings';
+const SETTINGS_KEY = 'circuitjs-next.settings.v2';
+/**
+ * Version 1 saved the default theme (Classic) along with any other setting, so its theme is not
+ * a choice the user made. Its other settings carry over; the theme starts at the new default.
+ */
+const SETTINGS_KEY_V1 = 'circuitjs-next.settings';
 
 function loadSettings(): UserSettings {
   const defaults: UserSettings = {
@@ -54,9 +59,15 @@ function loadSettings(): UserSettings {
     conventionalCurrent: true,
   };
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
+    let raw = localStorage.getItem(SETTINGS_KEY);
+    let fromV1 = false;
+    if (raw === null) {
+      raw = localStorage.getItem(SETTINGS_KEY_V1);
+      fromV1 = true;
+    }
     if (raw === null) return defaults;
     const s = JSON.parse(raw) as Partial<UserSettings>;
+    if (fromV1) delete s.themeId;
     return {
       themeId:
         typeof s.themeId === 'string' && s.themeId in BUILTIN_THEMES ? s.themeId : defaults.themeId,

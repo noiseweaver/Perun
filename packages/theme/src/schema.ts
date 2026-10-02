@@ -58,7 +58,9 @@ export interface Theme {
     dotRadius: number;
     /** Grid drawn behind the circuit. */
     grid: 'none' | 'dots' | 'lines';
+    /** UI text and canvas labels. */
     font: string;
+    /** Component values on the canvas and numeric readouts. */
     monoFont: string;
   };
 }

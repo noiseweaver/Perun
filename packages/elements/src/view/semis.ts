@@ -20,6 +20,7 @@ import {
   MUTED,
   TEXT,
   UNITS_FONT,
+  VALUE_FONT,
   vInk,
   volt,
   type ElementView,
@@ -266,7 +267,15 @@ export const mosfetView: ElementView<MosfetElm> = {
     p.line(gate0, gate2, vg);
     if (g.pcircle) p.circle(g.pcircle, 3 * 0.98, vg);
     if (e.hasFlag(MosfetElm.FLAG_SHOWVT)) {
-      drawCenteredText(ctx, javaDoubleToString(e.vt * e.pnp), e.x2 + 2, e.y2, false, TEXT);
+      drawCenteredText(
+        ctx,
+        javaDoubleToString(e.vt * e.pnp),
+        e.x2 + 2,
+        e.y2,
+        false,
+        TEXT,
+        VALUE_FONT,
+      );
     }
     const cs = ctx.dotCount(0, -(e.ids + e.capCurGS));
     const cd = ctx.dotCount(1, -e.ids + e.capCurGD);

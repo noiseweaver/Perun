@@ -44,7 +44,21 @@ export const classic: Theme = {
     strokeWidth: 3,
     dotRadius: 2,
     grid: 'none',
-    font: 'SansSerif, Arial, Helvetica, sans-serif',
-    monoFont: 'ui-monospace, Menlo, Consolas, monospace',
+    // upstream draws in the browser's SansSerif; both fonts are bundled with the app
+    font: "'Roboto Variable', Roboto, Arial, Helvetica, sans-serif",
+    monoFont:
+      "'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace",
   },
+};
+
+/** Classic colors on a dot grid. */
+export const classicDots: Theme = {
+  ...classic,
+  meta: {
+    ...classic.meta,
+    name: 'Classic Dots',
+    description: 'The CircuitJS1 colors with a dot grid behind the circuit',
+  },
+  canvas: { ...classic.canvas, grid: '#3a3a3a', gridMajor: '#5a5a5a' },
+  style: { ...classic.style, grid: 'dots' },
 };

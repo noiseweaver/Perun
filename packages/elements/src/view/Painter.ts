@@ -38,7 +38,10 @@ export interface StrokeStyle {
   readonly dash?: readonly number[];
 }
 
-/** `units` and `value` are upstream's 12 px fonts; a size picks an explicit one. */
+/**
+ * `units` and `value` are upstream's 12 px fonts; a size picks an explicit one. `value` is for
+ * component values and draws in the theme's monospace font, everything else in its text font.
+ */
 export interface TextStyle {
   readonly font?: 'units' | 'value';
   readonly size?: number;

@@ -1,5 +1,41 @@
 # Progress
 
+## 2026-10-02: Material restyle, Dark default, bundled fonts (between Phases 4 and 5)
+
+### Done
+
+- The owner asked for a Material Design look, Dark as the default theme and a better font.
+- UI chrome restyled on Material 3 lines while keeping React + Radix + Zustand (no component
+  library, so PLAN.md section 3 is unchanged): a top app bar with the circuit title and the File,
+  Circuits and Options menus; the canvas in a rounded surface; a bottom bar with a filled run
+  button, icon buttons for reset and fit (with tooltips), Material sliders, the time readouts and
+  error and warning chips. Shapes, elevation, state layers and the type scale are CSS tokens in
+  `packages/app/src/styles.css`, all mixed from the theme's `ui` colors (no literals). Icons are
+  inline Material Icons paths (Apache 2.0) in `Icon.tsx`.
+- Fonts: Roboto (variable) for UI text and canvas labels, JetBrains Mono (variable) for component
+  values on the canvas (the `value` text style now draws in the theme's `monoFont`; labeled-node
+  names moved to the `units` style) and the time readouts. Both are bundled with
+  `@fontsource-variable`, so themes still name families only (PLAN.md section 6).
+- New built-in Classic Dots (`classic-dots`): Classic colors with a dot grid.
+- Dark is the default (`DEFAULT_THEME_ID = 'dark'`, also the base for themes that name none), and
+  its UI colors are now a Material 3 dark scheme from a blue seed. Settings moved to the
+  `circuitjs-next.settings.v2` key: version 1 always stored Classic, so its theme is dropped and its
+  other settings carry over. An e2e test covers both.
+
+### Next
+
+- Phase 5: editor (palette, placement, wires, selection, undo, property panel, save and links).
+
+### Open issues
+
+- 250 of the 367 bundled examples skip at least one element: they use tier 2 and 3 elements
+  (logic inputs and outputs, gates, flip-flops, 555, transformers, controlled sources,
+  subcircuits ...), which PLAN.md schedules for Phase 8. The most common are logic input `L`
+  (66 examples), logic output `M` (64), inverter `I` (23), variable rail `172` and sweep `170`
+  (20 and 17) and logic gates (`150`, `151`, `152` ...).
+- The production bundle is 578 KB of JS plus about 330 KB of font subsets (only the subsets a
+  page uses are downloaded).
+
 ## 2026-10-02: Phase 4 (renderer and viewer)
 
 ### Done

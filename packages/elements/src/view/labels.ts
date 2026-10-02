@@ -17,7 +17,6 @@ import {
   LABEL,
   TEXT,
   UNITS_FONT,
-  VALUE_FONT,
   vInk,
   volt,
   type ElementView,
@@ -36,14 +35,14 @@ function drawRotatedLabel(ctx: DrawContext, str: string, pt1: Pt, pt2: Pt, ink: 
     lineOver = true;
     str = str.substring(1);
   }
-  const w = Math.trunc(p.measureText(str, VALUE_FONT));
-  const h = Math.trunc(p.fontSize(VALUE_FONT));
+  const w = Math.trunc(p.measureText(str, UNITS_FONT));
+  const h = Math.trunc(p.fontSize(UNITS_FONT));
   const dir = sign(pt2.y - pt1.y);
   // further from the wire so long names do not overlap it
   const offset = h + Math.max(0, Math.trunc(w / 2) - h);
   const at = pt(pt2.x, pt2.y + dir * offset);
   p.text(str, at, ink, {
-    ...VALUE_FONT,
+    ...UNITS_FONT,
     align: 'center',
     baseline: 'middle',
     rotate: -Math.PI / 2,

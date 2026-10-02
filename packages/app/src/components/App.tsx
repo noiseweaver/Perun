@@ -7,9 +7,9 @@ import { useEffect } from 'react';
 import { themeById } from '../SimController.ts';
 import { startup } from '../startup.ts';
 import { useApp } from '../store.ts';
+import { AppBar } from './AppBar.tsx';
 import { CircuitCanvas } from './CircuitCanvas.tsx';
-import { StatusBar } from './StatusBar.tsx';
-import { Toolbar } from './Toolbar.tsx';
+import { ControlBar } from './ControlBar.tsx';
 
 let started = false;
 
@@ -33,11 +33,11 @@ export function App() {
   return (
     <Tooltip.Provider delayDuration={400}>
       <div className="app">
-        <Toolbar />
+        <AppBar />
         <main className="canvas-area">
           <CircuitCanvas />
         </main>
-        <StatusBar />
+        <ControlBar />
       </div>
     </Tooltip.Provider>
   );
