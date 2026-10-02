@@ -4,7 +4,10 @@
     "lib": ["ES2022", "DOM"],
     "types": ["node"],
     "allowImportingTsExtensions": true,
-    "erasableSyntaxOnly": true
+    "erasableSyntaxOnly": true,
+    // Type-checking the harness also checks the engine and element sources it imports, which are
+    // written for unchecked indexing (see packages/engine/tsconfig.json).
+    "noUncheckedIndexedAccess": false
   },
   "include": ["src"]
 }
