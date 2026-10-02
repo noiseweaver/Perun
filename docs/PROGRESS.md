@@ -26,5 +26,5 @@
   code (PLAN.md section 3). Phase 2 should pin a `dev-ts` commit alongside the `master` pin.
 - Upstream now saves circuits as XML. The `format` package must read both formats; whether it
   also writes the legacy text format is open.
-- The reference-build CI workflow has not run on GitHub yet.
+- The reference-build workflow passed on GitHub on 2026-10-02 (manual run). It triggers on pushes that touch `reference/` or `tools/reference-build/`, or by hand.
 - The offline-distribution fallback for the reference build is documented but untested.
