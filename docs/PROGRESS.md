@@ -8,7 +8,8 @@
   12 fixtures with last-bit differences from the local one (141). Recording is now pinned to Chromium
   141.0.7390.37 (`REFERENCE_BROWSER`, installed in CI with Playwright 1.56.1) and refuses any other
   version unless `GOLDEN_ANY_BROWSER=1`. Fixtures were re-recorded with two new fields:
-  `reference.browser` and `export` (upstream's own XML save of the circuit after loading).
+  `reference.browser` and `export` (upstream's own XML save of the circuit after loading). The
+  reference-build job passed with the pin on the Phase 2 pull request.
 - `packages/engine`: `Simulation` (wire closure, node numbering, ground and unconnected nodes,
   closures into independent matrices, validation with repair passes, stamping, subiterations,
   adaptive timestep, wire currents), `SimElement`, `FindPathInfo`, dense LU, the EJML-derived
@@ -48,7 +49,6 @@
   `master`'s `InductorElm.reset()` also zeroes that copy, which can only matter when validation
   resets an inductor after a topology change. No golden circuit covers that yet; add one with a
   switch event when the harness supports switch events.
-- The reference-build job's new Chromium pin is verified locally; it runs on this PR in CI.
 
 ## 2026-10-02: Phase 1 (golden test harness)
 
