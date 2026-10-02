@@ -1,0 +1,235 @@
+{
+  "$comment": "Golden circuit set. See tools/golden/README.md. Times: steps x the circuit timestep.",
+  "defaults": {
+    "seed": 1,
+    "stepsPerSample": 40,
+    "samples": 100
+  },
+  "circuits": [
+    {
+      "name": "divider",
+      "description": "10 V source across a 1k/2k divider",
+      "source": "circuits/divider.txt",
+      "tags": ["linear"],
+      "samples": 10,
+      "stepsPerSample": 10
+    },
+    {
+      "name": "rc-charge",
+      "description": "RC charging from 5 V, tau 10 ms",
+      "source": "circuits/rc-charge.txt",
+      "tags": ["linear"],
+      "stepsPerSample": 100
+    },
+    {
+      "name": "rl-step",
+      "description": "RL step response, tau 1 ms",
+      "source": "circuits/rl-step.txt",
+      "tags": ["linear"],
+      "stepsPerSample": 10
+    },
+    {
+      "name": "rlc-series",
+      "description": "Underdamped series RLC step response",
+      "source": "circuits/rlc-series.txt",
+      "tags": ["linear"],
+      "stepsPerSample": 20
+    },
+    {
+      "name": "ac-rc-filter",
+      "description": "1 kHz AC source into an RC low-pass",
+      "source": "circuits/ac-rc-filter.txt",
+      "tags": ["linear"],
+      "stepsPerSample": 10
+    },
+    {
+      "name": "square-rc",
+      "description": "100 Hz square wave into an RC low-pass",
+      "source": "circuits/square-rc.txt",
+      "tags": ["linear"]
+    },
+    {
+      "name": "current-source-rc",
+      "description": "10 mA current source into R parallel C",
+      "source": "circuits/current-source-rc.txt",
+      "tags": ["linear"],
+      "stepsPerSample": 100
+    },
+    {
+      "name": "switches",
+      "description": "Closed, open and momentary (released) switches",
+      "source": "circuits/switches.txt",
+      "tags": ["linear"],
+      "samples": 10,
+      "stepsPerSample": 10
+    },
+    {
+      "name": "labels-probe",
+      "description": "Labeled nodes joining two halves, voltmeter probe",
+      "source": "circuits/labels-probe.txt",
+      "tags": ["linear"],
+      "samples": 10,
+      "stepsPerSample": 10
+    },
+    {
+      "name": "noise-rc",
+      "description": "Noise source into an RC low-pass (exercises the seeded Random)",
+      "source": "circuits/noise-rc.txt",
+      "tags": ["linear"]
+    },
+    {
+      "name": "rectifier-cap",
+      "description": "Half-wave rectifier with smoothing capacitor",
+      "source": "circuits/rectifier-cap.txt",
+      "tags": ["nonlinear"],
+      "stepsPerSample": 80
+    },
+    {
+      "name": "rectifier-adaptive",
+      "description": "Half-wave rectifier with the adaptive timestep flag set (it converges, so the step never shrinks)",
+      "source": "circuits/rectifier-adaptive.txt",
+      "tags": ["nonlinear"],
+      "stepsPerSample": 80
+    },
+    {
+      "name": "led-zener",
+      "description": "LED with series resistor, zener shunt regulator",
+      "source": "circuits/led-zener.txt",
+      "tags": ["nonlinear"],
+      "samples": 20,
+      "stepsPerSample": 10
+    },
+    {
+      "name": "npn-bias",
+      "description": "NPN common emitter, base bias resistor",
+      "source": "circuits/npn-bias.txt",
+      "tags": ["nonlinear"],
+      "samples": 20,
+      "stepsPerSample": 10
+    },
+    {
+      "name": "pnp-bias",
+      "description": "PNP common emitter, base bias resistor",
+      "source": "circuits/pnp-bias.txt",
+      "tags": ["nonlinear"],
+      "samples": 20,
+      "stepsPerSample": 10
+    },
+    {
+      "name": "nmos-switch",
+      "description": "N-MOSFET low-side switch driven by a square wave",
+      "source": "circuits/nmos-switch.txt",
+      "tags": ["nonlinear"]
+    },
+    {
+      "name": "pmos-switch",
+      "description": "P-MOSFET high-side switch driven by a square wave",
+      "source": "circuits/pmos-switch.txt",
+      "tags": ["nonlinear"]
+    },
+    {
+      "name": "opamp-inverting",
+      "description": "Inverting op-amp, gain -2, stays inside the rails",
+      "source": "circuits/opamp-inverting.txt",
+      "tags": ["nonlinear"],
+      "stepsPerSample": 100
+    },
+    {
+      "name": "opamp-saturating",
+      "description": "Inverting op-amp, gain -5, clips at the rails",
+      "source": "circuits/opamp-saturating.txt",
+      "tags": ["nonlinear"],
+      "stepsPerSample": 100
+    },
+    {
+      "name": "opamp-comparator",
+      "description": "Open-loop op-amp comparator on a square wave (rail-to-rail edges)",
+      "source": "circuits/opamp-comparator.txt",
+      "tags": ["nonlinear"]
+    },
+    {
+      "name": "upstream-voltdivide",
+      "description": "Upstream example: voltage dividers",
+      "source": "upstream:src/com/lushprojects/circuitjs1/public/circuits/voltdivide.txt",
+      "tags": ["linear", "upstream-example"],
+      "samples": 10,
+      "stepsPerSample": 10
+    },
+    {
+      "name": "upstream-lrc",
+      "description": "Upstream example: LRC circuit",
+      "source": "upstream:src/com/lushprojects/circuitjs1/public/circuits/lrc.txt",
+      "tags": ["linear", "upstream-example"]
+    },
+    {
+      "name": "upstream-inductkick",
+      "description": "Upstream example: inductive kickback",
+      "source": "upstream:src/com/lushprojects/circuitjs1/public/circuits/inductkick.txt",
+      "tags": ["linear", "upstream-example"]
+    },
+    {
+      "name": "upstream-pot",
+      "description": "Upstream example: potentiometer",
+      "source": "upstream:src/com/lushprojects/circuitjs1/public/circuits/pot.txt",
+      "tags": ["linear", "upstream-example"],
+      "samples": 10,
+      "stepsPerSample": 10
+    },
+    {
+      "name": "upstream-rectify",
+      "description": "Upstream example: half-wave rectifier",
+      "source": "upstream:src/com/lushprojects/circuitjs1/public/circuits/rectify.txt",
+      "tags": ["nonlinear", "upstream-example"],
+      "stepsPerSample": 100
+    },
+    {
+      "name": "upstream-fullrect",
+      "description": "Upstream example: full-wave rectifier",
+      "source": "upstream:src/com/lushprojects/circuitjs1/public/circuits/fullrect.txt",
+      "tags": ["nonlinear", "upstream-example"],
+      "stepsPerSample": 100
+    },
+    {
+      "name": "upstream-mosswitch",
+      "description": "Upstream example: MOSFET switch",
+      "source": "upstream:src/com/lushprojects/circuitjs1/public/circuits/mosswitch.txt",
+      "tags": ["nonlinear", "upstream-example"],
+      "samples": 20,
+      "stepsPerSample": 10
+    },
+    {
+      "name": "upstream-amp-invert",
+      "description": "Upstream example: inverting amplifier",
+      "source": "upstream:src/com/lushprojects/circuitjs1/public/circuits/amp-invert.txt",
+      "tags": ["nonlinear", "upstream-example"],
+      "stepsPerSample": 100
+    },
+    {
+      "name": "upstream-ceamp",
+      "description": "Upstream example: common-emitter amplifier",
+      "source": "upstream:src/com/lushprojects/circuitjs1/public/circuits/ceamp.txt",
+      "tags": ["nonlinear", "upstream-example"],
+      "stepsPerSample": 100
+    },
+    {
+      "name": "upstream-zenerref",
+      "description": "Upstream example: zener reference",
+      "source": "upstream:src/com/lushprojects/circuitjs1/public/circuits/zenerref.txt",
+      "tags": ["nonlinear", "upstream-example"],
+      "stepsPerSample": 100
+    },
+    {
+      "name": "auto-lrc",
+      "description": "Upstream auto-test: LRC (XML, saved element state)",
+      "source": "upstream:auto-tests/lrc.txt",
+      "tags": ["linear", "upstream-test", "xml"]
+    },
+    {
+      "name": "auto-capac",
+      "description": "Upstream auto-test: AC into RC (XML, saved element state)",
+      "source": "upstream:auto-tests/capac.txt",
+      "tags": ["linear", "upstream-test", "xml"],
+      "stepsPerSample": 100
+    }
+  ]
+}

@@ -30,7 +30,8 @@ packages/format    circuit text/XML and URL parse/serialize. -> elements
 packages/theme     theme schema, validation, built-ins. Depends on nothing.
 packages/render    Canvas 2D Painter, scene, hit testing. -> elements, theme
 packages/app       UI shell. -> everything
-tools/             reference build, golden harness, recon scripts, ESLint rules
+tools/             reference build and patch, golden harness, recon scripts, ESLint rules
+fixtures/golden/   recorded reference traces (JSON), one per tools/golden/manifest.json entry
 docs/              PLAN, PROGRESS, DEVIATIONS, UPSTREAM, ELEMENTS, ENGINE-NOTES
 ```
 
@@ -46,6 +47,9 @@ pnpm check              # typecheck + lint + format:check + unit tests
 pnpm test:e2e           # Playwright (set PLAYWRIGHT_CHROMIUM_EXECUTABLE to use a local Chromium)
 pnpm reference:build    # build upstream in Docker into .reference-site/
 pnpm reference:serve    # serve it at http://localhost:8000/circuitjs.html
+pnpm golden:record      # record fixtures/golden/ from the reference build (tools/golden/README.md)
+pnpm golden:check       # re-record in memory, fail if any fixture differs
+pnpm golden:compare     # compare an engine against the fixtures (--engine stub)
 ```
 
 ## Ported file header

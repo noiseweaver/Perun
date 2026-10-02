@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "name": "upstream-pot",
+  "description": "Upstream example: potentiometer",
+  "source": "upstream:src/com/lushprojects/circuitjs1/public/circuits/pot.txt",
+  "tags": ["linear", "upstream-example"],
+  "reference": {
+    "upstreamSha": "5a707168778216bb6ed01bfdd62e8bbf7ae0a032",
+    "harnessPatchSha256": "fa84fc858811ddd78a3e4c757e379392906a47e464b400c92c9d16b902886403",
+    "build": "java-master"
+  },
+  "settings": {
+    "seed": 1,
+    "stepsPerSample": 10,
+    "samples": 10,
+    "timeStep": 0.000005,
+    "maxTimeStep": 0.000005,
+    "minTimeStep": 5e-11,
+    "adjustTimeStep": false
+  },
+  "circuit": "$ 1 5.0E-6 10.20027730826997 50 5.0 50\nv 208 320 208 160 0 0 40.0 5.0 0.0 0.0 0.5\nv 432 320 432 160 0 0 40.0 5.0 0.0 0.0 0.5\nw 320 224 320 160 0\nw 320 160 208 160 0\nw 320 160 432 160 0\n174 208 320 432 224 1 1000.0 0.5 Resistance\n",
+  "topology": {
+    "nodeCount": 3,
+    "elements": [
+      {
+        "type": "VoltageElm",
+        "dumpType": 118,
+        "posts": 2,
+        "nodes": [0, 1]
+      },
+      {
+        "type": "VoltageElm",
+        "dumpType": 118,
+        "posts": 2,
+        "nodes": [2, 1]
+      },
+      {
+        "type": "WireElm",
+        "dumpType": 119,
+        "posts": 2,
+        "nodes": [1, 1]
+      },
+      {
+        "type": "WireElm",
+        "dumpType": 119,
+        "posts": 2,
+        "nodes": [1, 1]
+      },
+      {
+        "type": "WireElm",
+        "dumpType": 119,
+        "posts": 2,
+        "nodes": [1, 1]
+      },
+      {
+        "type": "PotElm",
+        "dumpType": 174,
+        "posts": 3,
+        "nodes": [0, 2, 1]
+      }
+    ]
+  },
+  "stop": null,
+  "samples": [
+    {"step":10,"t":0.00005,"timeStep":0.000005,"nodes":[0,5,0],"elements":[{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[5,5],"currents":[0.02,-0.02],"current":-0.02},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[0,0,5],"currents":[0.01,0.01,-0.02],"current":0}]},
+    {"step":20,"t":0.0001,"timeStep":0.000005,"nodes":[0,5,0],"elements":[{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[5,5],"currents":[0.02,-0.02],"current":-0.02},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[0,0,5],"currents":[0.01,0.01,-0.02],"current":0}]},
+    {"step":30,"t":0.00015000000000000007,"timeStep":0.000005,"nodes":[0,5,0],"elements":[{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[5,5],"currents":[0.02,-0.02],"current":-0.02},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[0,0,5],"currents":[0.01,0.01,-0.02],"current":0}]},
+    {"step":40,"t":0.0002000000000000002,"timeStep":0.000005,"nodes":[0,5,0],"elements":[{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[5,5],"currents":[0.02,-0.02],"current":-0.02},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[0,0,5],"currents":[0.01,0.01,-0.02],"current":0}]},
+    {"step":50,"t":0.00025000000000000033,"timeStep":0.000005,"nodes":[0,5,0],"elements":[{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[5,5],"currents":[0.02,-0.02],"current":-0.02},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[0,0,5],"currents":[0.01,0.01,-0.02],"current":0}]},
+    {"step":60,"t":0.00030000000000000046,"timeStep":0.000005,"nodes":[0,5,0],"elements":[{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[5,5],"currents":[0.02,-0.02],"current":-0.02},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[0,0,5],"currents":[0.01,0.01,-0.02],"current":0}]},
+    {"step":70,"t":0.0003500000000000006,"timeStep":0.000005,"nodes":[0,5,0],"elements":[{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[5,5],"currents":[0.02,-0.02],"current":-0.02},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[0,0,5],"currents":[0.01,0.01,-0.02],"current":0}]},
+    {"step":80,"t":0.0004000000000000007,"timeStep":0.000005,"nodes":[0,5,0],"elements":[{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[5,5],"currents":[0.02,-0.02],"current":-0.02},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[0,0,5],"currents":[0.01,0.01,-0.02],"current":0}]},
+    {"step":90,"t":0.00045000000000000086,"timeStep":0.000005,"nodes":[0,5,0],"elements":[{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[5,5],"currents":[0.02,-0.02],"current":-0.02},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[0,0,5],"currents":[0.01,0.01,-0.02],"current":0}]},
+    {"step":100,"t":0.000500000000000001,"timeStep":0.000005,"nodes":[0,5,0],"elements":[{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[0,5],"currents":[-0.01,0.01],"current":0.01},{"volts":[5,5],"currents":[0.02,-0.02],"current":-0.02},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[5,5],"currents":[0.01,-0.01],"current":-0.01},{"volts":[0,0,5],"currents":[0.01,0.01,-0.02],"current":0}]}
+  ]
+}

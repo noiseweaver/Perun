@@ -1,7 +1,8 @@
 # Reference build
 
-Builds upstream CircuitJS1 from the pinned submodule at `reference/circuitjs1` and serves it locally.
-This is the reference that golden tests (Phase 1) record against. Nothing here edits the submodule.
+Builds upstream CircuitJS1 from the pinned submodule at `reference/circuitjs1`, with the golden-test
+harness patch from [`tools/reference-patch/`](../reference-patch/README.md) applied, and serves it
+locally. This is the reference that golden tests record against. Nothing here edits the submodule.
 
 ## Requirements
 
@@ -19,7 +20,10 @@ pnpm reference:serve   # serves http://localhost:8000/circuitjs.html (builds fir
 node tools/reference-build/smoke.mjs   # with the server running: checks that the sim runs
 ```
 
-`build.sh` tags the image `circuitjs-next/reference:<first 12 chars of the upstream SHA>`.
+`build.sh` tags the image `circuitjs-next/reference:<first 12 chars of the upstream SHA>-p<first 8
+chars of the patch SHA-256>` and writes both SHAs to `.reference-site/reference-build.json`, which the
+golden recorder copies into every fixture. Gradle dependencies are kept in a BuildKit cache mount
+between builds, since Maven Central rate-limits repeated downloads.
 
 ## Toolchain
 

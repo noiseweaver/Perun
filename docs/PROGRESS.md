@@ -1,5 +1,44 @@
 # Progress
 
+## 2026-10-02: Phase 1 (golden test harness)
+
+### Done
+
+- Reference patch `tools/reference-patch/harness.patch` (two files, about 130 lines), applied by the
+  Docker build. Adds `CircuitJS1.harness`: `setSeed`, exact `step(n)` independent of wall-clock time,
+  and a dump of every node voltage and every element's voltages and currents. Image tag and
+  `.reference-site/reference-build.json` now carry the patch SHA. Gradle dependencies are cached in a
+  BuildKit cache mount (Maven Central returned 429 on repeated builds).
+- `tools/golden/`: recorder (`pnpm golden:record`, `pnpm golden:check`), comparator
+  (`pnpm golden:compare`, per-value absolute and relative tolerance, first divergence, worst value,
+  structural checks), stub engine, engine interface for Phase 2.
+- 32 golden circuits in `tools/golden/manifest.json`: 20 written for the harness covering every
+  tier-1 element (RC, RL, RLC, divider, AC and square sources, current source, switches, labeled
+  nodes and probe, noise, rectifiers, LED and zener, NPN and PNP bias, N and P MOSFET switches,
+  three op-amp circuits), 10 upstream examples and 2 upstream XML auto-tests. Tagged `linear`
+  (Phase 2) and `nonlinear` (Phase 3). Fixtures in `fixtures/golden/` (2.3 MB).
+- Acceptance: two fresh recordings matched the committed fixtures byte for byte (`pnpm golden:check`,
+  run twice). `pnpm golden:compare` against the stub fails all 32 circuits with a clean report and
+  exit code 1. Loading through `cct=` and through `importCircuit` gave identical traces.
+- Unit tests for the comparator, fixture JSON and manifest, plus fixture consistency tests (one
+  fixture per manifest entry, recorded from the current circuit text, pinned upstream SHA and current
+  patch SHA; each fixture passes against itself and fails against the stub).
+- The reference-build workflow now also runs on pull requests touching the patch, the harness or the
+  fixtures, and runs `pnpm golden:check` after the build.
+
+### Next
+
+- Phase 2: port the engine core and linear elements from upstream `dev-ts`, add a headless runner
+  and register it as a golden engine in `tools/golden/src/engines/index.ts`. Target: every circuit
+  tagged `linear` passes `pnpm golden:compare --engine <name> tag:linear`.
+
+### Open issues
+
+- Fixtures come from GWT's emulation of `java.util.Random`. It is meant to reproduce the JDK
+  sequence, but this was not checked. `noise-rc` will show it when the TS `java.util.Random` lands.
+- `rectifier-adaptive` sets the adaptive timestep flag but converges, so no golden circuit yet
+  exercises timestep halving. Add one in Phase 3 (a circuit that fails to converge at the full step).
+
 ## 2026-10-02: Phase 0 (setup and reconnaissance)
 
 ### Done
