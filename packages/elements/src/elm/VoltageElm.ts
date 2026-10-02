@@ -287,13 +287,15 @@ export class ACVoltageElm extends VoltageElm {
  */
 export const VoltageElmType: ElementType = {
   className: 'VoltageElm',
-  create(x, y) {
+  create(x, y, sim) {
     const e = new DCVoltageElm(x, y, x, y, 0);
+    e.sim = sim;
     e.initNew();
     return e;
   },
-  load(x1, y1, x2, y2, f, st) {
+  load(x1, y1, x2, y2, f, st, sim) {
     const e = new VoltageElm(x1, y1, x2, y2, f);
+    e.sim = sim;
     e.undump(st);
     return e;
   },

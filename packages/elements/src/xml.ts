@@ -18,3 +18,9 @@ export interface XmlAttrReader {
   parseStringAttr(name: string, def: string): string;
   parseStringAttr(name: string, def: string | null): string | null;
 }
+
+/** Adds top-level records (model definitions) to the document being saved. */
+export interface XmlDocWriter {
+  /** Append a new child of the root with this tag and return a writer for its attributes. */
+  addElement(tag: string): XmlAttrWriter;
+}

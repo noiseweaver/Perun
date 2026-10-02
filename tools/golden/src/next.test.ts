@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Phase 2 acceptance, checked on every `pnpm check`: the circuitjs-next engine matches every
-// linear golden circuit, and saving a loaded circuit gives upstream's own bytes.
+// Phase 2 and 3 acceptance, checked on every `pnpm check`: the circuitjs-next engine matches
+// every golden circuit, and saving a loaded circuit gives upstream's own bytes.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readCircuit } from '@circuitjs-next/format';
@@ -20,10 +20,8 @@ function withoutScopesAndSliders(xml: string): string {
     .replace(/^ {2}<adj [^\n]*\n/gm, '');
 }
 
-const linear = loadManifest().filter((e) => e.tags.includes('linear'));
-
-describe('circuitjs-next engine on linear golden circuits', () => {
-  for (const entry of linear) {
+describe('circuitjs-next engine on the golden circuits', () => {
+  for (const entry of loadManifest()) {
     const fixture = parseFixture(readFileSync(join(FIXTURE_DIR, `${entry.name}.json`), 'utf8'));
 
     it(`${entry.name}: matches the reference trace`, async () => {
