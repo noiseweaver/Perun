@@ -232,8 +232,8 @@ Acceptance: `pnpm golden:record` is reproducible (two runs give identical fixtur
 Acceptance: all linear golden circuits match within tolerance. Round-trip serialization is byte-identical for supported elements, or the difference is listed in DEVIATIONS.md.
 
 ### Phase 3: Nonlinear elements and convergence
-- [ ] Port iteration, convergence checks and timestep control.
-- [ ] Port remaining tier-1 elements: diode, LED, zener, BJT NPN/PNP, MOSFET N/P, ideal op-amp, potentiometer, push switch.
+- [x] Port iteration, convergence checks and timestep control. (The run loop came with Phase 2; Phase 3 adds golden circuits that halve the timestep and that fail to converge.)
+- [x] Port remaining tier-1 elements: diode, LED, zener, BJT NPN/PNP, MOSFET N/P, ideal op-amp, potentiometer, push switch. (Also the rail, which tier-1 circuits use, text labels for load and save, and the diode, transistor and MOSFET model records.)
 
 Acceptance: all tier-1 golden circuits pass. Non-convergence ends in the same error state as upstream, never a hang.
 

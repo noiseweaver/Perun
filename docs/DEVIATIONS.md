@@ -15,3 +15,10 @@ Not deviations, for the record:
 - The text-format reader and XML writer reproduce upstream's quirks on purpose: attribute order,
   double-escaped string attributes, JS number formatting (`0.000005`, `1e-7`), and the speed
   slider round trip (`ic="10"` saves as `ic="10.20027730826997"`).
+- Device models (diode, transistor, MOSFET) live in one library per `Simulation` instead of
+  upstream's page-wide static maps. A `Circuit` keeps its simulation across loads, so models
+  persist the way they do on an upstream page; two circuits in one process no longer share them.
+- Model lookups that scan the map (`getModelWithParameters`) go in insertion order. Upstream uses
+  a `java.util.HashMap`, which GWT backs with an insertion-ordered JS map for string keys.
+- Transistors keep master's crossed names for saved junction voltages (`vbe` holds base minus
+  collector). dev-ts renames them to `vBE`/`vBC`; files keep master's names.
