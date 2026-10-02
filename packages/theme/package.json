@@ -1,0 +1,14 @@
+{
+  "name": "@circuitjs-next/theme",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Theme schema, validation, built-ins, encode/decode.",
+  "license": "GPL-2.0-or-later",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  }
+}

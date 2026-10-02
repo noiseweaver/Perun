@@ -1,0 +1,36 @@
+{
+  "name": "circuitjs-next",
+  "private": true,
+  "version": "0.0.0",
+  "description": "TypeScript rebuild of CircuitJS1 with a new UI and a JSON theme system",
+  "license": "GPL-2.0-or-later",
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r --parallel typecheck && tsc -p tsconfig.json",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test",
+    "reference:build": "tools/reference-build/build.sh",
+    "reference:serve": "tools/reference-build/serve.sh"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.63.0",
+    "@types/node": "^22.18.0",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.9",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.0",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  }
+}

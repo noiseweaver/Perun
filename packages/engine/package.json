@@ -1,0 +1,14 @@
+{
+  "name": "@circuitjs-next/engine",
+  "version": "0.0.0",
+  "private": true,
+  "description": "MNA simulation engine. No DOM.",
+  "license": "GPL-2.0-or-later",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  }
+}
