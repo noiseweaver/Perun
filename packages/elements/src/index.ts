@@ -45,3 +45,6 @@ export { WireElm } from './elm/WireElm.ts';
 // The engine types loaders and runners need, so packages above elements need not depend on the
 // engine directly (eslint.config.js dependency direction).
 export { JavaRandom, Simulation, type CircuitNode } from '@circuitjs-next/engine';
+
+// Views: drawing through the Painter interface (render implements it).
+export * from './view/index.ts';

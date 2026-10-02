@@ -1,7 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    // Type-checking this package also checks the engine and element sources it imports, which
+    // are written for unchecked indexing (see packages/engine/tsconfig.json).
+    "noUncheckedIndexedAccess": false
   },
   "include": ["src"]
 }

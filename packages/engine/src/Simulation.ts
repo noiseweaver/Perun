@@ -147,6 +147,11 @@ export class Simulation {
     this.timeStepCount = 0;
   }
 
+  /** Zero every node voltage (dev-ts `resetNodes`, used by the reset button). */
+  resetNodes(): void {
+    for (const cn of this.nodeList) cn.v = 0;
+  }
+
   getElm(n: number): SimElement | null {
     return n < this.elmList.length ? this.elmList[n] : null;
   }

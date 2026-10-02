@@ -6,5 +6,11 @@
     "allowJs": true,
     "checkJs": true
   },
-  "include": ["*.config.ts", "eslint.config.js", "tools/eslint-rules"]
+  "include": [
+    "*.config.ts",
+    "eslint.config.js",
+    "tools/eslint-rules",
+    "packages/app/vite.config.ts",
+    "packages/app/vite-plugin-examples.ts"
+  ]
 }

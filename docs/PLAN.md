@@ -54,8 +54,8 @@ Rebuild Paul Falstad's CircuitJS1 as a modern TypeScript web app with a new UI a
 | Tooling | Vite, pnpm workspaces, Vitest, Playwright, ESLint, Prettier | Decided |
 | Engine strategy | Hand port to TS, using upstream's own TypeScript port (`dev-ts` branch) as the porting source, restructured into our packages. Golden references still come from the Java `master` build. No GWT, no transpiler | Decided (changed 2026-10-02 by owner, was: hand port the Java engine) |
 | Rendering | Canvas 2D behind a painter interface (WebGL possible later) | Decided |
-| UI framework | React with headless components (e.g. Radix) | Default, confirm before Phase 4 |
-| UI state | Zustand for UI state. Circuit model owned by engine/elements packages | Default |
+| UI framework | React with headless components (Radix) | Decided (confirmed 2026-10-02 by owner) |
+| UI state | Zustand for UI state. Circuit model owned by engine/elements packages | Decided (confirmed 2026-10-02 by owner) |
 | Engine thread | Main thread first. Engine package stays DOM-free so it can move to a Web Worker | Decide in Phase 4 |
 | License | GPL-2.0-or-later, keep upstream credits | Required |
 | Dev environment | Linux, Node LTS, Docker for the reference build | Default |

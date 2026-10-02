@@ -9,7 +9,8 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@circuitjs-next/elements": "workspace:*"
+    "@circuitjs-next/elements": "workspace:*",
+    "lz-string": "^1.5.0"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"
