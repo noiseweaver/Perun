@@ -9,7 +9,12 @@ const fixture: GoldenFixture = {
   description: 'd',
   source: 's',
   tags: ['linear', 'xml'],
-  reference: { upstreamSha: 'a', harnessPatchSha256: 'b', build: 'java-master' },
+  reference: {
+    upstreamSha: 'a',
+    harnessPatchSha256: 'b',
+    build: 'java-master',
+    browser: 'chromium 1',
+  },
   settings: {
     seed: 1,
     stepsPerSample: 2,
@@ -20,6 +25,7 @@ const fixture: GoldenFixture = {
     adjustTimeStep: false,
   },
   circuit: '$ 1 5.0E-6 10 50 5.0 50\n',
+  export: '<cir></cir>',
   topology: {
     nodeCount: 2,
     elements: [{ type: 'ResistorElm', dumpType: 114, posts: 2, nodes: [0, 1] }],

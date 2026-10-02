@@ -7,7 +7,8 @@
   "reference": {
     "upstreamSha": "5a707168778216bb6ed01bfdd62e8bbf7ae0a032",
     "harnessPatchSha256": "fa84fc858811ddd78a3e4c757e379392906a47e464b400c92c9d16b902886403",
-    "build": "java-master"
+    "build": "java-master",
+    "browser": "chromium 141.0.7390.37"
   },
   "settings": {
     "seed": 1,
@@ -19,6 +20,7 @@
     "adjustTimeStep": false
   },
   "circuit": "$ 1 5.0E-6 10 50 5.0 50\nv 96 320 96 96 0 0 40.0 5.0 0.0\nr 96 96 208 96 0 10.0\nl 208 96 320 96 0 0.01 0.0\nc 320 96 320 320 0 1.0E-5 0.0\nw 96 320 320 320 0\ng 96 320 96 352 0\n",
+  "export": "<cir f=\"1\" ts=\"0.000005\" ic=\"10.20027730826997\" cb=\"50\" pb=\"50\" vr=\"5\" mts=\"5e-11\">\n  <v x=\"96 320 96 96\" f=\"0\" wf=\"0\" maxv=\"5\"/>\n  <r x=\"96 96 208 96\" f=\"0\" r=\"10\"/>\n  <l x=\"208 96 320 96\" f=\"0\" l=\"0.01\" ic=\"0\" i=\"0\"/>\n  <c x=\"320 96 320 320\" f=\"0\" c=\"0.00001\" iv=\"0.001\" sr=\"0\" vd=\"0\"/>\n  <w x=\"96 320 320 320\" f=\"0\"/>\n  <g x=\"96 320 96 352\" f=\"0\"/>\n</cir>\n",
   "topology": {
     "nodeCount": 4,
     "elements": [

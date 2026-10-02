@@ -1,7 +1,13 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ES2022"]
+    "lib": ["ES2022"],
+    // Imports carry .ts extensions so tools/ can run this package with plain Node.
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    // Type-checking this package also checks the engine and element sources it imports, which
+    // are written for unchecked indexing (see packages/engine/tsconfig.json).
+    "noUncheckedIndexedAccess": false
   },
   "include": ["src"]
 }

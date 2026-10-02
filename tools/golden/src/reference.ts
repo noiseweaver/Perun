@@ -53,9 +53,27 @@ export async function serveSite(root = SITE_DIR): Promise<{ url: string; server:
   return { url: `http://127.0.0.1:${port}/circuitjs.html`, server };
 }
 
+/**
+ * The Chromium every fixture is recorded in. V8 versions differ in the last bits of `Math.exp`,
+ * `Math.sin` and friends, and the nonlinear circuits amplify that, so fixtures reproduce byte for
+ * byte only in this exact build. It is Playwright 1.56's Chromium (build 1194); install it with
+ * `pnpm dlx playwright@1.56.1 install chromium` and point PLAYWRIGHT_CHROMIUM_EXECUTABLE at it.
+ */
+export const REFERENCE_BROWSER = 'chromium 141.0.7390.37';
+
 export async function launchBrowser(): Promise<Browser> {
   const executablePath = process.env['PLAYWRIGHT_CHROMIUM_EXECUTABLE'];
-  return chromium.launch(executablePath ? { executablePath } : {});
+  const browser = await chromium.launch(executablePath ? { executablePath } : {});
+  const version = `chromium ${browser.version()}`;
+  if (version !== REFERENCE_BROWSER && !process.env['GOLDEN_ANY_BROWSER']) {
+    await browser.close();
+    throw new Error(
+      `golden fixtures are recorded in ${REFERENCE_BROWSER}, but this is ${version}. ` +
+        'Set PLAYWRIGHT_CHROMIUM_EXECUTABLE to that build (tools/golden/README.md), ' +
+        'or set GOLDEN_ANY_BROWSER=1 to record anyway.',
+    );
+  }
+  return browser;
 }
 
 /** Shape of `window.CircuitJS1` with the harness patch applied. */
@@ -73,6 +91,7 @@ interface CircuitJS1Api {
   getTimeStep(): number;
   getMaxTimeStep(): number;
   importCircuit(text: string, subcircuitsOnly: boolean): void;
+  exportCircuit(): string;
   harness?: {
     version: number;
     setSeed(seed: number): void;
@@ -94,6 +113,7 @@ const BLANK_CIRCUIT = '$ 1 5.0E-6 10 50 5.0 50\n';
 
 interface RawRun {
   error?: string;
+  exported: string;
   timeStep: number;
   maxTimeStep: number;
   minTimeStep: number;
@@ -110,6 +130,7 @@ function runInPage({ circuit, settings }: { circuit: string; settings: RunSettin
   if (!api || !h) throw new Error('reference build has no harness API; rebuild with the patch');
   const arr = (a: ArrayLike<number>): number[] => Array.prototype.slice.call(a) as number[];
   api.importCircuit(circuit, false);
+  const exported = api.exportCircuit();
   h.setSeed(settings.seed);
   const timeStep = api.getTimeStep();
   const maxTimeStep = api.getMaxTimeStep();
@@ -152,6 +173,7 @@ function runInPage({ circuit, settings }: { circuit: string; settings: RunSettin
     });
   }
   return {
+    exported,
     timeStep,
     maxTimeStep,
     minTimeStep,
@@ -207,6 +229,7 @@ export async function recordCircuit(
         upstreamSha: build.upstreamSha,
         harnessPatchSha256: build.harnessPatchSha256,
         build: 'java-master',
+        browser: `chromium ${browser.version()}`,
       },
       settings: {
         ...settings,
@@ -216,6 +239,7 @@ export async function recordCircuit(
         adjustTimeStep: raw.adjustTimeStep,
       },
       circuit: req.circuit,
+      export: raw.exported,
       topology: raw.topology,
       stop: raw.stop,
       samples: raw.samples,

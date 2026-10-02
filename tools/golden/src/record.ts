@@ -6,7 +6,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { parseArgs } from 'node:util';
-import { formatFixture } from './json.ts';
+import { compareTrace, formatResult } from './compare.ts';
+import { formatFixture, parseFixture } from './json.ts';
 import {
   FIXTURE_DIR,
   REPO_ROOT,
@@ -40,9 +41,22 @@ try {
       ? ` stopped: ${fixture.stop.message} at step ${fixture.stop.step}`
       : '';
     if (values.check) {
-      const same = existsSync(path) && readFileSync(path, 'utf8') === text;
+      const old = existsSync(path) ? readFileSync(path, 'utf8') : null;
+      const same = old === text;
       if (!same) differ++;
       console.log(`${same ? 'same  ' : 'DIFFER'} ${rel}${stop}`);
+      if (old !== null && !same) {
+        // Say how far apart they are: last-bit noise or a real change.
+        const stored = parseFixture(old);
+        if (stored.export !== fixture.export) console.log('       export differs');
+        const r = compareTrace(stored, fixture);
+        const w = r.worst;
+        console.log(
+          w
+            ? `       largest difference: ${w.quantity} at step ${w.step}, ${w.expected} vs ${w.actual} (${w.excess.toPrecision(3)}x compare tolerance)`
+            : '       ' + formatResult(r),
+        );
+      }
     } else {
       writeFileSync(path, text);
       console.log(`wrote ${rel}: ${fixture.samples.length} samples${stop}`);

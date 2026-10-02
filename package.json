@@ -23,6 +23,9 @@
     "golden:check": "node tools/golden/src/record.ts --check",
     "golden:compare": "node tools/golden/src/compare-cli.ts"
   },
+  "dependencies": {
+    "@circuitjs-next/format": "workspace:*"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "1.63.0",

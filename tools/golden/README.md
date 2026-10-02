@@ -7,11 +7,20 @@ Records reference traces from the upstream Java build and compares engines again
 pnpm reference:build                    # Docker build of upstream + tools/reference-patch
 pnpm golden:record [name | tag:x ...]   # record fixtures/golden/<name>.json
 pnpm golden:check                       # record again in memory, fail if any fixture differs
-pnpm golden:compare [--engine stub] [--json report.json] [name | tag:x ...]
+pnpm golden:compare [--engine next|stub] [--json report.json] [name | tag:x ...]
 ```
 
 Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to use a local Chromium. The recorder serves `.reference-site/`
 itself (override with `REFERENCE_SITE`), so `pnpm reference:serve` is not needed.
+
+Recording is pinned to one Chromium build (`REFERENCE_BROWSER` in [src/reference.ts](src/reference.ts),
+currently 141.0.7390.37, the one Playwright 1.56.1 installs). The GWT build's floating-point results
+differ slightly between V8 versions, so another Chromium re-records different numbers; the recorder
+refuses to run on any other version unless `GOLDEN_ANY_BROWSER=1` is set. Get the pinned build with
+`pnpm dlx playwright@1.56.1 install chromium` and point `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at it, as the
+reference-build workflow does. Each fixture records the browser in `reference.browser`, and
+`export` holds upstream's own XML save of the circuit right after loading (used by the format
+round-trip tests).
 
 ## How recording works
 
@@ -67,6 +76,7 @@ stop state. The report gives, per circuit, the first divergence (time, step and 
 worst value with its multiple of the tolerance. The exit code is 1 if any circuit fails.
 
 Engines live in [src/engines/](src/engines/) and implement `GoldenEngine`: given the circuit text,
-seed and sample settings, return an `EngineTrace` in the fixture's sample shape. The `stub` engine
-returns zeros in the reference shape and fails every circuit; Phase 2 adds the real engine. Only
-stubs may read `referenceTopology`.
+seed and sample settings, return an `EngineTrace` in the fixture's sample shape. `next` is the
+circuitjs-next engine (`runCircuit` from `@circuitjs-next/format`); `src/next.test.ts` runs it on
+every `linear` circuit in `pnpm check`. The `stub` engine returns zeros in the reference shape and
+fails every circuit. Only stubs may read `referenceTopology`.

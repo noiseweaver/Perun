@@ -1,5 +1,55 @@
 # Progress
 
+## 2026-10-02: Phase 2 (engine core and linear elements)
+
+### Done
+
+- Phase 1 follow-up: the reference-build job on `main` failed because CI's Chromium (153) re-recorded
+  12 fixtures with last-bit differences from the local one (141). Recording is now pinned to Chromium
+  141.0.7390.37 (`REFERENCE_BROWSER`, installed in CI with Playwright 1.56.1) and refuses any other
+  version unless `GOLDEN_ANY_BROWSER=1`. Fixtures were re-recorded with two new fields:
+  `reference.browser` and `export` (upstream's own XML save of the circuit after loading). The
+  reference-build job passed with the pin on the Phase 2 pull request.
+- `packages/engine`: `Simulation` (wire closure, node numbering, ground and unconnected nodes,
+  closures into independent matrices, validation with repair passes, stamping, subiterations,
+  adaptive timestep, wire currents), `SimElement`, `FindPathInfo`, dense LU, the EJML-derived
+  sparse LU (used from 150 rows), and an exact `java.util.Random`. Ported from `dev-ts` 7ec858d
+  (now pinned in docs/UPSTREAM.md) and checked against `master`; where they differ the port follows
+  `master` (capacitors skip the current update on node-voltage changes, ground-node voltage reset).
+- `packages/elements`: wire, ground, resistor, capacitor, inductor, voltage source (all waveforms;
+  `VoltageElm`, `DCVoltageElm`, `ACVoltageElm`), current source, switch, labeled node, probe,
+  output, potentiometer. Text and XML load and XML save ported from `master`. Registry mirrors
+  upstream's `register`/`createCe`/`constructElement`, including `v` loading as `VoltageElm` from
+  text and `DCVoltageElm` from XML.
+- `packages/format`: DOM-free XML parser and upstream's `prettyPrint`; `Circuit` reads text and XML
+  (`$`, `h`, elements; `o`, `38`, `<o>`, `<adj>` kept for later) and saves XML byte for byte as
+  upstream; `runCircuit(text, { seed, stepsPerSample, samples })` returns the golden fixture shape.
+  It steps by count, like the harness, instead of the `tEnd, sampleTimes` signature PLAN.md sketched.
+- Golden engine `next` (`pnpm golden:compare --engine next`). Acceptance:
+  - all 16 `linear` circuits pass (most bit for bit; worst difference 1e-9 of tolerance);
+  - saving each loaded linear circuit reproduces upstream's export, scopes and sliders aside
+    (docs/DEVIATIONS.md), and XML load then save is byte-identical for all 16.
+    Both run in `pnpm check` (`tools/golden/src/next.test.ts`).
+- `noise-rc` passes, so GWT's `java.util.Random` does match the JDK sequence (Phase 1 open issue).
+- Nonlinear circuits run without hanging and fail the comparison cleanly (unknown elements are
+  skipped with a warning).
+
+### Next
+
+- Phase 3: diode, LED, zener, BJT, MOSFET, op-amp, push switch; iteration and convergence; the
+  diode and transistor model records (`34`, `32`, `<dm>`, `<tm>`, `<mm>`). Potentiometer is done.
+- Add a golden circuit that exercises timestep halving (Phase 1 open issue, still open).
+
+### Open issues
+
+- Not ported yet: rails (`RailElm` and variants), text, bus-width detection (`detectBusWidths`, for
+  digital buses), probe measurement statistics (RMS, min/max, frequency; display only), custom logic
+  and subcircuit model records. The loader warns and skips them.
+- Element voltages live on the nodes (dev-ts model) instead of a per-element copy as in `master`.
+  `master`'s `InductorElm.reset()` also zeroes that copy, which can only matter when validation
+  resets an inductor after a topology change. No golden circuit covers that yet; add one with a
+  switch event when the harness supports switch events.
+
 ## 2026-10-02: Phase 1 (golden test harness)
 
 ### Done

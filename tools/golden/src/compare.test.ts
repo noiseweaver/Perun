@@ -20,7 +20,12 @@ function fixture(samples: Sample[]): GoldenFixture {
     description: '',
     source: 'test',
     tags: [],
-    reference: { upstreamSha: 'x', harnessPatchSha256: 'y', build: 'java-master' },
+    reference: {
+      upstreamSha: 'x',
+      harnessPatchSha256: 'y',
+      build: 'java-master',
+      browser: 'chromium 1',
+    },
     settings: {
       seed: 1,
       stepsPerSample: 1,
@@ -31,6 +36,7 @@ function fixture(samples: Sample[]): GoldenFixture {
       adjustTimeStep: false,
     },
     circuit: '',
+    export: '',
     topology: {
       nodeCount: 2,
       elements: [{ type: 'ResistorElm', dumpType: 114, posts: 2, nodes: [0, 1] }],
