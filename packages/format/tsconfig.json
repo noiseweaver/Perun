@@ -1,7 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ES2022"]
+    "lib": ["ES2022"],
+    // Imports carry .ts extensions so tools/ can run this package with plain Node.
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true
   },
   "include": ["src"]
 }

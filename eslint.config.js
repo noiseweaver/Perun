@@ -75,6 +75,8 @@ export default tseslint.config(
     plugins: { local: { rules: { 'no-color-literals': noColorLiterals } } },
     rules: {
       'local/no-color-literals': 'error',
+      // Ported upstream methods keep their parameters; a leading underscore marks unused ones.
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
   {

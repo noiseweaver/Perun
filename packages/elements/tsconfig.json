@@ -1,7 +1,13 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ES2022"]
+    "lib": ["ES2022"],
+    // Imports carry .ts extensions so tools/ can run this package with plain Node.
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    // Ported numeric code indexes arrays in hot loops; bounds are guaranteed by construction, as
+    // upstream. Checked indexing would mean a non-null assertion on every matrix access.
+    "noUncheckedIndexedAccess": false
   },
   "include": ["src"]
 }
