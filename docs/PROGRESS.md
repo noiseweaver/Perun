@@ -1,5 +1,52 @@
 # Progress
 
+## 2026-10-02: Phase 4 (renderer and viewer)
+
+### Done
+
+- Decisions (PLAN.md section 3): the owner confirmed React with Radix headless components and
+  Zustand, and chose to keep the engine on the main thread for now (revisit in Phase 9).
+- `packages/theme`: theme schema (`Theme`, deep-partial `ThemeInput`) validated with zod (color
+  syntax, text and font limits, 16 KB cap), color helpers that truncate like upstream's `Color`
+  mixing, the Classic (upstream colors) and Dark ("Night Bench") built-ins, `resolveTheme`,
+  `parseThemeJson` (never throws) and CSS variables for the UI.
+- `packages/elements/src/view`: the `Painter` interface with semantic inks (role, voltage,
+  voltage gradient, data color) and views for every tier-1 element plus output and text. Geometry,
+  value text and labels follow upstream's `draw` methods (`interpPoint` rounding, `calcLeads`,
+  `drawValues`, `drawLabeledNode`); values use GWT's number formatting.
+- `packages/render`: Canvas 2D painter (HiDPI, theme stroke width and dot size), the 201-step
+  voltage palette (`getVoltageColor`), current dots (`updateDotCount`, `currentMult`), grid,
+  posts and bad-connection marks, pan and zoom with upstream's `centerCircuit` fit, and hit
+  testing.
+- `packages/format`: upstream URL handling (`cct`, `ctz`, `startCircuit`, `startLabel`,
+  `startCircuitLink`, `running`, with `QueryParameters` decoding) and `Circuit.reset()`.
+- `packages/app`: React + Radix + Zustand viewer. File menu (open file, open link), the upstream
+  example list from `setuplist.txt` (served from the reference submodule in dev, copied into the
+  build), run/stop, reset, fit, speed and current-speed sliders, display options (dots, voltage
+  colors, values, small grid, IEC resistors, ohm sign, conventional current) and the theme picker.
+  Clicking a switch toggles it. Convergence failures stop the run and show upstream's message.
+- Checked against the reference build with screenshots side by side: the default LRC example,
+  two galleries of every tier-1 element in all orientations, and several golden circuits look the
+  same (positions, labels, values, colors, dot speed).
+- Acceptance: `packages/app/e2e/viewer.spec.ts` loads the default example, `cct=`, `ctz=` and
+  `startCircuit=` links and checks they animate; switches Classic, Dark and back at runtime and
+  checks the canvas background and UI variables change with no reload; checks run/stop, reset,
+  switch clicks, the open-link dialog and a convergence failure. The no-color-literal lint passes.
+  CI now checks out the submodule so the examples are available to the e2e tests.
+
+### Next
+
+- Phase 5: editor (palette, placement, wires, selection, undo, property panel, save and links).
+
+### Open issues
+
+- Not drawn yet: power display mode (option flag 8), probe meter modes other than voltage (they
+  need the probe statistics), and upstream's `whiteBackground` (waits for a Light theme, Phase 7).
+- Small display differences from upstream: potentiometer values appear while paused (we analyze
+  on load), and the probe circle takes the hover color when highlighted.
+- Hover info and scopes come in Phase 6; scope and slider records are still kept but not shown.
+- The production bundle is one 570 KB chunk; split it when the editor lands.
+
 ## 2026-10-02: Phase 3 (nonlinear elements and convergence)
 
 ### Done
