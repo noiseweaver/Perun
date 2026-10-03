@@ -246,4 +246,22 @@ test.describe('on a touch screen', () => {
     expect(after?.x).toBeCloseTo((before?.x ?? 0) + 100, 0);
     expect(after?.y).toBeCloseTo((before?.y ?? 0) + 60, 0);
   });
+  test('a long press opens the element menu and selects no text', async ({ page }) => {
+    await open(page, LOOP);
+    const r = await at(page, 176, 96);
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: r.x, y: r.y }],
+    });
+    await expect(page.getByTestId('ctx-delete')).toBeVisible();
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    // the press only opened the menu: nothing moved
+    expect((await elements(page)).find((e) => e.cls === 'ResistorElm')?.pos).toEqual([
+      96, 96, 256, 96,
+    ]);
+    expect(await page.evaluate(() => getComputedStyle(document.body).userSelect)).toBe('none');
+    await page.getByTestId('ctx-delete').tap();
+    expect((await elements(page)).some((e) => e.cls === 'ResistorElm')).toBe(false);
+  });
 });

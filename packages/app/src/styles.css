@@ -52,11 +52,22 @@ body {
   letter-spacing: 0.01em;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  /* an app, not a page: a long press must not select text or open the browser's callout */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .icon {
   flex: none;
   display: block;
+}
+
+input,
+textarea,
+[contenteditable='true'] {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .app {

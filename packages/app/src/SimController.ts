@@ -16,7 +16,13 @@ import {
 import { Circuit, OptionFlag } from '@circuitjs-next/format';
 import { CircuitRenderer, currentMultiplier, type FrameState } from '@circuitjs-next/render';
 import { BUILTIN_THEMES, DEFAULT_THEME_ID, type Theme } from '@circuitjs-next/theme';
-import { Editor, MouseMode, type EditorHost, type Modifiers } from './editor/Editor.ts';
+import {
+  Editor,
+  MouseMode,
+  NO_MODIFIERS,
+  type EditorHost,
+  type Modifiers,
+} from './editor/Editor.ts';
 import { useApp, type AppState, type EditorState } from './store.ts';
 
 /** Simulation time per frame before the frame is cut short (upstream `frameTimeLimit`). */
@@ -413,6 +419,22 @@ export class SimController {
     let gestureId: number | null = null;
     const touches = new Map<number, { x: number; y: number }>();
     let pinch: { dist: number; mx: number; my: number } | null = null;
+    // touch long press: opens the context menu, as a right click does with a mouse
+    let press: { timer: number; id: number; x: number; y: number; cx: number; cy: number } | null =
+      null;
+    const cancelPress = (): void => {
+      if (press !== null) window.clearTimeout(press.timer);
+      press = null;
+    };
+    /** End the gesture in progress without it editing anything more. */
+    const abandonGesture = (id: number): void => {
+      if (gestureId !== id) return;
+      gestureId = null;
+      pan = null;
+      if (canvas.hasPointerCapture(id)) canvas.releasePointerCapture(id);
+      ed.pointerUp(NO_MODIFIERS);
+      this.publishEditor();
+    };
 
     const local = (e: MouseEvent): { x: number; y: number } => {
       const rect = canvas.getBoundingClientRect();
@@ -460,6 +482,7 @@ export class SimController {
         touches.set(e.pointerId, p);
         if (touches.size === 2) {
           // second finger: pinch zoom and two-finger pan instead of editing
+          cancelPress();
           if (ed.isDragging) ed.leave();
           pan = null;
           gestureId = null;
@@ -479,6 +502,32 @@ export class SimController {
       if (res === 'pan') pan = { x: p.x, y: p.y, id: e.pointerId };
       gestureId = e.pointerId;
       canvas.setPointerCapture(e.pointerId);
+      if (e.pointerType === 'touch' && ed.mouseMode === MouseMode.SELECT) {
+        cancelPress();
+        const id = e.pointerId;
+        press = {
+          id,
+          x: p.x,
+          y: p.y,
+          cx: e.clientX,
+          cy: e.clientY,
+          timer: window.setTimeout(() => {
+            const at = press;
+            press = null;
+            if (at === null) return;
+            abandonGesture(id);
+            canvas.dispatchEvent(
+              new MouseEvent('contextmenu', {
+                bubbles: true,
+                cancelable: true,
+                clientX: at.cx,
+                clientY: at.cy,
+                button: 2,
+              }),
+            );
+          }, LONG_PRESS_MS),
+        };
+      }
       this.publishEditor();
       updateCursor(g.x, g.y);
       e.preventDefault();
@@ -487,6 +536,12 @@ export class SimController {
       const r = this.renderer;
       if (!r) return;
       const p = local(e);
+      if (
+        press !== null &&
+        press.id === e.pointerId &&
+        Math.hypot(p.x - press.x, p.y - press.y) > LONG_PRESS_SLOP
+      )
+        cancelPress();
       if (e.pointerType === 'touch' && touches.has(e.pointerId)) {
         touches.set(e.pointerId, p);
         if (pinch !== null) {
@@ -512,6 +567,7 @@ export class SimController {
       updateCursor(g.x, g.y);
     };
     const up = (e: PointerEvent): void => {
+      if (press !== null && press.id === e.pointerId) cancelPress();
       touches.delete(e.pointerId);
       if (touches.size < 2) pinch = null;
       if (gestureId !== e.pointerId) return;
@@ -537,6 +593,12 @@ export class SimController {
       this.renderer?.viewport.zoomAt(Math.exp(-e.deltaY * 0.0015), p.x, p.y);
     };
     const contextMenu = (e: MouseEvent): void => {
+      // the browser's own long-press menu event: same as ours, so the timer is not needed
+      if (press !== null) {
+        const id = press.id;
+        cancelPress();
+        abandonGesture(id);
+      }
       // pick what is under the mouse now (a touch long-press has no hover before it)
       const g = grid(local(e));
       ed.hover(g.x, g.y);
@@ -560,6 +622,7 @@ export class SimController {
     canvas.addEventListener('contextmenu', contextMenu);
     canvas.addEventListener('dblclick', dblclick);
     return () => {
+      cancelPress();
       canvas.removeEventListener('pointerdown', down);
       canvas.removeEventListener('pointermove', move);
       canvas.removeEventListener('pointerup', up);
@@ -620,6 +683,10 @@ export class SimController {
 function inRect(r: Rect, x: number, y: number): boolean {
   return x >= r.x1 && x <= r.x2 && y >= r.y1 && y <= r.y2;
 }
+
+/** How long a touch must stay still to open the context menu, and how far it may wander (px). */
+const LONG_PRESS_MS = 500;
+const LONG_PRESS_SLOP = 8;
 
 /** Upstream keeps the clipboard in local storage so it survives reloads and other tabs. */
 const CLIPBOARD_KEY = 'circuitClipboard';
