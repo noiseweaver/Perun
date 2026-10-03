@@ -198,3 +198,52 @@ test('save downloads the circuit and export link reopens it', async ({ page }) =
   const again = await page.evaluate(() => window.circuitjsNext?.controller.saveText());
   expect(again).toBe(saved);
 });
+
+test.describe('on a touch screen', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('a one-finger drag on empty space pans, even after a touch whose end was lost', async ({
+    page,
+  }) => {
+    await open(page, LOOP);
+    const box = await page.getByTestId('circuit-canvas').boundingBox();
+    if (!box) throw new Error('no canvas');
+    // a finger that went down on the canvas and lifted where the canvas never heard of it
+    await page.evaluate(
+      ([x, y]) => {
+        document.querySelector('[data-testid=circuit-canvas]')?.dispatchEvent(
+          new PointerEvent('pointerdown', {
+            pointerId: 99,
+            pointerType: 'touch',
+            isPrimary: true,
+            clientX: x,
+            clientY: y,
+            bubbles: true,
+          }),
+        );
+      },
+      [box.x + 20, box.y + 20] as const,
+    );
+    const view = () =>
+      page.evaluate(() => {
+        const c = window.circuitjsNext?.controller;
+        const a = c?.toScreen(0, 0);
+        const b = c?.toScreen(100, 0);
+        return a && b ? { x: a.x, y: a.y, scale: (b.x - a.x) / 100 } : null;
+      });
+    const before = await view();
+    const cdp = await page.context().newCDPSession(page);
+    const at = (x: number, y: number) => [{ x: box.x + x, y: box.y + y }];
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: at(40, 560) });
+    for (let i = 1; i <= 10; i++)
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: at(40 + 10 * i, 560 + 6 * i),
+      });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    const after = await view();
+    expect(after?.scale).toBe(before?.scale);
+    expect(after?.x).toBeCloseTo((before?.x ?? 0) + 100, 0);
+    expect(after?.y).toBeCloseTo((before?.y ?? 0) + 60, 0);
+  });
+});

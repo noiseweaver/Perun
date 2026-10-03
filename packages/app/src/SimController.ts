@@ -451,6 +451,12 @@ export class SimController {
       canvas.focus({ preventScroll: true });
       const p = local(e);
       if (e.pointerType === 'touch') {
+        // a primary touch starts a new gesture: no other finger is down, so forget any touch
+        // whose end never reached the canvas (it would turn this drag into a pinch zoom)
+        if (e.isPrimary) {
+          touches.clear();
+          pinch = null;
+        }
         touches.set(e.pointerId, p);
         if (touches.size === 2) {
           // second finger: pinch zoom and two-finger pan instead of editing
