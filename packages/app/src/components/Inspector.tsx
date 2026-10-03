@@ -269,6 +269,102 @@ function SelectionActions({ elm }: { elm: CircuitElm | null }) {
 }
 
 /** Properties of the selected element, or what to do with a multiple selection. */
+/** Narrow screens show the panel as a bottom sheet (matches the CSS breakpoint). */
+const NARROW = '(max-width: 719px)';
+
+function useNarrow(): boolean {
+  const [narrow, setNarrow] = useState(() => window.matchMedia(NARROW).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(NARROW);
+    const on = (): void => setNarrow(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return narrow;
+}
+
+type SheetSnap = 'peek' | 'half' | 'full';
+/** The sheet keeps the height the user last chose while the app is open. */
+let lastSnap: SheetSnap = 'half';
+
+/** Sheet heights in px: just the title row, about half the screen, or up to the app bar. */
+function sheetHeights(panel: HTMLElement): Record<SheetSnap, number> {
+  const header = panel.querySelector<HTMLElement>('.inspector-header');
+  const peek = header ? header.offsetTop + header.offsetHeight + 8 : 96;
+  const full = Math.max(peek, window.innerHeight - 64 - 16);
+  const half = Math.min(full, Math.max(peek, Math.round(window.innerHeight * 0.45)));
+  return { peek, half, full };
+}
+
+/** Drag handle: drag to resize the sheet, release to snap; a tap toggles it open or shut. */
+function SheetHandle(props: {
+  panel: React.RefObject<HTMLElement | null>;
+  snap: SheetSnap;
+  setSnap: (s: SheetSnap) => void;
+  setDragHeight: (h: number | null) => void;
+}) {
+  const drag = useRef<{ id: number; y: number; h: number; moved: boolean } | null>(null);
+  const { panel, snap, setSnap, setDragHeight } = props;
+  const heightAt = (y: number): number => {
+    const d = drag.current;
+    const el = panel.current;
+    if (!d || !el) return 0;
+    const hs = sheetHeights(el);
+    return Math.min(hs.full, Math.max(hs.peek, d.h - (y - d.y)));
+  };
+  return (
+    <button
+      type="button"
+      className="sheet-handle"
+      aria-label={snap === 'peek' ? 'Show properties' : 'Hide properties'}
+      aria-expanded={snap !== 'peek'}
+      data-testid="sheet-handle"
+      onPointerDown={(e) => {
+        const el = panel.current;
+        if (!el || e.button !== 0) return;
+        drag.current = { id: e.pointerId, y: e.clientY, h: el.offsetHeight, moved: false };
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }}
+      onPointerMove={(e) => {
+        const d = drag.current;
+        if (!d || d.id !== e.pointerId) return;
+        if (!d.moved && Math.abs(e.clientY - d.y) < 4) return;
+        d.moved = true;
+        setDragHeight(heightAt(e.clientY));
+      }}
+      onPointerUp={(e) => {
+        const d = drag.current;
+        const el = panel.current;
+        if (!d || d.id !== e.pointerId || !el) return;
+        let next: SheetSnap;
+        if (!d.moved) next = snap === 'peek' ? 'half' : 'peek';
+        else {
+          const h = heightAt(e.clientY);
+          const hs = sheetHeights(el);
+          next = (['peek', 'half', 'full'] as const).reduce((a, b) =>
+            Math.abs(hs[b] - h) < Math.abs(hs[a] - h) ? b : a,
+          );
+        }
+        drag.current = null;
+        setDragHeight(null);
+        setSnap(next);
+      }}
+      onPointerCancel={() => {
+        drag.current = null;
+        setDragHeight(null);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowUp') setSnap(snap === 'peek' ? 'half' : 'full');
+        else if (e.key === 'ArrowDown') setSnap(snap === 'full' ? 'half' : 'peek');
+        else return;
+        e.preventDefault();
+      }}
+    >
+      <span className="sheet-handle-bar" />
+    </button>
+  );
+}
+
 export function Inspector() {
   const selected = useApp((s) => s.editor.selected);
   const count = useApp((s) => s.editor.selectionCount);
@@ -277,6 +373,14 @@ export function Inspector() {
   const [error, setError] = useState<string | null>(null);
   const [rebuild, setRebuild] = useState(0);
   const panel = useRef<HTMLElement>(null);
+  const narrow = useNarrow();
+  const [snap, setSnapState] = useState<SheetSnap>(lastSnap);
+  const [dragHeight, setDragHeight] = useState<number | null>(null);
+  const [heights, setHeights] = useState<Record<SheetSnap, number> | null>(null);
+  const setSnap = (s: SheetSnap): void => {
+    lastSnap = s;
+    setSnapState(s);
+  };
 
   const infos = useMemo(() => {
     const list: EditInfo[] = [];
@@ -293,9 +397,22 @@ export function Inspector() {
 
   useEffect(() => setError(null), [selected]);
 
-  // double-click and Enter move the keyboard to the first field
+  // measure the sheet's snap heights once it is on screen, and again when the window resizes
+  const shown = count > 0;
+  useEffect(() => {
+    if (!narrow || !shown) return;
+    const measure = (): void => {
+      if (panel.current) setHeights(sheetHeights(panel.current));
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [narrow, shown, selected]);
+
+  // double-click and Enter move the keyboard to the first field (opening a shut sheet)
   useEffect(() => {
     if (focus === 0) return;
+    if (lastSnap === 'peek') setSnap('half');
     const first = panel.current?.querySelector<HTMLElement>('[data-testid="field-0"]');
     first?.focus();
   }, [focus]);
@@ -309,7 +426,16 @@ export function Inspector() {
   };
 
   return (
-    <aside className="inspector" aria-label="Properties" data-testid="inspector" ref={panel}>
+    <aside
+      className="inspector"
+      aria-label="Properties"
+      data-testid="inspector"
+      data-sheet={narrow ? snap : undefined}
+      data-dragging={dragHeight !== null || undefined}
+      style={narrow && heights !== null ? { height: dragHeight ?? heights[snap] } : undefined}
+      ref={panel}
+    >
+      <SheetHandle panel={panel} snap={snap} setSnap={setSnap} setDragHeight={setDragHeight} />
       <header className="inspector-header">
         <h2 className="inspector-title" data-testid="inspector-title">
           {selected !== null

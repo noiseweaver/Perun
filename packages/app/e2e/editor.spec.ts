@@ -264,4 +264,32 @@ test.describe('on a touch screen', () => {
     await page.getByTestId('ctx-delete').tap();
     expect((await elements(page)).some((e) => e.cls === 'ResistorElm')).toBe(false);
   });
+  test('the property panel is a sheet that drags down to a tab and back up', async ({ page }) => {
+    await open(page, LOOP);
+    await clickCircuit(page, 176, 96);
+    const sheet = page.getByTestId('inspector');
+    await expect(sheet).toHaveAttribute('data-sheet', 'half');
+    const height = () => sheet.evaluate((e) => (e as HTMLElement).offsetHeight);
+    const half = await height();
+    const handle = await page.getByTestId('sheet-handle').boundingBox();
+    if (!handle) throw new Error('no handle');
+    const cdp = await page.context().newCDPSession(page);
+    const x = handle.x + handle.width / 2;
+    const y = handle.y + handle.height / 2;
+    const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', dy: number) =>
+      cdp.send('Input.dispatchTouchEvent', {
+        type,
+        touchPoints: type === 'touchEnd' ? [] : [{ x, y: y + dy }],
+      });
+    await touch('touchStart', 0);
+    for (let i = 1; i <= 10; i++) await touch('touchMove', 30 * i);
+    await touch('touchEnd', 0);
+    await expect(sheet).toHaveAttribute('data-sheet', 'peek');
+    await expect.poll(height).toBeLessThan(half / 2);
+    await expect(page.getByTestId('inspector-title')).toBeInViewport();
+    // a tap on the handle brings it back
+    await page.getByTestId('sheet-handle').tap();
+    await expect(sheet).toHaveAttribute('data-sheet', 'half');
+    await expect.poll(height).toBe(half);
+  });
 });

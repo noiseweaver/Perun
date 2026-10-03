@@ -725,6 +725,11 @@ kbd,
   background: var(--md-surface-container-low);
 }
 
+/* the bottom sheet's drag handle; shown on narrow screens only */
+.sheet-handle {
+  display: none;
+}
+
 .inspector-header {
   display: flex;
   align-items: center;
@@ -998,16 +1003,51 @@ textarea.field-input {
     background: var(--md-surface-container-high);
   }
 
+  /* a bottom sheet: drag the handle up and down, or tap it to open and shut */
   .inspector {
     position: fixed;
     z-index: 9;
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: auto;
-    max-height: 45vh;
+    max-height: calc(100% - 72px);
+    padding-top: 0;
+    border-radius: var(--md-shape-l) var(--md-shape-l) 0 0;
     box-shadow: var(--md-elevation-3);
     background: var(--md-surface-container-high);
+    transition: height 200ms ease;
+  }
+
+  .inspector[data-dragging] {
+    transition: none;
+  }
+
+  .sheet-handle {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    width: calc(100% + 32px);
+    margin: 0 -16px;
+    padding: 12px 0 10px;
+    border: none;
+    background: inherit;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .sheet-handle-bar {
+    width: 32px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--ui-text-muted);
+    opacity: 0.5;
+  }
+
+  .sheet-handle:focus-visible .sheet-handle-bar {
+    opacity: 1;
   }
 
   .app-bar-actions {
