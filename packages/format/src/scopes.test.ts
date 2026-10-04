@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
 
+import { plotName } from '@circuitjs-next/elements';
 import { describe, expect, it } from 'vitest';
 import { Circuit, readCircuit } from './circuit.ts';
 
@@ -97,5 +98,39 @@ describe('scopes', () => {
     expect(c.scopes.scopeCount).toBe(1);
     expect(c.scopes.scopes[0]?.plots[0]?.elm?.getClassName()).toBe('ResistorElm');
     expect(c.warnings).toContain('a scope shows an element that is not supported yet');
+  });
+
+  it('lays out cards with the plot inside, and one column at a time when compact', () => {
+    const mgr = readCircuit(LRC).scopes;
+    mgr.look = 'cards';
+    const area = { x: 0, y: 400, width: 960, height: 200 };
+    mgr.setupScopes(area, 160);
+    for (const s of mgr.scopes) {
+      const { slot, rect } = s;
+      expect(rect.x).toBeGreaterThan(slot.x);
+      expect(rect.y).toBeGreaterThan(slot.y + 30); // two header lines
+      expect(rect.x + rect.width).toBeLessThan(slot.x + slot.width);
+      expect(rect.y + rect.height).toBeLessThan(slot.y + slot.height);
+    }
+    expect(mgr.scopes[1]?.slot.x).toBeGreaterThan(mgr.scopes[0]?.slot.x ?? 0);
+    expect(mgr.scopeIndexAt((mgr.scopes[1]?.slot.x ?? 0) + 2, 410)).toBe(1);
+
+    mgr.compact = true;
+    mgr.activeColumn = 2;
+    mgr.setupScopes(area, 0);
+    expect(mgr.scopes.map((s) => mgr.isShown(s))).toEqual([false, false, true]);
+    expect(mgr.scopes[2]?.slot.width).toBeGreaterThan(900);
+    expect(mgr.scopeIndexAt(100, 450)).toBe(2);
+  });
+
+  it('names plots for the legend', () => {
+    const mgr = readCircuit(LRC).scopes;
+    const s = mgr.scopes[0];
+    if (!s) throw new Error('no scope');
+    expect(s.plots.map((p) => plotName(s, p))).toEqual(['V', 'I']);
+    mgr.combineAll();
+    const all = mgr.scopes[0];
+    if (!all) throw new Error('no scope');
+    expect(all.plots.map((p) => plotName(all, p))).toEqual(['V1', 'I1', 'V2', 'I2', 'V3', 'I3']);
   });
 });

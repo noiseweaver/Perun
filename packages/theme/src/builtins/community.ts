@@ -34,6 +34,7 @@ export const nord: Theme = {
   },
   scope: {
     background: '#292e39',
+    card: '#3b4252',
     grid: '#3b4252',
     gridMajor: '#4c566a',
     text: '#e5e9f0',
@@ -78,6 +79,7 @@ export const solarizedDark: Theme = {
   },
   scope: {
     background: '#00252e',
+    card: '#073642',
     grid: '#073642',
     gridMajor: '#586e75',
     text: '#eee8d5',
@@ -122,6 +124,7 @@ export const gruvboxDark: Theme = {
   },
   scope: {
     background: '#1d2021',
+    card: '#32302f',
     grid: '#3c3836',
     gridMajor: '#665c54',
     text: '#ebdbb2',
@@ -166,6 +169,7 @@ export const adwaitaDark: Theme = {
   },
   scope: {
     background: '#1a1a1a',
+    card: '#2a2a2a',
     grid: '#2c2c2c',
     gridMajor: '#5e5e5e',
     text: '#ffffff',

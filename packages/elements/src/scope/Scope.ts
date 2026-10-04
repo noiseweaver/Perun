@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Ported from CircuitJS1 src/com/lushprojects/circuitjs1/client/Scope.java (master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032, with ScopePropertiesDialog.nextHighestScale. Drawing
-// goes through ScopeGraphics with semantic inks instead of upstream's colors.
+// goes through ScopeGraphics with semantic inks instead of upstream's colors; the card look
+// (ScopeCardView.ts) is this port's own.
 // Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) circuitjs-next contributors.
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
@@ -30,6 +31,7 @@ import {
   VAL_VOLTAGE,
 } from './constants.ts';
 import type { ScopeManager } from './ScopeManager.ts';
+import { cardHitTest, drawScopeCard } from './ScopeCardView.ts';
 import { ScopeFFT } from './ScopeFFT.ts';
 import type { ScopeGraphics, ScopeInk } from './ScopeGraphics.ts';
 import { ScopeOverlays } from './ScopeOverlays.ts';
@@ -100,7 +102,10 @@ export class Scope {
   /** Number of scopes in this column. */
   stackCount = 0;
   text: string | null = null;
+  /** The plot area. */
   rect: ScopeRect = { x: 0, y: 0, width: 1, height: 1 };
+  /** The scope's whole space: the plot area plus, in the card look, its card and header. */
+  slot: ScopeRect = { x: 0, y: 0, width: 1, height: 1 };
   manualScale = false;
   showI = false;
   showV = false;
@@ -337,7 +342,8 @@ export class Scope {
     const w = this.rect.width;
     const h = this.rect.height;
     this.rect = r;
-    if (r.width !== w || (this.plot2d.plotXY && r.height !== h)) this.resetGraph();
+    // (upstream resets only X/Y plots on a height change; any 2D plot's image needs the new size)
+    if (r.width !== w || (this.plot2d.enabled && r.height !== h)) this.resetGraph();
   }
 
   getWidth(): number {
@@ -345,7 +351,7 @@ export class Scope {
   }
 
   rightEdge(): number {
-    return this.rect.x + this.rect.width;
+    return Math.max(this.rect.x + this.rect.width, this.slot.x + this.slot.width);
   }
 
   setElm(ce: CircuitElm | null): void {
@@ -521,12 +527,15 @@ export class Scope {
   }
 
   showSettingsWheel(): boolean {
+    // the card look has its settings button in the header
+    if (this.mgr.look === 'cards') return false;
     return this.rect.height > 100 && this.rect.width > 100;
   }
 
   cursorInSettingsWheel(): boolean {
     const mx = this.mgr.mouseCursorX;
     const my = this.mgr.mouseCursorY;
+    if (this.mgr.look === 'cards') return cardHitTest(this, mx, my)?.kind === 'settings';
     const r = this.rect;
     return (
       this.showSettingsWheel() &&
@@ -568,6 +577,10 @@ export class Scope {
       this.scopeTimeStep = sim.maxTimeStep;
       this.resetGraph();
     }
+    if (mgr.look === 'cards') {
+      drawScopeCard(this, g);
+      return;
+    }
     if (this.plot2d.enabled) {
       this.plot2d.draw(g);
       return;
@@ -583,45 +596,16 @@ export class Scope {
       this.fftPlot.draw(g);
     }
 
-    for (let i = 0; i !== UNITS_COUNT; i++) {
-      this.reduceRange[i] = false;
-      if (this.maxScale && !this.manualScale) this.scale[i] = 1e-4;
-    }
-
-    // is one of our plots selected?
-    this.somethingSelected = false;
-    for (const plot of this.visiblePlots) {
-      this.calcPlotScale(plot);
-      if (mgr.scopeSelected === -1 && plot.elm !== null && plot.elm === mgr.mouseElm)
-        this.somethingSelected = true;
-      this.reduceRange[plot.units] = true;
-    }
-
-    const sel = mgr.scopeMenuIsSelected(this);
-    const somethingSelectedHere = this.somethingSelected;
-
-    this.checkForSelectionElsewhere();
-    if (this.selectedPlot >= 0) this.somethingSelected = true;
-
-    if (somethingSelectedHere || sel) {
+    const { sel, highlight, allPlotsSameUnits } = this.prepareDraw();
+    if (highlight) {
       g.save();
       g.setGlobalAlpha(0.15);
       g.setColor('selection');
       g.fillRect(0, 0, this.rect.width, this.rect.height);
       g.restore();
     }
-    if (this.getSingleElm() !== null) this.somethingSelected = false;
-
     this.drawGridLines = true;
-    let allPlotsSameUnits = true;
     const vp = this.visiblePlots;
-    for (let i = 1; i < vp.length; i++) {
-      // don't draw horizontal grid lines unless all plots are in same units
-      if (vp[i].units !== vp[0].units) allPlotsSameUnits = false;
-    }
-
-    if ((allPlotsSameUnits || this.showMax || this.showMin || this.showP2P) && vp.length > 0)
-      this.calcMaxAndMin(vp[0].units);
 
     // draw volt plots on top (last), then current plots underneath, then everything else
     for (let i = 0; i !== vp.length; i++)
@@ -643,11 +627,68 @@ export class Scope {
     g.restore();
 
     this.drawCursor(g);
+    this.finishDraw();
+  }
 
+  /**
+   * The part of draw() before any plot is drawn: auto scales, which plot is selected, and the
+   * max and min. `highlight` asks for the selection tint over the scope.
+   */
+  prepareDraw(): { sel: boolean; highlight: boolean; allPlotsSameUnits: boolean } {
+    const mgr = this.mgr;
+    for (let i = 0; i !== UNITS_COUNT; i++) {
+      this.reduceRange[i] = false;
+      if (this.maxScale && !this.manualScale) this.scale[i] = 1e-4;
+    }
+
+    // is one of our plots selected?
+    this.somethingSelected = false;
+    for (const plot of this.visiblePlots) {
+      this.calcPlotScale(plot);
+      if (mgr.scopeSelected === -1 && plot.elm !== null && plot.elm === mgr.mouseElm)
+        this.somethingSelected = true;
+      this.reduceRange[plot.units] = true;
+    }
+
+    const sel = mgr.scopeMenuIsSelected(this);
+    const somethingSelectedHere = this.somethingSelected;
+
+    this.checkForSelectionElsewhere();
+    if (this.selectedPlot >= 0) this.somethingSelected = true;
+    const highlight = somethingSelectedHere || sel;
+    if (this.getSingleElm() !== null) this.somethingSelected = false;
+
+    let allPlotsSameUnits = true;
+    const vp = this.visiblePlots;
+    for (let i = 1; i < vp.length; i++) {
+      // don't draw horizontal grid lines unless all plots are in same units
+      if (vp[i].units !== vp[0].units) allPlotsSameUnits = false;
+    }
+
+    if ((allPlotsSameUnits || this.showMax || this.showMin || this.showP2P) && vp.length > 0)
+      this.calcMaxAndMin(vp[0].units);
+    return { sel, highlight, allPlotsSameUnits };
+  }
+
+  /** The part of draw() after the plots: shrink auto scales that have room to spare. */
+  finishDraw(): void {
     if (this.plots[0].ptr > 5 && !this.manualScale) {
       for (let i = 0; i !== UNITS_COUNT; i++)
         if (this.scale[i] > 1e-4 && this.reduceRange[i]) this.scale[i] /= 2;
     }
+  }
+
+  /** The color a plot is drawn in now: muted while another is selected, or the selection. */
+  plotInk(plot: ScopePlot, selected: boolean, allSelected: boolean): ScopeInk {
+    const mgr = this.mgr;
+    let color: ScopeInk = this.somethingSelected ? 'muted' : plot.color;
+    if (
+      allSelected ||
+      (mgr.scopeSelected === -1 && this.getSingleElm() === null && plot.elm === mgr.mouseElm)
+    )
+      color = 'selection';
+    else if (selected) color = plot.color;
+    return color;
   }
 
   /** Maximum and minimum values for all plots of the given units. */
@@ -785,17 +826,10 @@ export class Scope {
     allSelected: boolean,
   ): void {
     if (plot.elm === null) return;
-    const mgr = this.mgr;
     const rect = this.rect;
     const maxy = Math.trunc((rect.height - 1) / 2);
 
-    let color: ScopeInk = this.somethingSelected ? 'muted' : plot.color;
-    if (
-      allSelected ||
-      (mgr.scopeSelected === -1 && this.getSingleElm() === null && plot.elm === mgr.mouseElm)
-    )
-      color = 'selection';
-    else if (selected) color = plot.color;
+    const color = this.plotInk(plot, selected, allSelected);
 
     const ipa = this.displayStartIndex(plot, rect.width);
     const maxV = plot.maxValues;

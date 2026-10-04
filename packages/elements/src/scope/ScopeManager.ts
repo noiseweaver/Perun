@@ -10,6 +10,7 @@
 import type { Simulation } from '@circuitjs-next/engine';
 import type { CircuitElm } from '../CircuitElm.ts';
 import { Scope, type ScopeElementKinds, type ScopeRect } from './Scope.ts';
+import { cardPlotRect, CARD_GAP } from './ScopeCardView.ts';
 import type { ScopeImage } from './ScopeGraphics.ts';
 import type { ScopeDefaultsStore } from './ScopeSerializer.ts';
 
@@ -83,6 +84,13 @@ export class ScopeManager {
   cursorUnits = 0;
   dragStartTime = -1;
   draggingPlotYScope: Scope | null = null;
+
+  /** How scopes are drawn: as upstream does, or in cards (ScopeCardView). */
+  look: 'classic' | 'cards' = 'classic';
+  /** Narrow screens: one column of scopes at a time, picked with tabs or a swipe. */
+  compact = false;
+  /** The column shown when compact. */
+  activeColumn = 0;
 
   /**
    * While a file loads, its element list with null for records this port can't load yet, so the
@@ -174,11 +182,16 @@ export class ScopeManager {
       colCount[s.position]++;
     }
     const colct = pos + 1;
+    if (this.activeColumn >= colct) this.activeColumn = colct - 1;
+    if (this.activeColumn < 0) this.activeColumn = 0;
     let iw = infoWidth;
     if (colct <= 2) iw = Math.trunc((iw * 3) / 2);
-    let w = Math.trunc((area.width - iw) / colct);
+    // compact: every column gets the whole width, and only the active one is shown
+    const cols = this.compact ? 1 : colct;
+    let w = Math.trunc((area.width - iw) / cols);
     const marg = 10;
     if (w < marg * 2) w = marg * 2;
+    const cards = this.look === 'cards';
     pos = -1;
     let colh = 0;
     let row = 0;
@@ -195,7 +208,21 @@ export class ScopeManager {
         s.speed = speed;
         s.resetGraph();
       }
-      const r = { x: area.x + pos * w, y: area.y + colh * row, width: w - marg, height: colh };
+      const x = area.x + (this.compact ? 0 : pos) * w;
+      let r: ScopeRect;
+      if (cards) {
+        const g = CARD_GAP / 2;
+        s.slot = {
+          x: x + g,
+          y: area.y + colh * row + g,
+          width: w - CARD_GAP,
+          height: colh - CARD_GAP,
+        };
+        r = cardPlotRect(s.slot);
+      } else {
+        r = { x, y: area.y + colh * row, width: w - marg, height: colh };
+        s.slot = r;
+      }
       row++;
       const o = s.rect;
       if (r.x !== o.x || r.y !== o.y || r.width !== o.width || r.height !== o.height) s.setRect(r);
@@ -205,8 +232,32 @@ export class ScopeManager {
   /** Right edge of the last docked scope, where the info text starts (or 0 without scopes). */
   scopesRightEdge(): number {
     let x = 0;
-    for (const s of this.scopes) x = Math.max(x, s.rightEdge());
+    for (const s of this.scopes) if (this.isShown(s)) x = Math.max(x, s.rightEdge());
     return x;
+  }
+
+  /** Number of scope columns. */
+  columnCount(): number {
+    let n = 0;
+    for (const s of this.scopes) n = Math.max(n, s.position + 1);
+    return n;
+  }
+
+  /** Is the scope on screen? When compact, only the active column is. */
+  isShown(s: Scope): boolean {
+    return !this.compact || s.position === this.activeColumn;
+  }
+
+  /** The shown docked scope whose space holds a point, or -1. */
+  scopeIndexAt(x: number, y: number): number {
+    return this.scopes.findIndex(
+      (s) =>
+        this.isShown(s) &&
+        x >= s.slot.x &&
+        y >= s.slot.y &&
+        x < s.slot.x + s.slot.width &&
+        y < s.slot.y + s.slot.height,
+    );
   }
 
   /**

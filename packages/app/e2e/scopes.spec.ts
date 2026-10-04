@@ -171,3 +171,103 @@ test('hovering an element shows its info', async ({ page }) => {
       ]),
     );
 });
+
+/** Page coordinates of the centre of a clickable part of scope `i`'s card. */
+const cardPart = async (page: Page, i: number, kind: string, index = 0) => {
+  const box = await page.getByTestId('circuit-canvas').boundingBox();
+  const h = await page.evaluate(
+    ([i, kind, index]) => {
+      const c = window.circuitjsNext?.controller;
+      const s = c?.scopes.scopes[i as number];
+      if (!c || !s) return null;
+      // scan the card for the part (hit regions are recorded as the card is drawn)
+      for (let y = s.slot.y; y < s.slot.y + 50; y += 2)
+        for (let x = s.slot.x; x < s.slot.x + s.slot.width; x += 2) {
+          const hit = c.cardHit(s, x, y);
+          if (hit !== null && hit.kind === kind && hit.index === index)
+            return { x: hit.x + hit.width / 2, y: hit.y + hit.height / 2 };
+        }
+      return null;
+    },
+    [i, kind, index] as const,
+  );
+  if (!box || !h) throw new Error(`no ${kind} on scope ${i}`);
+  return { x: box.x + h.x, y: box.y + h.y };
+};
+
+test.describe('the card look', () => {
+  test('cards have settings and close buttons, and legend chips that hide a trace', async ({
+    page,
+  }) => {
+    await page.goto('/?startCircuit=lrc.txt');
+    await ready(page);
+    expect(await page.evaluate(() => window.circuitjsNext?.controller.scopes.look)).toBe('cards');
+
+    // the current chip hides the current trace and shows it again
+    const showI = () =>
+      page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes[0]?.showI);
+    expect(await showI()).toBe(true);
+    const chip = await cardPart(page, 0, 'chip', 1);
+    await page.mouse.click(chip.x, chip.y);
+    expect(await showI()).toBe(false);
+    // the chips move as values come and go; and two quick clicks would be a double click
+    await page.waitForTimeout(600);
+    const again = await cardPart(page, 0, 'chip', 1);
+    await page.mouse.click(again.x, again.y);
+    expect(await showI()).toBe(true);
+
+    const gear = await cardPart(page, 0, 'settings');
+    await page.mouse.click(gear.x, gear.y);
+    await expect(page.getByTestId('scope-dialog')).toBeVisible();
+    await page.getByTestId('scope-dialog-ok').click();
+
+    const close = await cardPart(page, 0, 'close');
+    await page.mouse.click(close.x, close.y);
+    await expect.poll(() => scopeCount(page)).toBe(2);
+    await page.keyboard.press('Control+z');
+    await expect.poll(() => scopeCount(page)).toBe(3);
+  });
+
+  test('Classic draws scopes as upstream does', async ({ page }) => {
+    await page.goto('/?startCircuit=lrc.txt');
+    await ready(page);
+    await page.getByTestId('options-menu').click();
+    await page.getByTestId('theme-classic').click();
+    await expect
+      .poll(() => page.evaluate(() => window.circuitjsNext?.controller.scopes.look))
+      .toBe('classic');
+    await page.getByTestId('options-menu').click();
+    await page.getByTestId('theme-dark').click();
+  });
+});
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('one scope column shows at a time; tabs and a swipe switch between them', async ({
+    page,
+  }) => {
+    await page.goto('/?startCircuit=lrc.txt');
+    await ready(page);
+    const active = () =>
+      page.evaluate(() => window.circuitjsNext?.controller.scopes.activeColumn ?? -1);
+    expect(await page.evaluate(() => window.circuitjsNext?.controller.scopes.compact)).toBe(true);
+    expect(await active()).toBe(0);
+    const tab = await cardPart(page, 0, 'tab', 2);
+    await page.touchscreen.tap(tab.x, tab.y);
+    await expect.poll(active).toBe(2);
+
+    // swipe right over the scope: back one column
+    const s = await inScope(page, 2);
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', x: number) =>
+      cdp.send('Input.dispatchTouchEvent', {
+        type,
+        touchPoints: type === 'touchEnd' ? [] : [{ x, y: s.y }],
+      });
+    await touch('touchStart', s.x - 80);
+    for (let i = 1; i <= 8; i++) await touch('touchMove', s.x - 80 + i * 20);
+    await touch('touchEnd', 0);
+    await expect.poll(active).toBe(1);
+  });
+});

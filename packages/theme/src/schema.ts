@@ -38,7 +38,10 @@ export interface Theme {
     badConnection: string;
   };
   scope: {
+    /** Plot area. */
     background: string;
+    /** Card around each scope, with its header and legend (card look only). */
+    card: string;
     /** Grid lines. */
     grid: string;
     /** Zero line, every tenth time line, muted plots. */
@@ -75,6 +78,11 @@ export interface Theme {
     font: string;
     /** Component values on the canvas and numeric readouts. */
     monoFont: string;
+    /**
+     * How scopes look: `classic` draws them as upstream does, `cards` puts each one in a card
+     * with a header, legend and labeled axes.
+     */
+    scopeLook: 'classic' | 'cards';
   };
 }
 
@@ -131,6 +139,7 @@ export const themeInputSchema = z.object({
   scope: z
     .object({
       background: color,
+      card: color,
       grid: color,
       gridMajor: color,
       text: color,
@@ -161,6 +170,7 @@ export const themeInputSchema = z.object({
       grid: z.enum(['none', 'dots', 'lines']),
       font: fontFamily,
       monoFont: fontFamily,
+      scopeLook: z.enum(['classic', 'cards']),
     })
     .partial()
     .optional(),

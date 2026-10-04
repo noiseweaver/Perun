@@ -30,6 +30,7 @@ export const classic: Theme = {
   // upstream's eight colors for repeated plots
   scope: {
     background: '#000000',
+    card: '#000000',
     grid: '#404040',
     gridMajor: '#a0a0a0',
     text: '#ffffff',
@@ -66,6 +67,7 @@ export const classic: Theme = {
     font: "'Roboto Variable', Roboto, Arial, Helvetica, sans-serif",
     monoFont:
       "'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace",
+    scopeLook: 'classic',
   },
 };
 

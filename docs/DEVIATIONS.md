@@ -13,6 +13,10 @@ test that shows it (PLAN.md section 2).
 
 Not deviations, for the record:
 
+- The scope card look (`style.scopeLook: cards`) changes only how scopes are drawn: the data,
+  auto scales and saved records are upstream's. Classic keeps upstream's look. A 2D (X-Y or V vs
+  I) plot also redraws its trail image when its height changes; upstream does this for X/Y plots
+  only, so its V vs I image keeps its old size after a resize.
 - Saving writes XML only, never the legacy text format. Upstream master does the same (its
   `VoltageElm` has no text `dump()` any more). Both formats are read.
 - The text-format reader and XML writer reproduce upstream's quirks on purpose: attribute order,

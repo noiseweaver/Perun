@@ -76,7 +76,14 @@ export {
   type ScopeElementKinds,
   type ScopeRect,
 } from './scope/Scope.ts';
-export type { ScopeGraphics, ScopeImage, ScopeInk } from './scope/ScopeGraphics.ts';
+export {
+  CARD_GAP,
+  cardHitTest,
+  cardPlotRect,
+  plotName,
+  type CardHit,
+} from './scope/ScopeCardView.ts';
+export type { ScopeGraphics, ScopeImage, ScopeInk, ScopeTextStyle } from './scope/ScopeGraphics.ts';
 export {
   INFO_WIDTH,
   MAX_SCOPES,

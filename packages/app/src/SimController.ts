@@ -5,13 +5,20 @@
 // 160 * iterCount steps per second, at most about 50 ms of simulation per frame.
 
 import {
+  INFO_WIDTH,
   SwitchElm,
+  UNITS_A,
+  UNITS_V,
+  VAL_CURRENT,
+  VAL_VOLTAGE,
   VoltageElm,
+  cardHitTest,
   getTimeText,
   getUnitText,
   showFormat,
   switchRect,
   viewFor,
+  type CardHit,
   type CircuitElm,
   type EditInfo,
   type Rect,
@@ -444,7 +451,10 @@ export class SimController {
   circuitHeight(): number {
     const h = this.cssHeight;
     if (this.circuit.scopes.scopeCount === 0) return h;
-    return h - Math.trunc(h * this.scopeHeightFraction);
+    let sh = Math.trunc(h * this.scopeHeightFraction);
+    // one column at a time on a phone: give it room for a header and a readable plot
+    if (this.cssWidth < COMPACT_WIDTH) sh = Math.max(sh, Math.min(220, Math.trunc(h * 0.35)));
+    return h - sh;
   }
 
   /** The scope area in CSS pixels. */
@@ -458,10 +468,13 @@ export class SimController {
     const sr = this.scopeRenderer;
     if (!sr) return;
     const mgr = this.circuit.scopes;
+    mgr.look = this.theme.style.scopeLook;
+    mgr.compact = this.cssWidth < COMPACT_WIDTH;
+    const infoWidth = mgr.compact ? 0 : INFO_WIDTH;
     const before = mgr.scopeCount;
-    mgr.setupScopes(this.scopeArea());
+    mgr.setupScopes(this.scopeArea(), infoWidth);
     // removing the last scope gives its room back to the circuit
-    if (mgr.scopeCount !== before) mgr.setupScopes(this.scopeArea());
+    if (mgr.scopeCount !== before) mgr.setupScopes(this.scopeArea(), infoWidth);
     mgr.dialogShowing = useApp.getState().dialog !== null;
     mgr.mouseElm = this.editor.mouseElm ?? this.scopeHoverElm;
     mgr.cursorScope = null;
@@ -492,7 +505,7 @@ export class SimController {
       if (elm === ed.mouseElm && ed.mousePost >= 0)
         arr.push('V = ' + getUnitText(elm.getPostVoltage(ed.mousePost), 'V'));
       else elm.getInfo(arr);
-    } else if (mgr.scopeCount > 0) {
+    } else if (mgr.scopeCount > 0 && !mgr.compact) {
       arr[0] = 't = ' + getTimeText(sim.t);
       const timerate = 160 * this.circuit.getIterCount() * sim.timeStep;
       if (timerate >= 0.1) arr[0] += ' (' + showFormat(timerate) + 'x)';
@@ -513,15 +526,54 @@ export class SimController {
 
   /** Index of the docked scope at a canvas point, or -1. */
   scopeAt(x: number, y: number): number {
-    const mgr = this.circuit.scopes;
     if (y < this.circuitHeight()) return -1;
-    return mgr.scopes.findIndex(
-      (s) =>
-        x >= s.rect.x &&
-        y >= s.rect.y &&
-        x < s.rect.x + s.rect.width &&
-        y < s.rect.y + s.rect.height,
-    );
+    return this.circuit.scopes.scopeIndexAt(x, y);
+  }
+
+  /**
+   * A click on a scope card's header: settings, close, a legend chip (shows or hides voltage or
+   * current) or a column tab. Returns whether it hit one.
+   */
+  private cardClick(s: Scope, x: number, y: number): boolean {
+    const mgr = this.circuit.scopes;
+    if (mgr.look !== 'cards') return false;
+    const hit = cardHitTest(s, x, y);
+    if (hit === null) return false;
+    switch (hit.kind) {
+      case 'settings':
+        this.openScopeProperties(s);
+        break;
+      case 'close':
+        this.scopeCommand('Remove scope', () => s.setElm(null));
+        break;
+      case 'tab':
+        mgr.activeColumn = hit.index;
+        break;
+      case 'chip': {
+        const p = s.plots[hit.index];
+        if (p === undefined) break;
+        // voltage and current plots can be hidden and shown again (upstream's Show Voltage and
+        // Show Current); others stay, unless they are all a scope has left
+        if (p.value === VAL_VOLTAGE && p.units === UNITS_V && !(s.showV && !s.showI))
+          this.scopeCommand('Scope', () => s.showVoltage(!s.showV));
+        else if (p.value === VAL_CURRENT && p.units === UNITS_A && !(s.showI && !s.showV))
+          this.scopeCommand('Scope', () => s.showCurrent(!s.showI));
+        break;
+      }
+    }
+    return true;
+  }
+
+  /** The clickable part of a scope's card at a point (for tests). */
+  cardHit(s: Scope, x: number, y: number): CardHit | null {
+    return cardHitTest(s, x, y);
+  }
+
+  /** Compact: show the next (+1) or previous (-1) scope column. */
+  private swipeScopes(dir: number): void {
+    const mgr = this.circuit.scopes;
+    const n = mgr.columnCount();
+    if (n > 1) mgr.activeColumn = (mgr.activeColumn + dir + n) % n;
   }
 
   /** Hover over the scope area: select the scope and highlight what it shows (upstream). */
@@ -745,6 +797,8 @@ export class SimController {
     // scope area gestures: dragging the splitter, or a press in a scope (drag-to-measure)
     let split: number | null = null;
     let scopeGesture: number | null = null;
+    // compact: a sideways swipe over the scopes shows the next column
+    let swipe: { x: number; y: number; id: number } | null = null;
     const mgr = (): ScopeManager => this.circuit.scopes;
     const onSplitter = (p: { x: number; y: number }): boolean =>
       mgr().scopeCount > 0 && Math.abs(p.y - this.circuitHeight()) <= 4;
@@ -759,10 +813,13 @@ export class SimController {
         m.mouseCursorY = p.y;
         this.hoverScopes(p.x, p.y);
         const s = m.scopes[m.scopeSelected];
+        if (s !== undefined && !m.dialogShowing && e.button === 0 && this.cardClick(s, p.x, p.y))
+          return true;
         if (s !== undefined && !m.dialogShowing && s.cursorInSettingsWheel()) {
           this.openScopeProperties(s);
           return true;
         }
+        if (m.compact && e.pointerType === 'touch') swipe = { x: p.x, y: p.y, id: e.pointerId };
         if (!m.dialogShowing) for (const sc of m.scopes) sc.mousePressed(p.x, p.y);
         // alt-drag or middle-drag moves the selected plot in manual scale mode
         if (
@@ -888,7 +945,9 @@ export class SimController {
           m.mouseCursorY = p.y;
           canvas.style.cursor = this.splitterHot
             ? 'ns-resize'
-            : s !== undefined && s.cursorInSettingsWheel()
+            : s !== undefined &&
+                (s.cursorInSettingsWheel() ||
+                  (m.look === 'cards' && cardHitTest(s, p.x, p.y) !== null))
               ? 'pointer'
               : 'default';
           this.publishEditor();
@@ -928,6 +987,13 @@ export class SimController {
     };
     const up = (e: PointerEvent): void => {
       if (split === e.pointerId || scopeGesture === e.pointerId) {
+        if (swipe !== null && swipe.id === e.pointerId) {
+          const p = local(e);
+          const dx = p.x - swipe.x;
+          if (Math.abs(dx) > SWIPE_MIN && Math.abs(dx) > Math.abs(p.y - swipe.y) * 2)
+            this.swipeScopes(dx < 0 ? 1 : -1);
+        }
+        swipe = null;
         endScopeGesture();
         if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
         return;
@@ -1012,7 +1078,9 @@ export class SimController {
       const lp = local(e);
       if (inScopes(lp)) {
         const s = mgr().scopes[this.scopeAt(lp.x, lp.y)];
-        if (s !== undefined) this.openScopeProperties(s);
+        // a double click on a card's buttons or chips is two clicks on them
+        if (s !== undefined && !(mgr().look === 'cards' && cardHitTest(s, lp.x, lp.y) !== null))
+          this.openScopeProperties(s);
         return;
       }
       const g = grid(lp);
@@ -1110,6 +1178,10 @@ function inRect(r: Rect, x: number, y: number): boolean {
 /** How long a touch must stay still to open the context menu, and how far it may wander (px). */
 const LONG_PRESS_MS = 500;
 const LONG_PRESS_SLOP = 8;
+/** Canvas narrower than this shows one scope column at a time (CSS px). */
+const COMPACT_WIDTH = 600;
+/** Sideways travel that counts as a swipe between scope columns (CSS px). */
+const SWIPE_MIN = 40;
 
 /** Scope "Save as default" settings, in local storage as upstream (key `scopeDefaults`). */
 const scopeDefaultsStore: ScopeDefaultsStore = {

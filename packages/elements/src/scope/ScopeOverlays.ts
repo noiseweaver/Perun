@@ -15,12 +15,18 @@ import { ScopeDataIterator, type ScopePlot } from './ScopePlot.ts';
 export class ScopeOverlays {
   readonly scope: Scope;
   textY = 0;
+  /** While set, info text is collected here instead of drawn (the card look's header). */
+  private collected: string[] | null = null;
 
   constructor(scope: Scope) {
     this.scope = scope;
   }
 
   drawInfoText(g: ScopeGraphics, text: string): void {
+    if (this.collected !== null) {
+      this.collected.push(text);
+      return;
+    }
     const rect = this.scope.rect;
     if (rect.y + rect.height <= this.textY + 5) return;
     g.drawString(text, 0, this.textY);
@@ -208,6 +214,33 @@ export class ScopeOverlays {
     for (let i = 0; info[i] !== undefined; i++) this.drawInfoText(g, info[i]);
   }
 
+  /**
+   * The readouts draw() would show (peaks, RMS, average, duty cycle, frequency, element info,
+   * phase angle), as text, for the card look. Leaves out the scale and the label, which the card
+   * shows elsewhere.
+   */
+  readouts(g: ScopeGraphics): string[] {
+    const scope = this.scope;
+    const out: string[] = [];
+    this.collected = out;
+    try {
+      const showScale = scope.showScale;
+      const text = scope.text;
+      // an empty label draws nothing
+      scope.showScale = false;
+      scope.text = '';
+      try {
+        this.draw(g);
+      } finally {
+        scope.showScale = showScale;
+        scope.text = text;
+      }
+    } finally {
+      this.collected = null;
+    }
+    return out;
+  }
+
   draw(g: ScopeGraphics): void {
     const scope = this.scope;
     g.setColor('text');
@@ -221,7 +254,8 @@ export class ScopeOverlays {
     if (scope.showMax) this.drawInfoText(g, 'Max=' + plot.getUnitText(scope.maxValue));
     if (scope.showMin) {
       const ym = scope.rect.height - 5;
-      g.drawString('Min=' + plot.getUnitText(scope.minValue), 0, ym);
+      if (this.collected !== null) this.collected.push('Min=' + plot.getUnitText(scope.minValue));
+      else g.drawString('Min=' + plot.getUnitText(scope.minValue), 0, ym);
     }
     if (scope.showP2P)
       this.drawInfoText(g, 'P-P=' + plot.getUnitText(scope.maxValue - scope.minValue));

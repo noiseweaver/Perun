@@ -31,6 +31,16 @@
   tests in `packages/format/src/scopes.test.ts`, browser tests in `packages/app/e2e/scopes.spec.ts`.
 - On phones the app bar menus scroll sideways instead of widening the page (the Scopes menu made
   them overflow).
+- Scope card look (Gady chose all seven restyle ideas, 2026-10-04), drawn by
+  `packages/elements/src/scope/ScopeCardView.ts` from the same data and scales as the ported
+  `Scope.draw`. Each scope sits in a card with a header (title, time per division, settings and
+  close buttons), legend chips with live values (clicking V or I hides and shows that trace), the
+  peak, frequency and other readouts, dotted minor grid lines with value labels, smooth 1.5 px
+  traces with a shaded min/max band, and a crosshair that reads every trace (drag still measures
+  Δt and Δ). The info text gets a card of its own. On screens under 600 px one scope column shows
+  at a time, with numbered tabs and a sideways swipe. Themes choose the look with the new
+  `style.scopeLook` key (`cards` for Dark and the community themes, `classic` for Classic) and
+  color the card with `scope.card`.
 
 ### Next
 

@@ -34,6 +34,10 @@ export type ScopeInk =
   | 'fftGrid'
   /** Drag-to-measure start line (upstream: light gray). */
   | 'measure'
+  /** Card around a scope in the card look (not upstream). */
+  | 'card'
+  /** Secondary text in the card look: axis labels, readouts, legend values (not upstream). */
+  | 'textMuted'
   /** Second and later plots of the same kind (upstream: eight fixed colors). */
   | { readonly trace: number }
   /** A color computed from circuit data (X-Y plot color modulation). 0..255. */
@@ -58,7 +62,22 @@ export interface ScopeGraphics {
   clipRect(x: number, y: number, w: number, h: number): void;
   setGlobalAlpha(a: number): void;
   drawImage(img: ScopeImage, x: number, y: number): void;
+
+  // The card look (ScopeCardView) also uses these; upstream's look does not.
+  fillRoundRect(x: number, y: number, w: number, h: number, r: number): void;
+  strokeRoundRect(x: number, y: number, w: number, h: number, r: number, width: number): void;
+  /** Dash pattern for lines and polylines; empty for solid. */
+  setLineDash(segments: readonly number[]): void;
+  /** Stroke points (xs[i], ys[i]) for i < n as one smooth line. */
+  strokePolyline(xs: ArrayLike<number>, ys: ArrayLike<number>, n: number, width: number): void;
+  /** Fill the polygon through points (xs[i], ys[i]) for i < n. */
+  fillPolygon(xs: ArrayLike<number>, ys: ArrayLike<number>, n: number): void;
+  /** Text style for drawString and measureWidth: upstream's 12 px text, or a card style. */
+  setTextStyle(style: ScopeTextStyle): void;
 }
+
+/** `normal`: upstream's scope text. `title`: card headers. `label`: axis labels and chips. */
+export type ScopeTextStyle = 'normal' | 'title' | 'label' | 'value';
 
 /**
  * Off-screen image an X-Y plot draws into as the simulation runs (upstream keeps a canvas per

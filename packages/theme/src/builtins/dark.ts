@@ -30,8 +30,9 @@ export const dark: Theme = {
     badConnection: '#e06c75',
   },
   scope: {
-    background: '#16191f',
-    grid: '#2a2f3a',
+    background: '#14171c',
+    card: '#21252c',
+    grid: '#343a46',
     gridMajor: '#4b5263',
     text: '#e2e2e9',
     current: '#e5c07b',
@@ -55,5 +56,6 @@ export const dark: Theme = {
     grid: 'dots',
     font: "'Roboto Variable', Roboto, system-ui, sans-serif",
     monoFont: "'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace",
+    scopeLook: 'cards',
   },
 };

@@ -10,7 +10,9 @@ import type {
   ScopeInk,
   ScopeManager,
   ScopeRect,
+  ScopeTextStyle,
 } from '@circuitjs-next/elements';
+import { CARD_GAP } from '@circuitjs-next/elements';
 import { toCss, type Theme } from '@circuitjs-next/theme';
 
 /** Scope inks resolved to CSS colors for one theme. */
@@ -36,6 +38,8 @@ export class ScopePalette {
       fft: s.fft,
       fftGrid: s.fftGrid,
       measure: theme.ui.textMuted,
+      card: s.card,
+      textMuted: theme.ui.textMuted,
     };
   }
 
@@ -119,15 +123,22 @@ export class CanvasScopeImage implements ScopeImage {
 export class CanvasScopeGraphics implements ScopeGraphics {
   readonly ctx: CanvasRenderingContext2D;
   palette: ScopePalette;
-  font: string;
+  /** Fonts per text style; `normal` is upstream's 12 px scope text. */
+  fonts: Record<ScopeTextStyle, string>;
+  private textStyle: ScopeTextStyle = 'normal';
   private color = '';
   private pathWidth = 0;
   private pathOpen = false;
 
-  constructor(ctx: CanvasRenderingContext2D, palette: ScopePalette, font: string) {
+  constructor(ctx: CanvasRenderingContext2D, palette: ScopePalette, theme: Theme) {
     this.ctx = ctx;
     this.palette = palette;
-    this.font = font;
+    this.fonts = fontsFor(theme);
+  }
+
+  /** upstream's scope font. */
+  get font(): string {
+    return this.fonts.normal;
   }
 
   /** Stroke any batched lines. Call before reading the canvas or changing its state directly. */
@@ -173,14 +184,65 @@ export class CanvasScopeGraphics implements ScopeGraphics {
   drawString(s: string, x: number, y: number): void {
     this.flush();
     const c = this.ctx;
-    c.font = this.font;
+    c.font = this.fonts[this.textStyle];
     c.fillText(s, x, y);
   }
 
   measureWidth(s: string): number {
     const c = this.ctx;
-    c.font = this.font;
+    c.font = this.fonts[this.textStyle];
     return c.measureText(s).width;
+  }
+
+  setTextStyle(style: ScopeTextStyle): void {
+    this.textStyle = style;
+  }
+
+  fillRoundRect(x: number, y: number, w: number, h: number, r: number): void {
+    this.flush();
+    roundRect(this.ctx, x, y, w, h, Math.min(r, w / 2, h / 2));
+    this.ctx.fill();
+  }
+
+  strokeRoundRect(x: number, y: number, w: number, h: number, r: number, width: number): void {
+    this.flush();
+    const c = this.ctx;
+    c.lineWidth = width;
+    this.pathWidth = 0;
+    roundRect(c, x, y, w, h, Math.min(r, w / 2, h / 2));
+    c.stroke();
+  }
+
+  setLineDash(segments: readonly number[]): void {
+    this.flush();
+    this.ctx.setLineDash(segments as number[]);
+  }
+
+  strokePolyline(xs: ArrayLike<number>, ys: ArrayLike<number>, n: number, width: number): void {
+    if (n < 2) return;
+    this.flush();
+    const c = this.ctx;
+    c.lineWidth = width;
+    this.pathWidth = 0;
+    c.lineJoin = 'round';
+    c.lineCap = 'round';
+    c.beginPath();
+    c.moveTo(xs[0] ?? 0, ys[0] ?? 0);
+    for (let i = 1; i < n; i++) c.lineTo(xs[i] ?? 0, ys[i] ?? 0);
+    c.stroke();
+    c.lineJoin = 'miter';
+    c.lineCap = 'butt';
+  }
+
+  fillPolygon(xs: ArrayLike<number>, ys: ArrayLike<number>, n: number): void {
+    if (n < 3) return;
+    this.flush();
+    const c = this.ctx;
+    c.beginPath();
+    c.moveTo(xs[0] ?? 0, ys[0] ?? 0);
+    for (let i = 1; i < n; i++) c.lineTo(xs[i] ?? 0, ys[i] ?? 0);
+    c.closePath();
+    c.fill();
   }
 
   fillRect(x: number, y: number, w: number, h: number): void {
@@ -265,13 +327,13 @@ export class ScopeRenderer {
     this.canvas = canvas;
     this.ctx = ctx;
     this.palette = new ScopePalette(theme);
-    this.graphics = new CanvasScopeGraphics(ctx, this.palette, fontFor(theme));
+    this.graphics = new CanvasScopeGraphics(ctx, this.palette, theme);
   }
 
   setTheme(theme: Theme): void {
     this.palette = new ScopePalette(theme);
     this.graphics.palette = this.palette;
-    this.graphics.font = fontFor(theme);
+    this.graphics.fonts = fontsFor(theme);
   }
 
   /** An offscreen image for an X-Y plot (ScopeHost.createImage). */
@@ -297,11 +359,15 @@ export class ScopeRenderer {
     const theme = this.palette.theme;
     const hasScopes = mgr.scopeCount > 0;
 
+    const cards = mgr.look === 'cards';
+
     if (hasScopes) {
-      c.fillStyle = theme.scope.background;
+      // cards float on the canvas; upstream's scopes sit on one black strip
+      c.fillStyle = cards ? theme.canvas.background : theme.scope.background;
       c.fillRect(area.x, area.y, area.width, area.height);
-      for (const s of mgr.scopes) s.draw(g);
+      for (const s of mgr.scopes) if (mgr.isShown(s)) s.draw(g);
       g.flush();
+      g.setTextStyle('normal');
       if (state.splitterHot) {
         c.fillStyle = theme.circuit.selection;
         c.fillRect(area.x, area.y - 3, area.width, 4);
@@ -311,34 +377,60 @@ export class ScopeRenderer {
     const info = state.info;
     if (info.length > 0) {
       c.font = g.font;
-      let x: number;
-      let y: number;
-      if (hasScopes) {
-        x = mgr.scopesRightEdge() + 20;
-        y = area.y;
+      c.textBaseline = 'alphabetic';
+      if (hasScopes && !mgr.compact && !cards) {
+        // upstream: right of the scopes
+        c.fillStyle = theme.scope.text;
+        const x = mgr.scopesRightEdge() + 20;
+        for (let i = 0; i !== info.length; i++) c.fillText(info[i] ?? '', x, area.y + 15 * (i + 1));
+      } else if (hasScopes && !mgr.compact) {
+        // a card of its own beside the scope cards
+        const x = mgr.scopesRightEdge() + CARD_GAP;
+        const w = area.x + area.width - x - CARD_GAP / 2;
+        const y = area.y + CARD_GAP / 2;
+        const h = area.height - CARD_GAP;
+        if (w > 40 && h > 20) {
+          c.fillStyle = theme.scope.card;
+          roundRect(c, x, y, w, h, 10);
+          c.fill();
+          c.save();
+          c.beginPath();
+          c.rect(x, y, w - 8, h - 6);
+          c.clip();
+          c.fillStyle = theme.scope.text;
+          for (let i = 0; i !== info.length; i++)
+            c.fillText(info[i] ?? '', x + 12, y + 22 + 16 * i);
+          c.restore();
+        }
       } else {
-        // no scopes: a box in the bottom right corner, over the circuit
+        // no scopes, or one column on a phone: a box in the bottom right corner of the circuit
         let w = 0;
         for (const s of info) w = Math.max(w, c.measureText(s).width);
-        const h = Math.max(INFO_BOX_HEIGHT, 15 * info.length + 12);
+        const h = Math.max(hasScopes ? 0 : INFO_BOX_HEIGHT, 15 * info.length + 12);
         const bw = Math.ceil(w) + 20;
-        x = area.x + area.width - bw + 10;
-        y = area.y + area.height - h;
+        const x = area.x + area.width - bw + 10 - (hasScopes ? 8 : 0);
+        const y = (hasScopes ? area.y - 8 : area.y + area.height) - h;
         c.globalAlpha = 0.85;
-        c.fillStyle = theme.scope.background;
+        c.fillStyle = cards ? theme.scope.card : theme.scope.background;
         roundRect(c, x - 10, y, bw, h, 8);
         c.fill();
         c.globalAlpha = 1;
+        c.fillStyle = theme.scope.text;
+        for (let i = 0; i !== info.length; i++) c.fillText(info[i] ?? '', x, y + 15 * (i + 1));
       }
-      c.fillStyle = theme.scope.text;
-      for (let i = 0; i !== info.length; i++) c.fillText(info[i] ?? '', x, y + 15 * (i + 1));
     }
     c.restore();
   }
 }
 
-function fontFor(theme: Theme): string {
-  return `${FONT_SIZE}px ${theme.style.font}`;
+function fontsFor(theme: Theme): Record<ScopeTextStyle, string> {
+  const f = theme.style.font;
+  return {
+    normal: `${FONT_SIZE}px ${f}`,
+    title: `500 ${FONT_SIZE}px ${f}`,
+    label: `11px ${f}`,
+    value: `11px ${theme.style.monoFont}`,
+  };
 }
 
 function roundRect(
