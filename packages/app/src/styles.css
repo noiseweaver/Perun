@@ -34,6 +34,9 @@
 
 * {
   box-sizing: border-box;
+  /* scrollbars blend into the surface they scroll */
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--ui-text-muted) 45%, transparent) transparent;
 }
 
 html,
@@ -580,15 +583,69 @@ textarea,
   width: 272px;
   flex: none;
   min-height: 0;
+  overflow: hidden;
   border-radius: var(--md-shape-l);
   background: var(--md-surface-container-low);
+  transition:
+    width 250ms var(--md-motion),
+    margin-right 250ms var(--md-motion),
+    opacity 200ms var(--md-motion);
+}
+
+/* slid away: no width, and the workspace gap is taken back too */
+.palette[data-open='false'] {
+  width: 0;
+  margin-right: -12px;
+  opacity: 0;
+}
+
+/* the content keeps its width while the panel slides */
+.palette-inner {
+  display: flex;
+  flex-direction: column;
+  width: 272px;
+  min-height: 0;
+  flex: 1;
+}
+
+.palette-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 12px 8px 4px 12px;
+}
+
+/* tab on the canvas edge that slides the palette back */
+.palette-reveal {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 56px;
+  padding: 0;
+  transform: translateY(-50%);
+  border: none;
+  border-radius: 0 var(--md-shape-m) var(--md-shape-m) 0;
+  color: var(--ui-text-muted);
+  background: var(--md-surface-container-high);
+  box-shadow: var(--md-elevation-2);
+  cursor: pointer;
+}
+
+.palette-reveal:hover {
+  color: var(--ui-text);
 }
 
 .palette-search {
   display: flex;
+  flex: 1;
+  min-width: 0;
   align-items: center;
   gap: 8px;
-  margin: 12px 12px 4px;
   padding: 0 4px 0 12px;
   height: 44px;
   border-radius: var(--md-shape-full);
@@ -626,12 +683,46 @@ textarea,
 }
 
 .palette-group-title {
-  margin: 12px 8px 4px;
+  margin: 8px 0 2px;
   font-size: 12px;
   line-height: 16px;
   font-weight: 500;
   letter-spacing: 0.05em;
   color: var(--ui-text-muted);
+}
+
+/* a category header: click to fold its components away */
+.palette-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  min-height: 32px;
+  padding: 0 4px;
+  border: none;
+  border-radius: var(--md-shape-s);
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.palette-group-toggle:hover:not(:disabled) {
+  color: var(--ui-text);
+  background: color-mix(in srgb, var(--ui-text) 8%, transparent);
+}
+
+.palette-group-toggle:disabled {
+  cursor: default;
+}
+
+.palette-group-chevron {
+  transition: transform 150ms var(--md-motion);
+}
+
+.palette-group-toggle[aria-expanded='false'] .palette-group-chevron {
+  transform: rotate(-90deg);
 }
 
 .palette-item {
@@ -993,6 +1084,11 @@ textarea.field-input {
 }
 
 @media (max-width: 719px) {
+  .palette[data-open='false'],
+  .palette-reveal {
+    display: none;
+  }
+
   .palette {
     position: fixed;
     z-index: 10;

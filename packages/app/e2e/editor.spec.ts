@@ -240,6 +240,40 @@ test('a trackpad swipe pans, a pinch zooms, and a mouse wheel zooms', async ({ p
   expect(after?.scale).toBeLessThan(before?.scale ?? 0);
 });
 
+test('the palette slides away and back, and stays as it was left', async ({ page }) => {
+  await open(page, BLANK);
+  const palette = page.getByTestId('palette');
+  const canvasWidth = async () =>
+    (await page.getByTestId('circuit-canvas').boundingBox())?.width ?? 0;
+  const wide = await canvasWidth();
+  await page.getByTestId('palette-hide').click();
+  await expect(palette).toHaveAttribute('data-open', 'false');
+  await expect.poll(canvasWidth).toBeGreaterThan(wide + 200);
+  await page.reload();
+  await expect(palette).toHaveAttribute('data-open', 'false');
+  await page.getByTestId('palette-reveal').click();
+  await expect(palette).toHaveAttribute('data-open', 'true');
+  await expect(page.getByTestId('palette-ResistorElm')).toBeVisible();
+});
+
+test('palette categories fold away and stay folded', async ({ page }) => {
+  await open(page, BLANK);
+  const header = page.getByTestId('palette-group-Basic');
+  await expect(page.getByTestId('palette-ResistorElm')).toBeVisible();
+  await header.click();
+  await expect(header).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByTestId('palette-ResistorElm')).toHaveCount(0);
+  await expect(page.getByTestId('palette-CapacitorElm')).toBeVisible();
+  // a search still finds it
+  await page.getByTestId('palette-search').fill('resis');
+  await expect(page.getByTestId('palette-ResistorElm')).toBeVisible();
+  await page.getByTestId('palette-search').fill('');
+  await page.reload();
+  await expect(page.getByTestId('palette-group-Basic')).toHaveAttribute('aria-expanded', 'false');
+  await page.getByTestId('palette-group-Basic').click();
+  await expect(page.getByTestId('palette-ResistorElm')).toBeVisible();
+});
+
 test.describe('on a touch screen', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 

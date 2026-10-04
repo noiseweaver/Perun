@@ -6,7 +6,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { useEffect } from 'react';
 import { themeById } from '../SimController.ts';
 import { startup } from '../startup.ts';
-import { useApp } from '../store.ts';
+import { setPaletteOpen, useApp } from '../store.ts';
 import { installShortcuts } from '../commands.ts';
 import { paletteItem } from '../editor/catalog.ts';
 import { controller } from '../SimController.ts';
@@ -15,6 +15,7 @@ import { CircuitCanvas } from './CircuitCanvas.tsx';
 import { ControlBar } from './ControlBar.tsx';
 import { Dialogs } from './Dialogs.tsx';
 import { Inspector } from './Inspector.tsx';
+import { Icon } from './Icon.tsx';
 import { Palette } from './Palette.tsx';
 
 let started = false;
@@ -44,8 +45,20 @@ export function App() {
       <div className="app">
         <AppBar />
         <div className="workspace">
-          {paletteOpen && <Palette />}
+          <Palette />
           <main className="canvas-area">
+            {!paletteOpen && (
+              <button
+                type="button"
+                className="palette-reveal"
+                aria-label="Show components"
+                title="Show components"
+                data-testid="palette-reveal"
+                onClick={() => setPaletteOpen(true)}
+              >
+                <Icon name="chevronRight" size={20} />
+              </button>
+            )}
             <CircuitCanvas />
             <ModeChip />
             <Toast />

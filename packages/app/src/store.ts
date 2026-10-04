@@ -116,6 +116,19 @@ export function saveSettings(s: UserSettings): void {
   }
 }
 
+const PALETTE_KEY = 'circuitjs-next.paletteOpen';
+
+/** Open on wide screens unless the user slid it away last time; shut on narrow ones. */
+function initialPaletteOpen(): boolean {
+  if (typeof window === 'undefined') return true;
+  if (window.innerWidth < 720) return false;
+  try {
+    return localStorage.getItem(PALETTE_KEY) !== 'false';
+  } catch {
+    return true;
+  }
+}
+
 export const useApp = create<AppState>(() => ({
   title: '',
   running: true,
@@ -136,11 +149,22 @@ export const useApp = create<AppState>(() => ({
     canPaste: false,
     revision: 0,
   },
-  paletteOpen: typeof window === 'undefined' || window.innerWidth >= 720,
+  paletteOpen: initialPaletteOpen(),
   toast: null,
   inspectorFocus: 0,
   dialog: null,
 }));
+
+/** Open or shut the palette; on wide screens the choice is remembered. */
+export function setPaletteOpen(open: boolean): void {
+  useApp.setState({ paletteOpen: open });
+  if (window.innerWidth < 720) return;
+  try {
+    localStorage.setItem(PALETTE_KEY, String(open));
+  } catch {
+    // storage disabled: the choice lasts for this page
+  }
+}
 
 export function updateSettings(patch: Partial<UserSettings>): void {
   const settings = { ...useApp.getState().settings, ...patch };

@@ -8,7 +8,7 @@ import type { ExampleMenu } from '../examples.ts';
 import { openDialog } from '../commands.ts';
 import { controller } from '../SimController.ts';
 import { openExample } from '../startup.ts';
-import { updateSettings, useApp, type CircuitDisplay } from '../store.ts';
+import { updateSettings, useApp, type CircuitDisplay, setPaletteOpen } from '../store.ts';
 import { Icon } from './Icon.tsx';
 import { OpenLinkDialog } from './OpenLinkDialog.tsx';
 
@@ -93,7 +93,7 @@ export function AppBar() {
         aria-pressed={paletteOpen}
         title="Components"
         data-testid="palette-toggle"
-        onClick={() => useApp.setState({ paletteOpen: !paletteOpen })}
+        onClick={() => setPaletteOpen(!paletteOpen)}
       >
         <Icon name="menu" />
       </button>
