@@ -278,6 +278,10 @@ Acceptance: at least 95% of upstream examples pass golden compare (threshold to 
 - [ ] Optional i18n hooks.
 - [ ] README, credits, GPL notices, About dialog.
 
+### Backlog: after release (could have)
+Ideas from the owner, not scheduled. Pick them up only after Phase 9, and only when the owner says go.
+- [ ] Teaching tools: a pencil for drawing on the circuit and a laser pointer whose trail fades out, for highlighting things while teaching. Work with mouse, pen and touch. Annotations are a temporary overlay with a clear button and are not saved in the circuit file, so the upstream format stays untouched. (Requested 2026-10-04.)
+
 ## 8. Java to TypeScript porting pitfalls
 
 - **Integer math.** Java `int` division truncates and overflows at 32 bits. JS does neither. Use `Math.trunc` or `| 0` wherever upstream relies on int behaviour. Check `(int)` casts, `%` on negatives, `>>` vs `>>>`, `char` arithmetic.
