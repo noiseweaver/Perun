@@ -266,6 +266,11 @@ test('the community dark themes apply', async ({ page }) => {
 test('the time readout does not move as digits change', async ({ page }) => {
   await page.goto(`/?cct=${cct(RC)}`);
   const readout = page.getByTestId('sim-time');
+  // the width is in ch of the monospace web font: measure once it has loaded
+  await readout.evaluate(async (el) => {
+    await document.fonts.load(`12px ${getComputedStyle(el).fontFamily}`);
+    await document.fonts.ready;
+  });
   const boxes = new Set<string>();
   for (let i = 0; i < 8; i++) {
     const b = await readout.boundingBox();
