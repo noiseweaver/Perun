@@ -244,8 +244,11 @@ test('a trackpad swipe pans, a pinch zooms, a mouse wheel zooms and shift+wheel 
   // a mouse wheel notch (lines) zooms out
   const before = await view();
   await wheel({ deltaY: 3, deltaMode: 1 });
+  // the zoom eases in over a few frames, about 8% per notch
+  await expect
+    .poll(async () => (await view())?.scale)
+    .toBeCloseTo((before?.scale ?? 0) * Math.exp(-0.08), 5);
   const after = await view();
-  expect(after?.scale).toBeLessThan(before?.scale ?? 0);
   // shift + a mouse wheel notch pans sideways, whichever delta the browser put it in
   await wheel({ deltaY: 3, deltaMode: 1, shiftKey: true });
   const side = await view();

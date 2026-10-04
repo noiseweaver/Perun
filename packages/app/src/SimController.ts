@@ -48,6 +48,9 @@ export class SimController {
   /** File name of the last save, offered again (upstream ExportAsLocalFileDialog). */
   lastFileName: string | null = null;
   private raf = 0;
+  /** Mouse wheel zoom still to apply (natural log of the factor), eased in over a few frames. */
+  private zoomPending = 0;
+  private zoomAnchor = { x: 0, y: 0 };
   private lastFrame = 0;
   private stepsOwed = 0;
   private lastStatus = 0;
@@ -225,6 +228,7 @@ export class SimController {
 
   /** One animation frame: run the simulation for the elapsed time, then draw. */
   frame(now: number): void {
+    this.easeZoom();
     const state = useApp.getState();
     const elapsed = this.lastFrame === 0 ? 0 : Math.min(now - this.lastFrame, 1000);
     this.lastFrame = now;
@@ -317,6 +321,14 @@ export class SimController {
         return { x1: a.x, y1: a.y, x2: b.x, y2: b.y };
       },
     };
+  }
+
+  /** Apply part of the pending wheel zoom, so each notch glides instead of jumping. */
+  private easeZoom(): void {
+    if (this.zoomPending === 0 || !this.renderer) return;
+    const step = Math.abs(this.zoomPending) < 0.002 ? this.zoomPending : this.zoomPending * 0.35;
+    this.zoomPending -= step;
+    this.renderer.viewport.zoomAt(Math.exp(step), this.zoomAnchor.x, this.zoomAnchor.y);
   }
 
   /** The element list or an element changed: analyze again (upstream `needAnalyze`). */
@@ -632,8 +644,12 @@ export class SimController {
       if (e.ctrlKey || e.metaKey) r.viewport.zoomAt(Math.exp(-dy * 0.01), p.x, p.y);
       // some browsers turn shift+wheel into deltaX themselves, others leave it in deltaY
       else if (e.shiftKey) r.viewport.pan(-(dx !== 0 ? dx : dy), 0);
-      else if (isMouseWheel(e)) r.viewport.zoomAt(Math.exp(-dy * 0.0015), p.x, p.y);
-      else r.viewport.pan(-dx, -dy);
+      else if (isMouseWheel(e)) {
+        // about 8% per notch (100 px in Chrome, 3 lines in Firefox), eased in by frame()
+        const notches = e.deltaMode === 1 ? e.deltaY / 3 : dy / 100;
+        this.zoomPending -= notches * WHEEL_ZOOM_PER_NOTCH;
+        this.zoomAnchor = p;
+      } else r.viewport.pan(-dx, -dy);
     };
     const contextMenu = (e: MouseEvent): void => {
       // the browser's own long-press menu event: same as ours, so the timer is not needed
@@ -722,6 +738,9 @@ export class SimController {
     return this.renderer?.viewport.toScreen(x, y) ?? null;
   }
 }
+
+/** Natural log of the zoom factor for one mouse wheel notch. */
+const WHEEL_ZOOM_PER_NOTCH = 0.08;
 
 /**
  * Whether a wheel event comes from a mouse wheel rather than a trackpad. Browsers don't say, so
