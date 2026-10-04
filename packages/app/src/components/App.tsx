@@ -93,7 +93,7 @@ function Toast() {
   const toast = useApp((s) => s.toast);
   if (toast === null) return null;
   return (
-    <div className="toast" role="status" data-testid="toast">
+    <div key={toast} className="toast" role="status" data-testid="toast">
       {toast}
     </div>
   );

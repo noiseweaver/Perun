@@ -194,3 +194,11 @@ export function updateSettings(patch: Partial<UserSettings>): void {
   useApp.setState({ settings });
   saveSettings(settings);
 }
+
+/** A short message at the bottom of the canvas, gone after a moment. */
+export function showToast(text: string): void {
+  useApp.setState({ toast: text });
+  window.setTimeout(() => {
+    if (useApp.getState().toast === text) useApp.setState({ toast: null });
+  }, 2500);
+}

@@ -52,6 +52,13 @@
   speed button beside Reset.
 - Spectrum view (card look): the cursor snaps to peaks and reads their frequency and level, the
   strongest peak is labeled, and dragging measures Δf.
+- Last round (Gady, 2026-10-04): a freeze button on scope cards; Ctrl+wheel and two-finger pinch
+  zoom the time scale; the time cursor snaps to peaks, troughs and crossings and reads period and
+  frequency; a selected undocked card's leader end drags onto a post of what it shows (saved as
+  `lp`). Feedback animations across the app: cards fly when docked and undocked and grow in when
+  new, elements pop in and fade out, a ring marks newly joined ends, toasts for undo and redo,
+  pressed buttons, Run/Stop icon turn, and panels, menus, dialogs and the toast slide or fade in.
+  All of it respects reduced motion.
 
 ### Next
 

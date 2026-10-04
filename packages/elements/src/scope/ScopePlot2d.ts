@@ -187,7 +187,8 @@ export class ScopePlot2d {
     g.clipRect(0, 0, rect.width, rect.height);
 
     this.alphaCounter++;
-    if (this.alphaCounter > 2) {
+    // a frozen card look scope holds its trail
+    if (this.alphaCounter > 2 && scope.frozen === null) {
       this.alphaCounter = 0;
       let fadeAlpha: number;
       if (this.trailPersistence <= 0) fadeAlpha = 0.01;

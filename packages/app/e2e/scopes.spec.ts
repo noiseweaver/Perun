@@ -446,3 +446,148 @@ test('the header button undocks a docked scope and docks it back', async ({ page
   await page.mouse.click(dock.x, dock.y);
   await expect.poll(() => scopeCount(page)).toBe(3);
 });
+
+test.describe('last round', () => {
+  test('the freeze button holds the trace while the simulation runs', async ({ page }) => {
+    await page.goto('/?startCircuit=lrc.txt');
+    await ready(page);
+    const trace = () =>
+      page.evaluate(() => {
+        const s = window.circuitjsNext?.controller.scopes.scopes[0];
+        return s ? Array.from(s.plots[0]?.maxValues ?? []).join(',') : '';
+      });
+    const freeze = await cardPart(page, 0, 'freeze');
+    await page.mouse.click(freeze.x, freeze.y);
+    const held = await trace();
+    await page.waitForTimeout(300);
+    expect(await trace()).toBe(held);
+    expect(
+      await page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes[0]?.frozen),
+    ).not.toBeNull();
+    await page.mouse.click(freeze.x, freeze.y);
+    expect(
+      await page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes[0]?.frozen),
+    ).toBeNull();
+    await expect.poll(trace).not.toBe(held);
+  });
+
+  test('Ctrl+wheel over a scope changes its time scale', async ({ page }) => {
+    await page.goto('/?startCircuit=lrc.txt');
+    await ready(page);
+    const speed = () =>
+      page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes[0]?.speed ?? 0);
+    const before = await speed();
+    const s = await inScope(page, 0);
+    await page.mouse.move(s.x, s.y);
+    await page.keyboard.down('Control');
+    await page.mouse.wheel(0, -120);
+    await page.keyboard.up('Control');
+    await expect.poll(speed).toBe(before / 2);
+  });
+
+  test('the time cursor snaps to the waveform and reads its period', async ({ page }) => {
+    await page.goto('/?startCircuit=lrc.txt');
+    await ready(page);
+    // let the LC ring for a few periods (at full speed), then hold it still
+    await page.evaluate(() => {
+      const c = window.circuitjsNext?.controller;
+      if (c) c.circuit.options.speed = 259;
+    });
+    await expect
+      .poll(() => page.evaluate(() => window.circuitjsNext?.controller.circuit.sim.t ?? 0), {
+        timeout: 20000,
+      })
+      .toBeGreaterThan(0.1);
+    await page.evaluate(() => window.circuitjsNext?.controller.setRunning(false));
+    const snaps: { kind: string; period: number }[] = [];
+    const r = await page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes[0]?.rect);
+    const box = await page.getByTestId('circuit-canvas').boundingBox();
+    if (!r || !box) throw new Error('no scope');
+    for (let x = r.x + 20; x < r.x + r.width - 20; x += 6) {
+      await page.mouse.move(box.x + x, box.y + r.y + r.height / 2);
+      const s = await page.evaluate(() => {
+        const m = window.circuitjsNext?.controller.scopes;
+        return m?.cursorSnap ? { ...m.cursorSnap } : null;
+      });
+      if (s !== null) snaps.push(s);
+    }
+    expect(snaps.length).toBeGreaterThan(3);
+    // the LC rings at about 41 Hz: a period near 24 ms
+    const periods = snaps.filter((s) => s.period > 0).map((s) => s.period);
+    expect(periods.length).toBeGreaterThan(0);
+    for (const p of periods) {
+      expect(p).toBeGreaterThan(0.018);
+      expect(p).toBeLessThan(0.03);
+    }
+  });
+
+  test('an undocked leader can be pinned to a post of what it shows', async ({ page }) => {
+    await page.goto(`/?ctz=${compressCircuit(LOOP)}`);
+    await ready(page);
+    const p = await at(page, 176, 96);
+    await page.mouse.move(p.x, p.y);
+    await page.mouse.click(p.x, p.y, { button: 'right' });
+    await page.getByTestId('ctx-view-in-undocked-scope').click();
+    await page.waitForTimeout(400);
+    // select the card: its leader end (on the resistor's middle) becomes a handle
+    const handle = await cardPart(page, -1, 'handle');
+    await page.mouse.click(handle.x, handle.y);
+    expect(
+      await page.evaluate(() => window.circuitjsNext?.controller.circuit.scopeElms()[0]?.selected),
+    ).toBe(true);
+    // drag that end onto the resistor's right post
+    const post = await at(page, 256, 96);
+    await page.mouse.move(p.x, p.y);
+    await page.mouse.down();
+    await page.mouse.move(post.x - 4, post.y + 3, { steps: 6 });
+    await page.mouse.up();
+    const lp = () =>
+      page.evaluate(() => window.circuitjsNext?.controller.circuit.scopeElms()[0]?.leaderPost);
+    expect(await lp()).toBe(1);
+    expect(await page.evaluate(() => window.circuitjsNext?.controller.circuit.dumpXml())).toMatch(
+      /<Scope [^>]*lp="1"/,
+    );
+    await page.keyboard.press('Control+z');
+    expect(await lp()).toBe(-1);
+    await expect(page.getByTestId('toast')).toHaveText('Undid move leader');
+  });
+});
+
+test.describe('pinch on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('two fingers spreading over a scope shorten its time span', async ({ page }) => {
+    await page.goto('/?startCircuit=lrc.txt');
+    await ready(page);
+    const speed = () =>
+      page.evaluate(() => {
+        const m = window.circuitjsNext?.controller.scopes;
+        return m?.scopes.find((s) => m.isShown(s))?.speed ?? 0;
+      });
+    const before = await speed();
+    const r = await page.evaluate(() => {
+      const m = window.circuitjsNext?.controller.scopes;
+      return m?.scopes.find((s) => m.isShown(s))?.rect ?? null;
+    });
+    const box = await page.getByTestId('circuit-canvas').boundingBox();
+    if (!r || !box) throw new Error('no scope');
+    const cx = box.x + r.x + r.width / 2;
+    const cy = box.y + r.y + r.height / 2;
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', d: number) =>
+      cdp.send('Input.dispatchTouchEvent', {
+        type,
+        touchPoints:
+          type === 'touchEnd'
+            ? []
+            : [
+                { x: cx - d, y: cy, id: 1 },
+                { x: cx + d, y: cy, id: 2 },
+              ],
+      });
+    await touch('touchStart', 20);
+    for (let d = 24; d <= 80; d += 8) await touch('touchMove', d);
+    await touch('touchEnd', 0);
+    await expect.poll(speed).toBeLessThan(before);
+  });
+});

@@ -8,6 +8,7 @@ test that shows it (PLAN.md section 2).
 | Saving sliders read from XML      | Re-serializes `<adj>` (slider) records from its live sliders | Writes them back verbatim, after the elements, where upstream puts them                                                                                                           | Sliders are not ported yet; until then they are kept, not interpreted                                                   | `auto-capac`, `auto-lrc`: `tools/golden/src/next.test.ts` compares exports without `<adj>`                                           |
 | Saving sliders read from text     | Converts text `38` lines to XML `<adj>` when saving          | Keeps the lines (`Circuit.textExtras`) but does not save them                                                                                                                     | `<adj>` needs each element's edit-dialog labels and the slider UI, not ported yet                                       | `upstream-inductkick`, `upstream-lrc` (same test)                                                                                    |
 | Text box fonts                    | Text boxes have a size and color only                        | Each text box also has a font (sans, serif, monospace) and style (bold, italic), or follows the app's Options default. Saved as extra XML attributes `ff` and `fs`, only when set | Requested by the owner (2026-10-04). Upstream ignores unknown attributes, so files still open there in its default font | Not simulation: `packages/format/src/textfont.test.ts` (round trip, nothing extra by default)                                        |
+| Undocked scope leader post        | An undocked scope has no leader line                         | A card's leader can be pinned to one post of what it shows. Saved as an extra XML attribute `lp` on `<Scope>`, only when set                                                      | Requested by the owner (2026-10-04). Upstream ignores unknown attributes                                                | Not simulation: `packages/app/e2e/scopes.spec.ts` (pinning, save, undo)                                                              |
 | Scopes on elements not ported yet | Restores every scope in the file                             | Drops a scope (or a plot) whose element this port can't load yet, with a warning. Element numbers still count upstream's full list, so the other scopes find the right elements   | The element doesn't exist here, so there is nothing to plot. Goes away as Phase 8 ports the elements                    | `tools/golden/src/scopes.test.ts`: 440 of 550 scopes in the upstream examples restore identically, the rest are on unported elements |
 
 Not deviations, for the record:
@@ -26,6 +27,14 @@ Not deviations, for the record:
 - The card look's spectrum cursor snaps to nearby peaks, reads their frequency (refined between
   bins) and level, marks the strongest peak, and a drag measures Δf between two frequencies.
   Upstream shows the frequency and dB under the mouse only. Drawing only.
+- Card look scope extras (owner's request, 2026-10-04), all view state, never saved: a freeze
+  button holds a card's trace while the simulation runs (any reset lets it go); Ctrl+wheel (a
+  trackpad pinch) and a two-finger pinch change the time scale as the wheel does; the time cursor
+  snaps to peaks, troughs and mid-level crossings of the selected trace and reads the period and
+  frequency to the like point before it, and a drag adds f = 1/Δt. Classic keeps upstream's cursor.
+- Feedback animations (cards flying when docked or undocked, new elements popping in, deleted ones
+  fading, a ring where ends join, undo and redo toasts) change drawing only, and stop when the
+  system asks for reduced motion.
 - Saving writes XML only, never the legacy text format. Upstream master does the same (its
   `VoltageElm` has no text `dump()` any more). Both formats are read.
 - The text-format reader and XML writer reproduce upstream's quirks on purpose: attribute order,

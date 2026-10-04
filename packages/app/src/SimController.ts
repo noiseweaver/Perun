@@ -47,7 +47,7 @@ import {
   type EditorHost,
   type Modifiers,
 } from './editor/Editor.ts';
-import { useApp, type AppState, type EditorState } from './store.ts';
+import { showToast, useApp, type AppState, type EditorState } from './store.ts';
 
 /** Simulation time per frame before the frame is cut short (upstream `frameTimeLimit`). */
 const FRAME_BUDGET_MS = 50;
@@ -101,6 +101,13 @@ export class SimController {
   private scopeHoverElm: CircuitElm | null = null;
   /** Undocked scope whose card is under the mouse (card look), or null. */
   private hoverUndocked: ScopeElm | null = null;
+  /** Play feedback animations (not when the user prefers reduced motion). */
+  readonly motion =
+    typeof matchMedia !== 'function' || !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /** An undocked scope's leader end being dragged onto a post, at a screen point. */
+  private leaderDrag: { elm: ScopeElm; x: number; y: number; id: number } | null = null;
+  /** Where each undocked scope's leader ends on screen, as last laid out. */
+  private readonly leaderTargets = new WeakMap<ScopeElm, { x: number; y: number } | null>();
   /** Docked scope the context menu was opened on, or -1; and its selected plot. */
   menuScope = -1;
   /** Undocked scope the context menu was opened on, or null. */
@@ -207,6 +214,7 @@ export class SimController {
     this.detach();
     const state = useApp.getState();
     const renderer = new CircuitRenderer(canvas, themeById(state.settings.themeId));
+    renderer.motion = this.motion;
     this.renderer = renderer;
     this.scopeRenderer = new ScopeRenderer(canvas, themeById(state.settings.themeId));
     renderer.setElements(this.circuit.elements);
@@ -504,17 +512,87 @@ export class SimController {
       if (rect.x !== o.x || rect.y !== o.y || rect.width !== o.width || rect.height !== o.height)
         s.setRect(rect);
       const shown = s.getElm();
-      const t = shown !== null ? scopeAnchor(shown) : null;
-      items.push({
+      const t = shown !== null ? scopeAnchor(shown, e.leaderPost) : null;
+      const item: UndockedScopeItem = {
         scope: s,
         target: t !== null ? vp.toScreen(t.x, t.y) : null,
         active:
           e.selected ||
           e === this.hoverUndocked ||
+          e === this.leaderDrag?.elm ||
           (shown !== null && (ed.mouseElm === shown || shown.selected)),
-      });
+      };
+      const drag = this.leaderDrag;
+      if (drag !== null && drag.elm === e && shown !== null) {
+        item.target = { x: drag.x, y: drag.y };
+        item.posts = this.leaderPosts(e);
+        item.snapPost = this.leaderSnap(e, drag.x, drag.y);
+      }
+      this.leaderTargets.set(e, item.target);
+      items.push(item);
     }
     return items;
+  }
+
+  /** A ripple at each point where ends meet now but didn't before (a few at most). */
+  private rippleNewJoins(before: Set<string> | null): void {
+    const r = this.renderer;
+    if (!r || before === null) return;
+    let n = 0;
+    for (const k of r.connectionKeys()) {
+      if (before.has(k)) continue;
+      const [x, y] = k.split(',').map(Number) as [number, number];
+      r.ripple(x, y);
+      if (++n === 6) break;
+    }
+  }
+
+  /** Screen points of the posts of what an undocked scope shows. */
+  private leaderPosts(e: ScopeElm): { x: number; y: number }[] {
+    const shown = e.elmScope.getElm();
+    const r = this.renderer;
+    if (shown === null || !r) return [];
+    const pts: { x: number; y: number }[] = [];
+    for (let k = 0; k !== shown.getPostCount(); k++) {
+      const p = shown.getPost(k);
+      pts.push(r.viewport.toScreen(p.x, p.y));
+    }
+    return pts;
+  }
+
+  /** The post a leader dropped at a screen point snaps to, or -1 (the element's middle). */
+  private leaderSnap(e: ScopeElm, x: number, y: number): number {
+    let best = -1;
+    let bestDist = LEADER_SNAP;
+    this.leaderPosts(e).forEach((p, k) => {
+      const d = Math.hypot(p.x - x, p.y - y);
+      if (d <= bestDist) {
+        best = k;
+        bestDist = d;
+      }
+    });
+    return best;
+  }
+
+  /** The selected undocked scope whose leader end is at a screen point, or null. */
+  leaderAt(x: number, y: number, reach: number): ScopeElm | null {
+    if (this.circuit.scopes.look !== 'cards' || y >= this.circuitHeight()) return null;
+    const elms = this.circuit.scopeElms();
+    for (let i = elms.length - 1; i >= 0; i--) {
+      const e = elms[i];
+      const t = e !== undefined ? this.leaderTargets.get(e) : undefined;
+      // only a selected card's leader: its end sits on the element, which is pressed there too
+      if (e?.selected === true && t != null && Math.hypot(t.x - x, t.y - y) <= reach) return e;
+    }
+    return null;
+  }
+
+  /** Point an undocked scope's leader at a post of what it shows (-1: the middle). */
+  setLeaderPost(e: ScopeElm, post: number): void {
+    if (e.leaderPost === post) return;
+    this.scopeCommand('Move leader', () => {
+      e.leaderPost = post;
+    });
   }
 
   /** The undocked scope whose card is at a canvas point (the one drawn on top), or null. */
@@ -546,6 +624,8 @@ export class SimController {
     mgr.mouseElm = this.editor.mouseElm ?? this.scopeHoverElm;
     mgr.cursorScope = null;
     mgr.cursorTime = -1;
+    mgr.cursorSnap = null;
+    mgr.now = this.motion ? performance.now() : 0;
     const m = this.mouse;
     mgr.mouseCursorX = m?.x ?? -1;
     mgr.mouseCursorY = m?.y ?? -1;
@@ -627,6 +707,9 @@ export class SimController {
           if (u !== undefined) this.dockScope(u);
         } else this.undockScope(mgr.scopes.indexOf(s));
         break;
+      case 'freeze':
+        s.setFrozen(s.frozen === null);
+        break;
       case 'handle':
       case 'resize':
         return false;
@@ -687,11 +770,23 @@ export class SimController {
 
   /** Run a scope change as one undoable edit (upstream pushes an undo item first). */
   scopeCommand(label: string, fn: () => unknown): void {
+    const before = new Set(this.everyScope());
     this.editor.history.record(label, () => {
       fn();
       return true;
     });
     this.unsavedChanges = true;
+    // new cards grow in
+    for (const s of this.everyScope()) if (!before.has(s)) this.animateCard(s, null);
+  }
+
+  /** Docked and undocked scopes. */
+  private everyScope(): Scope[] {
+    return [...this.circuit.scopes.scopes, ...this.circuit.scopeElms().map((e) => e.elmScope)];
+  }
+
+  private animateCard(s: Scope, from: ScopeRect | null): void {
+    if (this.motion) this.scopeRenderer?.animateCard(s, from);
   }
 
   /** Element menu: View in New Scope. */
@@ -721,6 +816,10 @@ export class SimController {
     }
     if (item === 'remove' && u !== null) {
       this.removeUndocked(s);
+      return;
+    }
+    if (item === 'freeze') {
+      s.setFrozen(s.frozen === null);
       return;
     }
     if (item === 'properties') {
@@ -812,12 +911,26 @@ export class SimController {
 
   /** Element menu: View in New Undocked Scope (upstream viewInFloatScope). */
   viewInUndockedScope(elm: CircuitElm): void {
+    let added: ScopeElm | null = null;
     this.scopeCommand('View in undocked scope', () => {
       const se = this.newScopeElm(elm);
       if (se === null) return;
       se.setScopeElm(elm);
       this.circuit.elements.push(se);
+      added = se;
     });
+    // the card comes out of what it shows
+    const r = this.renderer;
+    if (added !== null && r) {
+      const t = scopeAnchor(elm);
+      const p = r.viewport.toScreen(t.x, t.y);
+      this.animateCard((added as ScopeElm).elmScope, {
+        x: p.x - 12,
+        y: p.y - 8,
+        width: 24,
+        height: 16,
+      });
+    }
     this.circuitChanged();
   }
 
@@ -827,6 +940,7 @@ export class SimController {
     const s = mgr.scopes[i];
     const elm = s?.getElm() ?? null;
     if (s === undefined || elm === null) return;
+    const from = { ...s.slot };
     this.scopeCommand('Undock scope', () => {
       const se = this.newScopeElm(elm);
       if (se === null) return;
@@ -835,6 +949,7 @@ export class SimController {
       mgr.scopes.splice(i, 1);
       this.circuit.elements.push(se);
     });
+    this.animateCard(s, from);
     this.circuitChanged();
   }
 
@@ -842,6 +957,7 @@ export class SimController {
   dockScope(u: ScopeElm): void {
     const mgr = this.circuit.scopes;
     if (mgr.scopeCount >= MAX_SCOPES) return;
+    const from = { ...u.elmScope.slot };
     this.scopeCommand('Dock scope', () => {
       const s = u.elmScope;
       s.position = mgr.scopeCount;
@@ -849,6 +965,7 @@ export class SimController {
       this.circuit.elements = this.circuit.elements.filter((e) => e !== u);
       u.selected = false;
     });
+    this.animateCard(u.elmScope, from);
     if (this.hoverUndocked === u) this.clearScopeHover();
     this.circuitChanged();
     this.publishEditor();
@@ -880,11 +997,15 @@ export class SimController {
   // ---- commands ------------------------------------------------------------------------------
 
   undo(): void {
+    const label = this.editor.history.undoLabel;
     this.editor.history.undo();
+    if (label !== null) showToast(`Undid ${label.toLowerCase()}`);
   }
 
   redo(): void {
+    const label = this.editor.history.redoLabel;
     this.editor.history.redo();
+    if (label !== null) showToast(`Redid ${label.toLowerCase()}`);
   }
 
   copy(menuElm: CircuitElm | null = this.editor.keyTarget()): void {
@@ -1047,6 +1168,9 @@ export class SimController {
           s.startDragPlotY(p.x, p.y);
         }
         scopeGesture = e.pointerId;
+        const sc = m.scopes[m.scopeSelected];
+        if (e.pointerType === 'touch' && sc !== undefined)
+          scopeTouches.set(e.pointerId, { ...p, scope: sc });
       } else return false;
       try {
         canvas.setPointerCapture(e.pointerId);
@@ -1122,7 +1246,10 @@ export class SimController {
         s.startDragPlotY(p.x, p.y);
       }
       scopeGesture = e.pointerId;
-      if (e.pointerType === 'touch') startLongPress(e, p);
+      if (e.pointerType === 'touch') {
+        scopeTouches.set(e.pointerId, { ...p, scope: s });
+        startLongPress(e, p);
+      }
       try {
         canvas.setPointerCapture(e.pointerId);
       } catch {
@@ -1131,6 +1258,79 @@ export class SimController {
       e.preventDefault();
       return true;
     };
+    // touch: two fingers on one scope pinch its time scale (not upstream)
+    const scopeTouches = new Map<number, { x: number; y: number; scope: Scope }>();
+    let scopePinch: { scope: Scope; dist: number } | null = null;
+    const scopeUnder = (p: { x: number; y: number }): Scope | null => {
+      const m = mgr();
+      const u = m.look === 'cards' ? this.undockedAt(p.x, p.y) : null;
+      if (u !== null) return u.elmScope;
+      return inScopes(p) ? (m.scopes[this.scopeAt(p.x, p.y)] ?? null) : null;
+    };
+    const touchDist = (): number => {
+      const [a, b] = [...scopeTouches.values()];
+      return a !== undefined && b !== undefined ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
+    };
+    /** A second finger on the scope the first one is on: start a pinch. */
+    const scopePinchDown = (e: PointerEvent, p: { x: number; y: number }): boolean => {
+      if (e.pointerType !== 'touch' || scopeTouches.size !== 1) return false;
+      const s = scopeUnder(p);
+      const first = [...scopeTouches.values()][0];
+      if (s === null || first === undefined || first.scope !== s) return false;
+      scopeTouches.set(e.pointerId, { ...p, scope: s });
+      cancelPress();
+      swipe = null;
+      // the first finger's measuring or plot drag gives way to the pinch
+      endScopeGesture();
+      scopePinch = { scope: s, dist: Math.max(1, touchDist()) };
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {
+        // the pointer is already gone
+      }
+      e.preventDefault();
+      return true;
+    };
+    /** Pinch apart for a shorter time span (speedUp), together for a longer one. */
+    const scopePinchMove = (id: number, p: { x: number; y: number }): boolean => {
+      const t = scopeTouches.get(id);
+      if (t === undefined) return false;
+      t.x = p.x;
+      t.y = p.y;
+      if (scopePinch === null) return false;
+      // one finger lifted: the other does nothing until it lifts too
+      if (scopeTouches.size < 2) return true;
+      const ratio = touchDist() / scopePinch.dist;
+      if (ratio > PINCH_STEP) {
+        scopePinch.scope.speedUp();
+        scopePinch.dist = touchDist();
+      } else if (ratio < 1 / PINCH_STEP) {
+        scopePinch.scope.slowDown();
+        scopePinch.dist = Math.max(1, touchDist());
+      }
+      return true;
+    };
+    /** A press on an undocked card's leader end picks it up, to drop on a post. */
+    const leaderDown = (e: PointerEvent, p: { x: number; y: number }): boolean => {
+      if (e.button !== 0 || ed.mouseMode !== MouseMode.SELECT || mgr().dialogShowing) return false;
+      if (e.pointerType === 'touch' && touches.size > 0) return false;
+      const reach = e.pointerType === 'touch' ? LEADER_GRAB_TOUCH : LEADER_GRAB;
+      const u = this.leaderAt(p.x, p.y, reach);
+      if (u === null || this.undockedAt(p.x, p.y) !== null) return false;
+      this.leaderDrag = { elm: u, x: p.x, y: p.y, id: e.pointerId };
+      if (ed.mouseElm !== null) ed.leave();
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {
+        // the pointer is already gone
+      }
+      canvas.style.cursor = 'grabbing';
+      this.publishEditor();
+      e.preventDefault();
+      return true;
+    };
+    // where ends met when an edit gesture began: new meeting points get a ripple when it ends
+    let joinedBefore: Set<string> | null = null;
     const endScopeGesture = (): void => {
       const m = mgr();
       m.dragStartTime = -1;
@@ -1147,6 +1347,8 @@ export class SimController {
       canvas.focus({ preventScroll: true });
       const p = local(e);
       this.mouse = p;
+      if (scopePinchDown(e, p)) return;
+      if (leaderDown(e, p)) return;
       if (
         !(e.pointerType === 'touch' && touches.size > 0) &&
         (undockedDown(e, p) || scopeDown(e, p))
@@ -1178,6 +1380,7 @@ export class SimController {
         e.pointerType === 'touch' &&
         ed.mouseMode === MouseMode.SELECT &&
         ed.pick(g.x, g.y).elm === null;
+      joinedBefore = this.renderer?.connectionKeys() ?? null;
       const res = ed.pointerDown(g.x, g.y, mods(e), e.button === 1 || touchPan);
       if (res === 'pan') pan = { x: p.x, y: p.y, id: e.pointerId };
       gestureId = e.pointerId;
@@ -1201,6 +1404,13 @@ export class SimController {
         this.scopeHeightFraction = Math.min(0.9, Math.max(0.1, f));
         return;
       }
+      if (scopePinchMove(e.pointerId, p) && scopePinch !== null) return;
+      const drag = this.leaderDrag;
+      if (drag !== null && drag.id === e.pointerId) {
+        drag.x = p.x;
+        drag.y = p.y;
+        return;
+      }
       if (scopeGesture === e.pointerId) {
         if (
           press !== null &&
@@ -1213,6 +1423,16 @@ export class SimController {
         return;
       }
       if (gestureId === null && pan === null && pinch === null) {
+        if (
+          e.pointerType === 'mouse' &&
+          this.undockedAt(p.x, p.y) === null &&
+          this.leaderAt(p.x, p.y, LEADER_GRAB) !== null
+        ) {
+          if (ed.mouseElm !== null) ed.leave();
+          canvas.style.cursor = 'grab';
+          this.publishEditor();
+          return;
+        }
         const u = mgr().look === 'cards' ? this.undockedAt(p.x, p.y) : null;
         if (u !== null) {
           this.splitterHot = false;
@@ -1287,6 +1507,30 @@ export class SimController {
       updateCursor(g.x, g.y);
     };
     const up = (e: PointerEvent): void => {
+      const drag = this.leaderDrag;
+      if (drag !== null && drag.id === e.pointerId) {
+        this.leaderDrag = null;
+        if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+        if (e.type === 'pointerup') {
+          const p = local(e);
+          const post = this.leaderSnap(drag.elm, p.x, p.y);
+          this.setLeaderPost(drag.elm, post);
+          const shown = drag.elm.elmScope.getElm();
+          if (shown !== null) {
+            const at = scopeAnchor(shown, post);
+            this.renderer?.ripple(at.x, at.y);
+          }
+        }
+        canvas.style.cursor = 'grab';
+        this.publishEditor();
+        return;
+      }
+      if (scopeTouches.delete(e.pointerId) && scopePinch !== null) {
+        if (scopeTouches.size === 0) scopePinch = null;
+        if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+        if (scopeGesture === e.pointerId) endScopeGesture();
+        return;
+      }
       if (split === e.pointerId || scopeGesture === e.pointerId) {
         if (press !== null && press.id === e.pointerId) cancelPress();
         if (swipe !== null && swipe.id === e.pointerId) {
@@ -1310,6 +1554,8 @@ export class SimController {
         pan = null;
         ed.pointerUp(mods(e));
       } else ed.pointerUp(mods(e));
+      this.rippleNewJoins(joinedBefore);
+      joinedBefore = null;
       this.publishEditor();
       const g = grid(local(e));
       updateCursor(g.x, g.y);
@@ -1334,14 +1580,16 @@ export class SimController {
       const dx = e.deltaX * unit;
       const dy = e.deltaY * unit;
       const u = mgr().look === 'cards' ? this.undockedAt(p.x, p.y) : null;
-      if (u !== null && isMouseWheel(e)) {
-        u.elmScope.onMouseWheel(dy / 16);
+      // a trackpad pinch (ctrl) sends small steps: scale them up to about a step per pinch
+      const scopeWheel = e.ctrlKey && !isMouseWheel(e) ? dy / 4 : dy / 16;
+      if (u !== null && (isMouseWheel(e) || e.ctrlKey)) {
+        u.elmScope.onMouseWheel(scopeWheel);
         return;
       }
       if (inScopes(p)) {
         // the wheel over a scope changes its time scale (about one step per notch)
         const i = this.scopeAt(p.x, p.y);
-        if (i >= 0) mgr().scopes[i]?.onMouseWheel(dy / 16);
+        if (i >= 0) mgr().scopes[i]?.onMouseWheel(scopeWheel);
         return;
       }
       if (e.ctrlKey || e.metaKey) r.viewport.zoomAt(Math.exp(-dy * 0.01), p.x, p.y);
@@ -1490,7 +1738,8 @@ const UNDOCKED_HEIGHT = 144;
  * The circuit point an undocked scope's leader line goes to: the post of a one-post element
  * (a labeled node, an output), else the middle of the element.
  */
-function scopeAnchor(elm: CircuitElm): { x: number; y: number } {
+function scopeAnchor(elm: CircuitElm, post = -1): { x: number; y: number } {
+  if (post >= 0 && post < elm.getPostCount()) return elm.getPost(post);
   if (elm.getPostCount() === 1) return elm.getPost(0);
   const b = viewFor(elm)?.bbox(elm);
   if (b === undefined) return { x: (elm.x + elm.x2) / 2, y: (elm.y + elm.y2) / 2 };
@@ -1529,6 +1778,13 @@ const LONG_PRESS_MS = 500;
 const LONG_PRESS_SLOP = 8;
 /** Canvas narrower than this shows one scope column at a time (CSS px). */
 const COMPACT_WIDTH = 600;
+/** How near a post a dropped leader snaps to it, and how near its end a press grabs it (px). */
+const LEADER_SNAP = 20;
+const LEADER_GRAB = 7;
+const LEADER_GRAB_TOUCH = 14;
+/** Finger distance ratio for one time scale step in a scope pinch. */
+const PINCH_STEP = 1.4;
+
 /** Sideways travel that counts as a swipe between scope columns (CSS px). */
 const SWIPE_MIN = 40;
 

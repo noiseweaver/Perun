@@ -38,6 +38,7 @@ import { ScopeOverlays } from './ScopeOverlays.ts';
 import { ScopeDataIterator, ScopePlot, V_POSITION_STEPS } from './ScopePlot.ts';
 import { ScopePlot2d, rectContains } from './ScopePlot2d.ts';
 import { ScopeSerializer } from './ScopeSerializer.ts';
+import { snapToWave } from './ScopeSnap.ts';
 import { ScopeTrigger } from './ScopeTrigger.ts';
 
 export const MULTA = [2.0, 2.5, 2.0] as const;
@@ -108,6 +109,10 @@ export class Scope {
   slot: ScopeRect = { x: 0, y: 0, width: 1, height: 1 };
   /** Undocked: its element is selected on the circuit (the card gets the selection outline). */
   canvasSelected = false;
+  /** Card look: sim time the trace was frozen at, or null while live (not upstream). */
+  frozen: number | null = null;
+  /** Card look: when (ScopeManager.now) the card last flashed, for freeze feedback. */
+  flashAt = -Infinity;
   manualScale = false;
   showI = false;
   showV = false;
@@ -229,6 +234,8 @@ export class Scope {
   }
 
   resetGraph(full = false): void {
+    // a fresh trace has nothing to hold
+    this.frozen = null;
     this.scopePointCount = 1;
     while (this.scopePointCount <= this.rect.width) this.scopePointCount *= 2;
     // double buffer for trigger mode to prevent overwriting displayed data
@@ -481,8 +488,22 @@ export class Scope {
     }
   }
 
+  /** The time at the right edge of the trace: the freeze time while frozen. */
+  displayT(): number {
+    return this.frozen ?? this.sim.t;
+  }
+
+  /** Hold the trace while the simulation runs on; unfreezing starts a new trace. */
+  setFrozen(b: boolean): void {
+    if (b === (this.frozen !== null)) return;
+    this.flashAt = this.mgr.now;
+    if (b) this.frozen = this.sim.t;
+    else this.resetGraph(true);
+  }
+
   /** Called for each timestep. */
   timeStep(): void {
+    if (this.frozen !== null) return;
     for (const p of this.plots) p.timeStep(this.sim);
     this.checkTrigger();
     // for 2d plots we draw here rather than in the drawing routine
@@ -806,7 +827,7 @@ export class Scope {
 
     // vertical (time) gridlines
     const ts = sim.maxTimeStep * this.speed;
-    const tRight = this.isTriggered() ? this.trigger.time + (ts * rect.width) / 2 : sim.t;
+    const tRight = this.isTriggered() ? this.trigger.time + (ts * rect.width) / 2 : this.displayT();
     const tstart = tRight - ts * rect.width;
     const gsx = this.gridStepX;
     const tx = tRight - (tRight % gsx);
@@ -893,15 +914,18 @@ export class Scope {
         this.trigger.time +
         sim.maxTimeStep * this.speed * (mouseX - this.rect.x - Math.trunc(this.rect.width / 2))
       );
-    return sim.t - sim.maxTimeStep * this.speed * (this.rect.x + this.rect.width - mouseX);
+    return (
+      this.displayT() - sim.maxTimeStep * this.speed * (this.rect.x + this.rect.width - mouseX)
+    );
   }
 
   selectScope(mouseX: number, mouseY: number): void {
     if (!rectContains(this.rect, mouseX, mouseY)) return;
     const mgr = this.mgr;
-    if (this.plot2d.enabled || this.visiblePlots.length === 0) mgr.cursorTime = -1;
-    else mgr.cursorTime = this.mouseXToTime(mouseX);
     this.checkForSelection(mouseX, mouseY);
+    mgr.cursorSnap = null;
+    if (this.plot2d.enabled || this.visiblePlots.length === 0) mgr.cursorTime = -1;
+    else mgr.cursorTime = this.mouseXToTime(this.snapX(mouseX, true));
     mgr.cursorScope = this;
   }
 
@@ -914,7 +938,16 @@ export class Scope {
       return;
     }
     if (this.plot2d.enabled || this.fftPlot.enabled || this.visiblePlots.length === 0) return;
-    this.mgr.dragStartTime = this.mouseXToTime(mouseX);
+    this.mgr.dragStartTime = this.mouseXToTime(this.snapX(mouseX, false));
+  }
+
+  /** Card look: a time cursor at x snaps to the trace's peaks and crossings (not upstream). */
+  private snapX(mouseX: number, record: boolean): number {
+    if (this.mgr.look !== 'cards' || this.fftPlot.enabled) return mouseX;
+    const s = snapToWave(this, mouseX);
+    if (s === null) return mouseX;
+    if (record) this.mgr.cursorSnap = s.snap;
+    return s.x;
   }
 
   /** Find the plot nearest the mouse. */
@@ -951,7 +984,7 @@ export class Scope {
       return Math.trunc(
         r.x + Math.trunc(r.width / 2) + (t - this.trigger.time) / (sim.maxTimeStep * this.speed),
       );
-    return -Math.trunc((sim.t - t) / (sim.maxTimeStep * this.speed) - r.x - r.width);
+    return -Math.trunc((this.displayT() - t) / (sim.maxTimeStep * this.speed) - r.x - r.width);
   }
 
   /** Dot on the plot at pixel x; returns the plot value there, or NaN when out of range. */
@@ -1109,7 +1142,7 @@ export class Scope {
     // all visible plots share the same scopePointCount and speed
     const w = this.rect.width;
     const ts = this.sim.maxTimeStep * this.speed;
-    const tStart = this.sim.t - ts * w;
+    const tStart = this.displayT() - ts * w;
     for (let i = 0; i !== w; i++) {
       const t = tStart + ts * i;
       if (t < 0) continue;

@@ -166,7 +166,11 @@ export function ControlBar() {
           data-testid="run-stop"
           aria-pressed={running}
         >
-          <Icon name={running ? 'pause' : 'play'} />
+          <Icon
+            key={running ? 'pause' : 'play'}
+            name={running ? 'pause' : 'play'}
+            className="icon icon-swap"
+          />
           {running ? 'Stop' : 'Run'}
         </button>
         <IconButton label="Reset" onClick={() => controller.reset()} testId="reset">

@@ -308,6 +308,9 @@ export interface UndockedScopeItem {
   target: { x: number; y: number } | null;
   /** The card or what it shows is hovered or selected. */
   active: boolean;
+  /** While its leader is dragged: the posts it can snap to, and the one it would. */
+  posts?: readonly { x: number; y: number }[];
+  snapPost?: number;
 }
 
 /** What the bottom area shows besides the scopes. */
@@ -329,6 +332,9 @@ const INFO_BOX_HEIGHT = 70;
  * Draws the docked scopes and the info text on the circuit canvas, below (and, for cursor
  * readouts, slightly over) the circuit, as upstream's bottom area.
  */
+/** How long a card takes to fly into place (ms). */
+const CARD_MS = 260;
+
 export class ScopeRenderer {
   readonly canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
@@ -340,6 +346,8 @@ export class ScopeRenderer {
    * first line and number of lines), so it doesn't jitter as the values change.
    */
   private infoBox = { key: '', width: 0 };
+  /** Cards flying to a new place (docked, undocked) or growing in: where from, and when. */
+  private readonly cardAnims = new WeakMap<Scope, { from: ScopeRect | null; start: number }>();
 
   constructor(canvas: HTMLCanvasElement, theme: Theme) {
     const ctx = canvas.getContext('2d');
@@ -348,6 +356,57 @@ export class ScopeRenderer {
     this.ctx = ctx;
     this.palette = new ScopePalette(theme);
     this.graphics = new CanvasScopeGraphics(ctx, this.palette, theme);
+  }
+
+  /**
+   * Animate a card into its place: from a rectangle (where it was docked or undocked, or the
+   * point it was opened from), or growing in where it is when `from` is null.
+   */
+  animateCard(s: Scope, from: ScopeRect | null): void {
+    this.cardAnims.set(s, { from, start: performance.now() });
+  }
+
+  /** Whether a card is still animating. */
+  private cardAnimating(s: Scope, now: number): boolean {
+    const a = this.cardAnims.get(s);
+    if (a === undefined) return false;
+    if (now - a.start < CARD_MS) return true;
+    this.cardAnims.delete(s);
+    return false;
+  }
+
+  /** Draw a scope, moved and scaled along its card animation if it has one. */
+  private drawScope(s: Scope, now: number): void {
+    const g = this.graphics;
+    const a = this.cardAnims.get(s);
+    if (a === undefined || !this.cardAnimating(s, now)) {
+      s.draw(g);
+      return;
+    }
+    const t = (now - a.start) / CARD_MS;
+    const e = 1 - (1 - t) ** 3;
+    const to = s.slot;
+    const from = a.from ?? {
+      x: to.x + to.width * 0.08,
+      y: to.y + to.height * 0.08,
+      width: to.width * 0.84,
+      height: to.height * 0.84,
+    };
+    const lerp = (p: number, q: number): number => p + (q - p) * e;
+    const w = lerp(Math.max(1, from.width), to.width);
+    const h = lerp(Math.max(1, from.height), to.height);
+    const cx = lerp(from.x + from.width / 2, to.x + to.width / 2);
+    const cy = lerp(from.y + from.height / 2, to.y + to.height / 2);
+    // one scale for both axes, so the card keeps its shape while it travels
+    const sc = Math.sqrt((w / to.width) * (h / to.height));
+    g.save();
+    const c = this.ctx;
+    c.translate(cx, cy);
+    c.scale(sc, sc);
+    c.translate(-(to.x + to.width / 2), -(to.y + to.height / 2));
+    c.globalAlpha = Math.min(1, 0.3 + e);
+    s.draw(g);
+    g.restore();
   }
 
   setTheme(theme: Theme): void {
@@ -390,15 +449,36 @@ export class ScopeRenderer {
     c.rect(0, 0, width, clipHeight);
     c.clip();
     g.begin();
+    const now = performance.now();
+    const flying = items.filter((it) => this.cardAnimating(it.scope, now));
     if (mgr.look === 'cards') {
       for (const it of items)
-        if (it.target !== null) drawLeader(it.scope, g, it.target.x, it.target.y, it.active);
+        if (it.target !== null && !flying.includes(it))
+          drawLeader(it.scope, g, it.target.x, it.target.y, it.active);
+      // a leader being dragged: rings on the posts it can point at
+      for (const it of items) {
+        if (it.posts === undefined) continue;
+        g.setColor('selection');
+        it.posts.forEach((p, k) => {
+          const r = k === it.snapPost ? 7 : 5;
+          g.strokeRoundRect(p.x - r, p.y - r, 2 * r, 2 * r, r, k === it.snapPost ? 2 : 1);
+        });
+      }
       g.flush();
     }
-    for (const it of items) it.scope.draw(g);
+    for (const it of items) if (!flying.includes(it)) it.scope.draw(g);
     g.flush();
-    g.setTextStyle('normal');
     c.restore();
+    // a card on its way in may come up from the docked area: not clipped to the circuit
+    if (flying.length > 0) {
+      c.save();
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      g.begin();
+      for (const it of flying) this.drawScope(it.scope, now);
+      g.flush();
+      c.restore();
+    }
+    g.setTextStyle('normal');
   }
 
   render(mgr: ScopeManager, state: BottomAreaState, dpr: number): void {
@@ -421,7 +501,8 @@ export class ScopeRenderer {
       // cards float on the canvas; upstream's scopes sit on one black strip
       c.fillStyle = cards ? theme.canvas.background : theme.scope.background;
       c.fillRect(area.x, area.y, area.width, area.height);
-      for (const s of mgr.scopes) if (mgr.isShown(s)) s.draw(g);
+      const now = performance.now();
+      for (const s of mgr.scopes) if (mgr.isShown(s)) this.drawScope(s, now);
       g.flush();
       g.setTextStyle('normal');
       if (state.splitterHot) {

@@ -13,6 +13,7 @@ import { Scope, type ScopeElementKinds, type ScopeRect } from './Scope.ts';
 import { cardPlotRect, CARD_GAP } from './ScopeCardView.ts';
 import type { ScopeImage } from './ScopeGraphics.ts';
 import type { ScopeDefaultsStore } from './ScopeSerializer.ts';
+import type { WaveSnap } from './ScopeSnap.ts';
 
 /** Upstream's fixed scope array size. */
 export const MAX_SCOPES = 20;
@@ -81,6 +82,10 @@ export class ScopeManager {
   wheelSensitivity = 1;
   cursorScope: Scope | null = null;
   cursorTime = -1;
+  /** Animation clock (ms), set by the app each frame; 0 when nothing animates. */
+  now = 0;
+  /** Card look: what the time cursor snapped to (a peak or crossing), with its period. */
+  cursorSnap: WaveSnap | null = null;
   cursorUnits = 0;
   dragStartTime = -1;
   /** Card look: frequency where a drag over a spectrum started (-1: none), and its scope. */

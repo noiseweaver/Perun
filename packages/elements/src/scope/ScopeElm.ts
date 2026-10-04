@@ -18,6 +18,11 @@ export const SCOPE_ELM_DUMP_TYPE = 403;
 /** A scope on the circuit canvas, filling the rectangle between its two points. */
 export class ScopeElm extends CircuitElm {
   private scope: Scope | null = null;
+  /**
+   * The post of the shown element the card's leader points at, or -1 for the element's middle.
+   * Saved as an `lp` attribute upstream ignores (not upstream).
+   */
+  leaderPost = -1;
 
   /** The scope (made on first use: the simulation is only known after construction). */
   get elmScope(): Scope {
@@ -67,11 +72,13 @@ export class ScopeElm extends CircuitElm {
 
   override dumpXml(w: XmlAttrWriter): void {
     super.dumpXml(w);
+    if (this.leaderPost >= 0) w.dumpAttr('lp', this.leaderPost);
     this.elmScope.serializer.dumpXml(w);
   }
 
   override undumpXml(r: XmlAttrReader): void {
     super.undumpXml(r);
+    this.leaderPost = r.parseIntAttr('lp', -1);
     for (const child of r.getChildElements()) {
       if (child.getTagName() === 'o') {
         this.elmScope.serializer.undumpXml(child);

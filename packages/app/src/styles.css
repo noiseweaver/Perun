@@ -1332,3 +1332,104 @@ textarea.field-input {
   opacity: 0.5;
   cursor: default;
 }
+
+/* ---- motion: small answers to what the user does ------------------------------------------ */
+
+/* buttons give a little under the finger */
+.button,
+.icon-button,
+.menu-trigger {
+  transition:
+    background-color 150ms var(--md-motion),
+    transform 120ms var(--md-motion);
+}
+
+.button:active:not(:disabled),
+.icon-button:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+/* Run and Stop swap icons with a turn */
+.icon-swap {
+  animation: icon-swap 260ms var(--md-motion);
+}
+
+@keyframes icon-swap {
+  from {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
+  }
+}
+
+.tooltip {
+  transform-origin: var(--radix-tooltip-content-transform-origin);
+  animation: pop-in 120ms var(--md-motion);
+}
+
+.speed-popover {
+  transform-origin: var(--radix-popover-content-transform-origin);
+  animation: pop-in 160ms var(--md-motion);
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+.dialog-content {
+  animation: dialog-in 220ms var(--md-motion);
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px) scale(0.96);
+  }
+}
+
+/* the property panel slides in beside the canvas (up from the bottom on phones) */
+.inspector {
+  animation: panel-in 220ms var(--md-motion);
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+
+@media (max-width: 719px) {
+  .inspector {
+    animation-name: sheet-in;
+  }
+
+  @keyframes sheet-in {
+    from {
+      transform: translateY(40%);
+      opacity: 0;
+    }
+  }
+}
+
+.toast {
+  animation: toast-in 240ms var(--md-motion);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(16px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

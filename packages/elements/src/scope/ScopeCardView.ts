@@ -9,6 +9,7 @@
 // looks changes nothing but the picture.
 
 import { getTimeText, getUnitText } from '../view/units.ts';
+import type { WaveEventKind } from './ScopeSnap.ts';
 import {
   UNITS_A,
   UNITS_OHMS,
@@ -75,7 +76,7 @@ export function cardPlotRect(slot: ScopeRect, undocked = false): ScopeRect {
  * have a drag handle (`handle`, the whole card when it is a mini one) and a resize grip.
  */
 export interface CardHit {
-  kind: 'settings' | 'close' | 'dock' | 'chip' | 'tab' | 'handle' | 'resize';
+  kind: 'settings' | 'close' | 'dock' | 'freeze' | 'chip' | 'tab' | 'handle' | 'resize';
   index: number;
   x: number;
   y: number;
@@ -209,7 +210,9 @@ function drawGrid(
   const hLines = horizontalLines(scope, plot, gridMid, allPlotsSameUnits);
 
   const ts = sim.maxTimeStep * scope.speed;
-  const tRight = scope.isTriggered() ? scope.trigger.time + (ts * rect.width) / 2 : sim.t;
+  const tRight = scope.isTriggered()
+    ? scope.trigger.time + (ts * rect.width) / 2
+    : scope.displayT();
   const tstart = tRight - ts * rect.width;
   const gsx = scope.gridStepX;
   const tx = tRight - (tRight % gsx);
@@ -379,6 +382,48 @@ function dockIcon(g: ScopeGraphics, cx: number, cy: number): void {
   g.drawLine(cx + 6, cy + 6, cx + 6, cy + 2, 1.5);
 }
 
+/** Freeze: two bars. */
+function pauseIcon(g: ScopeGraphics, cx: number, cy: number): void {
+  g.fillRoundRect(cx - 5, cy - 6, 3.5, 12, 1);
+  g.fillRoundRect(cx + 1.5, cy - 6, 3.5, 12, 1);
+}
+
+/** Resume: a triangle pointing right. */
+function playIcon(g: ScopeGraphics, cx: number, cy: number): void {
+  g.fillPolygon([cx - 4, cx + 6, cx - 4], [cy - 6, cy, cy + 6], 3);
+}
+
+/** How long the plot flashes when it is frozen or let go (ms). */
+const FLASH_MS = 320;
+
+/** A fading wash over the plot just after a freeze (plot coordinates). */
+function drawFlash(scope: Scope, g: ScopeGraphics): void {
+  const t = (scope.mgr.now - scope.flashAt) / FLASH_MS;
+  if (!(t >= 0 && t < 1)) return;
+  g.save();
+  g.setGlobalAlpha(0.28 * (1 - t) ** 2);
+  g.setColor('selection');
+  g.fillRect(0, 0, scope.rect.width, scope.rect.height);
+  g.restore();
+}
+
+/** A "Frozen" pill in the plot's top left corner (plot coordinates). */
+function drawFrozenBadge(g: ScopeGraphics): void {
+  g.setTextStyle('label');
+  const label = 'Frozen';
+  const w = g.measureWidth(label) + 22;
+  g.save();
+  g.setGlobalAlpha(0.9);
+  g.setColor('selection');
+  g.fillRoundRect(6, 6, w, 18, 9);
+  g.restore();
+  g.setColor('card');
+  g.fillRoundRect(12, 11, 2.2, 8, 1);
+  g.fillRoundRect(15.8, 11, 2.2, 8, 1);
+  g.drawString(label, 22, 19);
+  g.setTextStyle('normal');
+}
+
 function cross(g: ScopeGraphics, cx: number, cy: number): void {
   g.drawLine(cx - 4, cy - 4, cx + 4, cy + 4, 1.5);
   g.drawLine(cx - 4, cy + 4, cx + 4, cy - 4, 1.5);
@@ -464,8 +509,22 @@ function drawHeader(
   g.setColor(over(dock) ? 'selection' : 'textMuted');
   if (scope.position < 0) dockIcon(g, dock.x + ICON / 2, dock.y + ICON / 2);
   else undockIcon(g, dock.x + ICON / 2, dock.y + ICON / 2);
+  right -= ICON + 6;
+  // hold the trace (play resumes it)
+  const freeze: CardHit = {
+    kind: 'freeze',
+    index: 0,
+    x: right - ICON,
+    y: iconY,
+    width: ICON,
+    height: ICON,
+  };
+  const frozen = scope.frozen !== null;
+  g.setColor(frozen || over(freeze) ? 'selection' : 'textMuted');
+  if (frozen) playIcon(g, freeze.x + ICON / 2, freeze.y + ICON / 2);
+  else pauseIcon(g, freeze.x + ICON / 2, freeze.y + ICON / 2);
   right -= ICON + 10;
-  hits.push(close, settings, dock);
+  hits.push(close, settings, dock, freeze);
 
   // compact: tabs for the columns, on the top card of the shown column
   const cols = mgr.columnCount();
@@ -597,6 +656,13 @@ function drawHeader(
   g.setTextStyle('normal');
 }
 
+const SNAP_NAMES: Record<WaveEventKind, string> = {
+  peak: 'peak',
+  trough: 'trough',
+  rise: 'rising edge',
+  fall: 'falling edge',
+};
+
 /** A crosshair at the cursor time: dots on every trace and a readout of their values. */
 function drawCursor(scope: Scope, g: ScopeGraphics): void {
   const mgr = scope.mgr;
@@ -660,13 +726,30 @@ function drawCursor(scope: Scope, g: ScopeGraphics): void {
       g.setColor('measure');
       g.drawLine(dragX, r.y, dragX, r.y + r.height - 1);
       const start = scope.drawPlotDot(g, plot, dragX);
-      lines.push({
-        ink: null,
-        text: 'Δt ' + getTimeText(Math.abs(mgr.cursorTime - mgr.dragStartTime)),
-      });
+      const dt = Math.abs(mgr.cursorTime - mgr.dragStartTime);
+      lines.push({ ink: null, text: 'Δt ' + getTimeText(dt) });
+      if (dt > 0) lines.push({ ink: null, text: 'f ' + getUnitText(1 / dt, 'Hz') });
       const end = scope.drawPlotDot(g, plot, x);
       if (!Number.isNaN(start) && !Number.isNaN(end))
         lines.push({ ink: plot.color, text: 'Δ ' + plot.getUnitText(end - start) });
+    }
+  }
+  // snapped to a peak or crossing: name it, and the period to the like one before
+  const snap = mgr.cursorSnap;
+  if (!fft && snap !== null && plot !== undefined) {
+    const v = scope.drawPlotDot(g, plot, x);
+    if (!Number.isNaN(v)) {
+      const vy =
+        r.y + Math.trunc((r.height - 1) / 2) - Math.trunc(plot.gridMult * (v + plot.plotOffset));
+      g.setColor(plot.color);
+      g.strokeRoundRect(x - 5.5, vy - 5.5, 11, 11, 5.5, 1.5);
+    }
+    if (mgr.dragStartTime < 0) {
+      lines.push({ ink: null, text: SNAP_NAMES[snap.kind] });
+      if (snap.period > 0) {
+        lines.push({ ink: null, text: 'T ' + getTimeText(snap.period) });
+        lines.push({ ink: null, text: 'f ' + getUnitText(1 / snap.period, 'Hz') });
+      }
     }
   }
   if (!fft) lines.push({ ink: null, text: getTimeText(mgr.cursorTime) });
@@ -736,6 +819,12 @@ export function drawScopeCard(scope: Scope, g: ScopeGraphics): void {
 
   if (scope.plot2d.enabled) {
     scope.plot2d.draw(g);
+    if (scope.frozen !== null) {
+      g.save();
+      g.translate(r.x, r.y);
+      drawFrozenBadge(g);
+      g.restore();
+    }
     header([], null);
     return;
   }
@@ -783,6 +872,8 @@ export function drawScopeCard(scope: Scope, g: ScopeGraphics): void {
   if (gridPlot !== null)
     drawAxisLabels(scope, g, gridPlot.plot, gridPlot.gridMid, allPlotsSameUnits);
   scope.trigger.drawIndicator(g, vp, r);
+  if (scope.frozen !== null) drawFrozenBadge(g);
+  drawFlash(scope, g);
   g.restore();
   scope.finishDraw();
 
@@ -924,6 +1015,8 @@ export function drawLeader(
   g.setColor(active ? 'selection' : 'textMuted');
   g.strokePolyline(xs, ys, pts.length, active ? 1.5 : 1);
   g.fillOval(tx - 3, ty - 3, 6, 6);
+  // a selected card's leader end can be dragged onto a post: show it as a handle
+  if (scope.canvasSelected) g.strokeRoundRect(tx - 6.5, ty - 6.5, 13, 13, 6.5, 1.5);
   const a = pts[0];
   g.fillOval(a.x - 2, a.y - 2, 4, 4);
 }

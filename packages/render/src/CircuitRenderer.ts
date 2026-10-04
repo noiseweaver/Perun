@@ -56,6 +56,28 @@ export const DEFAULT_FRAME: FrameState = {
 /** Radius of a junction dot, larger than a post so it reads as a schematic junction. */
 const JUNCTION_RADIUS = 6;
 
+/** Durations of the edit feedback effects (ms). */
+const POP_MS = 220;
+const GHOST_MS = 180;
+const RIPPLE_MS = 420;
+/** More elements than this added or removed at once (a load, a big paste) get no effect. */
+const EFFECT_LIMIT = 40;
+
+/**
+ * Small animations that answer an edit: a new element pops in, a deleted one fades out, and a
+ * ring spreads from a point where ends were just joined.
+ */
+type Effect =
+  | { kind: 'pop'; elm: CircuitElm; start: number }
+  | { kind: 'ghost'; elm: CircuitElm; start: number }
+  | { kind: 'ripple'; x: number; y: number; start: number };
+
+/** Ease out with a little overshoot. */
+function easeOutBack(t: number): number {
+  const c = 1.7;
+  return 1 + (c + 1) * (t - 1) ** 3 + c * (t - 1) ** 2;
+}
+
 interface PostInfo {
   /** Posts drawn as dots: those not joining exactly two element ends. */
   draw: { x: number; y: number }[];
@@ -95,6 +117,11 @@ export class CircuitRenderer {
   scopeHighlights: ReadonlyMap<CircuitElm, string> = new Map();
   /** Height of the circuit area in CSS pixels; scopes take the rest. Null: the whole canvas. */
   circuitHeight: number | null = null;
+  /** Play edit feedback animations (off when the user prefers reduced motion). */
+  motion = true;
+  private effects: Effect[] = [];
+  /** The element last being placed: it needs no pop once it lands. */
+  private lastPending: CircuitElm | null = null;
 
   constructor(canvas: HTMLCanvasElement, theme: Theme) {
     const ctx = canvas.getContext('2d');
@@ -116,6 +143,7 @@ export class CircuitRenderer {
 
   /** Show a new circuit; dot positions restart. */
   setElements(elements: CircuitElm[]): void {
+    this.effects = [];
     this.elements = elements;
     this.dots.clear();
     this.hovered = null;
@@ -125,9 +153,40 @@ export class CircuitRenderer {
 
   /** The circuit was edited (elements added, removed or moved); dot positions are kept. */
   elementsChanged(elements: CircuitElm[]): void {
+    if (this.motion) this.diffEffects(this.elements, elements);
     this.elements = elements;
     if (this.hovered !== null && !elements.includes(this.hovered)) this.hovered = null;
     this.posts = this.findPosts();
+  }
+
+  private diffEffects(before: readonly CircuitElm[], after: readonly CircuitElm[]): void {
+    const was = new Set(before);
+    const now = new Set(after);
+    const added = after.filter((e) => !was.has(e) && e !== this.lastPending);
+    const removed = before.filter((e) => !now.has(e));
+    const t = performance.now();
+    if (added.length <= EFFECT_LIMIT)
+      for (const elm of added) this.effects.push({ kind: 'pop', elm, start: t });
+    if (removed.length <= EFFECT_LIMIT)
+      for (const elm of removed) this.effects.push({ kind: 'ghost', elm, start: t });
+  }
+
+  /** A ring spreading from a circuit point (ends joined there, a leader pinned there). */
+  ripple(x: number, y: number): void {
+    if (this.motion) this.effects.push({ kind: 'ripple', x, y, start: performance.now() });
+  }
+
+  /** Points where two or more element ends meet, as "x,y" keys. */
+  connectionKeys(): Set<string> {
+    const keys = new Set<string>();
+    for (const p of this.posts.joins) keys.add(`${p.x},${p.y}`);
+    for (const p of this.posts.junctions) keys.add(`${p.x},${p.y}`);
+    return keys;
+  }
+
+  /** Whether an effect is still playing (a test can wait for the canvas to settle). */
+  get animating(): boolean {
+    return this.effects.length > 0;
   }
 
   /** Recompute post lists after elements moved or changed shape. */
@@ -219,7 +278,18 @@ export class CircuitRenderer {
       dots: frame.showDots && frame.running,
     };
 
-    for (const e of this.elements) if (e !== this.stopElm) this.drawElement(e, frame);
+    const now = performance.now();
+    const pops = new Map<CircuitElm, number>();
+    this.effects = this.effects.filter((fx) => {
+      const age = now - fx.start;
+      const keep = age < (fx.kind === 'pop' ? POP_MS : fx.kind === 'ghost' ? GHOST_MS : RIPPLE_MS);
+      if (keep && fx.kind === 'pop') pops.set(fx.elm, age / POP_MS);
+      return keep;
+    });
+    for (const fx of this.effects)
+      if (fx.kind === 'ghost') this.drawElement(fx.elm, frame, -(now - fx.start) / GHOST_MS);
+    for (const e of this.elements)
+      if (e !== this.stopElm) this.drawElement(e, frame, pops.get(e) ?? 1);
     if (this.stopElm !== null) this.drawElement(this.stopElm, frame);
 
     painter.highlighted = false;
@@ -234,7 +304,24 @@ export class CircuitRenderer {
     // first drag some (MOSFET) have no post geometry yet
     const pend = this.pending;
     if (pend !== null && (pend.x !== pend.x2 || pend.y !== pend.y2)) this.drawElement(pend, frame);
+    if (pend !== null) this.lastPending = pend;
     if (this.selectionRect !== null) this.drawSelectionRect(this.selectionRect);
+    for (const fx of this.effects)
+      if (fx.kind === 'ripple') this.drawRipple(fx.x, fx.y, (now - fx.start) / RIPPLE_MS);
+  }
+
+  private drawRipple(x: number, y: number, t: number): void {
+    const c = this.ctx;
+    const k = 1 - (1 - t) ** 3;
+    const scale = this.viewport.scale;
+    c.save();
+    c.strokeStyle = this.palette.selection;
+    c.globalAlpha = 0.7 * (1 - t);
+    c.lineWidth = (2.5 - 1.5 * t) / scale;
+    c.beginPath();
+    c.arc(x + 0.5, y + 0.5, (4 + 16 * k) / scale, 0, 2 * Math.PI);
+    c.stroke();
+    c.restore();
   }
 
   private drawSelectionRect(r: Rect): void {
@@ -250,16 +337,22 @@ export class CircuitRenderer {
     c.restore();
   }
 
-  private drawElement(e: CircuitElm, frame: FrameState): void {
+  /**
+   * Draw one element. `anim` below 1 pops it in (0 to 1: how far along); below 0 it is a deleted
+   * element fading out (0 to -1).
+   */
+  private drawElement(e: CircuitElm, frame: FrameState, anim = 1): void {
     const view = viewFor(e);
     if (!view) return;
+    const ghost = anim < 0;
     const painter = this.painter;
     const highlighted =
-      e === this.hovered ||
-      e === this.stopElm ||
-      e.selected ||
-      e === this.pending ||
-      this.scopeHighlights.has(e);
+      !ghost &&
+      (e === this.hovered ||
+        e === this.stopElm ||
+        e.selected ||
+        e === this.pending ||
+        this.scopeHighlights.has(e));
     painter.highlighted = highlighted;
     painter.highlightColor =
       e === this.stopElm || e.selected || e === this.pending
@@ -273,12 +366,24 @@ export class CircuitRenderer {
       euroResistors: frame.euroResistors,
       showOhm: frame.showOhm,
       textFont: frame.textFont,
-      dotCount: (slot, current) => dots.advance(e, slot, current, frame.currentMult, frame.running),
+      dotCount: (slot, current) =>
+        dots.advance(e, slot, current, frame.currentMult, frame.running && !ghost),
     };
     this.ctx.save();
+    if (anim < 1) {
+      const t = ghost ? -anim : anim;
+      const sc = ghost ? 1 - 0.15 * t : 0.6 + 0.4 * easeOutBack(t);
+      const b = view.bbox(e);
+      const cx = (b.x1 + b.x2) / 2;
+      const cy = (b.y1 + b.y2) / 2;
+      this.ctx.translate(cx, cy);
+      this.ctx.scale(sc, sc);
+      this.ctx.translate(-cx, -cy);
+      this.ctx.globalAlpha = ghost ? 1 - t : Math.min(1, t * 2.5);
+    }
     view.draw(e, ctx);
     this.ctx.restore();
-    if (highlighted) {
+    if (highlighted && !ghost) {
       // a highlighted element shows all its posts (upstream drawPosts)
       painter.highlighted = false;
       for (let i = 0; i !== e.getPostCount(); i++) {

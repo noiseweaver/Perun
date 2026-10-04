@@ -218,6 +218,19 @@ function ScopeMenuItems({ index, undocked }: { index: number; undocked: ScopeElm
         </span>
         Max Scale
       </Ctx.CheckboxItem>
+      {controller.scopes.look === 'cards' && (
+        <Ctx.CheckboxItem
+          className="menu-item"
+          data-testid="scope-freeze"
+          checked={s.frozen !== null}
+          onSelect={run('freeze')}
+        >
+          <span className="menu-check" aria-hidden>
+            {s.frozen !== null && <Icon name="check" size={18} />}
+          </span>
+          Freeze
+        </Ctx.CheckboxItem>
+      )}
       {undocked === null && (
         <>
           <Item label="Stack" disabled={!mgr.canStackScope(index)} onSelect={run('stack')} />
