@@ -271,13 +271,15 @@ test('the time readout does not move as digits change', async ({ page }) => {
     await document.fonts.load(`12px ${getComputedStyle(el).fontFamily}`);
     await document.fonts.ready;
   });
-  const boxes = new Set<string>();
+  await expect.poll(() => simTime(page)).not.toBe('t = 0.000 s');
+  const seen = new Map<string, string>();
   for (let i = 0; i < 8; i++) {
     const b = await readout.boundingBox();
-    if (b) boxes.add(`${Math.round(b.x)},${Math.round(b.width)}`);
+    if (b) seen.set(`${b.x.toFixed(1)},${b.width.toFixed(1)}`, await simTime(page));
     await page.waitForTimeout(250);
   }
-  expect(boxes.size).toBe(1);
+  // on failure, shows each position with a readout text seen there
+  expect(Object.fromEntries(seen)).toEqual(Object.fromEntries([...seen].slice(0, 1)));
 });
 
 test('the time step can be changed and undone', async ({ page }) => {
