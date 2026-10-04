@@ -621,6 +621,12 @@ export class SimController {
         if (s.position < 0) this.removeUndocked(s);
         else this.scopeCommand('Remove scope', () => s.setElm(null));
         break;
+      case 'dock':
+        if (s.position < 0) {
+          const u = this.circuit.scopeElms().find((e) => e.elmScope === s);
+          if (u !== undefined) this.dockScope(u);
+        } else this.undockScope(mgr.scopes.indexOf(s));
+        break;
       case 'handle':
       case 'resize':
         return false;
@@ -1017,7 +1023,19 @@ export class SimController {
           this.openScopeProperties(s);
           return true;
         }
-        if (m.compact && e.pointerType === 'touch') swipe = { x: p.x, y: p.y, id: e.pointerId };
+        // compact: a swipe on the header switches columns; on the plot a drag measures
+        if (
+          m.compact &&
+          e.pointerType === 'touch' &&
+          s !== undefined &&
+          !(
+            p.x >= s.rect.x &&
+            p.x < s.rect.x + s.rect.width &&
+            p.y >= s.rect.y &&
+            p.y < s.rect.y + s.rect.height
+          )
+        )
+          swipe = { x: p.x, y: p.y, id: e.pointerId };
         if (!m.dialogShowing) for (const sc of m.scopes) sc.mousePressed(p.x, p.y);
         // alt-drag or middle-drag moves the selected plot in manual scale mode
         if (

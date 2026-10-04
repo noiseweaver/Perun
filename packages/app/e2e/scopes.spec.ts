@@ -261,17 +261,28 @@ test.describe('on a phone', () => {
     await page.touchscreen.tap(tab.x, tab.y);
     await expect.poll(active).toBe(2);
 
-    // swipe right over the scope: back one column
-    const s = await inScope(page, 2);
     const cdp = await page.context().newCDPSession(page);
-    const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', x: number) =>
-      cdp.send('Input.dispatchTouchEvent', {
-        type,
-        touchPoints: type === 'touchEnd' ? [] : [{ x, y: s.y }],
-      });
-    await touch('touchStart', s.x - 80);
-    for (let i = 1; i <= 8; i++) await touch('touchMove', s.x - 80 + i * 20);
-    await touch('touchEnd', 0);
+    const swipe = async (x: number, y: number) => {
+      const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', tx: number) =>
+        cdp.send('Input.dispatchTouchEvent', {
+          type,
+          touchPoints: type === 'touchEnd' ? [] : [{ x: tx, y }],
+        });
+      await touch('touchStart', x - 80);
+      for (let i = 1; i <= 8; i++) await touch('touchMove', x - 80 + i * 20);
+      await touch('touchEnd', 0);
+    };
+    // a sideways drag over the plot measures; it doesn't switch columns
+    const s = await inScope(page, 2);
+    await swipe(s.x, s.y);
+    await page.waitForTimeout(300);
+    expect(await active()).toBe(2);
+
+    // swipe right over the header (the title): back one column
+    const box = await page.getByTestId('circuit-canvas').boundingBox();
+    const slot = await page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes[2]?.slot);
+    if (!box || !slot) throw new Error('no scope');
+    await swipe(box.x + slot.x + 120, box.y + slot.y + 12);
     await expect.poll(active).toBe(1);
   });
 });
@@ -419,4 +430,19 @@ test('a spectrum finds its peak, and the cursor snaps to it', async ({ page }) =
     peak.x,
   );
   expect(snapped).toBeCloseTo(peak.freq, 3);
+});
+
+test('the header button undocks a docked scope and docks it back', async ({ page }) => {
+  await page.goto('/?startCircuit=lrc.txt');
+  await ready(page);
+  const undock = await cardPart(page, 0, 'dock');
+  await page.mouse.click(undock.x, undock.y);
+  await expect.poll(() => scopeCount(page)).toBe(2);
+  expect(
+    await page.evaluate(() => window.circuitjsNext?.controller.circuit.scopeElms().length),
+  ).toBe(1);
+  await page.mouse.move(5, 5);
+  const dock = await cardPart(page, -1, 'dock');
+  await page.mouse.click(dock.x, dock.y);
+  await expect.poll(() => scopeCount(page)).toBe(3);
 });

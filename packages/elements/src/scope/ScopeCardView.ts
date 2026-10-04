@@ -75,7 +75,7 @@ export function cardPlotRect(slot: ScopeRect, undocked = false): ScopeRect {
  * have a drag handle (`handle`, the whole card when it is a mini one) and a resize grip.
  */
 export interface CardHit {
-  kind: 'settings' | 'close' | 'chip' | 'tab' | 'handle' | 'resize';
+  kind: 'settings' | 'close' | 'dock' | 'chip' | 'tab' | 'handle' | 'resize';
   index: number;
   x: number;
   y: number;
@@ -358,6 +358,27 @@ function resizeGrip(g: ScopeGraphics, x: number, y: number): void {
   for (let k = 1; k <= 2; k++) g.drawLine(x - 4 * k, y, x, y - 4 * k, 1);
 }
 
+/** Pop out: a box open at the top right, with an arrow leaving it. */
+function undockIcon(g: ScopeGraphics, cx: number, cy: number): void {
+  g.drawLine(cx - 6, cy - 3, cx - 6, cy + 6, 1.5);
+  g.drawLine(cx - 6, cy + 6, cx + 3, cy + 6, 1.5);
+  g.drawLine(cx + 3, cy + 6, cx + 3, cy + 2, 1.5);
+  g.drawLine(cx - 6, cy - 3, cx - 2, cy - 3, 1.5);
+  g.drawLine(cx - 2, cy + 2, cx + 6, cy - 6, 1.5);
+  g.drawLine(cx + 1, cy - 6, cx + 6, cy - 6, 1.5);
+  g.drawLine(cx + 6, cy - 6, cx + 6, cy - 1, 1.5);
+}
+
+/** Dock: an arrow down into a tray. */
+function dockIcon(g: ScopeGraphics, cx: number, cy: number): void {
+  g.drawLine(cx, cy - 6, cx, cy + 2, 1.5);
+  g.drawLine(cx - 4, cy - 2, cx, cy + 2, 1.5);
+  g.drawLine(cx + 4, cy - 2, cx, cy + 2, 1.5);
+  g.drawLine(cx - 6, cy + 2, cx - 6, cy + 6, 1.5);
+  g.drawLine(cx - 6, cy + 6, cx + 6, cy + 6, 1.5);
+  g.drawLine(cx + 6, cy + 6, cx + 6, cy + 2, 1.5);
+}
+
 function cross(g: ScopeGraphics, cx: number, cy: number): void {
   g.drawLine(cx - 4, cy - 4, cx + 4, cy + 4, 1.5);
   g.drawLine(cx - 4, cy + 4, cx + 4, cy - 4, 1.5);
@@ -430,8 +451,21 @@ function drawHeader(
   };
   g.setColor(over(settings) ? 'selection' : 'textMuted');
   gear(g, settings.x + ICON / 2, settings.y + ICON / 2);
+  right -= ICON + 6;
+  // undock a docked card onto the circuit, or dock an undocked one
+  const dock: CardHit = {
+    kind: 'dock',
+    index: 0,
+    x: right - ICON,
+    y: iconY,
+    width: ICON,
+    height: ICON,
+  };
+  g.setColor(over(dock) ? 'selection' : 'textMuted');
+  if (scope.position < 0) dockIcon(g, dock.x + ICON / 2, dock.y + ICON / 2);
+  else undockIcon(g, dock.x + ICON / 2, dock.y + ICON / 2);
   right -= ICON + 10;
-  hits.push(close, settings);
+  hits.push(close, settings, dock);
 
   // compact: tabs for the columns, on the top card of the shown column
   const cols = mgr.columnCount();
