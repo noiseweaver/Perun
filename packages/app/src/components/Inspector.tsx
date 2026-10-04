@@ -187,15 +187,18 @@ function TextField(props: FieldProps) {
 
 function CheckboxField(props: FieldProps) {
   const cb = props.ei.checkbox;
+  // EditInfo is mutable and does not re-render the panel; React state shows the tick at once
+  const [on, setOn] = useState(cb?.state ?? false);
   if (!cb) return null;
   return (
     <label className="field field-check">
       <input
         type="checkbox"
         className="checkbox"
-        checked={cb.state}
+        checked={on}
         autoFocus={props.autoFocus}
         onChange={(e) => {
+          setOn(e.target.checked);
           cb.state = e.target.checked;
           apply(props);
         }}
@@ -208,6 +211,7 @@ function CheckboxField(props: FieldProps) {
 
 function ChoiceField(props: FieldProps) {
   const ch = props.ei.choice;
+  const [selected, setSelected] = useState(ch?.selected ?? 0);
   if (!ch) return null;
   const id = `field-${props.n}`;
   return (
@@ -218,9 +222,10 @@ function ChoiceField(props: FieldProps) {
       <select
         id={id}
         className="select"
-        value={ch.selected}
+        value={selected}
         autoFocus={props.autoFocus}
         onChange={(e) => {
+          setSelected(Number(e.target.value));
           ch.selected = Number(e.target.value);
           props.ei.value = ch.selected;
           apply(props);

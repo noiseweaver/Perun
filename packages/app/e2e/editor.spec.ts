@@ -368,3 +368,15 @@ test.describe('on a touch screen', () => {
     await expect.poll(height).toBe(half);
   });
 });
+
+test('property checkboxes show their new state at once', async ({ page }) => {
+  await open(page, BLANK + 's 96 96 256 96 0 1 false\n');
+  await page.keyboard.press('ControlOrMeta+a');
+  await expect(page.getByTestId('inspector-title')).toHaveText(/Switch/);
+  const box = page.getByRole('checkbox', { name: 'Momentary Switch' });
+  await expect(box).not.toBeChecked();
+  await box.click();
+  await expect(box).toBeChecked();
+  await box.click();
+  await expect(box).not.toBeChecked();
+});
