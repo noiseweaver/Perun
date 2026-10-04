@@ -318,14 +318,30 @@ function drawTrace(scope: Scope, g: ScopeGraphics, t: Trace, allSelected: boolea
   }
 }
 
+/** A cog: eight square teeth round a solid ring, with a hole in the card's color. */
 function gear(g: ScopeGraphics, cx: number, cy: number): void {
-  g.strokeRoundRect(cx - 3, cy - 3, 6, 6, 3, 1.5);
-  for (let k = 0; k !== 8; k++) {
-    const a = (k * Math.PI) / 4;
-    const c = Math.cos(a);
-    const s = Math.sin(a);
-    g.drawLine(cx + c * 4.5, cy + s * 4.5, cx + c * 7, cy + s * 7, 2);
+  const teeth = 8;
+  const rOut = 7.5;
+  const rIn = 5.6;
+  const xs: number[] = [];
+  const ys: number[] = [];
+  const step = (2 * Math.PI) / teeth;
+  for (let k = 0; k !== teeth; k++) {
+    const a = k * step;
+    // tooth from a - 0.2 step to a + 0.2 step, slightly narrower at the tip
+    for (const [da, r] of [
+      [-0.3, rIn],
+      [-0.17, rOut],
+      [0.17, rOut],
+      [0.3, rIn],
+    ] as const) {
+      xs.push(cx + Math.cos(a + da * step) * r);
+      ys.push(cy + Math.sin(a + da * step) * r);
+    }
   }
+  g.fillPolygon(xs, ys, xs.length);
+  g.setColor('card');
+  g.fillOval(cx - 2.4, cy - 2.4, 4.8, 4.8);
 }
 
 /** Width the six-dot handle takes in the header, with its gap. */
