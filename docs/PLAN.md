@@ -276,11 +276,8 @@ Acceptance: at least 95% of upstream examples pass golden compare (threshold to 
 - [ ] Profile performance (matrix size, allocations per step). Move the engine to a worker if decided.
 - [ ] Accessibility pass, responsive layout, PWA offline support.
 - [ ] Optional i18n hooks.
+- [ ] Teaching tools: a pencil for drawing on the circuit and a laser pointer whose trail fades out, for highlighting things while teaching. Work with mouse, pen and touch. Annotations are a temporary overlay with a clear button and are not saved in the circuit file, so the upstream format stays untouched. (Added 2026-10-04 by owner.)
 - [ ] README, credits, GPL notices, About dialog.
-
-### Backlog: after release (could have)
-Ideas from the owner, not scheduled. Pick them up only after Phase 9, and only when the owner says go.
-- [ ] Teaching tools: a pencil for drawing on the circuit and a laser pointer whose trail fades out, for highlighting things while teaching. Work with mouse, pen and touch. Annotations are a temporary overlay with a clear button and are not saved in the circuit file, so the upstream format stays untouched. (Requested 2026-10-04.)
 
 ## 8. Java to TypeScript porting pitfalls
 
