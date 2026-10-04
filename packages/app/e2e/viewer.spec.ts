@@ -203,3 +203,72 @@ test('a convergence failure stops the simulation with a message', async ({ page 
   });
   await expect(page.getByTestId('run-stop')).toHaveText(/Run/);
 });
+
+/** A diode straight across a 5 V source: upstream stops with "max current exceeded". */
+const SHORTED_DIODE =
+  '$ 1 0.000005 10.20027730826997 50 5 50 5e-11\n' +
+  'v 96 224 96 96 0 0 40 5 0 0 0.5\n' +
+  'w 96 96 224 96 0\n' +
+  'w 96 224 224 224 0\n' +
+  'd 224 96 224 224 2 default\n';
+
+test('a stop from an element leaves the canvas drawing', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto(`/?cct=${cct(SHORTED_DIODE)}`);
+  await expect(page.getByTestId('stop-message')).toHaveText(/max current exceeded/, {
+    timeout: 15_000,
+  });
+  // the frame loop survived the stop: a theme change still repaints the canvas
+  const before = await canvasHash(page);
+  await page.getByTestId('options-menu').click();
+  await page.getByTestId('theme-classic').click();
+  await expect.poll(() => canvasHash(page)).not.toBe(before);
+  expect(errors).toEqual([]);
+});
+
+/** Three ends meeting at (256, 96) and at (256, 224). */
+const TEE =
+  '$ 1 0.000005 10.20027730826997 50 5 50 5e-11\n' +
+  'v 96 224 96 96 0 0 40 5 0 0 0.5\n' +
+  'w 96 96 256 96 0\n' +
+  'r 256 96 416 96 0 1000\n' +
+  'r 256 96 256 224 0 1000\n' +
+  'w 416 96 416 224 0\n' +
+  'w 96 224 256 224 0\n' +
+  'w 256 224 416 224 0\n';
+
+test('Junction dots draws dots where three ends meet', async ({ page }) => {
+  await page.goto(`/?cct=${cct(TEE)}`);
+  await expect(page.getByTestId('circuit-title')).toBeVisible();
+  await page.getByTestId('run-stop').click();
+  await expect(page.getByTestId('run-stop')).toHaveText(/Run/);
+  const off = await canvasHash(page);
+  await page.getByTestId('options-menu').click();
+  await page.getByTestId('menu-junction-dots').click();
+  await expect.poll(() => canvasHash(page)).not.toBe(off);
+  await page.getByTestId('options-menu').click();
+  await page.getByTestId('menu-junction-dots').click();
+  await expect.poll(() => canvasHash(page)).toBe(off);
+});
+
+test('the community dark themes apply', async ({ page }) => {
+  await page.goto(`/?cct=${cct(RC)}`);
+  for (const id of ['nord', 'solarized-dark', 'gruvbox-dark', 'adwaita-dark']) {
+    await page.getByTestId('options-menu').click();
+    await page.getByTestId(`theme-${id}`).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', id);
+  }
+});
+
+test('the time readout does not move as digits change', async ({ page }) => {
+  await page.goto(`/?cct=${cct(RC)}`);
+  const readout = page.getByTestId('sim-time');
+  const boxes = new Set<string>();
+  for (let i = 0; i < 8; i++) {
+    const b = await readout.boundingBox();
+    if (b) boxes.add(`${Math.round(b.x)},${Math.round(b.width)}`);
+    await page.waitForTimeout(250);
+  }
+  expect(boxes.size).toBe(1);
+});

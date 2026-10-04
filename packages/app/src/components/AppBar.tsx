@@ -247,6 +247,14 @@ export function AppBar() {
           </Menu.CheckboxItem>
           <Menu.CheckboxItem
             className="menu-item"
+            checked={settings.junctionDots}
+            onCheckedChange={(v) => updateSettings({ junctionDots: v })}
+            data-testid="menu-junction-dots"
+          >
+            <Check on={settings.junctionDots} /> Junction dots
+          </Menu.CheckboxItem>
+          <Menu.CheckboxItem
+            className="menu-item"
             checked={settings.conventionalCurrent}
             onCheckedChange={(v) => updateSettings({ conventionalCurrent: v })}
           >

@@ -146,10 +146,10 @@ export function ControlBar() {
             {warnings.length} unsupported item{warnings.length === 1 ? '' : 's'} skipped
           </span>
         )}
-        <span className="readout" data-testid="sim-time">
+        <span className="readout readout-time" data-testid="sim-time">
           t = {getUnitText(t, 's')}
         </span>
-        <span className="readout">time step = {getUnitText(timeStep, 's')}</span>
+        <span className="readout readout-step">time step = {getUnitText(timeStep, 's')}</span>
       </div>
     </footer>
   );

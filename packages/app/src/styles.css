@@ -333,9 +333,21 @@ textarea,
 }
 
 .readout {
+  display: inline-block;
   font-family: var(--mono-font);
   font-size: 12px;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* fixed widths (the font is monospaced) so the readouts don't shift as digits come and go:
+   a value is at most 10 characters ("100.231 ms") */
+.readout-time {
+  min-width: 14ch;
+}
+
+.readout-step {
+  min-width: 22ch;
 }
 
 .chip {

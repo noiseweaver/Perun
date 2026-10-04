@@ -31,6 +31,8 @@ export interface FrameState {
   /** User settings. */
   euroResistors: boolean;
   showOhm: boolean;
+  /** Mark points where three or more element ends meet with a solid schematic dot. */
+  junctionDots: boolean;
   /** Grid spacing in circuit units (16, or 8 with the small grid option). */
   gridSize: number;
 }
@@ -44,14 +46,20 @@ export const DEFAULT_FRAME: FrameState = {
   voltageRange: 5,
   euroResistors: false,
   showOhm: false,
+  junctionDots: false,
   gridSize: 16,
 };
+
+/** Radius of a junction dot, larger than a post so it reads as a schematic junction. */
+const JUNCTION_RADIUS = 6;
 
 interface PostInfo {
   /** Posts drawn as dots: those not joining exactly two element ends. */
   draw: { x: number; y: number }[];
   /** Unconnected posts lying inside another element's box. */
   bad: { x: number; y: number }[];
+  /** Points where three or more element ends meet. */
+  junctions: { x: number; y: number }[];
 }
 
 /**
@@ -66,7 +74,7 @@ export class CircuitRenderer {
   private palette: Palette;
   private readonly dots = new DotCounters();
   private elements: CircuitElm[] = [];
-  private posts: PostInfo = { draw: [], bad: [] };
+  private posts: PostInfo = { draw: [], bad: [], junctions: [] };
   private cssWidth = 0;
   private cssHeight = 0;
   private dpr = 1;
@@ -205,6 +213,9 @@ export class CircuitRenderer {
 
     painter.highlighted = false;
     for (const p of this.posts.draw) this.drawPost(p.x, p.y, 'post');
+    if (frame.junctionDots)
+      for (const p of this.posts.junctions)
+        this.painter.fillCircle({ x: p.x, y: p.y }, JUNCTION_RADIUS, { role: 'component' });
     for (const p of this.posts.bad) this.drawPost(p.x, p.y, 'badConnection');
 
     if (this.pending !== null) this.drawElement(this.pending, frame);
@@ -314,10 +325,11 @@ export class CircuitRenderer {
         else count.set(k, { x: p.x, y: p.y, n: 1 });
       }
     }
-    const info: PostInfo = { draw: [], bad: [] };
+    const info: PostInfo = { draw: [], bad: [], junctions: [] };
     const boxes = this.elements.map((e) => ({ e, box: viewFor(e)?.bbox(e) ?? null }));
     for (const p of count.values()) {
       if (p.n !== 2) info.draw.push({ x: p.x, y: p.y });
+      if (p.n >= 3) info.junctions.push({ x: p.x, y: p.y });
       if (p.n !== 1) continue;
       let bad = false;
       for (const { e, box } of boxes) {

@@ -267,6 +267,7 @@ export class SimController {
         voltageRange: o.voltageRange,
         euroResistors: state.settings.euroResistors,
         showOhm: state.settings.showOhm,
+        junctionDots: state.settings.junctionDots,
         gridSize: sim.gridSize,
       };
       r.render(frame);

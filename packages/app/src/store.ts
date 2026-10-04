@@ -12,6 +12,8 @@ export interface UserSettings {
   euroResistors: boolean;
   showOhm: boolean;
   conventionalCurrent: boolean;
+  /** Draw a solid dot where three or more element ends meet. */
+  junctionDots: boolean;
 }
 
 /** Circuit options shown in the Options menu (saved with the circuit). */
@@ -81,6 +83,7 @@ function loadSettings(): UserSettings {
     euroResistors: false,
     showOhm: false,
     conventionalCurrent: true,
+    junctionDots: false,
   };
   try {
     let raw = localStorage.getItem(SETTINGS_KEY);
@@ -102,6 +105,7 @@ function loadSettings(): UserSettings {
         typeof s.conventionalCurrent === 'boolean'
           ? s.conventionalCurrent
           : defaults.conventionalCurrent,
+      junctionDots: typeof s.junctionDots === 'boolean' ? s.junctionDots : defaults.junctionDots,
     };
   } catch {
     return defaults;
