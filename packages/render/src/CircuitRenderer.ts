@@ -11,6 +11,7 @@ import {
   type CircuitElm,
   type DrawContext,
   type Rect,
+  type TextFont,
 } from '@circuitjs-next/elements';
 import type { Theme } from '@circuitjs-next/theme';
 import { CanvasPainter } from './CanvasPainter.ts';
@@ -31,6 +32,9 @@ export interface FrameState {
   /** User settings. */
   euroResistors: boolean;
   showOhm: boolean;
+  textFont: TextFont;
+  /** Mark points where three or more element ends meet with a solid schematic dot. */
+  junctionDots: boolean;
   /** Grid spacing in circuit units (16, or 8 with the small grid option). */
   gridSize: number;
 }
@@ -44,14 +48,23 @@ export const DEFAULT_FRAME: FrameState = {
   voltageRange: 5,
   euroResistors: false,
   showOhm: false,
+  textFont: { family: 'default', bold: false, italic: false },
+  junctionDots: false,
   gridSize: 16,
 };
+
+/** Radius of a junction dot, larger than a post so it reads as a schematic junction. */
+const JUNCTION_RADIUS = 6;
 
 interface PostInfo {
   /** Posts drawn as dots: those not joining exactly two element ends. */
   draw: { x: number; y: number }[];
   /** Unconnected posts lying inside another element's box. */
   bad: { x: number; y: number }[];
+  /** Points where three or more element ends meet. */
+  junctions: { x: number; y: number }[];
+  /** Points where exactly two ends meet (only drawn with junction dots on). */
+  joins: { x: number; y: number }[];
 }
 
 /**
@@ -66,7 +79,7 @@ export class CircuitRenderer {
   private palette: Palette;
   private readonly dots = new DotCounters();
   private elements: CircuitElm[] = [];
-  private posts: PostInfo = { draw: [], bad: [] };
+  private posts: PostInfo = { draw: [], bad: [], junctions: [], joins: [] };
   private cssWidth = 0;
   private cssHeight = 0;
   private dpr = 1;
@@ -74,6 +87,10 @@ export class CircuitRenderer {
   hovered: CircuitElm | null = null;
   /** Element that stopped the simulation; drawn highlighted and on top. */
   stopElm: CircuitElm | null = null;
+  /** Element being placed (not in the circuit yet); drawn on top with all its posts. */
+  pending: CircuitElm | null = null;
+  /** Rubber band selection in circuit coordinates. */
+  selectionRect: Rect | null = null;
 
   constructor(canvas: HTMLCanvasElement, theme: Theme) {
     const ctx = canvas.getContext('2d');
@@ -99,6 +116,13 @@ export class CircuitRenderer {
     this.dots.clear();
     this.hovered = null;
     this.stopElm = null;
+    this.posts = this.findPosts();
+  }
+
+  /** The circuit was edited (elements added, removed or moved); dot positions are kept. */
+  elementsChanged(elements: CircuitElm[]): void {
+    this.elements = elements;
+    if (this.hovered !== null && !elements.includes(this.hovered)) this.hovered = null;
     this.posts = this.findPosts();
   }
 
@@ -194,16 +218,43 @@ export class CircuitRenderer {
 
     painter.highlighted = false;
     for (const p of this.posts.draw) this.drawPost(p.x, p.y, 'post');
+    if (frame.junctionDots) for (const p of this.posts.joins) this.drawPost(p.x, p.y, 'post');
+    if (frame.junctionDots)
+      for (const p of this.posts.junctions)
+        this.painter.fillCircle({ x: p.x, y: p.y }, JUNCTION_RADIUS, { role: 'component' });
     for (const p of this.posts.bad) this.drawPost(p.x, p.y, 'badConnection');
+
+    // upstream UIManager draws the element being placed only once it has length; until the
+    // first drag some (MOSFET) have no post geometry yet
+    const pend = this.pending;
+    if (pend !== null && (pend.x !== pend.x2 || pend.y !== pend.y2)) this.drawElement(pend, frame);
+    if (this.selectionRect !== null) this.drawSelectionRect(this.selectionRect);
+  }
+
+  private drawSelectionRect(r: Rect): void {
+    const c = this.ctx;
+    c.save();
+    c.strokeStyle = this.palette.selection;
+    c.fillStyle = this.palette.selection;
+    c.lineWidth = 1 / this.viewport.scale;
+    c.setLineDash([4 / this.viewport.scale, 3 / this.viewport.scale]);
+    c.strokeRect(r.x1, r.y1, r.x2 - r.x1, r.y2 - r.y1);
+    c.globalAlpha = 0.08;
+    c.fillRect(r.x1, r.y1, r.x2 - r.x1, r.y2 - r.y1);
+    c.restore();
   }
 
   private drawElement(e: CircuitElm, frame: FrameState): void {
     const view = viewFor(e);
     if (!view) return;
     const painter = this.painter;
-    const highlighted = e === this.hovered || e === this.stopElm;
+    const highlighted =
+      e === this.hovered || e === this.stopElm || e.selected || e === this.pending;
     painter.highlighted = highlighted;
-    painter.highlightColor = e === this.stopElm ? this.palette.selection : this.palette.hover;
+    painter.highlightColor =
+      e === this.stopElm || e.selected || e === this.pending
+        ? this.palette.selection
+        : this.palette.hover;
     const dots = this.dots;
     const ctx: DrawContext = {
       painter,
@@ -211,6 +262,7 @@ export class CircuitRenderer {
       showValues: frame.showValues,
       euroResistors: frame.euroResistors,
       showOhm: frame.showOhm,
+      textFont: frame.textFont,
       dotCount: (slot, current) => dots.advance(e, slot, current, frame.currentMult, frame.running),
     };
     this.ctx.save();
@@ -283,10 +335,12 @@ export class CircuitRenderer {
         else count.set(k, { x: p.x, y: p.y, n: 1 });
       }
     }
-    const info: PostInfo = { draw: [], bad: [] };
+    const info: PostInfo = { draw: [], bad: [], junctions: [], joins: [] };
     const boxes = this.elements.map((e) => ({ e, box: viewFor(e)?.bbox(e) ?? null }));
     for (const p of count.values()) {
       if (p.n !== 2) info.draw.push({ x: p.x, y: p.y });
+      if (p.n >= 3) info.junctions.push({ x: p.x, y: p.y });
+      if (p.n === 2) info.joins.push({ x: p.x, y: p.y });
       if (p.n !== 1) continue;
       let bad = false;
       for (const { e, box } of boxes) {

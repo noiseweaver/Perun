@@ -43,9 +43,11 @@ export interface StrokeStyle {
  * component values and draws in the theme's monospace font, everything else in its text font.
  */
 export interface TextStyle {
-  readonly font?: 'units' | 'value';
+  /** units: the theme's text font; value: its monospace font; serif: a generic serif. */
+  readonly font?: 'units' | 'value' | 'serif';
   readonly size?: number;
   readonly bold?: boolean;
+  readonly italic?: boolean;
   readonly align?: 'left' | 'center';
   readonly baseline?: 'alphabetic' | 'middle';
   /** Rotation in radians around the anchor point. */
@@ -79,6 +81,13 @@ export interface Painter {
 }
 
 /** Per-element drawing state the renderer provides. */
+/** How text boxes are drawn (a display setting; circuits don't store it). */
+export interface TextFont {
+  readonly family: 'default' | 'serif' | 'mono';
+  readonly bold: boolean;
+  readonly italic: boolean;
+}
+
 export interface DrawContext {
   readonly painter: Painter;
   /** Hovered, selected or the element that stopped the simulation. */
@@ -89,6 +98,8 @@ export interface DrawContext {
   readonly euroResistors: boolean;
   /** User setting: draw the ohm sign after resistances (upstream `showOhm`, off by default). */
   readonly showOhm: boolean;
+  /** User setting, not in upstream: the font of text boxes (TextElm). Default font if absent. */
+  readonly textFont?: TextFont;
   /**
    * Advance current-dot counter `slot` of this element by this frame's `current` and return it.
    * Call once per slot per frame (upstream `updateDotCount`).
