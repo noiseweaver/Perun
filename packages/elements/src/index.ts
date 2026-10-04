@@ -65,3 +65,32 @@ export { JavaRandom, Simulation, type CircuitNode } from '@circuitjs-next/engine
 
 // Views: drawing through the Painter interface (render implements it).
 export * from './view/index.ts';
+
+// Scopes: the model, drawing through ScopeGraphics (render implements it), and save format.
+export * from './scope/constants.ts';
+export {
+  MIN_MAN_SCALE,
+  Scope,
+  getScaleUnitsText,
+  nextHighestScale,
+  type ScopeElementKinds,
+  type ScopeRect,
+} from './scope/Scope.ts';
+export type { ScopeGraphics, ScopeImage, ScopeInk } from './scope/ScopeGraphics.ts';
+export {
+  INFO_WIDTH,
+  MAX_SCOPES,
+  ScopeManager,
+  defaultScopeElementKinds,
+  scopesFor,
+  type ScopeHost,
+} from './scope/ScopeManager.ts';
+export { ScopePlot, V_POSITION_STEPS } from './scope/ScopePlot.ts';
+export { ScopeSerializer, type ScopeDefaultsStore } from './scope/ScopeSerializer.ts';
+export {
+  TRIGGER_AUTO,
+  TRIGGER_EDGE_FALLING,
+  TRIGGER_EDGE_RISING,
+  TRIGGER_FREERUN,
+  TRIGGER_NORMAL,
+} from './scope/ScopeTrigger.ts';

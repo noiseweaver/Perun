@@ -39,7 +39,20 @@ export interface Theme {
   };
   scope: {
     background: string;
+    /** Grid lines. */
     grid: string;
+    /** Zero line, every tenth time line, muted plots. */
+    gridMajor: string;
+    /** Labels, readouts, cursor, power and other non-V/I plots. */
+    text: string;
+    /** Current plots. */
+    current: string;
+    /** Trigger level and state. */
+    trigger: string;
+    /** Spectrum (FFT) trace and labels. */
+    fft: string;
+    fftGrid: string;
+    /** The first entry draws voltage plots; later plots of one kind cycle through the rest. */
     traces: string[];
   };
   ui: {
@@ -116,7 +129,17 @@ export const themeInputSchema = z.object({
     .partial()
     .optional(),
   scope: z
-    .object({ background: color, grid: color, traces: z.array(color).min(1).max(16) })
+    .object({
+      background: color,
+      grid: color,
+      gridMajor: color,
+      text: color,
+      current: color,
+      trigger: color,
+      fft: color,
+      fftGrid: color,
+      traces: z.array(color).min(1).max(16),
+    })
     .partial()
     .optional(),
   ui: z

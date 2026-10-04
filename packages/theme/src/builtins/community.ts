@@ -35,7 +35,13 @@ export const nord: Theme = {
   scope: {
     background: '#292e39',
     grid: '#3b4252',
-    traces: ['#a3be8c', '#88c0d0', '#ebcb8b', '#b48ead', '#d08770'],
+    gridMajor: '#4c566a',
+    text: '#e5e9f0',
+    current: '#ebcb8b',
+    trigger: '#d08770',
+    fft: '#bf616a',
+    fftGrid: '#5e3a40',
+    traces: ['#a3be8c', '#88c0d0', '#b48ead', '#d08770', '#8fbcbb'],
   },
   ui: {
     surface: '#242933',
@@ -73,7 +79,13 @@ export const solarizedDark: Theme = {
   scope: {
     background: '#00252e',
     grid: '#073642',
-    traces: ['#859900', '#268bd2', '#b58900', '#d33682', '#2aa198'],
+    gridMajor: '#586e75',
+    text: '#eee8d5',
+    current: '#b58900',
+    trigger: '#cb4b16',
+    fft: '#dc322f',
+    fftGrid: '#5c1f1e',
+    traces: ['#859900', '#268bd2', '#d33682', '#2aa198', '#6c71c4'],
   },
   ui: {
     surface: '#00212b',
@@ -111,7 +123,13 @@ export const gruvboxDark: Theme = {
   scope: {
     background: '#1d2021',
     grid: '#3c3836',
-    traces: ['#b8bb26', '#83a598', '#fabd2f', '#d3869b', '#fe8019'],
+    gridMajor: '#665c54',
+    text: '#ebdbb2',
+    current: '#fabd2f',
+    trigger: '#fe8019',
+    fft: '#fb4934',
+    fftGrid: '#5a2420',
+    traces: ['#b8bb26', '#83a598', '#d3869b', '#fe8019', '#8ec07c'],
   },
   ui: {
     surface: '#1d2021',
@@ -149,7 +167,13 @@ export const adwaitaDark: Theme = {
   scope: {
     background: '#1a1a1a',
     grid: '#2c2c2c',
-    traces: ['#8ff0a4', '#78aeed', '#f6d32d', '#dc8add', '#ffa348'],
+    gridMajor: '#5e5e5e',
+    text: '#ffffff',
+    current: '#f6d32d',
+    trigger: '#ffa348',
+    fft: '#f66151',
+    fftGrid: '#5c2622',
+    traces: ['#8ff0a4', '#78aeed', '#dc8add', '#ffa348', '#99c1f1'],
   },
   ui: {
     surface: '#242424',

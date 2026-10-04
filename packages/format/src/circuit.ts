@@ -17,7 +17,11 @@ import {
   modelsFor,
   parseJavaDouble,
   parseJavaInt,
+  scopesFor,
   type CircuitElm,
+  type Scope,
+  type ScopeHost,
+  type ScopeManager,
   type XmlDocWriter,
 } from '@circuitjs-next/elements';
 import { AttrReader, AttrWriter } from './attrs.ts';
@@ -71,12 +75,45 @@ export class Circuit {
   options: CircuitOptions = { flags: 0, speed: 117, currentBar: 50, powerBar: 50, voltageRange: 5 };
   hint: Hint = { type: -1, item1: 0, item2: 0 };
   /**
-   * Scope (`o`) and slider (`adj`) records from an XML file, kept verbatim and written back after
-   * the elements until scopes and sliders are ported (Phase 6, see docs/DEVIATIONS.md).
+   * Slider (`adj`) records from an XML file, kept verbatim and written back after the scopes
+   * until sliders are ported (see docs/DEVIATIONS.md).
    */
   xmlExtras: XmlElement[] = [];
-  /** Scope (`o`) and slider (`38`) lines from a text file. Not written back (DEVIATIONS.md). */
+  /** Slider (`38`) lines from a text file. Not written back (DEVIATIONS.md). */
   textExtras: string[] = [];
+  /**
+   * While reading: every element record so far, with null for those this port can't load, so
+   * scope element numbers count as upstream's do.
+   */
+  private loadList: (CircuitElm | null)[] = [];
+
+  constructor() {
+    const scopes = this.scopes;
+    scopes.host = {
+      elements: () => this.elements,
+      dotsEnabled: () => (this.options.flags & OptionFlag.DOTS) !== 0,
+      createImage: () => null,
+      defaultsStore: null,
+    };
+    this.sim.onTimeStep = () => scopes.timeStep();
+    this.sim.canDelayWireProcessing = () => scopes.canDelayWireProcessing();
+  }
+
+  /** The docked scopes. */
+  get scopes(): ScopeManager {
+    return scopesFor(this.sim);
+  }
+
+  /** Give scopes what only the UI has (offscreen images, saved defaults). */
+  setScopeUi(ui: Pick<ScopeHost, 'createImage' | 'defaultsStore'>): void {
+    const host = this.scopes.host;
+    this.scopes.host = {
+      elements: host.elements,
+      dotsEnabled: host.dotsEnabled,
+      createImage: ui.createImage,
+      defaultsStore: ui.defaultsStore,
+    };
+  }
   /** What upstream would print to its console while loading (unknown or broken records). */
   warnings: string[] = [];
 
@@ -103,6 +140,7 @@ export class Circuit {
     this.setGrid();
     this.xmlExtras = [];
     this.textExtras = [];
+    this.scopes.clearScopes();
   }
 
   private setGrid(): void {
@@ -134,8 +172,13 @@ export class Circuit {
   /** Load a circuit in either format, replacing this one (upstream `readCircuit(text, 0)`). */
   read(text: string): void {
     this.clear();
-    if (text.startsWith('<')) this.readXml(text, false);
-    else this.readText(text, false);
+    this.beginRead();
+    try {
+      if (text.startsWith('<')) this.readXml(text, false);
+      else this.readText(text, false);
+    } finally {
+      this.endRead();
+    }
     this.finishRead();
   }
 
@@ -145,10 +188,25 @@ export class Circuit {
    */
   readRetain(text: string): CircuitElm[] {
     const first = this.elements.length;
-    if (text.startsWith('<')) this.readXml(text, true);
-    else this.readText(text, true);
+    this.beginRead();
+    try {
+      if (text.startsWith('<')) this.readXml(text, true);
+      else this.readText(text, true);
+    } finally {
+      this.endRead();
+    }
     this.finishRead();
     return this.elements.slice(first);
+  }
+
+  private beginRead(): void {
+    this.loadList = [...this.elements];
+    this.scopes.loadElements = this.loadList;
+  }
+
+  private endRead(): void {
+    this.scopes.loadElements = null;
+    this.loadList = [];
   }
 
   private finishRead(): void {
@@ -158,6 +216,20 @@ export class Circuit {
   private addElement(ce: CircuitElm): void {
     ce.sim = this.sim;
     this.elements.push(ce);
+    this.loadList.push(ce);
+  }
+
+  private addScope(sc: Scope): void {
+    if (sc.serializer.missingElement) {
+      this.warnings.push('a scope shows an element that is not supported yet');
+      return;
+    }
+    this.scopes.addScope(sc);
+  }
+
+  /** An element record upstream would load but this port can't: keep its number taken. */
+  private skipElement(): void {
+    this.loadList.push(null);
   }
 
   // ---- text format ---------------------------------------------------------------------------
@@ -170,7 +242,11 @@ export class Circuit {
       let tint = type.charCodeAt(0);
       try {
         if (type.charAt(0) === 'o') {
-          this.textExtras.push(line);
+          // a pasted circuit's scopes would point at the wrong elements (and copies have none)
+          if (retain) continue;
+          const sc = this.scopes.newScope();
+          sc.serializer.undump(st);
+          this.addScope(sc);
           continue;
         }
         if (type.charAt(0) === 'h') {
@@ -226,6 +302,7 @@ export class Circuit {
         const ce = createCe(tint, x1, y1, x2, y2, f, st, this.sim);
         if (ce === null) {
           this.warnings.push('unrecognized dump type: ' + type);
+          this.skipElement();
           continue;
         }
         ce.sim = this.sim;
@@ -275,7 +352,18 @@ export class Circuit {
     for (const elem of root.elements()) {
       const tag = elem.name;
       r.elem = elem;
-      if (tag === 'o' || tag === 'adj') {
+      if (tag === 'o') {
+        if (retain) continue;
+        const sc = this.scopes.newScope();
+        try {
+          sc.serializer.undumpXml(new AttrReader(elem));
+          this.addScope(sc);
+        } catch (e) {
+          this.warnings.push(`exception while reading a scope: ${String(e)}`);
+        }
+        continue;
+      }
+      if (tag === 'adj') {
         if (!retain) this.xmlExtras.push(elem);
         continue;
       }
@@ -312,10 +400,14 @@ export class Circuit {
       const className = classNameForXmlTag(tag);
       if (className === undefined) {
         this.warnings.push('unrecognized xml element: ' + tag);
+        this.skipElement();
         continue;
       }
       const elm = constructElement(className, 0, 0, sim);
-      if (elm === null) continue;
+      if (elm === null) {
+        this.skipElement();
+        continue;
+      }
       elm.sim = sim;
       elm.undumpXml(r);
       const xs = x.split(' ');
@@ -348,7 +440,7 @@ export class Circuit {
     modelsFor(sim).clearDumpedFlags();
     const doc = docWriter(root);
     for (const ce of this.elements) appendElement(root, doc, ce);
-    for (const e of this.xmlExtras) if (e.name === 'o') root.appendChild(e);
+    for (const sc of this.scopes.scopes) sc.serializer.dumpXml(w);
     for (const e of this.xmlExtras) if (e.name === 'adj') root.appendChild(e);
     if (this.hint.type !== -1) {
       const h = new XmlElement('h');
@@ -392,6 +484,11 @@ function appendElement(root: XmlElement, doc: XmlDocWriter, ce: CircuitElm): voi
   ce.dumpXml(ew);
   ce.dumpXmlState(ew);
   root.appendChild(elem);
+}
+
+/** Whether this port can load XML records with this tag as elements. */
+export function isSupportedElementTag(tag: string): boolean {
+  return classNameForXmlTag(tag) !== undefined;
 }
 
 /** Load a circuit from upstream text or XML. */

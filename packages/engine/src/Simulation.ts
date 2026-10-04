@@ -117,6 +117,12 @@ export class Simulation {
    */
   delayWireProcessing = true;
 
+  /** Asked at the start of each `step()`; scopes set it (upstream asks the scope manager). */
+  canDelayWireProcessing: (() => boolean) | null = null;
+
+  /** Called after every timestep, as upstream `CirSim.onTimeStep()` (scopes sample here). */
+  onTimeStep: (() => void) | null = null;
+
   // Wire-closure state (upstream keeps these in statics on GroundElm and LabeledNodeElm).
   firstGround: Point | null = null;
   labelList = new Map<string, LabelEntry>();
@@ -829,6 +835,8 @@ export class Simulation {
     }
     // upstream's loop works on a local copy: stop() clears this.matrices mid-step
     const allMatrices = this.matrices;
+    if (this.canDelayWireProcessing !== null)
+      this.delayWireProcessing = this.canDelayWireProcessing();
     const delayWireProcessing = this.delayWireProcessing;
     let goodIterations = 100;
     let done = 0;
@@ -907,6 +915,7 @@ export class Simulation {
       }
       for (const e of elmArr) e.stepFinished();
       if (!delayWireProcessing) this.calcWireCurrents();
+      this.onTimeStep?.();
       // save node voltages so a failed next step can restart from here
       for (const m of allMatrices) {
         const last = m.lastNodeVoltages as number[];

@@ -11,13 +11,12 @@ import { parseFixture } from './json.ts';
 import { FIXTURE_DIR, loadManifest } from './manifest.ts';
 
 /**
- * Scope (`o`) and slider (`adj`) records are passed through verbatim until Phase 6, while
- * upstream re-serializes them (docs/DEVIATIONS.md), so the export comparison leaves them out.
+ * Slider (`adj`) records are passed through verbatim until sliders are ported, while upstream
+ * re-serializes them (docs/DEVIATIONS.md), so the export comparison leaves them out. Scope (`o`)
+ * records are compared: they are rebuilt from the loaded scopes.
  */
-function withoutScopesAndSliders(xml: string): string {
-  return xml
-    .replace(/^ {2}<o [^\n]*>\n(?: {4}[^\n]*\n)* {2}<\/o>\n/gm, '')
-    .replace(/^ {2}<adj [^\n]*\n/gm, '');
+function withoutSliders(xml: string): string {
+  return xml.replace(/^ {2}<adj [^\n]*\n/gm, '');
 }
 
 describe('circuitjs-next engine on the golden circuits', () => {
@@ -46,13 +45,14 @@ describe('circuitjs-next engine on the golden circuits', () => {
       expect(circuit.sim.maxTimeStep).toBe(fixture.settings.maxTimeStep);
       expect(circuit.sim.minTimeStep).toBe(fixture.settings.minTimeStep);
       expect(circuit.sim.adjustTimeStep).toBe(fixture.settings.adjustTimeStep);
-      expect(withoutScopesAndSliders(circuit.dumpXml())).toBe(
-        withoutScopesAndSliders(fixture.export),
-      );
+      expect(withoutSliders(circuit.dumpXml())).toBe(withoutSliders(fixture.export));
     });
 
     it(`${entry.name}: XML round trip is byte-identical`, () => {
-      expect(readCircuit(fixture.export).dumpXml()).toBe(fixture.export);
+      // Upstream reads scope plots from XML without resetting them, so saving right after an XML
+      // load writes sp="0" (auto-lrc's fixture shows it); the rest is unchanged.
+      const expected = fixture.export.replace(/(<o en="-?\d+") sp="\d+"/g, '$1 sp="0"');
+      expect(readCircuit(fixture.export).dumpXml()).toBe(expected);
     });
   }
 });

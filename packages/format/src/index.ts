@@ -2,7 +2,14 @@
 // Copyright (C) 2026 circuitjs-next contributors
 
 export { AttrReader, AttrWriter } from './attrs.ts';
-export { Circuit, OptionFlag, readCircuit, type CircuitOptions, type Hint } from './circuit.ts';
+export {
+  Circuit,
+  OptionFlag,
+  isSupportedElementTag,
+  readCircuit,
+  type CircuitOptions,
+  type Hint,
+} from './circuit.ts';
 export {
   runCircuit,
   type RunElementInfo,

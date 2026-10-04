@@ -14,7 +14,7 @@ import {
   type XmlAttrReader,
   type XmlAttrWriter,
 } from '@circuitjs-next/elements';
-import type { XmlElement } from './xml.ts';
+import { XmlElement } from './xml.ts';
 
 /** Writes attributes onto one element, as upstream `XMLSerializer.dumpAttr`. */
 export class AttrWriter implements XmlAttrWriter {
@@ -39,6 +39,16 @@ export class AttrWriter implements XmlAttrWriter {
       this.elem.setAttribute(name, String(value));
     }
   }
+
+  setAttribute(name: string, value: string): void {
+    this.elem.setAttribute(name, value);
+  }
+
+  addChild(tag: string): AttrWriter {
+    const e = new XmlElement(tag);
+    this.elem.appendChild(e);
+    return new AttrWriter(e);
+  }
 }
 
 /** Reads attributes of one element, as upstream `XMLDeserializer.parse*Attr`. */
@@ -47,6 +57,14 @@ export class AttrReader implements XmlAttrReader {
 
   constructor(elem: XmlElement) {
     this.elem = elem;
+  }
+
+  getTagName(): string {
+    return this.elem.name;
+  }
+
+  getChildElements(): AttrReader[] {
+    return this.elem.elements().map((e) => new AttrReader(e));
   }
 
   parseDoubleAttr(name: string, def: number): number {

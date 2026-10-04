@@ -26,10 +26,28 @@ export const classic: Theme = {
     label: '#c0c0c0',
     badConnection: '#ff0000',
   },
+  // Scope.java, ScopePlot.java and ScopeTrigger.java colors; traces after the first are
+  // upstream's eight colors for repeated plots
   scope: {
     background: '#000000',
-    grid: '#808080',
-    traces: ['#00ff00', '#ffff00', '#ff0000', '#00ffff', '#ff00ff', '#ffffff'],
+    grid: '#404040',
+    gridMajor: '#a0a0a0',
+    text: '#ffffff',
+    current: '#ffff00',
+    trigger: '#ff8000',
+    fft: '#ff0000',
+    fftGrid: '#880000',
+    traces: [
+      '#00ff00',
+      '#ff0000',
+      '#ff8000',
+      '#ff00ff',
+      '#7f00ff',
+      '#0000ff',
+      '#0080ff',
+      '#ffff00',
+      '#00ffff',
+    ],
   },
   ui: {
     surface: '#1e1e1e',
