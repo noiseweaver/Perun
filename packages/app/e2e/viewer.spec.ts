@@ -258,6 +258,8 @@ test('the community dark themes apply', async ({ page }) => {
     await page.getByTestId('options-menu').click();
     await page.getByTestId(`theme-${id}`).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', id);
+    // reopen only once the menu has closed, or the click lands on the closing menu
+    await expect(page.getByRole('menu')).toHaveCount(0);
   }
 });
 
