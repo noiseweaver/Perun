@@ -419,3 +419,20 @@ test('placing a MOSFET draws nothing until it is dragged out', async ({ page }) 
     .toBe(true);
   expect(errors).toEqual([]);
 });
+
+test('a text box has its own font, saved with the circuit', async ({ page }) => {
+  await open(page, BLANK + 'x 96 96 112 96 4 24 hello\n');
+  await page.keyboard.press('ControlOrMeta+a');
+  await expect(page.getByTestId('inspector-title')).toHaveText(/Text/);
+  const font = page.getByRole('combobox', { name: 'Font' });
+  await expect(font).toHaveValue('0');
+  await font.selectOption({ label: 'Serif' });
+  await page.getByRole('combobox', { name: 'Style' }).selectOption({ label: 'Bold' });
+  const xml = await page.evaluate(() => window.circuitjsNext?.controller.saveText() ?? '');
+  expect(xml).toContain('ff="serif"');
+  expect(xml).toContain('fs="bold"');
+  await page.getByTestId('undo').click();
+  await expect
+    .poll(() => page.evaluate(() => window.circuitjsNext?.controller.saveText() ?? ''))
+    .not.toContain('fs="bold"');
+});

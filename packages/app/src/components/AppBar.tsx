@@ -241,7 +241,7 @@ export function AppBar() {
           </Menu.CheckboxItem>
           <Menu.Sub>
             <Menu.SubTrigger className="menu-item" data-testid="menu-text-font">
-              Text box font
+              Default text box font
               <Icon name="chevronRight" className="icon menu-trailing" />
             </Menu.SubTrigger>
             <Menu.Portal>
