@@ -346,10 +346,10 @@ textarea,
   white-space: nowrap;
 }
 
-/* fixed widths (the font is monospaced) so the readouts don't shift as digits come and go:
-   a value is at most 10 characters ("100.231 ms") */
+/* fixed widths (the font is monospaced) so the readouts don't shift as digits come and go */
 .readout-time {
-  min-width: 14ch;
+  /* "t = 999.999 ms" is 14 characters; room for a fallback μ that is wider than 1ch */
+  min-width: 16ch;
 }
 
 .readout-step {
