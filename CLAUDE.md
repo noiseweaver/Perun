@@ -50,6 +50,7 @@ pnpm reference:serve    # serve it at http://localhost:8000/circuitjs.html
 pnpm golden:record      # record fixtures/golden/ from the reference build (tools/golden/README.md)
 pnpm golden:check       # re-record in memory, fail if any fixture differs
 pnpm golden:compare     # compare an engine against the fixtures (--engine next, or stub)
+pnpm golden:scopes      # record how upstream restores the scopes of every bundled example
 ```
 
 ## Ported file header

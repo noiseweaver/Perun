@@ -13,6 +13,7 @@ on:
       - tools/reference-patch/**
       - tools/golden/**
       - fixtures/golden/**
+      - fixtures/scopes/**
   pull_request:
     paths:
       - reference/**
@@ -20,6 +21,7 @@ on:
       - tools/reference-patch/**
       - tools/golden/**
       - fixtures/golden/**
+      - fixtures/scopes/**
 
 jobs:
   build:
@@ -49,6 +51,8 @@ jobs:
           node tools/reference-build/smoke.mjs
       - name: Golden fixtures reproduce
         run: pnpm golden:check
+      - name: Scope fixture reproduces
+        run: pnpm golden:scopes --check
       - uses: actions/upload-artifact@v4
         if: always()
         with:

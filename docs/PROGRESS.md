@@ -1,5 +1,46 @@
 # Progress
 
+## 2026-10-04: Phase 6 (scopes and measurement)
+
+### Done
+
+- Scope model ported from upstream master (`packages/elements/src/scope`): `Scope`, `ScopePlot`,
+  `ScopePlot2d` (X-Y), triggers, FFT, the overlays and cursor readouts, and `ScopeSerializer`
+  (text `o` lines old and new style, XML `<o>`/`<p>` records, saved defaults). `ScopeManager`
+  holds what upstream kept on `CirSim`: layout, stack, unstack, combine, separate, View in New
+  Scope, Add to Scope. Drawing goes through a `ScopeGraphics` interface with semantic inks; the
+  renderer maps them to the theme's new scope keys (`gridMajor`, `text`, `current`, `trigger`,
+  `fft`, `fftGrid`, plus `traces`).
+- Engine hooks: `Simulation.onTimeStep` (after each step, after wire currents) feeds the plots,
+  and `canDelayWireProcessing` follows upstream.
+- `Circuit` reads scopes from text and XML and saves them from the live scopes, as upstream does.
+  Element numbers count upstream's full element list (unported elements keep a placeholder), so
+  scopes find the right element even when earlier ones are skipped.
+- UI: scopes draw on the circuit canvas in upstream's bottom area with a draggable splitter, the
+  hover info beside them, or in a box at the bottom right when there are none. Element menu: View
+  in New Scope, Add to Scope. Scope menu: Remove, Max Scale, Stack, Unstack, Combine, Remove
+  Plot, Reset, Export CSV, Properties. A Scopes menu arranges them all. The properties dialog
+  covers plots, X-Y, vertical scale (auto, max, manual per channel, position, AC/DC, divisions),
+  speed, trigger, the info shown and a label. Mouse wheel over a scope changes its speed, alt or
+  middle drag moves a plot, double-click opens properties, undo covers every scope change.
+- Acceptance: `pnpm golden:scopes` loads every bundled upstream example that has scopes (259
+  files, 550 scopes) in the reference build and records upstream's save in
+  `fixtures/scopes/upstream-examples.json`; `tools/golden/src/scopes.test.ts` loads the same
+  files here and requires our `<o>` records to match. 440 scopes restore identically; the other
+  110 show elements not ported yet and are dropped with a warning (docs/DEVIATIONS.md). Unit
+  tests in `packages/format/src/scopes.test.ts`, browser tests in `packages/app/e2e/scopes.spec.ts`.
+- On phones the app bar menus scroll sideways instead of widening the page (the Scopes menu made
+  them overflow).
+
+### Next
+
+- Phase 7: theme system complete.
+
+### Open issues
+
+- Undocked scopes (`ScopeElm`, dump type 403) come with the Phase 8 element work.
+- Sliders (`38` lines, `<adj>`) are still kept verbatim, not live.
+
 ## 2026-10-02: Phase 5 (editor)
 
 ### Done
