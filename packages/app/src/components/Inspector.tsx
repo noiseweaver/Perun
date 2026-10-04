@@ -242,11 +242,17 @@ function ChoiceField(props: FieldProps) {
   );
 }
 
-function ActionButton(props: { icon: IconName; label: string; onClick: () => void }) {
+function ActionButton(props: {
+  icon: IconName;
+  label: string;
+  onClick: () => void;
+  testId?: string;
+}) {
   return (
     <button
       type="button"
       className="icon-button"
+      data-testid={props.testId}
       aria-label={props.label}
       title={props.label}
       onClick={props.onClick}
@@ -266,6 +272,22 @@ function SelectionActions({ elm }: { elm: CircuitElm | null }) {
       <ActionButton icon="flip" label="Mirror X" onClick={() => ed.mirrorX()} />
       {elm !== null && elm.getPostCount() === 2 && (
         <ActionButton icon="swap" label="Swap terminals" onClick={() => ed.swapTerminals(elm)} />
+      )}
+      {elm !== null && elm.canViewInScope() && (
+        <>
+          <ActionButton
+            icon="scope"
+            label="View in new scope"
+            testId="action-view-in-scope"
+            onClick={() => controller.viewInScope(elm)}
+          />
+          <ActionButton
+            icon="scopeUndocked"
+            label="View in new undocked scope"
+            testId="action-view-in-undocked-scope"
+            onClick={() => controller.viewInUndockedScope(elm)}
+          />
+        </>
       )}
       <ActionButton icon="copy" label="Duplicate" onClick={() => ed.duplicate(null)} />
       <ActionButton icon="delete" label="Delete" onClick={() => ed.deleteSelected(null)} />
@@ -371,8 +393,8 @@ function SheetHandle(props: {
 }
 
 export function Inspector() {
-  const selected = useApp((s) => s.editor.selected);
-  const count = useApp((s) => s.editor.selectionCount);
+  const selected = useApp((s) => s.editor.panelElm);
+  const count = useApp((s) => s.editor.panelCount);
   const revision = useApp((s) => s.editor.revision);
   const focus = useApp((s) => s.inspectorFocus);
   const [error, setError] = useState<string | null>(null);

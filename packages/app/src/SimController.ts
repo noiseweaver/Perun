@@ -431,6 +431,7 @@ export class SimController {
   publishEditor(propertiesChanged = false): void {
     const ed = this.editor;
     const sel = ed.selectedElements();
+    const panel = sel.filter((e) => !(e instanceof ScopeElm));
     const prev = useApp.getState().editor;
     const r = this.renderer;
     if (r) {
@@ -442,6 +443,8 @@ export class SimController {
       addClass: ed.mouseMode === MouseMode.ADD_ELM ? ed.addClass : null,
       selectionCount: sel.length,
       selected: sel.length === 1 ? (sel[0] ?? null) : null,
+      panelCount: panel.length,
+      panelElm: panel.length === 1 ? (panel[0] ?? null) : null,
       canUndo: ed.history.canUndo,
       canRedo: ed.history.canRedo,
       canPaste: ed.hasClipboard,
@@ -451,6 +454,8 @@ export class SimController {
       next.addClass !== prev.addClass ||
       next.selectionCount !== prev.selectionCount ||
       next.selected !== prev.selected ||
+      next.panelCount !== prev.panelCount ||
+      next.panelElm !== prev.panelElm ||
       next.canUndo !== prev.canUndo ||
       next.canRedo !== prev.canRedo ||
       next.canPaste !== prev.canPaste ||

@@ -591,3 +591,45 @@ test.describe('pinch on a phone', () => {
     await expect.poll(speed).toBeLessThan(before);
   });
 });
+
+test('the property panel adds the element to a new docked or undocked scope', async ({ page }) => {
+  await page.goto(`/?ctz=${compressCircuit(LOOP)}`);
+  await ready(page);
+  const p = await at(page, 176, 96);
+  await page.mouse.click(p.x, p.y);
+  await page.getByTestId('action-view-in-scope').click();
+  await expect.poll(() => scopeCount(page)).toBe(1);
+  await page.getByTestId('action-view-in-undocked-scope').click();
+  await expect
+    .poll(() => page.evaluate(() => window.circuitjsNext?.controller.circuit.scopeElms().length))
+    .toBe(1);
+});
+
+test.describe('moving an undocked card on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('does not open the property panel', async ({ page }) => {
+    await page.goto(`/?ctz=${compressCircuit(LOOP)}`);
+    await ready(page);
+    await page.evaluate(() => {
+      const c = window.circuitjsNext?.controller;
+      const r = c?.circuit.elements.find((e) => e.getClassName() === 'ResistorElm');
+      if (c && r) c.viewInUndockedScope(r);
+    });
+    await page.waitForTimeout(400);
+    const handle = await cardPart(page, -1, 'handle');
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', d: number) =>
+      cdp.send('Input.dispatchTouchEvent', {
+        type,
+        touchPoints: type === 'touchEnd' ? [] : [{ x: handle.x + d, y: handle.y + d }],
+      });
+    await touch('touchStart', 0);
+    for (let d = 5; d <= 40; d += 5) await touch('touchMove', d);
+    await touch('touchEnd', 0);
+    expect(
+      await page.evaluate(() => window.circuitjsNext?.controller.circuit.scopeElms()[0]?.selected),
+    ).toBe(true);
+    await expect(page.getByTestId('inspector')).toHaveCount(0);
+  });
+});
