@@ -150,9 +150,10 @@ textarea,
 }
 
 .app-bar-title {
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
-  margin: 0 0 0 8px;
+  max-width: 40%;
+  margin: 0 8px;
   font-size: 22px;
   line-height: 28px;
   font-weight: 400;
@@ -160,6 +161,11 @@ textarea,
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.app-bar > .icon-button,
+.app-bar-menus {
+  flex-shrink: 0;
 }
 
 .app-bar-menus {
@@ -1000,6 +1006,7 @@ textarea.field-input {
 .app-bar-actions {
   display: flex;
   gap: 4px;
+  margin-left: auto;
 }
 
 .app-bar-actions .icon-button,

@@ -56,7 +56,7 @@ function AppMenu(props: {
         <Icon name="dropDown" size={18} />
       </Menu.Trigger>
       <Menu.Portal>
-        <Menu.Content className="menu-content" sideOffset={4} align="end">
+        <Menu.Content className="menu-content" sideOffset={4} align="start">
           {props.children}
         </Menu.Content>
       </Menu.Portal>
@@ -64,7 +64,10 @@ function AppMenu(props: {
   );
 }
 
-/** Top app bar: circuit title and the File, Circuits and Options menus. */
+/**
+ * Top app bar: the circuit title, then the menus (on the left, so they and their submenus open
+ * rightwards with room to spare), then undo and redo at the right.
+ */
 export function AppBar() {
   const title = useApp((s) => s.title);
   const display = useApp((s) => s.display);
@@ -105,30 +108,6 @@ export function AppBar() {
       <h1 className="app-bar-title" data-testid="circuit-title">
         {title}
       </h1>
-      <div className="app-bar-actions">
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="Undo"
-          title={`Undo (${MOD}Z)`}
-          disabled={!editor.canUndo}
-          onClick={() => controller.undo()}
-          data-testid="undo"
-        >
-          <Icon name="undo" />
-        </button>
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="Redo"
-          title={`Redo (${MOD}Y)`}
-          disabled={!editor.canRedo}
-          onClick={() => controller.redo()}
-          data-testid="redo"
-        >
-          <Icon name="redo" />
-        </button>
-      </div>
       <nav className="app-bar-menus" aria-label="Menus">
         <AppMenu label="File" testId="file-menu">
           <Item label="New blank circuit" onSelect={() => controller.newCircuit()} />
@@ -260,6 +239,63 @@ export function AppBar() {
           >
             <Check on={settings.conventionalCurrent} /> Conventional current motion
           </Menu.CheckboxItem>
+          <Menu.Sub>
+            <Menu.SubTrigger className="menu-item" data-testid="menu-text-font">
+              Text box font
+              <Icon name="chevronRight" className="icon menu-trailing" />
+            </Menu.SubTrigger>
+            <Menu.Portal>
+              <Menu.SubContent className="menu-content" sideOffset={4} alignOffset={-8}>
+                <Menu.RadioGroup
+                  value={settings.textFont.family}
+                  onValueChange={(v) =>
+                    updateSettings({
+                      textFont: {
+                        ...settings.textFont,
+                        family: v === 'serif' || v === 'mono' ? v : 'default',
+                      },
+                    })
+                  }
+                >
+                  {(
+                    [
+                      ['default', 'Default'],
+                      ['serif', 'Serif'],
+                      ['mono', 'Monospace'],
+                    ] as const
+                  ).map(([id, label]) => (
+                    <Menu.RadioItem
+                      key={id}
+                      value={id}
+                      className="menu-item"
+                      data-testid={`text-font-${id}`}
+                    >
+                      <Check on={settings.textFont.family === id} /> {label}
+                    </Menu.RadioItem>
+                  ))}
+                </Menu.RadioGroup>
+                <Menu.Separator className="menu-separator" />
+                <Menu.CheckboxItem
+                  className="menu-item"
+                  checked={settings.textFont.bold}
+                  onCheckedChange={(v) =>
+                    updateSettings({ textFont: { ...settings.textFont, bold: v } })
+                  }
+                >
+                  <Check on={settings.textFont.bold} /> Bold
+                </Menu.CheckboxItem>
+                <Menu.CheckboxItem
+                  className="menu-item"
+                  checked={settings.textFont.italic}
+                  onCheckedChange={(v) =>
+                    updateSettings({ textFont: { ...settings.textFont, italic: v } })
+                  }
+                >
+                  <Check on={settings.textFont.italic} /> Italic
+                </Menu.CheckboxItem>
+              </Menu.SubContent>
+            </Menu.Portal>
+          </Menu.Sub>
           <Menu.Separator className="menu-separator" />
           <Item
             label="Simulation settings…"
@@ -284,6 +320,31 @@ export function AppBar() {
           </Menu.RadioGroup>
         </AppMenu>
       </nav>
+
+      <div className="app-bar-actions">
+        <button
+          type="button"
+          className="icon-button"
+          aria-label="Undo"
+          title={`Undo (${MOD}Z)`}
+          disabled={!editor.canUndo}
+          onClick={() => controller.undo()}
+          data-testid="undo"
+        >
+          <Icon name="undo" />
+        </button>
+        <button
+          type="button"
+          className="icon-button"
+          aria-label="Redo"
+          title={`Redo (${MOD}Y)`}
+          disabled={!editor.canRedo}
+          onClick={() => controller.redo()}
+          data-testid="redo"
+        >
+          <Icon name="redo" />
+        </button>
+      </div>
 
       <input
         ref={fileInput}

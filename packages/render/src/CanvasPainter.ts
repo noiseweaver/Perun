@@ -131,7 +131,9 @@ export class CanvasPainter implements Painter {
   private font(style?: TextStyle): string {
     const size = this.fontSize(style);
     const { font, monoFont } = this.palette.theme.style;
-    return `${style?.bold ? 'bold ' : ''}${size}px ${style?.font === 'value' ? monoFont : font}`;
+    const family =
+      style?.font === 'value' ? monoFont : style?.font === 'serif' ? 'Georgia, serif' : font;
+    return `${style?.italic ? 'italic ' : ''}${style?.bold ? 'bold ' : ''}${size}px ${family}`;
   }
 
   fontSize(style?: TextStyle): number {

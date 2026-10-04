@@ -286,3 +286,29 @@ test('the time step can be changed and undone', async ({ page }) => {
   await expect(page.getByTestId('time-step')).toHaveText(/5 μs/);
   await expect(page.getByTestId('sim-time')).toHaveText(/^t = \d+\.\d{3} [mμ]?s$/);
 });
+
+test('the text box font setting redraws text and is remembered', async ({ page }) => {
+  await page.goto(`/?cct=${cct('$ 1 0.000005 10 50 5 50 5e-11\nx 96 96 112 96 4 24 hello\n')}`);
+  await expect(page.getByTestId('circuit-title')).toBeVisible();
+  const before = await canvasHash(page);
+  await page.getByTestId('options-menu').click();
+  await page.getByTestId('menu-text-font').click();
+  await page.getByTestId('text-font-serif').click();
+  await expect.poll(() => canvasHash(page)).not.toBe(before);
+  await page.reload();
+  await page.getByTestId('options-menu').click();
+  await page.getByTestId('menu-text-font').click();
+  await expect(page.getByTestId('text-font-serif')).toHaveAttribute('aria-checked', 'true');
+});
+
+test('Circuits submenus open to the right of the menu', async ({ page }) => {
+  await page.goto(`/?cct=${cct(RC)}`);
+  await page.getByTestId('circuits-menu').click();
+  const top = page.getByRole('menu').first();
+  await top.getByRole('menuitem').first().click();
+  const sub = page.getByRole('menu').nth(1);
+  await expect(sub).toBeVisible();
+  const a = await top.boundingBox();
+  const b = await sub.boundingBox();
+  expect(b?.x ?? 0).toBeGreaterThanOrEqual((a?.x ?? 0) + (a?.width ?? 0) - 1);
+});

@@ -144,7 +144,13 @@ export const textView: ElementView<TextElm> = {
   draw(e, ctx) {
     const p = ctx.painter;
     const ink = ctx.highlighted ? LABEL : (textColor(e.color) ?? LABEL);
-    const font: TextStyle = { size: e.size };
+    const tf = ctx.textFont;
+    const font: TextStyle = {
+      size: e.size,
+      font: tf?.family === 'mono' ? 'value' : tf?.family === 'serif' ? 'serif' : 'units',
+      bold: tf?.bold ?? false,
+      italic: tf?.italic ?? false,
+    };
     let cury = e.y;
     for (const s of e.lines) {
       p.text(s, pt(e.x, cury), ink, font);

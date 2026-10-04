@@ -92,6 +92,7 @@ export type {
   Painter,
   Pt,
   StrokeStyle,
+  TextFont,
   TextStyle,
 } from './Painter.ts';
 export {

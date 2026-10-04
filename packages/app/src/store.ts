@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
 
-import type { CircuitElm } from '@circuitjs-next/elements';
+import type { CircuitElm, TextFont } from '@circuitjs-next/elements';
 import { BUILTIN_THEMES, DEFAULT_THEME_ID } from '@circuitjs-next/theme';
 import { create } from 'zustand';
 import type { ExampleList } from './examples.ts';
@@ -14,6 +14,8 @@ export interface UserSettings {
   conventionalCurrent: boolean;
   /** Mark every connection: a dot where two ends meet, a larger one where three or more do. */
   junctionDots: boolean;
+  /** Font for text boxes; a display choice, not saved with circuits. */
+  textFont: TextFont;
 }
 
 /** Circuit options shown in the Options menu (saved with the circuit). */
@@ -84,6 +86,7 @@ function loadSettings(): UserSettings {
     showOhm: false,
     conventionalCurrent: true,
     junctionDots: false,
+    textFont: { family: 'default', bold: false, italic: false },
   };
   try {
     let raw = localStorage.getItem(SETTINGS_KEY);
@@ -106,10 +109,18 @@ function loadSettings(): UserSettings {
           ? s.conventionalCurrent
           : defaults.conventionalCurrent,
       junctionDots: typeof s.junctionDots === 'boolean' ? s.junctionDots : defaults.junctionDots,
+      textFont: readTextFont(s.textFont) ?? defaults.textFont,
     };
   } catch {
     return defaults;
   }
+}
+
+function readTextFont(v: unknown): TextFont | null {
+  if (typeof v !== 'object' || v === null) return null;
+  const f = v as Partial<Record<keyof TextFont, unknown>>;
+  const family = f.family === 'serif' || f.family === 'mono' ? f.family : 'default';
+  return { family, bold: f.bold === true, italic: f.italic === true };
 }
 
 export function saveSettings(s: UserSettings): void {

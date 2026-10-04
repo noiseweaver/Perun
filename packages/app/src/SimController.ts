@@ -275,6 +275,7 @@ export class SimController {
         voltageRange: o.voltageRange,
         euroResistors: state.settings.euroResistors,
         showOhm: state.settings.showOhm,
+        textFont: state.settings.textFont,
         junctionDots: state.settings.junctionDots,
         gridSize: sim.gridSize,
       };
@@ -528,7 +529,11 @@ export class SimController {
       const res = ed.pointerDown(g.x, g.y, mods(e), e.button === 1 || touchPan);
       if (res === 'pan') pan = { x: p.x, y: p.y, id: e.pointerId };
       gestureId = e.pointerId;
-      canvas.setPointerCapture(e.pointerId);
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {
+        // the pointer is already gone (released before this handler ran)
+      }
       if (e.pointerType === 'touch' && ed.mouseMode === MouseMode.SELECT) {
         cancelPress();
         const id = e.pointerId;

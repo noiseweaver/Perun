@@ -11,6 +11,7 @@ import {
   type CircuitElm,
   type DrawContext,
   type Rect,
+  type TextFont,
 } from '@circuitjs-next/elements';
 import type { Theme } from '@circuitjs-next/theme';
 import { CanvasPainter } from './CanvasPainter.ts';
@@ -31,6 +32,7 @@ export interface FrameState {
   /** User settings. */
   euroResistors: boolean;
   showOhm: boolean;
+  textFont: TextFont;
   /** Mark points where three or more element ends meet with a solid schematic dot. */
   junctionDots: boolean;
   /** Grid spacing in circuit units (16, or 8 with the small grid option). */
@@ -46,6 +48,7 @@ export const DEFAULT_FRAME: FrameState = {
   voltageRange: 5,
   euroResistors: false,
   showOhm: false,
+  textFont: { family: 'default', bold: false, italic: false },
   junctionDots: false,
   gridSize: 16,
 };
@@ -259,6 +262,7 @@ export class CircuitRenderer {
       showValues: frame.showValues,
       euroResistors: frame.euroResistors,
       showOhm: frame.showOhm,
+      textFont: frame.textFont,
       dotCount: (slot, current) => dots.advance(e, slot, current, frame.currentMult, frame.running),
     };
     this.ctx.save();
