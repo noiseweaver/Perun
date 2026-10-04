@@ -199,6 +199,47 @@ test('save downloads the circuit and export link reopens it', async ({ page }) =
   expect(again).toBe(saved);
 });
 
+test('a trackpad swipe pans, a pinch zooms, and a mouse wheel zooms', async ({ page }) => {
+  await open(page, LOOP);
+  const view = () =>
+    page.evaluate(() => {
+      const c = window.circuitjsNext?.controller;
+      const a = c?.toScreen(0, 0);
+      const b = c?.toScreen(100, 0);
+      return a && b ? { x: a.x, y: a.y, scale: (b.x - a.x) / 100 } : null;
+    });
+  type Wheel = { deltaX?: number; deltaY?: number; deltaMode?: number; ctrlKey?: boolean };
+  const wheel = (init: Wheel) =>
+    page.evaluate((init) => {
+      const c = document.querySelector('[data-testid=circuit-canvas]');
+      const r = c?.getBoundingClientRect();
+      c?.dispatchEvent(
+        new WheelEvent('wheel', {
+          clientX: (r?.x ?? 0) + 100,
+          clientY: (r?.y ?? 0) + 100,
+          bubbles: true,
+          cancelable: true,
+          ...init,
+        }),
+      );
+    }, init);
+  const start = await view();
+  // two-finger swipe: pixel deltas in both directions
+  await wheel({ deltaX: 30, deltaY: 40 });
+  const panned = await view();
+  expect(panned?.scale).toBe(start?.scale);
+  expect(panned?.x).toBeCloseTo((start?.x ?? 0) - 30, 5);
+  expect(panned?.y).toBeCloseTo((start?.y ?? 0) - 40, 5);
+  // pinch: browsers send it as a wheel with ctrlKey
+  await wheel({ deltaY: -20, ctrlKey: true });
+  expect((await view())?.scale).toBeGreaterThan(panned?.scale ?? 0);
+  // a mouse wheel notch (lines) zooms out
+  const before = await view();
+  await wheel({ deltaY: 3, deltaMode: 1 });
+  const after = await view();
+  expect(after?.scale).toBeLessThan(before?.scale ?? 0);
+});
+
 test.describe('on a touch screen', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 

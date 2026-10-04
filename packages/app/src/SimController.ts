@@ -587,10 +587,19 @@ export class SimController {
       ed.leave();
       this.publishEditor();
     };
+    // A trackpad's two-finger swipe pans and its pinch (which browsers send with ctrlKey) zooms;
+    // a mouse wheel zooms, as upstream's does.
     const wheel = (e: WheelEvent): void => {
       e.preventDefault();
+      const r = this.renderer;
+      if (!r) return;
       const p = local(e);
-      this.renderer?.viewport.zoomAt(Math.exp(-e.deltaY * 0.0015), p.x, p.y);
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? canvas.clientHeight : 1;
+      const dx = e.deltaX * unit;
+      const dy = e.deltaY * unit;
+      if (e.ctrlKey || e.metaKey) r.viewport.zoomAt(Math.exp(-dy * 0.01), p.x, p.y);
+      else if (isMouseWheel(e)) r.viewport.zoomAt(Math.exp(-dy * 0.0015), p.x, p.y);
+      else r.viewport.pan(-dx, -dy);
     };
     const contextMenu = (e: MouseEvent): void => {
       // the browser's own long-press menu event: same as ours, so the timer is not needed
@@ -678,6 +687,18 @@ export class SimController {
   toScreen(x: number, y: number): { x: number; y: number } | null {
     return this.renderer?.viewport.toScreen(x, y) ?? null;
   }
+}
+
+/**
+ * Whether a wheel event comes from a mouse wheel rather than a trackpad. Browsers don't say, so
+ * this goes by the usual signs: a wheel scrolls by lines (Firefox) or in notches of 120 on the
+ * legacy wheelDelta, and only vertically.
+ */
+function isMouseWheel(e: WheelEvent): boolean {
+  if (e.deltaMode === 1) return true;
+  if (e.deltaX !== 0) return false;
+  const legacy = (e as WheelEvent & { wheelDeltaY?: number }).wheelDeltaY ?? 0;
+  return legacy !== 0 && legacy % 120 === 0;
 }
 
 function inRect(r: Rect, x: number, y: number): boolean {
