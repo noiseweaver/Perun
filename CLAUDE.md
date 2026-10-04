@@ -32,7 +32,7 @@ packages/render    Canvas 2D Painter, scene, hit testing. -> elements, theme
 packages/app       UI shell. -> everything
 tools/             reference build and patch, golden harness, recon scripts, ESLint rules
 fixtures/golden/   recorded reference traces (JSON), one per tools/golden/manifest.json entry
-docs/              PLAN, PROGRESS, DEVIATIONS, UPSTREAM, ELEMENTS, ENGINE-NOTES
+docs/              PLAN, PROGRESS, DEVIATIONS, UPSTREAM, ELEMENTS, ENGINE-NOTES, THEMES
 ```
 
 ESLint enforces the dependency direction (`no-restricted-imports`, see eslint.config.js) and bans
@@ -59,6 +59,7 @@ pnpm reference:serve    # serve it at http://localhost:8000/circuitjs.html
 pnpm golden:record      # record fixtures/golden/ from the reference build (tools/golden/README.md)
 pnpm golden:check       # re-record in memory, fail if any fixture differs
 pnpm golden:compare     # compare an engine against the fixtures (--engine next, or stub)
+pnpm theme:docs         # regenerate docs/theme.schema.json and the key table in docs/THEMES.md
 pnpm golden:scopes      # record how upstream restores the scopes of every bundled example
 ```
 

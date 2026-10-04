@@ -6,7 +6,7 @@
 
 import { getUnitText, parseUnits } from '@circuitjs-next/elements';
 import * as Dialog from '@radix-ui/react-dialog';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   UPSTREAM_PAGE,
   circuitLink,
@@ -19,8 +19,10 @@ import {
 import { paletteGroups } from '../editor/catalog.ts';
 import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
+import { themeLink } from '../themes.ts';
 import { Shell } from './DialogShell.tsx';
 import { ScopePropertiesDialog } from './ScopeDialog.tsx';
+import { ThemeEditorDialog, ThemesDialog } from './ThemeDialogs.tsx';
 
 function SaveDialog() {
   const [name, setName] = useState(defaultFileName);
@@ -78,8 +80,22 @@ function LinkRow(props: { label: string; url: string; testId: string }) {
 }
 
 function ExportLinkDialog() {
-  const here = circuitLink(pageBase());
+  const [withTheme, setWithTheme] = useState(false);
+  const [themed, setThemed] = useState<string | null>(null);
+  const plain = circuitLink(pageBase());
   const upstream = circuitLink(UPSTREAM_PAGE);
+  useEffect(() => {
+    if (!withTheme) return;
+    let live = true;
+    const base = pageBase();
+    void themeLink(useApp.getState().theme, base, plain.slice(base.length + 1)).then((l) => {
+      if (live) setThemed(l);
+    });
+    return () => {
+      live = false;
+    };
+  }, [withTheme, plain]);
+  const here = withTheme ? (themed ?? plain) : plain;
   return (
     <Shell
       title="Export link"
@@ -87,6 +103,19 @@ function ExportLinkDialog() {
       wide
     >
       <LinkRow label="This app" url={here} testId="link-here" />
+      <label className="field field-check link-theme-check">
+        <input
+          type="checkbox"
+          className="checkbox"
+          checked={withTheme}
+          onChange={(e) => setWithTheme(e.target.checked)}
+          data-testid="link-with-theme"
+        />
+        <span>
+          Include my theme ({useApp.getState().theme.meta.name}). It opens as a preview the other
+          person can apply or dismiss.
+        </span>
+      </label>
       <LinkRow label="Falstad CircuitJS" url={upstream} testId="link-upstream" />
       {here.length > 2000 && (
         <p className="dialog-problem">
@@ -351,6 +380,10 @@ export function Dialogs() {
       return <SimSettingsDialog />;
     case 'scopeProperties':
       return <ScopePropertiesDialog />;
+    case 'themes':
+      return <ThemesDialog />;
+    case 'themeEditor':
+      return <ThemeEditorDialog />;
     default:
       return null;
   }

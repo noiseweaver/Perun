@@ -10,6 +10,8 @@ export function Shell(props: {
   title: string;
   description?: string | undefined;
   wide?: boolean;
+  /** Extra class for the content box (custom sizes). */
+  className?: string;
   children: ReactNode;
   onClose?: () => void;
 }) {
@@ -24,7 +26,9 @@ export function Shell(props: {
     >
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content className={`dialog-content${props.wide ? ' dialog-wide' : ''}`}>
+        <Dialog.Content
+          className={`dialog-content${props.wide ? ' dialog-wide' : ''}${props.className ? ' ' + props.className : ''}`}
+        >
           <Dialog.Title className="dialog-title">{props.title}</Dialog.Title>
           {props.description !== undefined ? (
             <Dialog.Description className="dialog-description">

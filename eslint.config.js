@@ -103,10 +103,11 @@ export default tseslint.config(
   ...boundaries(),
   {
     // The only place color literals may live, plus the theme package's own tests (they exercise
-    // the color parser and theme validation).
+    // the color parser and theme validation) and the theme e2e tests (they author themes as data).
     files: [
       'packages/theme/src/builtins/**',
       'packages/theme/src/**/*.test.ts',
+      'packages/app/e2e/themes.spec.ts',
       'tools/eslint-rules/**',
     ],
     rules: { 'local/no-color-literals': 'off' },

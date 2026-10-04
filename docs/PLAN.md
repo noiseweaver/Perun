@@ -197,7 +197,7 @@ Classic (matches the upstream look), Light, Dark, High Contrast, Colorblind Safe
 
 ### Sharing
 - Export and import `*.theme.json` files.
-- URL: `?theme=<base64url(deflate(json))>`. The app shows a preview with Apply and Save buttons and never persists a theme automatically.
+- URL: `?theme=<base64url(deflate(json))>` (raw DEFLATE of the theme minus what its base already has; see docs/THEMES.md). The app shows a preview with Apply and Save buttons and never persists a theme automatically.
 - Combined link: circuit plus theme in one URL, with an opt-in "use sender's theme" flag.
 - Local theme library in IndexedDB.
 - Theme editor: live preview on a fixed sample circuit, WCAG contrast warnings for text and for voltage colors against the background.
@@ -260,8 +260,8 @@ Acceptance: a circuit built in the new app opens correctly in upstream, and the 
 Acceptance: scope `o` lines from upstream files restore equivalent scopes.
 
 ### Phase 7: Theme system complete
-- [ ] All built-ins, theme editor with live preview and contrast warnings, theme library, import/export, URL sharing, combined circuit plus theme links.
-- [ ] `docs/THEMES.md` with schema reference and the generated JSON Schema.
+- [x] All built-ins, theme editor with live preview and contrast warnings, theme library, import/export, URL sharing, combined circuit plus theme links.
+- [x] `docs/THEMES.md` with schema reference and the generated JSON Schema.
 
 Acceptance: success criterion 3 holds. Fuzz test of the theme decoder with malformed input shows no crash and no injection path.
 

@@ -1,0 +1,277 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 1,
+      "description": "Always 1."
+    },
+    "meta": {
+      "description": "About the theme.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Name shown in the theme menu."
+        },
+        "author": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Who made the theme."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "One line about the theme."
+        },
+        "base": {
+          "type": "string",
+          "maxLength": 40,
+          "description": "Built-in theme the missing keys come from: dark (the default), light, classic, classic-dots, high-contrast, colorblind-safe, nord, solarized-dark, gruvbox-dark or adwaita-dark."
+        }
+      }
+    },
+    "canvas": {
+      "description": "The circuit area.",
+      "type": "object",
+      "properties": {
+        "background": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Circuit area background."
+        },
+        "grid": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Grid dots or lines."
+        },
+        "gridMajor": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Every eighth grid line or dot."
+        }
+      }
+    },
+    "circuit": {
+      "description": "Elements and wires.",
+      "type": "object",
+      "properties": {
+        "voltage": {
+          "type": "object",
+          "properties": {
+            "negative": {
+              "type": "string",
+              "maxLength": 64,
+              "description": "Most negative voltage (at minus the voltage range)."
+            },
+            "zero": {
+              "type": "string",
+              "maxLength": 64,
+              "description": "Zero volts."
+            },
+            "positive": {
+              "type": "string",
+              "maxLength": 64,
+              "description": "Most positive voltage."
+            }
+          },
+          "description": "Voltage coloring: wires blend between these three stops."
+        },
+        "currentDot": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Moving current dots."
+        },
+        "component": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Element bodies and wires when voltage colors are off."
+        },
+        "componentMuted": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Secondary element parts: source and LED circles, transistor envelope."
+        },
+        "selection": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Selected elements and the selection box."
+        },
+        "hover": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "The element under the pointer."
+        },
+        "post": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Element end posts and junction dots."
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Values drawn next to elements."
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Labels: labeled nodes, outputs, text boxes, op-amp symbols."
+        },
+        "badConnection": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Posts that touch an element without connecting to it."
+        }
+      }
+    },
+    "scope": {
+      "description": "Oscilloscopes.",
+      "type": "object",
+      "properties": {
+        "background": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Plot area."
+        },
+        "card": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Card around each scope, with its header and legend (card look only)."
+        },
+        "grid": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Grid lines."
+        },
+        "gridMajor": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Zero line, every tenth time line, muted plots."
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Labels, readouts, cursor, power and other plots that are not V or I."
+        },
+        "current": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Current plots."
+        },
+        "trigger": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Trigger level and state."
+        },
+        "fft": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Spectrum (FFT) trace and labels."
+        },
+        "fftGrid": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Spectrum grid."
+        },
+        "traces": {
+          "minItems": 1,
+          "maxItems": 16,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "A trace color."
+          },
+          "description": "The first color draws voltage plots; further plots of one kind cycle through the rest."
+        }
+      }
+    },
+    "ui": {
+      "description": "The app around the canvas.",
+      "type": "object",
+      "properties": {
+        "surface": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "App background: bars, menus, dialogs (Material surface)."
+        },
+        "surfaceAlt": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Raised containers: panels, cards, fields (Material surface container)."
+        },
+        "border": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Dividers and outlines (Material outline variant)."
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Main text (Material on surface)."
+        },
+        "textMuted": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Secondary text and icons (Material on surface variant)."
+        },
+        "accent": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Primary buttons, checked items, focus (Material primary)."
+        },
+        "danger": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Errors and warnings (Material error)."
+        }
+      }
+    },
+    "style": {
+      "description": "Line widths, grid and fonts.",
+      "type": "object",
+      "properties": {
+        "strokeWidth": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 8,
+          "description": "Width of thick lines in circuit units (CircuitJS draws them 3 wide)."
+        },
+        "dotRadius": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 6,
+          "description": "Half the side of a current dot (CircuitJS: 2)."
+        },
+        "grid": {
+          "type": "string",
+          "enum": ["none", "dots", "lines"],
+          "description": "Grid drawn behind the circuit."
+        },
+        "font": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^[\\w\\s,'\"-]+$",
+          "description": "UI text and canvas labels: a CSS font family list."
+        },
+        "monoFont": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^[\\w\\s,'\"-]+$",
+          "description": "Component values and numeric readouts: a CSS font family list."
+        },
+        "scopeLook": {
+          "type": "string",
+          "enum": ["classic", "cards"],
+          "description": "classic draws scopes as CircuitJS does; cards puts each in a card with a header, legend and labeled axes."
+        }
+      }
+    }
+  },
+  "required": ["schemaVersion"],
+  "description": "A circuitjs-next theme. Every key but schemaVersion is optional.",
+  "$id": "https://github.com/noiseweaver/circuitsjs-next/blob/main/docs/theme.schema.json",
+  "title": "circuitjs-next theme"
+}
