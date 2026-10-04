@@ -350,6 +350,26 @@ textarea,
   min-width: 22ch;
 }
 
+.readout-button {
+  border: 0;
+  border-radius: 4px;
+  padding: 2px 4px;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.readout-button:hover {
+  text-decoration: underline dotted;
+}
+
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .chip {
   display: inline-flex;
   align-items: center;

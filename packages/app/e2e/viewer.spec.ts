@@ -78,7 +78,7 @@ test('cct and ctz links load', async ({ page }) => {
       ).circuitjsNext.controller.circuit.elements.map((e) => e.constructor.name),
     );
   await expect.poll(kinds).toEqual(['VoltageElm', 'ResistorElm', 'CapacitorElm', 'WireElm']);
-  await expect.poll(() => simTime(page)).not.toBe('t = 0 s');
+  await expect.poll(() => simTime(page)).not.toBe('t = 0.000 s');
 
   await page.goto(`/?ctz=${compressCircuit(SWITCHED)}&running=false`);
   await expect.poll(kinds).toEqual(['VoltageElm', 'SwitchElm', 'ResistorElm', 'WireElm']);
@@ -143,14 +143,14 @@ test('Dark is the default theme, including for settings saved before it was', as
 
 test('run/stop pauses and reset restarts time', async ({ page }) => {
   await page.goto(`/?cct=${cct(RC)}`);
-  await expect.poll(() => simTime(page)).not.toBe('t = 0 s');
+  await expect.poll(() => simTime(page)).not.toBe('t = 0.000 s');
   await page.getByTestId('run-stop').click();
   await page.waitForTimeout(300); // the status bar updates every 100 ms
   const paused = await simTime(page);
   await page.waitForTimeout(300);
   expect(await simTime(page)).toBe(paused);
   await page.getByTestId('reset').click();
-  await expect.poll(() => simTime(page)).toBe('t = 0 s');
+  await expect.poll(() => simTime(page)).toBe('t = 0.000 s');
 });
 
 test('clicking a switch toggles it', async ({ page }) => {
@@ -271,4 +271,16 @@ test('the time readout does not move as digits change', async ({ page }) => {
     await page.waitForTimeout(250);
   }
   expect(boxes.size).toBe(1);
+});
+
+test('the time step can be changed and undone', async ({ page }) => {
+  await page.goto(`/?cct=${cct(RC)}`);
+  await expect(page.getByTestId('time-step')).toHaveText(/5 μs/);
+  await page.getByTestId('time-step').click();
+  await page.getByTestId('sim-time-step').fill('1u');
+  await page.getByTestId('sim-settings-ok').click();
+  await expect(page.getByTestId('time-step')).toHaveText(/1 μs/);
+  await page.getByTestId('undo').click();
+  await expect(page.getByTestId('time-step')).toHaveText(/5 μs/);
+  await expect(page.getByTestId('sim-time')).toHaveText(/^t = \d+\.\d{3} [mμ]?s$/);
 });

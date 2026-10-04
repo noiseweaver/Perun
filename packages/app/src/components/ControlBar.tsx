@@ -5,6 +5,7 @@ import { getUnitText } from '@circuitjs-next/elements';
 import * as Slider from '@radix-ui/react-slider';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { ReactNode } from 'react';
+import { openDialog } from '../commands.ts';
 import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
 import { Icon } from './Icon.tsx';
@@ -65,6 +66,22 @@ function IconButton(props: {
       </Tooltip.Portal>
     </Tooltip.Root>
   );
+}
+
+/**
+ * Simulation time with three decimals in the largest unit below 1000, so the digit count only
+ * changes when the unit does (upstream's getUnitText drops trailing digits, which jitters).
+ */
+export function timeText(t: number): string {
+  const units: [number, string][] = [
+    [1, 's'],
+    [1e-3, 'ms'],
+    [1e-6, 'μs'],
+    [1e-9, 'ns'],
+  ];
+  for (const [scale, unit] of units)
+    if (Math.abs(t) >= scale) return `${(t / scale).toFixed(3)} ${unit}`;
+  return t === 0 ? '0.000 s' : `${(t / 1e-12).toFixed(3)} ps`;
 }
 
 /**
@@ -147,9 +164,17 @@ export function ControlBar() {
           </span>
         )}
         <span className="readout readout-time" data-testid="sim-time">
-          t = {getUnitText(t, 's')}
+          t = {timeText(t)}
         </span>
-        <span className="readout readout-step">time step = {getUnitText(timeStep, 's')}</span>
+        <button
+          type="button"
+          className="readout readout-step readout-button"
+          title="Change the time step"
+          data-testid="time-step"
+          onClick={() => openDialog('simSettings')}
+        >
+          time step = {getUnitText(timeStep, 's')}
+        </button>
       </div>
     </footer>
   );

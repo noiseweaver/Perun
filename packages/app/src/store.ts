@@ -65,7 +65,7 @@ export interface AppState {
   /** Text of a short notice ("Link copied"), or null. */
   toast: string | null;
   /** Open dialog (commands.ts DialogKind). */
-  dialog: 'save' | 'exportLink' | 'exportText' | 'importText' | 'shortcuts' | null;
+  dialog: 'save' | 'exportLink' | 'exportText' | 'importText' | 'shortcuts' | 'simSettings' | null;
   /** Bumped to move keyboard focus to the property panel (double-click, Enter). */
   inspectorFocus: number;
 }

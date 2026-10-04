@@ -401,6 +401,24 @@ export class SimController {
     this.circuitChanged();
   }
 
+  /** Simulation settings (upstream EditOptions time step fields), undoable, then re-analyze. */
+  setTimeStep(maxTimeStep: number, adjust: boolean, minTimeStep: number): void {
+    const sim = this.circuit.sim;
+    this.editor.history.record('Time step', () => {
+      if (
+        sim.maxTimeStep === maxTimeStep &&
+        sim.adjustTimeStep === adjust &&
+        sim.minTimeStep === minTimeStep
+      )
+        return false;
+      sim.maxTimeStep = maxTimeStep;
+      sim.adjustTimeStep = adjust;
+      sim.minTimeStep = minTimeStep;
+      return true;
+    });
+    this.circuitChanged();
+  }
+
   /** The circuit as upstream saves it. */
   saveText(): string {
     return this.circuit.dumpXml();

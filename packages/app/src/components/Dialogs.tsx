@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
 // Save and export dialogs after CircuitJS1 ExportAsLocalFileDialog, ExportAsUrlDialog,
-// ExportAsTextDialog, ImportFromTextDialog and ShortcutsDialog
+// ExportAsTextDialog, ImportFromTextDialog, ShortcutsDialog and the time step fields of EditOptions
 // (src/com/lushprojects/circuitjs1/client/, master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032.
 
+import { getUnitText, parseUnits } from '@circuitjs-next/elements';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useState, type ReactNode } from 'react';
 import {
@@ -192,6 +193,104 @@ function ImportTextDialog() {
   );
 }
 
+/** Reads "5u", "10µ", "1e-6"; null for anything else or a value that is not positive. */
+function readTime(text: string): number | null {
+  const s = text.trim().replace(/s$/, '').replace(/[µμ]/, 'u');
+  try {
+    const v = parseUnits(s);
+    return Number.isFinite(v) && v > 0 ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+const shortTime = (v: number): string => getUnitText(v, 's').replace(/ ?s$/, '').replace(' ', '');
+
+function SimSettingsDialog() {
+  const sim = controller.circuit.sim;
+  const [step, setStep] = useState(() => shortTime(sim.maxTimeStep));
+  const [adjust, setAdjust] = useState(sim.adjustTimeStep);
+  const [min, setMin] = useState(() => shortTime(sim.minTimeStep));
+  const stepValue = readTime(step);
+  const minValue = adjust ? readTime(min) : sim.minTimeStep;
+  const ok = stepValue !== null && minValue !== null;
+  return (
+    <Shell
+      title="Simulation settings"
+      description="A smaller time step is more accurate but makes the simulation run slower."
+    >
+      <form
+        className="dialog-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!ok) return;
+          controller.setTimeStep(stepValue, adjust, minValue);
+          openDialog(null);
+        }}
+      >
+        <div className="field">
+          <label className="field-label" htmlFor="sim-time-step">
+            Time step size (s)
+          </label>
+          <input
+            id="sim-time-step"
+            className="text-input field-input"
+            value={step}
+            autoFocus
+            spellCheck={false}
+            onChange={(e) => setStep(e.target.value)}
+            data-testid="sim-time-step"
+          />
+          {stepValue === null && (
+            <span className="field-error">Enter a positive time, like 5u or 1e-6.</span>
+          )}
+        </div>
+        <label className="field field-check">
+          <input
+            type="checkbox"
+            className="checkbox"
+            checked={adjust}
+            onChange={(e) => setAdjust(e.target.checked)}
+          />
+          <span>Auto-adjust time step</span>
+        </label>
+        {adjust && (
+          <div className="field">
+            <label className="field-label" htmlFor="sim-min-step">
+              Minimum time step size (s)
+            </label>
+            <input
+              id="sim-min-step"
+              className="text-input field-input"
+              value={min}
+              spellCheck={false}
+              onChange={(e) => setMin(e.target.value)}
+            />
+            {minValue === null && (
+              <span className="field-error">Enter a positive time, like 50p.</span>
+            )}
+          </div>
+        )}
+        <div className="dialog-buttons">
+          <Dialog.Close asChild>
+            <button type="button" className="button">
+              Cancel
+            </button>
+          </Dialog.Close>
+          <button
+            type="submit"
+            className="button button-primary"
+            disabled={!ok}
+            data-testid="sim-settings-ok"
+          >
+            Apply
+          </button>
+        </div>
+      </form>
+    </Shell>
+  );
+}
+
 const MOD = typeof navigator !== 'undefined' && /Mac|iP/.test(navigator.platform) ? '⌘' : 'Ctrl+';
 
 const EDIT_KEYS: [string, string][] = [
@@ -272,6 +371,8 @@ export function Dialogs() {
       return <ImportTextDialog />;
     case 'shortcuts':
       return <ShortcutsDialog />;
+    case 'simSettings':
+      return <SimSettingsDialog />;
     default:
       return null;
   }

@@ -261,6 +261,11 @@ export function AppBar() {
             <Check on={settings.conventionalCurrent} /> Conventional current motion
           </Menu.CheckboxItem>
           <Menu.Separator className="menu-separator" />
+          <Item
+            label="Simulation settings…"
+            testId="menu-sim-settings"
+            onSelect={() => openDialog('simSettings')}
+          />
           <Item label="Keyboard shortcuts…" hint="?" onSelect={() => openDialog('shortcuts')} />
           <Menu.Separator className="menu-separator" />
           <Menu.Label className="menu-label">Theme</Menu.Label>

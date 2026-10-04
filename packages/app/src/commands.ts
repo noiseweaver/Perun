@@ -12,7 +12,8 @@ import { controller } from './SimController.ts';
 import { useApp } from './store.ts';
 
 /** Dialogs the commands open; the App renders whichever is set. */
-export type DialogKind = 'save' | 'exportLink' | 'exportText' | 'importText' | 'shortcuts' | null;
+export type DialogKind =
+  'save' | 'exportLink' | 'exportText' | 'importText' | 'shortcuts' | 'simSettings' | null;
 
 export function openDialog(kind: DialogKind): void {
   useApp.setState({ dialog: kind });
