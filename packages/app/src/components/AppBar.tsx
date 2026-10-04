@@ -187,6 +187,10 @@ export function AppBar() {
           {examples && <ExampleItems menu={examples.root} />}
         </AppMenu>
 
+        <AppMenu label="Scopes" testId="scopes-menu">
+          <ScopesMenuItems />
+        </AppMenu>
+
         <AppMenu label="Options" testId="options-menu">
           <Menu.CheckboxItem
             className="menu-item"
@@ -390,5 +394,37 @@ function Check({ on }: { on: boolean }) {
     <span className="menu-check" aria-hidden>
       {on && <Icon name="check" size={18} />}
     </span>
+  );
+}
+
+/** Upstream's Scopes menu: arrange all docked scopes at once. */
+function ScopesMenuItems() {
+  const mgr = controller.scopes;
+  const n = mgr.scopeCount;
+  const last = mgr.scopes[n - 1];
+  return (
+    <>
+      <Item
+        label="Stack All"
+        disabled={!(n > 1 && last !== undefined && last.position > 0)}
+        onSelect={() => controller.allScopes('stackAll')}
+      />
+      <Item
+        label="Unstack All"
+        disabled={!(n > 1 && last !== undefined && last.position !== n - 1)}
+        onSelect={() => controller.allScopes('unstackAll')}
+      />
+      <Item
+        label="Combine All"
+        disabled={n <= 1}
+        onSelect={() => controller.allScopes('combineAll')}
+      />
+      <Item
+        label="Separate All"
+        disabled={n === 0}
+        testId="scopes-separate-all"
+        onSelect={() => controller.allScopes('separateAll')}
+      />
+    </>
   );
 }

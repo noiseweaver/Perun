@@ -7,14 +7,26 @@
 import {
   SwitchElm,
   VoltageElm,
+  getTimeText,
+  getUnitText,
+  showFormat,
   switchRect,
   viewFor,
   type CircuitElm,
   type EditInfo,
   type Rect,
+  type Scope,
+  type ScopeDefaultsStore,
+  type ScopeManager,
+  type ScopeRect,
 } from '@circuitjs-next/elements';
 import { Circuit, OptionFlag } from '@circuitjs-next/format';
-import { CircuitRenderer, currentMultiplier, type FrameState } from '@circuitjs-next/render';
+import {
+  CircuitRenderer,
+  ScopeRenderer,
+  currentMultiplier,
+  type FrameState,
+} from '@circuitjs-next/render';
 import { BUILTIN_THEMES, DEFAULT_THEME_ID, type Theme } from '@circuitjs-next/theme';
 import {
   Editor,
@@ -62,7 +74,30 @@ export class SimController {
   frames = 0;
   steps = 0;
 
+  // ---- scopes (upstream ScopeManager and the scope parts of MouseManager) ----
+  private scopeRenderer: ScopeRenderer | null = null;
+  /** Share of the canvas height the scopes take (upstream scopeHeightFraction). */
+  scopeHeightFraction = 0.2;
+  private cssWidth = 0;
+  private cssHeight = 0;
+  private dpr = 1;
+  /** Mouse position over the canvas in CSS pixels, or null when it is elsewhere. */
+  private mouse: { x: number; y: number } | null = null;
+  /** The mouse is on the splitter between the circuit and the scopes. */
+  private splitterHot = false;
+  /** Element of the scope under the mouse (highlighted on the circuit, shown in the info). */
+  private scopeHoverElm: CircuitElm | null = null;
+  /** Docked scope the context menu was opened on, or -1; and its selected plot. */
+  menuScope = -1;
+  menuPlot = -1;
+  /** Scope the properties dialog edits. */
+  dialogScope: Scope | null = null;
+
   constructor() {
+    this.circuit.setScopeUi({
+      createImage: (w, h) => this.scopeRenderer?.createImage(w, h) ?? null,
+      defaultsStore: scopeDefaultsStore,
+    });
     this.circuit.read('');
     this.editor = new Editor(this.circuit, this.makeHost());
     this.editor.history.onChange = () => this.publishEditor();
@@ -157,6 +192,7 @@ export class SimController {
     const state = useApp.getState();
     const renderer = new CircuitRenderer(canvas, themeById(state.settings.themeId));
     this.renderer = renderer;
+    this.scopeRenderer = new ScopeRenderer(canvas, themeById(state.settings.themeId));
     renderer.setElements(this.circuit.elements);
     this.needsFit = true;
     this.unsubscribe = useApp.subscribe((s, prev) => this.onStore(s, prev));
@@ -186,13 +222,18 @@ export class SimController {
     this.resizeObserver?.disconnect();
     this.unsubscribe = this.detachInput = this.resizeObserver = null;
     this.renderer = null;
+    this.scopeRenderer = null;
   }
 
   private resize(): void {
     const r = this.renderer;
     if (!r) return;
     const rect = r.canvas.getBoundingClientRect();
-    r.resize(rect.width, rect.height, window.devicePixelRatio || 1);
+    this.cssWidth = rect.width;
+    this.cssHeight = rect.height;
+    this.dpr = window.devicePixelRatio || 1;
+    r.resize(rect.width, rect.height, this.dpr);
+    r.circuitHeight = this.circuitHeight();
     if (this.needsFit && rect.width > 0) {
       r.fit();
       this.needsFit = false;
@@ -200,8 +241,12 @@ export class SimController {
   }
 
   private onStore(s: AppState, prev: AppState): void {
-    if (s.settings.themeId !== prev.settings.themeId)
+    if (s.settings.themeId !== prev.settings.themeId) {
       this.renderer?.setTheme(themeById(s.settings.themeId));
+      this.scopeRenderer?.setTheme(themeById(s.settings.themeId));
+      // X-Y plot images are drawn in theme colors as the simulation runs
+      this.circuit.scopes.resetGraphs();
+    }
     const o = this.circuit.options;
     // only changes made through the UI; a load sets the store from the circuit, not the reverse
     if (s.speed !== prev.speed) o.speed = s.speed;
@@ -283,7 +328,9 @@ export class SimController {
         junctionDots: state.settings.junctionDots,
         gridSize: sim.gridSize,
       };
+      r.circuitHeight = this.circuitHeight();
       r.render(frame);
+      this.drawScopes();
       this.frames++;
     }
     this.publishStatus(false);
@@ -362,7 +409,7 @@ export class SimController {
     const prev = useApp.getState().editor;
     const r = this.renderer;
     if (r) {
-      r.hovered = ed.mouseElm;
+      r.hovered = ed.mouseElm ?? this.scopeHoverElm;
       r.pending = ed.dragElm;
       r.selectionRect = ed.selectedArea;
     }
@@ -385,6 +432,193 @@ export class SimController {
       next.revision !== prev.revision
     )
       useApp.setState({ editor: next });
+  }
+
+  // ---- scopes --------------------------------------------------------------------------------
+
+  get scopes(): ScopeManager {
+    return this.circuit.scopes;
+  }
+
+  /** Height of the circuit area in CSS pixels; the scopes, if any, take the rest. */
+  circuitHeight(): number {
+    const h = this.cssHeight;
+    if (this.circuit.scopes.scopeCount === 0) return h;
+    return h - Math.trunc(h * this.scopeHeightFraction);
+  }
+
+  /** The scope area in CSS pixels. */
+  scopeArea(): ScopeRect {
+    const ch = this.circuitHeight();
+    return { x: 0, y: ch, width: this.cssWidth, height: this.cssHeight - ch };
+  }
+
+  /** Lay out and draw the scopes and the info text (upstream drawBottomArea). */
+  private drawScopes(): void {
+    const sr = this.scopeRenderer;
+    if (!sr) return;
+    const mgr = this.circuit.scopes;
+    const before = mgr.scopeCount;
+    mgr.setupScopes(this.scopeArea());
+    // removing the last scope gives its room back to the circuit
+    if (mgr.scopeCount !== before) mgr.setupScopes(this.scopeArea());
+    mgr.dialogShowing = useApp.getState().dialog !== null;
+    mgr.mouseElm = this.editor.mouseElm ?? this.scopeHoverElm;
+    mgr.cursorScope = null;
+    mgr.cursorTime = -1;
+    const m = this.mouse;
+    mgr.mouseCursorX = m?.x ?? -1;
+    mgr.mouseCursorY = m?.y ?? -1;
+    if (m !== null) for (const s of mgr.scopes) s.selectScope(m.x, m.y);
+    sr.render(
+      mgr,
+      { area: this.scopeArea(), info: this.infoLines(), splitterHot: this.splitterHot },
+      this.dpr,
+    );
+  }
+
+  /**
+   * The info text: the hovered element's getInfo (or the voltage of the hovered post), else the
+   * time and time step, as upstream shows right of the scopes. Without scopes only an element's
+   * info is shown; the control bar has the time.
+   */
+  infoLines(): string[] {
+    const ed = this.editor;
+    const mgr = this.circuit.scopes;
+    const sim = this.circuit.sim;
+    const elm = ed.mouseElm ?? this.scopeHoverElm;
+    const arr: string[] = [];
+    if (elm !== null) {
+      if (elm === ed.mouseElm && ed.mousePost >= 0)
+        arr.push('V = ' + getUnitText(elm.getPostVoltage(ed.mousePost), 'V'));
+      else elm.getInfo(arr);
+    } else if (mgr.scopeCount > 0) {
+      arr[0] = 't = ' + getTimeText(sim.t);
+      const timerate = 160 * this.circuit.getIterCount() * sim.timeStep;
+      if (timerate >= 0.1) arr[0] += ' (' + showFormat(timerate) + 'x)';
+      arr[1] = 'time step = ' + getTimeText(sim.timeStep);
+    }
+    // upstream stops at the first empty slot
+    const info: string[] = [];
+    for (const line of arr) {
+      if (typeof line !== 'string') break;
+      info.push(line);
+    }
+    if (mgr.scopeCount > 0) {
+      const bad = this.renderer?.badConnectionCount ?? 0;
+      if (bad > 0) info.push(`${bad} bad connection${bad === 1 ? '' : 's'}`);
+    }
+    return info;
+  }
+
+  /** Index of the docked scope at a canvas point, or -1. */
+  scopeAt(x: number, y: number): number {
+    const mgr = this.circuit.scopes;
+    if (y < this.circuitHeight()) return -1;
+    return mgr.scopes.findIndex(
+      (s) =>
+        x >= s.rect.x &&
+        y >= s.rect.y &&
+        x < s.rect.x + s.rect.width &&
+        y < s.rect.y + s.rect.height,
+    );
+  }
+
+  /** Hover over the scope area: select the scope and highlight what it shows (upstream). */
+  private hoverScopes(x: number, y: number): void {
+    const mgr = this.circuit.scopes;
+    const i = this.scopeAt(x, y);
+    mgr.scopeSelected = i;
+    const s = i >= 0 ? mgr.scopes[i] : undefined;
+    this.scopeHoverElm = s?.getElm() ?? null;
+    const r = this.renderer;
+    if (r) {
+      const roles = new Map<CircuitElm, string>();
+      s?.addScopePlotRoles(roles);
+      r.scopeHighlights = roles;
+    }
+  }
+
+  private clearScopeHover(): void {
+    const mgr = this.circuit.scopes;
+    mgr.scopeSelected = -1;
+    this.scopeHoverElm = null;
+    if (this.renderer) this.renderer.scopeHighlights = new Map();
+  }
+
+  /** Run a scope change as one undoable edit (upstream pushes an undo item first). */
+  scopeCommand(label: string, fn: () => unknown): void {
+    this.editor.history.record(label, () => {
+      fn();
+      return true;
+    });
+    this.unsavedChanges = true;
+  }
+
+  /** Element menu: View in New Scope. */
+  viewInScope(elm: CircuitElm): void {
+    this.scopeCommand('View in scope', () => this.circuit.scopes.viewInScope(elm));
+  }
+
+  /** Element menu: Add to Existing Scope n. */
+  addToScope(n: number, elm: CircuitElm): void {
+    this.scopeCommand('Add to scope', () => this.circuit.scopes.addToScope(n, elm));
+  }
+
+  /** Scope popup menu commands (upstream CommandManager "scopepop"). */
+  scopeMenu(item: string): void {
+    const mgr = this.circuit.scopes;
+    const i = this.menuScope;
+    const s = mgr.scopes[i];
+    if (s === undefined) return;
+    if (item === 'properties') {
+      this.openScopeProperties(s);
+      return;
+    }
+    if (item === 'exportcsv') {
+      const csv = s.exportCSV();
+      if (csv !== null) downloadText('circuitjs-scope.csv', csv, 'text/csv');
+      return;
+    }
+    this.scopeCommand('Scope', () => {
+      switch (item) {
+        case 'remove':
+          s.setElm(null); // setupScopes() removes it
+          break;
+        case 'removeplot':
+          s.removePlot(this.menuPlot);
+          break;
+        case 'maxscale':
+          s.toggleMaxScale();
+          break;
+        case 'stack':
+          mgr.stackScope(i);
+          break;
+        case 'unstack':
+          mgr.unstackScope(i);
+          break;
+        case 'combine':
+          mgr.combineScope(i);
+          break;
+        case 'selecty':
+          s.selectY();
+          break;
+        case 'reset':
+          s.resetGraph(true);
+          break;
+      }
+    });
+  }
+
+  /** Scopes menu: stack, unstack, combine or separate all. */
+  allScopes(item: 'stackAll' | 'unstackAll' | 'combineAll' | 'separateAll'): void {
+    const mgr = this.circuit.scopes;
+    this.scopeCommand('Scopes', () => mgr[item]());
+  }
+
+  openScopeProperties(s: Scope): void {
+    this.dialogScope = s;
+    useApp.setState({ dialog: 'scopeProperties' });
   }
 
   // ---- commands ------------------------------------------------------------------------------
@@ -508,10 +742,62 @@ export class SimController {
       return { dist: Math.hypot(a.x - b.x, a.y - b.y), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
     };
 
+    // scope area gestures: dragging the splitter, or a press in a scope (drag-to-measure)
+    let split: number | null = null;
+    let scopeGesture: number | null = null;
+    const mgr = (): ScopeManager => this.circuit.scopes;
+    const onSplitter = (p: { x: number; y: number }): boolean =>
+      mgr().scopeCount > 0 && Math.abs(p.y - this.circuitHeight()) <= 4;
+    const inScopes = (p: { x: number; y: number }): boolean =>
+      mgr().scopeCount > 0 && p.y > this.circuitHeight();
+    const scopeDown = (e: PointerEvent, p: { x: number; y: number }): boolean => {
+      if (onSplitter(p)) {
+        split = e.pointerId;
+      } else if (inScopes(p)) {
+        const m = mgr();
+        m.mouseCursorX = p.x;
+        m.mouseCursorY = p.y;
+        this.hoverScopes(p.x, p.y);
+        const s = m.scopes[m.scopeSelected];
+        if (s !== undefined && !m.dialogShowing && s.cursorInSettingsWheel()) {
+          this.openScopeProperties(s);
+          return true;
+        }
+        if (!m.dialogShowing) for (const sc of m.scopes) sc.mousePressed(p.x, p.y);
+        // alt-drag or middle-drag moves the selected plot in manual scale mode
+        if (
+          !m.dialogShowing &&
+          (e.button === 1 || (e.button === 0 && e.altKey)) &&
+          s !== undefined
+        ) {
+          s.selectScope(p.x, p.y);
+          s.startDragPlotY(p.x, p.y);
+        }
+        scopeGesture = e.pointerId;
+      } else return false;
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {
+        // the pointer is already gone
+      }
+      e.preventDefault();
+      return true;
+    };
+    const endScopeGesture = (): void => {
+      const m = mgr();
+      m.dragStartTime = -1;
+      if (m.draggingPlotYScope !== null) m.draggingPlotYScope.draggingPlotY = false;
+      m.draggingPlotYScope = null;
+      scopeGesture = null;
+      split = null;
+    };
+
     const down = (e: PointerEvent): void => {
       if (e.button === 2) return; // the context menu handles it
       canvas.focus({ preventScroll: true });
       const p = local(e);
+      this.mouse = p;
+      if (!(e.pointerType === 'touch' && touches.size > 0) && scopeDown(e, p)) return;
       if (e.pointerType === 'touch') {
         // a primary touch starts a new gesture: no other finger is down, so forget any touch
         // whose end never reached the canvas (it would turn this drag into a pinch zoom)
@@ -580,6 +866,36 @@ export class SimController {
       const r = this.renderer;
       if (!r) return;
       const p = local(e);
+      this.mouse = p;
+      if (split === e.pointerId) {
+        const f = 1 - p.y / Math.max(1, this.cssHeight);
+        this.scopeHeightFraction = Math.min(0.9, Math.max(0.1, f));
+        return;
+      }
+      if (scopeGesture === e.pointerId) {
+        mgr().draggingPlotYScope?.dragPlotY(p.y);
+        this.hoverScopes(p.x, p.y);
+        return;
+      }
+      if (gestureId === null && pan === null && pinch === null) {
+        this.splitterHot = onSplitter(p);
+        if (this.splitterHot || inScopes(p)) {
+          if (ed.mouseElm !== null) ed.leave();
+          this.hoverScopes(p.x, p.y);
+          const m = mgr();
+          const s = m.scopes[m.scopeSelected];
+          m.mouseCursorX = p.x;
+          m.mouseCursorY = p.y;
+          canvas.style.cursor = this.splitterHot
+            ? 'ns-resize'
+            : s !== undefined && s.cursorInSettingsWheel()
+              ? 'pointer'
+              : 'default';
+          this.publishEditor();
+          return;
+        }
+        if (this.scopeHoverElm !== null || mgr().scopeSelected >= 0) this.clearScopeHover();
+      }
       if (
         press !== null &&
         press.id === e.pointerId &&
@@ -611,6 +927,11 @@ export class SimController {
       updateCursor(g.x, g.y);
     };
     const up = (e: PointerEvent): void => {
+      if (split === e.pointerId || scopeGesture === e.pointerId) {
+        endScopeGesture();
+        if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+        return;
+      }
       if (press !== null && press.id === e.pointerId) cancelPress();
       touches.delete(e.pointerId);
       if (touches.size < 2) pinch = null;
@@ -626,7 +947,10 @@ export class SimController {
       updateCursor(g.x, g.y);
     };
     const leave = (e: PointerEvent): void => {
-      if (gestureId !== null) return; // captured: the gesture continues
+      if (gestureId !== null || split !== null || scopeGesture !== null) return; // captured
+      this.mouse = null;
+      this.splitterHot = false;
+      this.clearScopeHover();
       if (e.pointerType !== 'mouse') return;
       ed.leave();
       this.publishEditor();
@@ -641,6 +965,12 @@ export class SimController {
       const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? canvas.clientHeight : 1;
       const dx = e.deltaX * unit;
       const dy = e.deltaY * unit;
+      if (inScopes(p)) {
+        // the wheel over a scope changes its time scale (about one step per notch)
+        const i = this.scopeAt(p.x, p.y);
+        if (i >= 0) mgr().scopes[i]?.onMouseWheel(dy / 16);
+        return;
+      }
       if (e.ctrlKey || e.metaKey) r.viewport.zoomAt(Math.exp(-dy * 0.01), p.x, p.y);
       // some browsers turn shift+wheel into deltaX themselves, others leave it in deltaY
       else if (e.shiftKey) r.viewport.pan(-(dx !== 0 ? dx : dy), 0);
@@ -658,15 +988,34 @@ export class SimController {
         cancelPress();
         abandonGesture(id);
       }
+      const lp = local(e);
+      this.menuScope = -1;
+      if (inScopes(lp)) {
+        const i = this.scopeAt(lp.x, lp.y);
+        const s = mgr().scopes[i];
+        this.menuElm = null;
+        if (s !== undefined && s.canMenu()) {
+          this.menuScope = i;
+          this.menuPlot = s.selectedPlot;
+        }
+        this.publishEditor();
+        return;
+      }
       // pick what is under the mouse now (a touch long-press has no hover before it)
-      const g = grid(local(e));
+      const g = grid(lp);
       ed.hover(g.x, g.y);
       this.menuElm = ed.mouseElm;
       this.menuPos = g;
       this.publishEditor();
     };
     const dblclick = (e: MouseEvent): void => {
-      const g = grid(local(e));
+      const lp = local(e);
+      if (inScopes(lp)) {
+        const s = mgr().scopes[this.scopeAt(lp.x, lp.y)];
+        if (s !== undefined) this.openScopeProperties(s);
+        return;
+      }
+      const g = grid(lp);
       const elm = ed.pick(g.x, g.y).elm;
       if (elm === null || elm instanceof SwitchElm) return;
       ed.select(elm);
@@ -761,6 +1110,35 @@ function inRect(r: Rect, x: number, y: number): boolean {
 /** How long a touch must stay still to open the context menu, and how far it may wander (px). */
 const LONG_PRESS_MS = 500;
 const LONG_PRESS_SLOP = 8;
+
+/** Scope "Save as default" settings, in local storage as upstream (key `scopeDefaults`). */
+const scopeDefaultsStore: ScopeDefaultsStore = {
+  getItem(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  setItem(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      // storage disabled: the defaults last for this page
+    }
+  },
+};
+
+function downloadText(name: string, text: string, type: string): void {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
 
 /** Upstream keeps the clipboard in local storage so it survives reloads and other tabs. */
 const CLIPBOARD_KEY = 'circuitClipboard';

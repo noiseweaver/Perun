@@ -13,7 +13,14 @@ import { useApp } from './store.ts';
 
 /** Dialogs the commands open; the App renders whichever is set. */
 export type DialogKind =
-  'save' | 'exportLink' | 'exportText' | 'importText' | 'shortcuts' | 'simSettings' | null;
+  | 'save'
+  | 'exportLink'
+  | 'exportText'
+  | 'importText'
+  | 'shortcuts'
+  | 'simSettings'
+  | 'scopeProperties'
+  | null;
 
 export function openDialog(kind: DialogKind): void {
   useApp.setState({ dialog: kind });

@@ -91,6 +91,10 @@ export class CircuitRenderer {
   pending: CircuitElm | null = null;
   /** Rubber band selection in circuit coordinates. */
   selectionRect: Rect | null = null;
+  /** Elements the scope under the mouse shows; drawn highlighted (upstream scopePlotRoles). */
+  scopeHighlights: ReadonlyMap<CircuitElm, string> = new Map();
+  /** Height of the circuit area in CSS pixels; scopes take the rest. Null: the whole canvas. */
+  circuitHeight: number | null = null;
 
   constructor(canvas: HTMLCanvasElement, theme: Theme) {
     const ctx = canvas.getContext('2d');
@@ -166,7 +170,9 @@ export class CircuitRenderer {
 
   /** Centre the circuit in the canvas. */
   fit(): void {
-    this.viewport.fit(this.circuitBounds(), this.cssWidth, this.cssHeight);
+    const h =
+      this.circuitHeight === null ? this.cssHeight : Math.min(this.circuitHeight, this.cssHeight);
+    this.viewport.fit(this.circuitBounds(), this.cssWidth, h);
   }
 
   /** The element at a point in CSS pixels relative to the canvas, smallest box first. */
@@ -249,7 +255,11 @@ export class CircuitRenderer {
     if (!view) return;
     const painter = this.painter;
     const highlighted =
-      e === this.hovered || e === this.stopElm || e.selected || e === this.pending;
+      e === this.hovered ||
+      e === this.stopElm ||
+      e.selected ||
+      e === this.pending ||
+      this.scopeHighlights.has(e);
     painter.highlighted = highlighted;
     painter.highlightColor =
       e === this.stopElm || e.selected || e === this.pending

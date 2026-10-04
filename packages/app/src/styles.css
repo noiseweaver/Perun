@@ -1101,6 +1101,14 @@ textarea.field-input {
     padding: 0 4px 0 10px;
   }
 
+  /* five menus don't fit a phone: they scroll sideways instead of widening the page */
+  .app-bar-menus {
+    flex-shrink: 1;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
   .control-bar {
     gap: 8px 16px;
   }
@@ -1188,4 +1196,136 @@ textarea.field-input {
   .app-bar-actions {
     display: none;
   }
+}
+
+/* ---- scope properties --------------------------------------------------------------------- */
+
+.scope-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.scope-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.scope-section:last-child {
+  border-bottom: 0;
+}
+
+.scope-section-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ui-accent);
+}
+
+.scope-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  column-gap: 16px;
+}
+
+.scope-radios {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 20px;
+}
+
+.scope-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  cursor: pointer;
+}
+
+.scope-radio input {
+  margin: 0;
+  accent-color: var(--ui-accent);
+}
+
+.scope-xy-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.text-input.scope-select,
+.text-input.scope-short-input,
+.scope-scale-input .text-input {
+  height: 40px;
+  font-size: 14px;
+  padding: 0 12px;
+}
+
+.text-input.scope-short-input {
+  width: 96px;
+}
+
+.scope-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.scope-slider-row input[type='range'] {
+  flex: 1;
+  accent-color: var(--ui-accent);
+}
+
+.scope-value {
+  min-width: 88px;
+  text-align: right;
+  font-family: var(--mono-font);
+  font-size: 13px;
+}
+
+.scope-channels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.chip.chip-selected {
+  border-color: transparent;
+  background: var(--md-secondary-container);
+}
+
+.scope-scale-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.scope-scale-input {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 220px;
+}
+
+.scope-scale-input .text-input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--mono-font);
+}
+
+.field-disabled {
+  opacity: 0.5;
+  cursor: default;
 }
