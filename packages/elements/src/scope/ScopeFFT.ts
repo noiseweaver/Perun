@@ -88,6 +88,10 @@ export class ScopeFFT {
     g.setColor('fft');
     const w = scope.rect.width;
     const h = scope.rect.height;
+    if (scope.mgr.look === 'cards') {
+      this.drawSmooth(g, real, imag, maxM);
+      return;
+    }
     if (!this.logSpectrum) {
       let prevHeight = 0;
       const y = h - 1 - 12;
@@ -126,6 +130,68 @@ export class ScopeFFT {
         prevX = x;
       }
     }
+  }
+
+  /**
+   * The card look's spectrum (not upstream): the loudest bin of each pixel column, at sub-pixel
+   * height, as one smooth antialiased line over a faint fill. Same scales as upstream's.
+   */
+  private drawSmooth(g: ScopeGraphics, real: Float64Array, imag: Float64Array, maxM: number): void {
+    const scope = this.scope;
+    const fft = this.getFft();
+    const spc = scope.scopePointCount;
+    const w = scope.rect.width;
+    const h = scope.rect.height;
+    const dbRange = 80;
+    const topMargin = 5;
+    const bottomMargin = 12;
+    const pixelsPerDb = (h - topMargin - bottomMargin) / dbRange;
+    const base = this.logSpectrum ? h - bottomMargin : h - 1 - 12;
+    if (this.logSpectrum) {
+      g.setTextStyle('label');
+      for (let db = -20; db >= -80; db -= 20) {
+        const y = topMargin + Math.trunc(-db * pixelsPerDb);
+        if (y < 0 || y >= h) continue;
+        g.setColor('fftGrid');
+        g.drawLine(0, y, w, y);
+        // on the right: the peak label sits on the left, where the low frequencies are
+        const label = `${db} dB`;
+        g.setColor('textMuted');
+        g.drawString(label, w - g.measureWidth(label) - 4, y - 3);
+      }
+      g.setTextStyle('normal');
+    }
+    const yOf = (m: number): number => {
+      if (!this.logSpectrum) return base - (m * base) / maxM;
+      const db = Math.max(-dbRange, (20 * Math.log(m / maxM)) / Math.log(10));
+      return topMargin - db * pixelsPerDb;
+    };
+    // loudest bin per column, so a narrow peak never falls between pixels
+    const xs: number[] = [];
+    const ys: number[] = [];
+    let col = -1;
+    let best = 0;
+    for (let i = 0; i <= spc / 2; i++) {
+      const x = i < spc / 2 ? (2 * i * w) / spc : w;
+      const c = Math.floor(x);
+      const m = i < spc / 2 ? fft.magnitude(real[i], imag[i]) : 0;
+      if (c !== col) {
+        if (col >= 0) {
+          xs.push(col + 0.5);
+          ys.push(yOf(best));
+        }
+        col = c;
+        best = m;
+      } else if (m > best) best = m;
+    }
+    if (xs.length < 2) return;
+    g.save();
+    g.setGlobalAlpha(0.14);
+    g.setColor('fft');
+    g.fillPolygon([...xs, xs[xs.length - 1], xs[0]], [...ys, base, base], xs.length + 2);
+    g.restore();
+    g.setColor('fft');
+    g.strokePolyline(xs, ys, xs.length, 1.5);
   }
 
   drawPhaseAngle(g: ScopeGraphics): void {

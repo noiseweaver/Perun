@@ -110,6 +110,23 @@ export class ScopePlot {
     }
   }
 
+  /** The unit symbol of this plot's values. */
+  unitSymbol(): string {
+    switch (this.units) {
+      case UNITS_V:
+        return 'V';
+      case UNITS_A:
+        return 'A';
+      case UNITS_OHMS:
+        return OHM;
+      case UNITS_W:
+        return 'W';
+      case UNITS_C:
+        return 'C';
+    }
+    return '';
+  }
+
   getUnitText(v: number): string {
     switch (this.units) {
       case UNITS_V:

@@ -36,12 +36,12 @@ function exponentFormat(v: number): string {
   return `${mant}E${exp < 0 ? '-' : ''}${String(Math.abs(exp)).padStart(3, '0')}`;
 }
 
-function unitText(v: number, u: string, sf: boolean): string {
+function unitText(v: number, u: string, sf: boolean, fixed = false): string {
   const sp = sf ? '' : ' ';
-  const f = sf ? shortFormat : showFormat;
+  const f = fixed ? fixedFormat : sf ? shortFormat : showFormat;
   const va = Math.abs(v);
   // this used to return null, but then wires would display "null" with 0V
-  if (va < 1e-14) return '0' + sp + u;
+  if (va < 1e-14) return (fixed ? fixedFormat(0) : '0') + sp + u;
   if (va < 1e-9) return f(v * 1e12) + sp + 'p' + u;
   if (va < 1e-6) return f(v * 1e9) + sp + 'n' + u;
   if (va < 1e-3) return f(v * 1e6) + sp + MU + u;
@@ -56,6 +56,15 @@ function unitText(v: number, u: string, sf: boolean): string {
 /** `1.5 kΩ` style text with three decimals. */
 export function getUnitText(v: number, u: string): string {
   return unitText(v, u, false);
+}
+
+/**
+ * Like getUnitText, but always three decimals and a space where a minus sign would go, so a live
+ * value keeps its width in monospace as it changes (the scope cards, not upstream).
+ */
+export function getFixedUnitText(v: number, u: string): string {
+  const s = unitText(v, u, false, true);
+  return s.startsWith('-') ? s : ' ' + s;
 }
 
 /** `1.5kΩ` style text with one decimal, used on the circuit. */

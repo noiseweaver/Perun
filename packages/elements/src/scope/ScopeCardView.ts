@@ -8,7 +8,7 @@
 // Scope.draw (CircuitJS1 Scope.java at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032), so switching
 // looks changes nothing but the picture.
 
-import { getTimeText, getUnitText } from '../view/units.ts';
+import { getFixedUnitText, getTimeText, getUnitText } from '../view/units.ts';
 import type { WaveEventKind } from './ScopeSnap.ts';
 import {
   UNITS_A,
@@ -600,7 +600,8 @@ function drawHeader(
     g.setTextStyle('label');
     const nw = g.measureWidth(name);
     g.setTextStyle('value');
-    const value = shown && p.elm !== null ? p.getUnitText(p.lastValue) : '';
+    // fixed decimals: the value keeps its width as it changes
+    const value = shown && p.elm !== null ? getFixedUnitText(p.lastValue, p.unitSymbol()) : '';
     return { p, shown, name, nw, value, vw: value === '' ? 0 : g.measureWidth(value) + 5 };
   });
   // short of room: chips without their values
@@ -713,7 +714,10 @@ function drawCursor(scope: Scope, g: ScopeGraphics): void {
     for (const p of vp) {
       const v = scope.drawPlotDot(g, p, x);
       if (here && !Number.isNaN(v))
-        lines.push({ ink: p.color, text: `${plotName(scope, p)} ${p.getUnitText(v)}` });
+        lines.push({
+          ink: p.color,
+          text: `${plotName(scope, p)} ${getFixedUnitText(v, p.unitSymbol())}`,
+        });
     }
   }
   if (!here) return;
