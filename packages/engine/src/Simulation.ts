@@ -827,6 +827,8 @@ export class Simulation {
       this.matrices = null;
       return 0;
     }
+    // upstream's loop works on a local copy: stop() clears this.matrices mid-step
+    const allMatrices = this.matrices;
     const delayWireProcessing = this.delayWireProcessing;
     let goodIterations = 100;
     let done = 0;
@@ -846,7 +848,7 @@ export class Simulation {
       for (subiter = 0; subiter !== subiterCount; subiter++) {
         this.converged = true;
         this.subIterations = subiter;
-        const matrices = this.matrices as CircuitMatrix[];
+        const matrices = allMatrices;
         for (const m of matrices) {
           for (let i = 0; i !== m.size; i++) m.rightSide[i] = m.origRightSide[i];
           if (m.nonLinear) {
@@ -891,8 +893,7 @@ export class Simulation {
           break;
         }
         // retry the step at half the timestep from the state at its start
-        for (const m of this.matrices as CircuitMatrix[])
-          this.setNodeVoltages(m, m.lastNodeVoltages as number[]);
+        for (const m of allMatrices) this.setNodeVoltages(m, m.lastNodeVoltages as number[]);
         this.stampCircuit();
         continue;
       }
@@ -907,11 +908,14 @@ export class Simulation {
       for (const e of elmArr) e.stepFinished();
       if (!delayWireProcessing) this.calcWireCurrents();
       // save node voltages so a failed next step can restart from here
-      for (const m of this.matrices as CircuitMatrix[]) {
+      for (const m of allMatrices) {
         const last = m.lastNodeVoltages as number[];
         for (let i = 0; i !== m.nodeCount; i++) last[i] = m.nodeVoltages[i];
       }
       if (++done >= steps) break;
+      // stepFinished can stop the simulation (max current exceeded); upstream then leaves the
+      // loop because stop() clears simRunning
+      if (this.stopMessage !== null) break;
     }
     if (delayWireProcessing) this.calcWireCurrents();
     return done;
