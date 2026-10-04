@@ -771,7 +771,7 @@ function drawPeakLabel(scope: Scope, g: ScopeGraphics): void {
   g.setTextStyle('normal');
 }
 
-/** The resize grip of an undocked card, and a mini card's handle while the mouse is over it. */
+/** The resize grip (always) of an undocked card, and a mini card's handle while the mouse is over it. */
 function drawUndockedChrome(scope: Scope, g: ScopeGraphics, mini: boolean, radius: number): void {
   const slot = scope.slot;
   const mgr = scope.mgr;
@@ -779,10 +779,10 @@ function drawUndockedChrome(scope: Scope, g: ScopeGraphics, mini: boolean, radiu
   const my = mgr.mouseCursorY;
   const inside =
     mx >= slot.x && my >= slot.y && mx < slot.x + slot.width && my < slot.y + slot.height;
-  if (!inside && !scope.canvasSelected) return;
-  g.setColor('textMuted');
+  // the grip always shows (Gady, 2026-10-04); brighter while the mouse is over the card
+  g.setColor(inside || scope.canvasSelected ? 'text' : 'textMuted');
   resizeGrip(g, slot.x + slot.width - 4, slot.y + slot.height - 4);
-  if (mini) {
+  if (mini && (inside || scope.canvasSelected)) {
     g.save();
     g.setGlobalAlpha(0.85);
     g.setColor('card');
