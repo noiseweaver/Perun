@@ -13,6 +13,7 @@ import { unescapeToken } from '../escape.ts';
 import { parseJavaBoolean, parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import { getCurrentDText, getVoltageDText, getVoltageText } from '../view/units.ts';
 
 /** SPST switch. Position 0 is closed, 1 is open. */
 export class SwitchElm extends CircuitElm {
@@ -121,6 +122,18 @@ export class SwitchElm extends CircuitElm {
 
   useIECSymbol(): boolean {
     return (this.flags & SwitchElm.FLAG_IEC) !== 0;
+  }
+
+  override getInfo(arr: string[]): void {
+    arr[0] = this.momentary ? 'push switch (SPST)' : 'switch (SPST)';
+    if (this.position === 1) {
+      arr[1] = 'open';
+      arr[2] = 'Vd = ' + getVoltageDText(this.getVoltageDiff());
+    } else {
+      arr[1] = 'closed';
+      arr[2] = 'V = ' + getVoltageText(this.getPostVoltage(0));
+      arr[3] = 'I = ' + getCurrentDText(this.getCurrent());
+    }
   }
 
   override getElmType(): string {

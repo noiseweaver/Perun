@@ -13,10 +13,11 @@ import { SCALE_AUTO } from '../constants.ts';
 import { parseJavaDouble, parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import { getUnitText, getUnitTextWithScale, getVoltageText, showFormat } from '../view/units.ts';
 
 /**
  * Voltmeter between two posts, optionally with a finite input resistance. The measurement
- * statistics (RMS, min/max, frequency) are display only and come with scopes (Phase 6).
+ * statistics (RMS, min/max, period ...) are display only.
  */
 export class ProbeElm extends CircuitElm {
   static readonly FLAG_SHOWVOLTAGE = 1;
@@ -100,6 +101,208 @@ export class ProbeElm extends CircuitElm {
   }
   drawAsCircle(): boolean {
     return (this.flags & ProbeElm.FLAG_CIRCLE) !== 0;
+  }
+
+  // ---- measurement statistics (display only, updated once per maxTimeStep) -----------------
+
+  rmsV = 0;
+  total = 0;
+  count = 0;
+  avgV = 0;
+  totalV = 0;
+  /** 0 or 1; a double upstream because it is passed back to web pages. */
+  binaryLevel = 0;
+  zerocount = 0;
+  maxV = 0;
+  lastMaxV = 0;
+  minV = 0;
+  lastMinV = 0;
+  frequency = 0;
+  period = 0;
+  pulseWidth = 0;
+  dutyCycle = 0;
+  increasingV = true;
+  decreasingV = true;
+  started = false;
+  lastStepCount = 0;
+  /** Simulated time between consecutive maximum values. */
+  periodStart = 0;
+  periodLength = 0;
+  pulseStart = 0;
+
+  override reset(): void {
+    super.reset();
+    this.zerocount = 0;
+    this.rmsV = this.total = this.count = 0;
+    this.avgV = this.totalV = 0;
+    this.maxV = this.lastMaxV = 0;
+    this.minV = this.lastMinV = 0;
+    this.binaryLevel = 0;
+    this.period = this.pulseWidth = this.dutyCycle = 0;
+    this.periodStart = this.periodLength = this.pulseStart = 0;
+    this.increasingV = true;
+    this.decreasingV = true;
+    this.started = false;
+    this.lastStepCount = 0;
+  }
+
+  override stepFinished(): void {
+    const sim = this.sim;
+    if (sim.timeStepCount === this.lastStepCount) return;
+    this.lastStepCount = sim.timeStepCount;
+    // how many counts are in a cycle
+    this.count++;
+    const v = this.getVoltageDiff();
+    // sum of squares
+    this.total += v * v;
+    this.totalV += v;
+
+    // binary threshold is a fixed 2.5V (assumes ~5V logic levels)
+    this.binaryLevel = v < 2.5 ? 0 : 1;
+
+    if (!this.started) {
+      // prime max/min tracking with the first sample instead of the stale defaults
+      this.started = true;
+      this.maxV = this.minV = v;
+      this.increasingV = true;
+      this.decreasingV = false;
+      this.periodStart = this.pulseStart = sim.t;
+    }
+
+    // V going up, track maximum value
+    if (v > this.maxV && this.increasingV) {
+      this.maxV = v;
+      this.increasingV = true;
+      this.decreasingV = false;
+    }
+    if (v < this.maxV && this.increasingV) {
+      // change of direction V now going down - at start of waveform
+      this.lastMaxV = this.maxV;
+      this.periodLength = sim.t - this.periodStart;
+      this.periodStart = sim.t;
+      this.period = this.periodLength;
+      this.pulseWidth = sim.t - this.pulseStart;
+      this.dutyCycle = this.pulseWidth / this.periodLength;
+      this.minV = v;
+      this.increasingV = false;
+      this.decreasingV = true;
+      this.endCycle();
+    }
+    if (v < this.minV && this.decreasingV) {
+      // V going down, track minimum value
+      this.minV = v;
+      this.increasingV = false;
+      this.decreasingV = true;
+    }
+    if (v > this.minV && this.decreasingV) {
+      // change of direction V now going up
+      this.lastMinV = this.minV;
+      this.pulseStart = sim.t;
+      this.maxV = v;
+      this.increasingV = true;
+      this.decreasingV = false;
+      this.endCycle();
+    }
+    // need to zero the rms value if it stays at 0 for a while
+    if (v === 0) {
+      this.zerocount++;
+      if (this.zerocount > 5) {
+        this.total = 0;
+        this.rmsV = 0;
+        this.avgV = 0;
+        this.maxV = 0;
+        this.minV = 0;
+      }
+    } else this.zerocount = 0;
+  }
+
+  /** The rms and average bookkeeping both direction changes share upstream. */
+  private endCycle(): void {
+    this.total = this.total / this.count;
+    this.rmsV = Math.sqrt(this.total);
+    if (Number.isNaN(this.rmsV)) this.rmsV = 0;
+    this.avgV = this.totalV / this.count;
+    if (Number.isNaN(this.avgV)) this.avgV = 0;
+    this.count = 0;
+    this.total = 0;
+    this.totalV = 0;
+  }
+
+  /** The text shown next to the probe for its meter setting (upstream `draw`). */
+  meterValueText(): string {
+    const scale = this.scale;
+    switch (this.meter) {
+      case ProbeElm.TP_VOL:
+        return getUnitTextWithScale(this.getVoltageDiff(), 'V', scale);
+      case ProbeElm.TP_RMS:
+        return getUnitTextWithScale(this.rmsV, 'V(rms)', scale);
+      case ProbeElm.TP_AVG:
+        return getUnitTextWithScale(this.avgV, 'V(avg)', scale);
+      case ProbeElm.TP_MAX:
+        return getUnitTextWithScale(this.lastMaxV, 'Vpk', scale);
+      case ProbeElm.TP_MIN:
+        return getUnitTextWithScale(this.lastMinV, 'Vmin', scale);
+      case ProbeElm.TP_P2P:
+        return getUnitTextWithScale(this.lastMaxV - this.lastMinV, 'Vp2p', scale);
+      case ProbeElm.TP_BIN:
+        return String(this.binaryLevel);
+      case ProbeElm.TP_FRQ:
+        return getUnitText(this.frequency, 'Hz');
+      case ProbeElm.TP_PWI:
+        return getUnitText(this.pulseWidth, 's');
+      case ProbeElm.TP_DUT:
+        return showFormat(this.dutyCycle);
+    }
+    return '';
+  }
+
+  override getInfo(arr: string[]): void {
+    arr[0] = 'voltmeter';
+    let i = 1;
+    const m = this.meter;
+    arr[i++] = this.getMeterLine(m);
+    // the rest of the tracked values, skipping the selected one; frequency is never computed and
+    // binary is left out to make room for average, as upstream
+    for (const k of [
+      ProbeElm.TP_VOL,
+      ProbeElm.TP_MAX,
+      ProbeElm.TP_MIN,
+      ProbeElm.TP_RMS,
+      ProbeElm.TP_AVG,
+      ProbeElm.TP_P2P,
+      ProbeElm.TP_PER,
+      ProbeElm.TP_PWI,
+      ProbeElm.TP_DUT,
+    ])
+      if (m !== k) arr[i++] = this.getMeterLine(k);
+  }
+
+  getMeterLine(m: number): string {
+    switch (m) {
+      case ProbeElm.TP_VOL:
+        return 'Vd = ' + getVoltageText(this.getVoltageDiff());
+      case ProbeElm.TP_RMS:
+        return 'V(rms) = ' + getVoltageText(this.rmsV);
+      case ProbeElm.TP_AVG:
+        return 'V(avg) = ' + getVoltageText(this.avgV);
+      case ProbeElm.TP_MAX:
+        return 'Vmax = ' + getVoltageText(this.lastMaxV);
+      case ProbeElm.TP_MIN:
+        return 'Vmin = ' + getVoltageText(this.lastMinV);
+      case ProbeElm.TP_P2P:
+        return 'Vp2p = ' + getVoltageText(this.lastMaxV - this.lastMinV);
+      case ProbeElm.TP_BIN:
+        return 'Binary = ' + String(this.binaryLevel);
+      case ProbeElm.TP_FRQ:
+        return 'Freq = ' + getUnitText(this.frequency, 'Hz');
+      case ProbeElm.TP_PER:
+        return 'Period = ' + getUnitText(this.period, 's');
+      case ProbeElm.TP_PWI:
+        return 'Pulse width = ' + getUnitText(this.pulseWidth, 's');
+      case ProbeElm.TP_DUT:
+        return 'Duty cycle = ' + showFormat(this.dutyCycle);
+    }
+    return '';
   }
 
   override getElmType(): string {

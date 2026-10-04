@@ -17,6 +17,7 @@ import type { MosfetModel } from '../models/MosfetModel.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from '../xml.ts';
 import { Diode } from './Diode.ts';
+import { getCurrentText, getUnitText, getVoltageText } from '../view/units.ts';
 
 /** MOSFET (square-law model). Node 0 is the gate, 1 the source, 2 the drain, 3 the body. */
 export class MosfetElm extends CircuitElm {
@@ -506,6 +507,56 @@ export class MosfetElm extends CircuitElm {
     const capCur =
       model.capGD > 0 && this.geqGD > 0 ? this.geqGD * (nodes[0].v - nodes[2].v) + this.ceqGD : 0;
     return -this.ids + this.diodeCurrent2 + capCur;
+  }
+
+  override getPower(): number {
+    const v = (n: number): number => this.getPostVoltage(n);
+    return (
+      this.ids * (v(2) - v(1)) -
+      this.diodeCurrent1 * (v(1) - v(this.bodyTerminal)) -
+      this.diodeCurrent2 * (v(2) - v(this.bodyTerminal))
+    );
+  }
+
+  getFetInfo(arr: string[], n: string): void {
+    const pnp = this.pnp;
+    const v = (k: number): number => this.getPostVoltage(k);
+    arr[0] = (pnp === -1 ? 'p-' : 'n-') + n + ' (' + this.modelName + ')';
+    // beta is a double concatenated in GWT: no ".0"
+    arr[1] = 'Vt=' + getVoltageText(pnp * this.vt) + ', \u03b2=' + String(this.beta);
+    arr[2] = (pnp === 1 ? 'Ids = ' : 'Isd = ') + getCurrentText(this.ids);
+    arr[3] = 'Vgs = ' + getVoltageText(v(0) - v(pnp === -1 ? 2 : 1));
+    arr[4] = (pnp === 1 ? 'Vds = ' : 'Vsd = ') + getVoltageText(v(2) - v(1));
+    arr[5] = this.mode === 0 ? 'off' : this.mode === 1 ? 'linear' : 'saturation';
+    arr[6] = 'gm = ' + getUnitText(this.gm, 'A/V');
+    arr[7] = 'P = ' + getUnitText(this.getPower(), 'W');
+    let idx = 8;
+    if (this.showBulk())
+      arr[idx++] =
+        'Ib = ' +
+        getUnitText(
+          this.bodyTerminal === 1
+            ? -this.diodeCurrent1
+            : this.bodyTerminal === 2
+              ? this.diodeCurrent2
+              : -pnp * (this.diodeCurrent1 + this.diodeCurrent2),
+          'A',
+        );
+    const model = this.model;
+    if (model !== null && model.capGS > 0) arr[idx++] = 'Cgs = ' + getUnitText(model.capGS, 'F');
+    if (model !== null && model.capGD > 0) arr[idx] = 'Cgd = ' + getUnitText(model.capGD, 'F');
+  }
+
+  override getInfo(arr: string[]): void {
+    this.getFetInfo(arr, 'MOSFET');
+  }
+
+  override getScopeText(_v: number): string {
+    return (this.pnp === -1 ? 'p-' : 'n-') + 'MOSFET';
+  }
+
+  override canViewInScope(): boolean {
+    return true;
   }
 
   override getElmType(): string {

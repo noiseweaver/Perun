@@ -74,6 +74,12 @@ export class LEDElm extends DiodeElm {
     this.maxBrightnessCurrent = r.parseDoubleAttr('mbc', this.maxBrightnessCurrent);
   }
 
+  override getInfo(arr: string[]): void {
+    super.getInfo(arr);
+    if (this.model === null || this.model.oldStyle) arr[0] = 'LED';
+    else arr[0] = 'LED (' + this.modelName + ')';
+  }
+
   override getElmType(): string {
     return 'LED';
   }

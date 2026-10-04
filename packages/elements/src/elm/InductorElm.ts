@@ -13,6 +13,7 @@ import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaDouble } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import { getUnitText } from '../view/units.ts';
 
 /** Inductor companion model, shared with transformers and relays (upstream `Inductor`). */
 export class Inductor {
@@ -199,6 +200,22 @@ export class InductorElm extends CircuitElm {
     const fpi = new FindPathInfo(PathType.INDUCT, this, this.getNode(1), this.sim);
     if (!fpi.findPath(this.getNode(0))) this.reset();
     return true;
+  }
+
+  override getInfo(arr: string[]): void {
+    arr[0] = this.saturationCurrent > 0 ? 'inductor (sat)' : 'inductor';
+    this.getBasicInfo(arr);
+    arr[3] = 'L = ' + getUnitText(this.inductance, 'H');
+    arr[4] = 'P = ' + getUnitText(this.getPower(), 'W');
+    if (this.saturationCurrent > 0) {
+      const lEff = this.ind.calcEffectiveInductance(this.current);
+      arr[5] = 'Leff = ' + getUnitText(lEff, 'H');
+      arr[6] = 'Isat = ' + getUnitText(this.saturationCurrent, 'A');
+    }
+  }
+
+  override getScopeText(_v: number): string {
+    return 'inductor, ' + getUnitText(this.inductance, 'H');
   }
 
   override getElmType(): string {

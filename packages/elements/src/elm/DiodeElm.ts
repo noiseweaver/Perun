@@ -16,6 +16,7 @@ import { modelsFor } from '../models/ModelLibrary.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from '../xml.ts';
 import { Diode } from './Diode.ts';
+import { getCurrentText, getUnitText, getVoltageText } from '../view/units.ts';
 
 export class DiodeElm extends CircuitElm {
   static readonly FLAG_FWDROP = 1;
@@ -132,6 +133,16 @@ export class DiodeElm extends CircuitElm {
   override stepFinished(): void {
     // stop for huge currents that make simulator act weird
     if (Math.abs(this.current) > 1e12) this.sim.stop('max current exceeded', this);
+  }
+
+  override getInfo(arr: string[]): void {
+    const model = this.model;
+    if (model === null || model.oldStyle) arr[0] = 'diode';
+    else arr[0] = 'diode (' + this.modelName + ')';
+    arr[1] = 'I = ' + getCurrentText(this.getCurrent());
+    arr[2] = 'Vd = ' + getVoltageText(this.getVoltageDiff());
+    arr[3] = 'P = ' + getUnitText(this.getPower(), 'W');
+    if (model?.oldStyle === true) arr[4] = 'Vf = ' + getVoltageText(model.fwdrop);
   }
 
   override getElmType(): string {

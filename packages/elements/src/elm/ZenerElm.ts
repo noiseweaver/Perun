@@ -11,6 +11,7 @@ import { parseJavaDouble } from '../java.ts';
 import { modelsFor } from '../models/ModelLibrary.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import { DiodeElm } from './DiodeElm.ts';
+import { getVoltageText } from '../view/units.ts';
 
 export class ZenerElm extends DiodeElm {
   /** Upstream `ZenerElm.lastZenerModelName`. */
@@ -40,6 +41,12 @@ export class ZenerElm extends DiodeElm {
       this.modelName = this.model.name;
     }
     this.setup();
+  }
+
+  override getInfo(arr: string[]): void {
+    super.getInfo(arr);
+    arr[0] = 'Zener diode';
+    arr[5] = 'Vz = ' + getVoltageText(this.model?.breakdownVoltage ?? 0);
   }
 
   override getElmType(): string {

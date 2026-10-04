@@ -13,6 +13,7 @@ import { SCALE_AUTO } from '../constants.ts';
 import { parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import { getVoltageText } from '../view/units.ts';
 
 /** One-post voltage readout. */
 export class OutputElm extends CircuitElm {
@@ -57,6 +58,11 @@ export class OutputElm extends CircuitElm {
 
   override getVoltageDiff(): number {
     return this.nodes[0].v;
+  }
+
+  override getInfo(arr: string[]): void {
+    arr[0] = 'output';
+    arr[1] = 'V = ' + getVoltageText(this.getPostVoltage(0));
   }
 
   override getElmType(): string {

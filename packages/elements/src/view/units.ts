@@ -77,3 +77,35 @@ export function javaDoubleToString(v: number): string {
   const s = String(v);
   return Number.isInteger(v) && Math.abs(v) < 1e7 ? s + '.0' : s;
 }
+
+export function getVoltageText(v: number): string {
+  return getUnitText(v, 'V');
+}
+
+export function getVoltageDText(v: number): string {
+  return getUnitText(Math.abs(v), 'V');
+}
+
+export function getCurrentText(i: number): string {
+  return getUnitText(i, 'A');
+}
+
+export function getCurrentDText(i: number): string {
+  return getUnitText(Math.abs(i), 'A');
+}
+
+/**
+ * Upstream `getTimeText`: seconds with a unit prefix, or h:mm:ss.sss from a minute up. The hour
+ * and minute counts are doubles concatenated in GWT, so they print without ".0".
+ */
+export function getTimeText(v: number): string {
+  if (v >= 60) {
+    const h = Math.floor(v / 3600);
+    v -= 3600 * h;
+    const m = Math.floor(v / 60);
+    v -= 60 * m;
+    if (h === 0) return `${m}:${v >= 10 ? '' : '0'}${showFormat(v)}`;
+    return `${h}:${m >= 10 ? '' : '0'}${m}:${v >= 10 ? '' : '0'}${showFormat(v)}`;
+  }
+  return getUnitText(v, 's');
+}

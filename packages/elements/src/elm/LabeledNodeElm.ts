@@ -13,6 +13,7 @@ import { EditInfo } from '../edit/EditInfo.ts';
 import { unescapeToken } from '../escape.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import { getCurrentText, getVoltageText } from '../view/units.ts';
 
 /** Named node: every label with the same text is one node. */
 export class LabeledNodeElm extends CircuitElm {
@@ -138,6 +139,17 @@ export class LabeledNodeElm extends CircuitElm {
     return 'b'.charCodeAt(0);
   }
 
+  override getInfo(arr: string[]): void {
+    arr[0] = this.text + ' (Labeled Node)';
+    // bus labels (busWidth > 1) come with digital elements
+    arr[1] = 'I = ' + getCurrentText(this.getCurrent());
+    arr[2] = 'V = ' + getVoltageText(this.getPostVoltage(0));
+  }
+
+  override getScopeText(_v: number): string {
+    return this.text;
+  }
+
   override getElmType(): string {
     return 'Labeled Node';
   }
@@ -161,3 +173,18 @@ export class LabeledNodeElm extends CircuitElm {
 }
 
 export const LabeledNodeElmType = elementType('LabeledNodeElm', LabeledNodeElm);
+
+/** Upstream `LabeledNodeElm.getLabelForNode`: the label name on this node, if any. */
+export function labelForNode(
+  labels: ReadonlyMap<string, { node: CircuitNode | null }>,
+  cn: CircuitNode | undefined,
+): string | null {
+  if (cn === undefined) return null;
+  for (const [key, e] of labels) {
+    if (e.node === cn) {
+      const ci = key.lastIndexOf(':');
+      return ci < 0 ? key : key.substring(0, ci);
+    }
+  }
+  return null;
+}

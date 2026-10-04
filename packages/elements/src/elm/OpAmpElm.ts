@@ -14,6 +14,7 @@ import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaDouble } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import { getCurrentText, getVoltageText } from '../view/units.ts';
 
 /** Ideal op-amp. Post 0 is the inverting input, 1 the non-inverting input, 2 the output. */
 export class OpAmpElm extends CircuitElm {
@@ -204,6 +205,22 @@ export class OpAmpElm extends CircuitElm {
   override getCurrentIntoNode(n: number): number {
     if (n === 2) return -this.current;
     return 0;
+  }
+
+  override getPower(): number {
+    return this.getPostVoltage(2) * this.current;
+  }
+
+  override getInfo(arr: string[]): void {
+    arr[0] = 'op-amp';
+    arr[1] = 'V+ = ' + getVoltageText(this.getPostVoltage(1));
+    arr[2] = 'V- = ' + getVoltageText(this.getPostVoltage(0));
+    // sometimes the voltage goes slightly outside range, to make convergence easier. so we hide
+    // that here.
+    const vo = Math.max(Math.min(this.getPostVoltage(2), this.maxOut), this.minOut);
+    arr[3] = 'Vout = ' + getVoltageText(vo);
+    arr[4] = 'Iout = ' + getCurrentText(-this.current);
+    arr[5] = 'range = ' + getVoltageText(this.minOut) + ' to ' + getVoltageText(this.maxOut);
   }
 
   override getElmType(): string {

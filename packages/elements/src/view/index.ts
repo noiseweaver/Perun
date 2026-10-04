@@ -96,9 +96,16 @@ export type {
   TextStyle,
 } from './Painter.ts';
 export {
+  MU,
+  OHM,
   formatNumber,
+  getCurrentDText,
+  getCurrentText,
   getShortUnitText,
+  getTimeText,
   getUnitText,
   getUnitTextWithScale,
+  getVoltageDText,
+  getVoltageText,
   showFormat,
 } from './units.ts';

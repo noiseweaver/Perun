@@ -13,6 +13,7 @@ import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaDouble } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import { getUnitText, getVoltageText } from '../view/units.ts';
 
 export class CurrentElm extends CircuitElm {
   currentValue = 0;
@@ -151,6 +152,17 @@ export class CurrentElm extends CircuitElm {
     const fpi = new FindPathInfo(PathType.INDUCT, this, this.getNode(1), this.sim);
     this.setBroken(!fpi.findPath(this.getNode(0)));
     return true;
+  }
+
+  override getInfo(arr: string[]): void {
+    arr[0] = 'current source';
+    let i = this.getBasicInfo(arr);
+    arr[i++] = 'P = ' + getUnitText(this.getPower(), 'W');
+    if (this.isVoltageLimited()) arr[i] = 'Vmax = ' + getVoltageText(this.maxVoltage);
+  }
+
+  override getPower(): number {
+    return -this.getVoltageDiff() * this.current;
   }
 
   override getElmType(): string {
