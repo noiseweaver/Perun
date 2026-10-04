@@ -60,6 +60,8 @@ interface PostInfo {
   bad: { x: number; y: number }[];
   /** Points where three or more element ends meet. */
   junctions: { x: number; y: number }[];
+  /** Points where exactly two ends meet (only drawn with junction dots on). */
+  joins: { x: number; y: number }[];
 }
 
 /**
@@ -74,7 +76,7 @@ export class CircuitRenderer {
   private palette: Palette;
   private readonly dots = new DotCounters();
   private elements: CircuitElm[] = [];
-  private posts: PostInfo = { draw: [], bad: [], junctions: [] };
+  private posts: PostInfo = { draw: [], bad: [], junctions: [], joins: [] };
   private cssWidth = 0;
   private cssHeight = 0;
   private dpr = 1;
@@ -213,6 +215,7 @@ export class CircuitRenderer {
 
     painter.highlighted = false;
     for (const p of this.posts.draw) this.drawPost(p.x, p.y, 'post');
+    if (frame.junctionDots) for (const p of this.posts.joins) this.drawPost(p.x, p.y, 'post');
     if (frame.junctionDots)
       for (const p of this.posts.junctions)
         this.painter.fillCircle({ x: p.x, y: p.y }, JUNCTION_RADIUS, { role: 'component' });
@@ -325,11 +328,12 @@ export class CircuitRenderer {
         else count.set(k, { x: p.x, y: p.y, n: 1 });
       }
     }
-    const info: PostInfo = { draw: [], bad: [], junctions: [] };
+    const info: PostInfo = { draw: [], bad: [], junctions: [], joins: [] };
     const boxes = this.elements.map((e) => ({ e, box: viewFor(e)?.bbox(e) ?? null }));
     for (const p of count.values()) {
       if (p.n !== 2) info.draw.push({ x: p.x, y: p.y });
       if (p.n >= 3) info.junctions.push({ x: p.x, y: p.y });
+      if (p.n === 2) info.joins.push({ x: p.x, y: p.y });
       if (p.n !== 1) continue;
       let bad = false;
       for (const { e, box } of boxes) {

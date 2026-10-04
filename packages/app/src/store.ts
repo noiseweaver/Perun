@@ -12,7 +12,7 @@ export interface UserSettings {
   euroResistors: boolean;
   showOhm: boolean;
   conventionalCurrent: boolean;
-  /** Draw a solid dot where three or more element ends meet. */
+  /** Mark every connection: a dot where two ends meet, a larger one where three or more do. */
   junctionDots: boolean;
 }
 

@@ -238,7 +238,7 @@ const TEE =
   'w 96 224 256 224 0\n' +
   'w 256 224 416 224 0\n';
 
-test('Junction dots draws dots where three ends meet', async ({ page }) => {
+test('Junction dots marks every point where ends meet', async ({ page }) => {
   await page.goto(`/?cct=${cct(TEE)}`);
   await expect(page.getByTestId('circuit-title')).toBeVisible();
   await page.getByTestId('run-stop').click();
