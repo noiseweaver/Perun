@@ -1433,3 +1433,105 @@ textarea.field-input {
     transition: none !important;
   }
 }
+
+/* ---- Circuits sheet (phones) -------------------------------------------------------------- */
+
+.circuits-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: var(--md-surface-container-high);
+  color: var(--ui-text);
+  animation: sheet-up 240ms var(--md-motion);
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+.circuits-sheet-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 20px;
+}
+
+.circuits-sheet-title {
+  flex: 1;
+  margin: 0;
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 400;
+}
+
+.circuits-sheet-search {
+  flex: none;
+  margin: 0 16px 8px;
+}
+
+.circuits-sheet-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+
+.circuits-sheet-empty {
+  padding: 16px 20px;
+}
+
+.sheet-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sheet-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 6px 16px;
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  color: var(--ui-text);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.sheet-row:active {
+  background: color-mix(in srgb, var(--ui-text) 8%, transparent);
+}
+
+.sheet-group {
+  flex-direction: row;
+  align-items: center;
+  font-weight: 500;
+}
+
+.sheet-row-title {
+  flex: 1;
+}
+
+.sheet-row-path {
+  font-size: 12px;
+  color: var(--ui-text-muted);
+}
+
+.sheet-chevron {
+  color: var(--ui-text-muted);
+  transition: transform 150ms var(--md-motion);
+}
+
+.sheet-group[aria-expanded='true'] .sheet-chevron {
+  transform: rotate(90deg);
+}

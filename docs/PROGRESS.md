@@ -59,6 +59,11 @@
   new, elements pop in and fade out, a ring marks newly joined ends, toasts for undo and redo,
   pressed buttons, Run/Stop icon turn, and panels, menus, dialogs and the toast slide or fade in.
   All of it respects reduced motion.
+- Follow-ups (Gady, 2026-10-04): moving an undocked card no longer opens the property panel (it
+  leaves scope cards out); the property panel has View in new scope and View in new undocked
+  scope buttons; scope chip and cursor values keep three decimals and a sign space so they don't
+  jump; the card look draws the spectrum as one smooth antialiased line over a faint fill; on
+  phones the Circuits menu is a full-screen sheet with search and groups that open in place.
 
 ### Next
 

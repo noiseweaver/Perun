@@ -16,6 +16,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
+import { useNarrow } from './useNarrow.ts';
 import { Icon, type IconName } from './Icon.tsx';
 
 /** Upstream unitString(ei), with voltage sources shown in rms when that is shorter. */
@@ -296,19 +297,6 @@ function SelectionActions({ elm }: { elm: CircuitElm | null }) {
 }
 
 /** Properties of the selected element, or what to do with a multiple selection. */
-/** Narrow screens show the panel as a bottom sheet (matches the CSS breakpoint). */
-const NARROW = '(max-width: 719px)';
-
-function useNarrow(): boolean {
-  const [narrow, setNarrow] = useState(() => window.matchMedia(NARROW).matches);
-  useEffect(() => {
-    const mq = window.matchMedia(NARROW);
-    const on = (): void => setNarrow(mq.matches);
-    mq.addEventListener('change', on);
-    return () => mq.removeEventListener('change', on);
-  }, []);
-  return narrow;
-}
 
 type SheetSnap = 'peek' | 'half' | 'full';
 /** The sheet keeps the height the user last chose while the app is open. */
