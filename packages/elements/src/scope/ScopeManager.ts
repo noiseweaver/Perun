@@ -83,6 +83,9 @@ export class ScopeManager {
   cursorTime = -1;
   cursorUnits = 0;
   dragStartTime = -1;
+  /** Card look: frequency where a drag over a spectrum started (-1: none), and its scope. */
+  dragStartFreq = -1;
+  dragFreqScope: Scope | null = null;
   draggingPlotYScope: Scope | null = null;
 
   /** How scopes are drawn: as upstream does, or in cards (ScopeCardView). */

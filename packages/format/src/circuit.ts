@@ -8,6 +8,7 @@
 // License, or (at your option) any later version. See LICENSE.
 
 import {
+  ScopeElm,
   Simulation,
   StringTokenizer,
   classNameForXmlTag,
@@ -95,8 +96,38 @@ export class Circuit {
       createImage: () => null,
       defaultsStore: null,
     };
+    scopes.undockedScopes = () => this.undockedScopes();
     this.sim.onTimeStep = () => scopes.timeStep();
     this.sim.canDelayWireProcessing = () => scopes.canDelayWireProcessing();
+  }
+
+  private undockedCache: { elements: CircuitElm[]; length: number; scopes: Scope[] } | null = null;
+
+  /** Undocked scopes (ScopeElm), in element order; cached, as it is asked every timestep. */
+  undockedScopes(): Scope[] {
+    const els = this.elements;
+    const c = this.undockedCache;
+    if (c !== null && c.elements === els && c.length === els.length) return c.scopes;
+    const scopes: Scope[] = [];
+    for (const e of els) if (e instanceof ScopeElm) scopes.push(e.elmScope);
+    this.undockedCache = { elements: els, length: els.length, scopes };
+    return scopes;
+  }
+
+  /** Undocked scope elements, in element order. */
+  scopeElms(): ScopeElm[] {
+    return this.elements.filter((e): e is ScopeElm => e instanceof ScopeElm);
+  }
+
+  /**
+   * Remove undocked scopes whose elements are all gone (upstream deleteUnusedScopeElms).
+   * Returns whether any went.
+   */
+  removeUnusedScopeElms(): boolean {
+    const keep = this.elements.filter((e) => !(e instanceof ScopeElm && e.elmScope.needToRemove()));
+    if (keep.length === this.elements.length) return false;
+    this.elements = keep;
+    return true;
   }
 
   /** The docked scopes. */
@@ -307,6 +338,11 @@ export class Circuit {
         }
         ce.sim = this.sim;
         ce.setPoints();
+        if (ce instanceof ScopeElm && ce.missingElement) {
+          this.warnings.push('a scope shows an element that is not supported yet');
+          this.skipElement();
+          continue;
+        }
         this.addElement(ce);
       } catch (e) {
         this.warnings.push(`exception while undumping ${String(e)}`);
@@ -417,6 +453,11 @@ export class Circuit {
         return parseJavaInt(s);
       }) as [number, number, number, number];
       elm.setPosition(...pos);
+      if (elm instanceof ScopeElm && elm.missingElement) {
+        this.warnings.push('a scope shows an element that is not supported yet');
+        this.skipElement();
+        continue;
+      }
       this.addElement(elm);
     }
   }
@@ -461,7 +502,9 @@ export class Circuit {
     const root = new XmlElement('cir');
     modelsFor(this.sim).clearDumpedFlags();
     const doc = docWriter(root);
-    for (const ce of [...elements].reverse()) appendElement(root, doc, ce);
+    // upstream leaves undocked scopes out: their element numbers would point elsewhere
+    for (const ce of [...elements].reverse())
+      if (!(ce instanceof ScopeElm)) appendElement(root, doc, ce);
     return prettyPrint(root);
   }
 }

@@ -2,6 +2,7 @@
 // Copyright (C) 2026 circuitjs-next contributors
 
 import { getUnitText } from '@circuitjs-next/elements';
+import * as Popover from '@radix-ui/react-popover';
 import * as Slider from '@radix-ui/react-slider';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { ReactNode } from 'react';
@@ -69,6 +70,65 @@ function IconButton(props: {
 }
 
 /**
+ * The simulation and current speed sliders, in a popover: upstream keeps them in its sidebar all
+ * the time, but they are set now and then rather than used constantly.
+ */
+function SpeedButton() {
+  const speed = useApp((s) => s.speed);
+  const currentSpeed = useApp((s) => s.currentSpeed);
+  return (
+    <Popover.Root>
+      <Tooltip.Root>
+        <Tooltip.Trigger asChild>
+          <Popover.Trigger asChild>
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="Speed"
+              data-testid="speed-button"
+            >
+              <Icon name="speed" />
+            </button>
+          </Popover.Trigger>
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className="tooltip" sideOffset={6}>
+            Speed
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+      <Popover.Portal>
+        <Popover.Content
+          className="speed-popover"
+          side="top"
+          align="start"
+          sideOffset={8}
+          collisionPadding={8}
+          data-testid="speed-popover"
+        >
+          <LabeledSlider
+            label="Simulation speed"
+            min={0}
+            max={259}
+            value={speed}
+            onChange={(v) => useApp.setState({ speed: v })}
+            testId="speed-slider"
+          />
+          <LabeledSlider
+            label="Current speed"
+            min={1}
+            max={99}
+            value={currentSpeed}
+            onChange={(v) => useApp.setState({ currentSpeed: v })}
+            testId="current-slider"
+          />
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+/**
  * Simulation time with three decimals in the largest unit below 1000, so the digit count only
  * changes when the unit does (upstream's getUnitText drops trailing digits, which jitters).
  */
@@ -90,8 +150,6 @@ export function timeText(t: number): string {
  */
 export function ControlBar() {
   const running = useApp((s) => s.running);
-  const speed = useApp((s) => s.speed);
-  const currentSpeed = useApp((s) => s.currentSpeed);
   const { t, timeStep, stopMessage, badConnections } = useApp((s) => s.status);
   const warnings = useApp((s) => s.warnings);
   const error = useApp((s) => s.error);
@@ -117,25 +175,7 @@ export function ControlBar() {
         <IconButton label="Centre the circuit" onClick={() => controller.fit()}>
           <Icon name="fit" />
         </IconButton>
-      </div>
-
-      <div className="control-group control-sliders">
-        <LabeledSlider
-          label="Simulation speed"
-          min={0}
-          max={259}
-          value={speed}
-          onChange={(v) => useApp.setState({ speed: v })}
-          testId="speed-slider"
-        />
-        <LabeledSlider
-          label="Current speed"
-          min={1}
-          max={99}
-          value={currentSpeed}
-          onChange={(v) => useApp.setState({ currentSpeed: v })}
-          testId="current-slider"
-        />
+        <SpeedButton />
       </div>
 
       <div className="status">

@@ -41,6 +41,17 @@
   at a time, with numbered tabs and a sideways swipe. Themes choose the look with the new
   `style.scopeLook` key (`cards` for Dark and the community themes, `classic` for Classic) and
   color the card with `scope.card`.
+- Undocked scopes (Gady, 2026-10-04): `ScopeElm` (dump type 403) ported in
+  `packages/elements/src/scope/ScopeElm.ts`, loaded from text and XML and saved with its `<o>`
+  inside the element, so upstream's `multivib-a` and `qam-256` now load them. Scope menu Undock
+  Scope and Dock Scope, element menu View in New Undocked Scope. In the card look each is a card on
+  the circuit with a leader line to what it shows, a six-dot handle to drag it by and a resize
+  grip; buttons, chips, crosshair and measuring work as on docked cards.
+- The info box in the corner uses the monospace font and only grows while it shows the same
+  element, so it no longer jitters (card look). The speed sliders moved into a popover behind a
+  speed button beside Reset.
+- Spectrum view (card look): the cursor snaps to peaks and reads their frequency and level, the
+  strongest peak is labeled, and dragging measures Δf.
 
 ### Next
 
@@ -48,7 +59,6 @@
 
 ### Open issues
 
-- Undocked scopes (`ScopeElm`, dump type 403) come with the Phase 8 element work.
 - Sliders (`38` lines, `<adj>`) are still kept verbatim, not live.
 
 ## 2026-10-02: Phase 5 (editor)

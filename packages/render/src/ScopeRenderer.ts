@@ -5,6 +5,7 @@
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032: scopes on the left, the info text right of them.
 
 import type {
+  Scope,
   ScopeGraphics,
   ScopeImage,
   ScopeInk,
@@ -12,7 +13,7 @@ import type {
   ScopeRect,
   ScopeTextStyle,
 } from '@circuitjs-next/elements';
-import { CARD_GAP } from '@circuitjs-next/elements';
+import { CARD_GAP, drawLeader } from '@circuitjs-next/elements';
 import { toCss, type Theme } from '@circuitjs-next/theme';
 
 /** Scope inks resolved to CSS colors for one theme. */
@@ -139,6 +140,12 @@ export class CanvasScopeGraphics implements ScopeGraphics {
   /** upstream's scope font. */
   get font(): string {
     return this.fonts.normal;
+  }
+
+  /** Forget the cached color: the canvas state was changed by someone else since. */
+  begin(): void {
+    this.pathOpen = false;
+    this.color = '';
   }
 
   /** Stroke any batched lines. Call before reading the canvas or changing its state directly. */
@@ -295,6 +302,14 @@ export class CanvasScopeGraphics implements ScopeGraphics {
   }
 }
 
+/** An undocked scope to draw, with the screen point its leader line goes to. */
+export interface UndockedScopeItem {
+  scope: Scope;
+  target: { x: number; y: number } | null;
+  /** The card or what it shows is hovered or selected. */
+  active: boolean;
+}
+
 /** What the bottom area shows besides the scopes. */
 export interface BottomAreaState {
   /** Scope area in CSS pixels (the canvas below the circuit). */
@@ -320,6 +335,11 @@ export class ScopeRenderer {
   private palette: ScopePalette;
   private graphics: CanvasScopeGraphics;
   private dpr = 1;
+  /**
+   * Width of the info box in the corner: it only grows while it shows the same thing (the same
+   * first line and number of lines), so it doesn't jitter as the values change.
+   */
+  private infoBox = { key: '', width: 0 };
 
   constructor(canvas: HTMLCanvasElement, theme: Theme) {
     const ctx = canvas.getContext('2d');
@@ -346,6 +366,41 @@ export class ScopeRenderer {
     );
   }
 
+  /**
+   * Draw undocked scopes over the circuit (above `clipHeight`, the top of the scope area). In the
+   * card look each has a leader line to the point it shows; upstream's look draws just the scope.
+   */
+  renderUndocked(
+    mgr: ScopeManager,
+    items: readonly UndockedScopeItem[],
+    width: number,
+    clipHeight: number,
+    dpr: number,
+  ): void {
+    if (items.length === 0) return;
+    this.dpr = dpr;
+    const c = this.ctx;
+    const g = this.graphics;
+    c.save();
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.globalAlpha = 1;
+    c.lineCap = 'butt';
+    c.textBaseline = 'alphabetic';
+    c.beginPath();
+    c.rect(0, 0, width, clipHeight);
+    c.clip();
+    g.begin();
+    if (mgr.look === 'cards') {
+      for (const it of items)
+        if (it.target !== null) drawLeader(it.scope, g, it.target.x, it.target.y, it.active);
+      g.flush();
+    }
+    for (const it of items) it.scope.draw(g);
+    g.flush();
+    g.setTextStyle('normal');
+    c.restore();
+  }
+
   render(mgr: ScopeManager, state: BottomAreaState, dpr: number): void {
     this.dpr = dpr;
     const c = this.ctx;
@@ -358,6 +413,7 @@ export class ScopeRenderer {
     c.textBaseline = 'alphabetic';
     const theme = this.palette.theme;
     const hasScopes = mgr.scopeCount > 0;
+    g.begin();
 
     const cards = mgr.look === 'cards';
 
@@ -376,7 +432,8 @@ export class ScopeRenderer {
 
     const info = state.info;
     if (info.length > 0) {
-      c.font = g.font;
+      // the card look reads values in the monospace font, so they don't shift as digits change
+      c.font = cards ? `${FONT_SIZE}px ${theme.style.monoFont}` : g.font;
       c.textBaseline = 'alphabetic';
       if (hasScopes && !mgr.compact && !cards) {
         // upstream: right of the scopes
@@ -406,6 +463,9 @@ export class ScopeRenderer {
         // no scopes, or one column on a phone: a box in the bottom right corner of the circuit
         let w = 0;
         for (const s of info) w = Math.max(w, c.measureText(s).width);
+        const key = `${info.length} ${info[0] ?? ''}`;
+        if (key !== this.infoBox.key) this.infoBox = { key, width: 0 };
+        w = this.infoBox.width = Math.max(this.infoBox.width, w);
         const h = Math.max(hasScopes ? 0 : INFO_BOX_HEIGHT, 15 * info.length + 12);
         const bw = Math.ceil(w) + 20;
         const x = area.x + area.width - bw + 10 - (hasScopes ? 8 : 0);

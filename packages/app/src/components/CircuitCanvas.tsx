@@ -4,7 +4,7 @@
 // elmMenuBar, ScopePopupMenu.java, MouseManager.doPopupMenu, master at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032), minus sliders.
 
-import { WireElm, type CircuitElm } from '@circuitjs-next/elements';
+import { WireElm, type CircuitElm, type ScopeElm } from '@circuitjs-next/elements';
 import * as Ctx from '@radix-ui/react-context-menu';
 import { useEffect, useRef, useState } from 'react';
 import { controller } from '../SimController.ts';
@@ -38,6 +38,7 @@ export function CircuitCanvas() {
   const ref = useRef<HTMLCanvasElement>(null);
   const [menuElm, setMenuElm] = useState<CircuitElm | null>(null);
   const [menuScope, setMenuScope] = useState(-1);
+  const [menuUndocked, setMenuUndocked] = useState<ScopeElm | null>(null);
   const canPaste = useApp((s) => s.editor.canPaste);
   useEffect(() => {
     const canvas = ref.current;
@@ -56,6 +57,7 @@ export function CircuitCanvas() {
         if (open) {
           setMenuElm(controller.menuElm);
           setMenuScope(controller.menuScope);
+          setMenuUndocked(controller.menuUndocked);
         } else controller.scopes.scopeMenuSelected = -1;
       }}
     >
@@ -70,8 +72,10 @@ export function CircuitCanvas() {
       </Ctx.Trigger>
       <Ctx.Portal>
         <Ctx.Content className="menu-content" data-testid="context-menu">
-          {menuScope >= 0 ? (
-            <ScopeMenuItems index={menuScope} />
+          {menuUndocked !== null ? (
+            <ScopeMenuItems index={-1} undocked={menuUndocked} />
+          ) : menuScope >= 0 ? (
+            <ScopeMenuItems index={menuScope} undocked={null} />
           ) : menuElm !== null ? (
             <>
               <Item
@@ -119,6 +123,12 @@ export function CircuitCanvas() {
                 disabled={!menuElm.canViewInScope()}
                 testId="ctx-view-in-scope"
                 onSelect={() => controller.viewInScope(menuElm)}
+              />
+              <Item
+                label="View in New Undocked Scope"
+                disabled={!menuElm.canViewInScope()}
+                testId="ctx-view-in-undocked-scope"
+                onSelect={() => controller.viewInUndockedScope(menuElm)}
               />
               <AddToScopeItems elm={menuElm} />
               {isWire && (
@@ -188,24 +198,33 @@ function AddToScopeItems({ elm }: { elm: CircuitElm }) {
   );
 }
 
-/** The scope popup menu (upstream ScopePopupMenu, docked scopes). */
-function ScopeMenuItems({ index }: { index: number }) {
+/** The scope popup menu (upstream ScopePopupMenu), for a docked scope or an undocked one. */
+function ScopeMenuItems({ index, undocked }: { index: number; undocked: ScopeElm | null }) {
   const mgr = controller.scopes;
-  const s = mgr.scopes[index];
+  const s = undocked !== null ? undocked.elmScope : mgr.scopes[index];
   if (s === undefined) return null;
   const run = (item: string) => () => controller.scopeMenu(item);
   return (
     <>
       <Item label="Remove Scope" testId="scope-remove" onSelect={run('remove')} />
+      {undocked !== null ? (
+        <Item label="Dock Scope" testId="scope-dock" onSelect={run('dock')} />
+      ) : (
+        <Item label="Undock Scope" testId="scope-undock" onSelect={run('undock')} />
+      )}
       <Ctx.CheckboxItem className="menu-item" checked={s.maxScale} onSelect={run('maxscale')}>
         <span className="menu-check" aria-hidden>
           {s.maxScale && <Icon name="check" size={18} />}
         </span>
         Max Scale
       </Ctx.CheckboxItem>
-      <Item label="Stack" disabled={!mgr.canStackScope(index)} onSelect={run('stack')} />
-      <Item label="Unstack" disabled={!mgr.canUnstackScope(index)} onSelect={run('unstack')} />
-      <Item label="Combine" disabled={!mgr.canCombineScope()} onSelect={run('combine')} />
+      {undocked === null && (
+        <>
+          <Item label="Stack" disabled={!mgr.canStackScope(index)} onSelect={run('stack')} />
+          <Item label="Unstack" disabled={!mgr.canUnstackScope(index)} onSelect={run('unstack')} />
+          <Item label="Combine" disabled={!mgr.canCombineScope()} onSelect={run('combine')} />
+        </>
+      )}
       <Item label="Remove Plot" disabled={controller.menuPlot < 0} onSelect={run('removeplot')} />
       <Item label="Reset" onSelect={run('reset')} />
       <Ctx.Separator className="menu-separator" />

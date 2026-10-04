@@ -106,6 +106,8 @@ export class Scope {
   rect: ScopeRect = { x: 0, y: 0, width: 1, height: 1 };
   /** The scope's whole space: the plot area plus, in the card look, its card and header. */
   slot: ScopeRect = { x: 0, y: 0, width: 1, height: 1 };
+  /** Undocked: its element is selected on the circuit (the card gets the selection outline). */
+  canvasSelected = false;
   manualScale = false;
   showI = false;
   showV = false;
@@ -905,6 +907,12 @@ export class Scope {
 
   mousePressed(mouseX: number, mouseY: number): void {
     if (!rectContains(this.rect, mouseX, mouseY)) return;
+    // the card look measures between frequencies on a spectrum (not upstream)
+    if (this.fftPlot.enabled && this.mgr.look === 'cards' && !this.plot2d.enabled) {
+      this.mgr.dragStartFreq = this.fftPlot.cursorFrequency(mouseX - this.rect.x);
+      this.mgr.dragFreqScope = this;
+      return;
+    }
     if (this.plot2d.enabled || this.fftPlot.enabled || this.visiblePlots.length === 0) return;
     this.mgr.dragStartTime = this.mouseXToTime(mouseX);
   }

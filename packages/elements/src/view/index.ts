@@ -22,6 +22,7 @@ import { TransistorElm } from '../elm/TransistorElm.ts';
 import { VoltageElm } from '../elm/VoltageElm.ts';
 import { WireElm } from '../elm/WireElm.ts';
 import { ZenerElm } from '../elm/ZenerElm.ts';
+import { ScopeElm } from '../scope/ScopeElm.ts';
 import type { ElementView } from './common.ts';
 import { labeledNodeView, outputView, probeView, textView } from './labels.ts';
 import {
@@ -35,6 +36,12 @@ import {
 import { diodeView, ledView, mosfetView, opAmpView, transistorView, zenerView } from './semis.ts';
 import { currentView, railView, voltageView } from './sources.ts';
 import { switchView } from './switches.ts';
+
+/** Undocked scopes are drawn by the scope renderer, over the circuit; this only places them. */
+const scopeElmView: ElementView<ScopeElm> = {
+  draw() {},
+  bbox: (e) => e.box(),
+};
 
 type AnyCtor = abstract new (...args: never[]) => CircuitElm;
 
@@ -60,6 +67,7 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [TransistorElm, transistorView],
   [MosfetElm, mosfetView],
   [OpAmpElm, opAmpView],
+  [ScopeElm, scopeElmView],
 ];
 
 const cache = new Map<unknown, ElementView | null>();

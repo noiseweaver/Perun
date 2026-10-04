@@ -6,6 +6,8 @@
 
 import {
   INFO_WIDTH,
+  MAX_SCOPES,
+  ScopeElm,
   SwitchElm,
   UNITS_A,
   UNITS_V,
@@ -13,6 +15,8 @@ import {
   VAL_VOLTAGE,
   VoltageElm,
   cardHitTest,
+  cardPlotRect,
+  constructElement,
   getTimeText,
   getUnitText,
   showFormat,
@@ -33,6 +37,7 @@ import {
   ScopeRenderer,
   currentMultiplier,
   type FrameState,
+  type UndockedScopeItem,
 } from '@circuitjs-next/render';
 import { BUILTIN_THEMES, DEFAULT_THEME_ID, type Theme } from '@circuitjs-next/theme';
 import {
@@ -94,8 +99,12 @@ export class SimController {
   private splitterHot = false;
   /** Element of the scope under the mouse (highlighted on the circuit, shown in the info). */
   private scopeHoverElm: CircuitElm | null = null;
+  /** Undocked scope whose card is under the mouse (card look), or null. */
+  private hoverUndocked: ScopeElm | null = null;
   /** Docked scope the context menu was opened on, or -1; and its selected plot. */
   menuScope = -1;
+  /** Undocked scope the context menu was opened on, or null. */
+  menuUndocked: ScopeElm | null = null;
   menuPlot = -1;
   /** Scope the properties dialog edits. */
   dialogScope: Scope | null = null;
@@ -387,6 +396,7 @@ export class SimController {
 
   /** The element list or an element changed: analyze again (upstream `needAnalyze`). */
   circuitChanged(): void {
+    this.circuit.removeUnusedScopeElms();
     this.circuit.sim.setElements(this.circuit.elements);
     if (this.renderer) {
       this.renderer.elementsChanged(this.circuit.elements);
@@ -463,6 +473,63 @@ export class SimController {
     return { x: 0, y: ch, width: this.cssWidth, height: this.cssHeight - ch };
   }
 
+  /**
+   * Place each undocked scope where its rectangle is on screen (upstream ScopeElm.setScopeRect),
+   * with the point its leader line goes to.
+   */
+  private layoutUndocked(): UndockedScopeItem[] {
+    const r = this.renderer;
+    if (!r) return [];
+    const vp = r.viewport;
+    const mgr = this.circuit.scopes;
+    const cards = mgr.look === 'cards';
+    const ed = this.editor;
+    const items: UndockedScopeItem[] = [];
+    for (const e of this.circuit.scopeElms()) {
+      const b = e.box();
+      const a = vp.toScreen(b.x1, b.y1);
+      const c = vp.toScreen(b.x2, b.y2);
+      const slot = {
+        x: Math.round(a.x),
+        y: Math.round(a.y),
+        width: Math.max(1, Math.round(c.x - a.x)),
+        height: Math.max(1, Math.round(c.y - a.y)),
+      };
+      const s = e.elmScope;
+      s.position = -1;
+      s.slot = slot;
+      s.canvasSelected = e.selected;
+      const rect = cards ? cardPlotRect(slot, true) : slot;
+      const o = s.rect;
+      if (rect.x !== o.x || rect.y !== o.y || rect.width !== o.width || rect.height !== o.height)
+        s.setRect(rect);
+      const shown = s.getElm();
+      const t = shown !== null ? scopeAnchor(shown) : null;
+      items.push({
+        scope: s,
+        target: t !== null ? vp.toScreen(t.x, t.y) : null,
+        active:
+          e.selected ||
+          e === this.hoverUndocked ||
+          (shown !== null && (ed.mouseElm === shown || shown.selected)),
+      });
+    }
+    return items;
+  }
+
+  /** The undocked scope whose card is at a canvas point (the one drawn on top), or null. */
+  undockedAt(x: number, y: number): ScopeElm | null {
+    if (y >= this.circuitHeight()) return null;
+    const elms = this.circuit.scopeElms();
+    for (let i = elms.length - 1; i >= 0; i--) {
+      const e = elms[i];
+      if (e === undefined) continue;
+      const sl = e.elmScope.slot;
+      if (x >= sl.x && y >= sl.y && x < sl.x + sl.width && y < sl.y + sl.height) return e;
+    }
+    return null;
+  }
+
   /** Lay out and draw the scopes and the info text (upstream drawBottomArea). */
   private drawScopes(): void {
     const sr = this.scopeRenderer;
@@ -482,7 +549,14 @@ export class SimController {
     const m = this.mouse;
     mgr.mouseCursorX = m?.x ?? -1;
     mgr.mouseCursorY = m?.y ?? -1;
-    if (m !== null) for (const s of mgr.scopes) s.selectScope(m.x, m.y);
+    const undocked = this.layoutUndocked();
+    if (m !== null) {
+      for (const s of mgr.scopes) s.selectScope(m.x, m.y);
+      // an undocked card over the circuit; the docked area covers any part below it
+      const u = m.y < this.circuitHeight() ? this.undockedAt(m.x, m.y) : null;
+      if (u !== null) u.elmScope.selectScope(m.x, m.y);
+    }
+    sr.renderUndocked(mgr, undocked, this.cssWidth, this.circuitHeight(), this.dpr);
     sr.render(
       mgr,
       { area: this.scopeArea(), info: this.infoLines(), splitterHot: this.splitterHot },
@@ -544,8 +618,12 @@ export class SimController {
         this.openScopeProperties(s);
         break;
       case 'close':
-        this.scopeCommand('Remove scope', () => s.setElm(null));
+        if (s.position < 0) this.removeUndocked(s);
+        else this.scopeCommand('Remove scope', () => s.setElm(null));
         break;
+      case 'handle':
+      case 'resize':
+        return false;
       case 'tab':
         mgr.activeColumn = hit.index;
         break;
@@ -579,9 +657,11 @@ export class SimController {
   /** Hover over the scope area: select the scope and highlight what it shows (upstream). */
   private hoverScopes(x: number, y: number): void {
     const mgr = this.circuit.scopes;
-    const i = this.scopeAt(x, y);
+    const u = mgr.look === 'cards' ? this.undockedAt(x, y) : null;
+    this.hoverUndocked = u;
+    const i = u === null ? this.scopeAt(x, y) : -1;
     mgr.scopeSelected = i;
-    const s = i >= 0 ? mgr.scopes[i] : undefined;
+    const s = u !== null ? u.elmScope : i >= 0 ? mgr.scopes[i] : undefined;
     this.scopeHoverElm = s?.getElm() ?? null;
     const r = this.renderer;
     if (r) {
@@ -594,6 +674,7 @@ export class SimController {
   private clearScopeHover(): void {
     const mgr = this.circuit.scopes;
     mgr.scopeSelected = -1;
+    this.hoverUndocked = null;
     this.scopeHoverElm = null;
     if (this.renderer) this.renderer.scopeHighlights = new Map();
   }
@@ -621,8 +702,21 @@ export class SimController {
   scopeMenu(item: string): void {
     const mgr = this.circuit.scopes;
     const i = this.menuScope;
-    const s = mgr.scopes[i];
+    const u = this.menuUndocked;
+    const s = u !== null ? u.elmScope : mgr.scopes[i];
     if (s === undefined) return;
+    if (item === 'undock') {
+      this.undockScope(i);
+      return;
+    }
+    if (item === 'dock') {
+      if (u !== null) this.dockScope(u);
+      return;
+    }
+    if (item === 'remove' && u !== null) {
+      this.removeUndocked(s);
+      return;
+    }
     if (item === 'properties') {
       this.openScopeProperties(s);
       return;
@@ -660,6 +754,110 @@ export class SimController {
           break;
       }
     });
+  }
+
+  /**
+   * Where a new undocked scope for an element goes (circuit coordinates): up and to the right of
+   * it, so its leader line is short. Upstream puts a 128 x 64 one 50 px below and right of the
+   * element's first point; a card needs room for its header (DEVIATIONS.md).
+   */
+  private undockedPlace(elm: CircuitElm): { x1: number; y1: number; x2: number; y2: number } {
+    const t = scopeAnchor(elm);
+    const sim = this.circuit.sim;
+    const snap = (v: number): number => (v + (sim.gridSize / 2 - 1)) & ~(sim.gridSize - 1);
+    const W = UNDOCKED_WIDTH;
+    const H = UNDOCKED_HEIGHT;
+    const right = snap(t.x + 64);
+    const left = snap(t.x - 64) - W;
+    const above = snap(t.y - 48) - H;
+    const below = snap(t.y + 48);
+    const spots = [
+      { x1: right, y1: above },
+      { x1: right, y1: below },
+      { x1: left, y1: above },
+      { x1: left, y1: below },
+    ];
+    // the first spot on screen that leaves the other undocked scopes uncovered
+    const r = this.renderer;
+    const others = this.circuit.scopeElms().map((e) => e.box());
+    const fits = (p: { x1: number; y1: number }, screen: boolean): boolean => {
+      if (screen && r) {
+        const tl = r.viewport.toCircuit(0, 0);
+        const br = r.viewport.toCircuit(this.cssWidth, this.circuitHeight());
+        if (p.x1 < tl.x || p.y1 < tl.y || p.x1 + W > br.x || p.y1 + H > br.y) return false;
+      }
+      return !others.some((o) => p.x1 < o.x2 && o.x1 < p.x1 + W && p.y1 < o.y2 && o.y1 < p.y1 + H);
+    };
+    const spot = spots.find((p) => fits(p, true)) ?? spots.find((p) => fits(p, false)) ?? spots[0];
+    const x1 = spot?.x1 ?? right;
+    const y1 = spot?.y1 ?? above;
+    return { x1, y1, x2: x1 + UNDOCKED_WIDTH, y2: y1 + UNDOCKED_HEIGHT };
+  }
+
+  private newScopeElm(elm: CircuitElm): ScopeElm | null {
+    const p = this.undockedPlace(elm);
+    const se = constructElement('ScopeElm', p.x1, p.y1, this.circuit.sim);
+    if (!(se instanceof ScopeElm)) return null;
+    se.x2 = p.x2;
+    se.y2 = p.y2;
+    se.setPoints();
+    return se;
+  }
+
+  /** Element menu: View in New Undocked Scope (upstream viewInFloatScope). */
+  viewInUndockedScope(elm: CircuitElm): void {
+    this.scopeCommand('View in undocked scope', () => {
+      const se = this.newScopeElm(elm);
+      if (se === null) return;
+      se.setScopeElm(elm);
+      this.circuit.elements.push(se);
+    });
+    this.circuitChanged();
+  }
+
+  /** Scope menu: Undock Scope. The docked scope moves onto the circuit, beside what it shows. */
+  undockScope(i: number): void {
+    const mgr = this.circuit.scopes;
+    const s = mgr.scopes[i];
+    const elm = s?.getElm() ?? null;
+    if (s === undefined || elm === null) return;
+    this.scopeCommand('Undock scope', () => {
+      const se = this.newScopeElm(elm);
+      if (se === null) return;
+      se.setElmScope(s);
+      // setupScopes() closes the gap
+      mgr.scopes.splice(i, 1);
+      this.circuit.elements.push(se);
+    });
+    this.circuitChanged();
+  }
+
+  /** Scope menu on an undocked scope: Dock Scope, into a new column. */
+  dockScope(u: ScopeElm): void {
+    const mgr = this.circuit.scopes;
+    if (mgr.scopeCount >= MAX_SCOPES) return;
+    this.scopeCommand('Dock scope', () => {
+      const s = u.elmScope;
+      s.position = mgr.scopeCount;
+      mgr.scopes.push(s);
+      this.circuit.elements = this.circuit.elements.filter((e) => e !== u);
+      u.selected = false;
+    });
+    if (this.hoverUndocked === u) this.clearScopeHover();
+    this.circuitChanged();
+    this.publishEditor();
+  }
+
+  /** Remove an undocked scope (its card's close button, or Remove Scope). */
+  private removeUndocked(s: Scope): void {
+    const u = this.circuit.scopeElms().find((e) => e.elmScope === s);
+    if (u === undefined) return;
+    this.scopeCommand('Remove scope', () => {
+      this.circuit.elements = this.circuit.elements.filter((e) => e !== u);
+    });
+    if (this.hoverUndocked === u) this.clearScopeHover();
+    this.circuitChanged();
+    this.publishEditor();
   }
 
   /** Scopes menu: stack, unstack, combine or separate all. */
@@ -840,9 +1038,86 @@ export class SimController {
       e.preventDefault();
       return true;
     };
+    /** Touch: a long press opens the context menu, as a right click does with a mouse. */
+    const startLongPress = (e: PointerEvent, p: { x: number; y: number }): void => {
+      cancelPress();
+      const id = e.pointerId;
+      press = {
+        id,
+        x: p.x,
+        y: p.y,
+        cx: e.clientX,
+        cy: e.clientY,
+        timer: window.setTimeout(() => {
+          const at = press;
+          press = null;
+          if (at === null) return;
+          abandonGesture(id);
+          canvas.dispatchEvent(
+            new MouseEvent('contextmenu', {
+              bubbles: true,
+              cancelable: true,
+              clientX: at.cx,
+              clientY: at.cy,
+              button: 2,
+            }),
+          );
+        }, LONG_PRESS_MS),
+      };
+    };
+    /**
+     * A press on an undocked card (card look): its handle and resize grip move and resize it
+     * through the editor; its buttons and chips work as a docked card's; the plot measures.
+     */
+    const undockedDown = (e: PointerEvent, p: { x: number; y: number }): boolean => {
+      const m = mgr();
+      if (m.look !== 'cards' || ed.mouseMode !== MouseMode.SELECT || m.dialogShowing) return false;
+      const u = this.undockedAt(p.x, p.y);
+      if (u === null) return false;
+      const s = u.elmScope;
+      m.mouseCursorX = p.x;
+      m.mouseCursorY = p.y;
+      this.hoverScopes(p.x, p.y);
+      const hit = cardHitTest(s, p.x, p.y);
+      if (e.button === 0 && hit !== null && (hit.kind === 'handle' || hit.kind === 'resize')) {
+        const post = hit.kind === 'resize' ? bottomRightPost(u) : -1;
+        const g = grid(p);
+        ed.pointerDown(g.x, g.y, mods(e), false, { elm: u, post });
+        gestureId = e.pointerId;
+        try {
+          canvas.setPointerCapture(e.pointerId);
+        } catch {
+          // the pointer is already gone
+        }
+        canvas.style.cursor = post >= 0 ? 'nwse-resize' : 'grabbing';
+        this.publishEditor();
+        e.preventDefault();
+        return true;
+      }
+      if (e.button === 0 && this.cardClick(s, p.x, p.y)) {
+        e.preventDefault();
+        return true;
+      }
+      if (e.button === 0 && !e.altKey) s.mousePressed(p.x, p.y);
+      if (e.button === 1 || (e.button === 0 && e.altKey)) {
+        s.selectScope(p.x, p.y);
+        s.startDragPlotY(p.x, p.y);
+      }
+      scopeGesture = e.pointerId;
+      if (e.pointerType === 'touch') startLongPress(e, p);
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {
+        // the pointer is already gone
+      }
+      e.preventDefault();
+      return true;
+    };
     const endScopeGesture = (): void => {
       const m = mgr();
       m.dragStartTime = -1;
+      m.dragStartFreq = -1;
+      m.dragFreqScope = null;
       if (m.draggingPlotYScope !== null) m.draggingPlotYScope.draggingPlotY = false;
       m.draggingPlotYScope = null;
       scopeGesture = null;
@@ -854,7 +1129,11 @@ export class SimController {
       canvas.focus({ preventScroll: true });
       const p = local(e);
       this.mouse = p;
-      if (!(e.pointerType === 'touch' && touches.size > 0) && scopeDown(e, p)) return;
+      if (
+        !(e.pointerType === 'touch' && touches.size > 0) &&
+        (undockedDown(e, p) || scopeDown(e, p))
+      )
+        return;
       if (e.pointerType === 'touch') {
         // a primary touch starts a new gesture: no other finger is down, so forget any touch
         // whose end never reached the canvas (it would turn this drag into a pinch zoom)
@@ -889,32 +1168,7 @@ export class SimController {
       } catch {
         // the pointer is already gone (released before this handler ran)
       }
-      if (e.pointerType === 'touch' && ed.mouseMode === MouseMode.SELECT) {
-        cancelPress();
-        const id = e.pointerId;
-        press = {
-          id,
-          x: p.x,
-          y: p.y,
-          cx: e.clientX,
-          cy: e.clientY,
-          timer: window.setTimeout(() => {
-            const at = press;
-            press = null;
-            if (at === null) return;
-            abandonGesture(id);
-            canvas.dispatchEvent(
-              new MouseEvent('contextmenu', {
-                bubbles: true,
-                cancelable: true,
-                clientX: at.cx,
-                clientY: at.cy,
-                button: 2,
-              }),
-            );
-          }, LONG_PRESS_MS),
-        };
-      }
+      if (e.pointerType === 'touch' && ed.mouseMode === MouseMode.SELECT) startLongPress(e, p);
       this.publishEditor();
       updateCursor(g.x, g.y);
       e.preventDefault();
@@ -930,11 +1184,40 @@ export class SimController {
         return;
       }
       if (scopeGesture === e.pointerId) {
+        if (
+          press !== null &&
+          press.id === e.pointerId &&
+          Math.hypot(p.x - press.x, p.y - press.y) > LONG_PRESS_SLOP
+        )
+          cancelPress();
         mgr().draggingPlotYScope?.dragPlotY(p.y);
         this.hoverScopes(p.x, p.y);
         return;
       }
       if (gestureId === null && pan === null && pinch === null) {
+        const u = mgr().look === 'cards' ? this.undockedAt(p.x, p.y) : null;
+        if (u !== null) {
+          this.splitterHot = false;
+          if (ed.mouseElm !== null) ed.leave();
+          const m = mgr();
+          m.mouseCursorX = p.x;
+          m.mouseCursorY = p.y;
+          this.hoverScopes(p.x, p.y);
+          const hit = cardHitTest(u.elmScope, p.x, p.y);
+          canvas.style.cursor =
+            hit === null
+              ? 'default'
+              : hit.kind === 'handle'
+                ? 'grab'
+                : hit.kind === 'resize'
+                  ? bottomRightPost(u) >= 0
+                    ? 'nwse-resize'
+                    : 'grab'
+                  : 'pointer';
+          this.publishEditor();
+          return;
+        }
+        if (this.hoverUndocked !== null) this.clearScopeHover();
         this.splitterHot = onSplitter(p);
         if (this.splitterHot || inScopes(p)) {
           if (ed.mouseElm !== null) ed.leave();
@@ -987,6 +1270,7 @@ export class SimController {
     };
     const up = (e: PointerEvent): void => {
       if (split === e.pointerId || scopeGesture === e.pointerId) {
+        if (press !== null && press.id === e.pointerId) cancelPress();
         if (swipe !== null && swipe.id === e.pointerId) {
           const p = local(e);
           const dx = p.x - swipe.x;
@@ -1031,6 +1315,11 @@ export class SimController {
       const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? canvas.clientHeight : 1;
       const dx = e.deltaX * unit;
       const dy = e.deltaY * unit;
+      const u = mgr().look === 'cards' ? this.undockedAt(p.x, p.y) : null;
+      if (u !== null && isMouseWheel(e)) {
+        u.elmScope.onMouseWheel(dy / 16);
+        return;
+      }
       if (inScopes(p)) {
         // the wheel over a scope changes its time scale (about one step per notch)
         const i = this.scopeAt(p.x, p.y);
@@ -1056,6 +1345,18 @@ export class SimController {
       }
       const lp = local(e);
       this.menuScope = -1;
+      this.menuUndocked = null;
+      const u = this.undockedAt(lp.x, lp.y);
+      if (u !== null) {
+        const s = u.elmScope;
+        this.menuElm = null;
+        if (s.canMenu()) {
+          this.menuUndocked = u;
+          this.menuPlot = s.selectedPlot;
+        }
+        this.publishEditor();
+        return;
+      }
       if (inScopes(lp)) {
         const i = this.scopeAt(lp.x, lp.y);
         const s = mgr().scopes[i];
@@ -1076,6 +1377,13 @@ export class SimController {
     };
     const dblclick = (e: MouseEvent): void => {
       const lp = local(e);
+      const u = this.undockedAt(lp.x, lp.y);
+      if (u !== null) {
+        const s = u.elmScope;
+        if (!(mgr().look === 'cards' && cardHitTest(s, lp.x, lp.y) !== null))
+          this.openScopeProperties(s);
+        return;
+      }
       if (inScopes(lp)) {
         const s = mgr().scopes[this.scopeAt(lp.x, lp.y)];
         // a double click on a card's buttons or chips is two clicks on them
@@ -1156,6 +1464,21 @@ export class SimController {
   }
 }
 
+/** Size of a new undocked scope (circuit units). */
+const UNDOCKED_WIDTH = 224;
+const UNDOCKED_HEIGHT = 144;
+
+/**
+ * The circuit point an undocked scope's leader line goes to: the post of a one-post element
+ * (a labeled node, an output), else the middle of the element.
+ */
+function scopeAnchor(elm: CircuitElm): { x: number; y: number } {
+  if (elm.getPostCount() === 1) return elm.getPost(0);
+  const b = viewFor(elm)?.bbox(elm);
+  if (b === undefined) return { x: (elm.x + elm.x2) / 2, y: (elm.y + elm.y2) / 2 };
+  return { x: (b.x1 + b.x2) / 2, y: (b.y1 + b.y2) / 2 };
+}
+
 /** Natural log of the zoom factor for one mouse wheel notch. */
 const WHEEL_ZOOM_PER_NOTCH = 0.08;
 
@@ -1169,6 +1492,14 @@ function isMouseWheel(e: WheelEvent): boolean {
   if (e.deltaX !== 0) return false;
   const legacy = (e as WheelEvent & { wheelDeltaY?: number }).wheelDeltaY ?? 0;
   return legacy !== 0 && legacy % 120 === 0;
+}
+
+/** Which point of an undocked scope is its bottom right corner (its resize grip), or -1. */
+function bottomRightPost(u: ScopeElm): number {
+  const b = u.box();
+  if (u.x2 === b.x2 && u.y2 === b.y2) return 1;
+  if (u.x === b.x2 && u.y === b.y2) return 0;
+  return -1;
 }
 
 function inRect(r: Rect, x: number, y: number): boolean {

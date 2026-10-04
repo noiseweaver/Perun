@@ -29,6 +29,7 @@ import { ResistorElmType } from './elm/ResistorElm.ts';
 import { SwitchElmType } from './elm/SwitchElm.ts';
 import { ACVoltageElm, DCVoltageElm, VoltageElmType } from './elm/VoltageElm.ts';
 import { WireElmType } from './elm/WireElm.ts';
+import { ScopeElmType } from './scope/ScopeElm.ts';
 import type { StringTokenizer } from './StringTokenizer.ts';
 
 /** Every ported element class. */
@@ -54,6 +55,7 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   MosfetElmType,
   OpAmpElmType,
   TextElmType,
+  ScopeElmType,
   // menu-only variants; their dump types are already registered under the base class
   NTransistorElmType,
   PTransistorElmType,

@@ -172,16 +172,20 @@ test('hovering an element shows its info', async ({ page }) => {
     );
 });
 
-/** Page coordinates of the centre of a clickable part of scope `i`'s card. */
+/**
+ * Page coordinates of the centre of a clickable part of scope `i`'s card (negative i: undocked
+ * scope -i - 1).
+ */
 const cardPart = async (page: Page, i: number, kind: string, index = 0) => {
   const box = await page.getByTestId('circuit-canvas').boundingBox();
   const h = await page.evaluate(
     ([i, kind, index]) => {
       const c = window.circuitjsNext?.controller;
-      const s = c?.scopes.scopes[i as number];
+      const n = i as number;
+      const s = n >= 0 ? c?.scopes.scopes[n] : c?.circuit.scopeElms()[-n - 1]?.elmScope;
       if (!c || !s) return null;
       // scan the card for the part (hit regions are recorded as the card is drawn)
-      for (let y = s.slot.y; y < s.slot.y + 50; y += 2)
+      for (let y = s.slot.y; y < s.slot.y + s.slot.height; y += 2)
         for (let x = s.slot.x; x < s.slot.x + s.slot.width; x += 2) {
           const hit = c.cardHit(s, x, y);
           if (hit !== null && hit.kind === kind && hit.index === index)
@@ -270,4 +274,149 @@ test.describe('on a phone', () => {
     await touch('touchEnd', 0);
     await expect.poll(active).toBe(1);
   });
+});
+
+test.describe('undocked scopes', () => {
+  const undocked = (page: Page) =>
+    page.evaluate(() =>
+      (window.circuitjsNext?.controller.circuit.scopeElms() ?? []).map((e) => e.box()),
+    );
+
+  test('a scope undocks onto the circuit, moves by its handle, resizes and docks again', async ({
+    page,
+  }) => {
+    await page.goto('/?startCircuit=lrc.txt');
+    await ready(page);
+    const s = await inScope(page, 1);
+    await page.mouse.click(s.x, s.y, { button: 'right' });
+    await page.getByTestId('scope-undock').click();
+    expect(await scopeCount(page)).toBe(2);
+    expect(await undocked(page)).toHaveLength(1);
+    const saved = await page.evaluate(() => window.circuitjsNext?.controller.circuit.dumpXml());
+    expect(saved).toMatch(/<Scope x="[-\d ]+" f="0">\n {4}<o en="3"/);
+    // the card's leader line and plot are drawn
+    const slot = await page.evaluate(
+      () => window.circuitjsNext?.controller.circuit.scopeElms()[0]?.elmScope.slot,
+    );
+    if (!slot) throw new Error('no undocked scope');
+    await expect.poll(() => colorsIn(page, slot)).toBeGreaterThan(4);
+
+    // drag the handle: the card moves by whole grid steps
+    const before = (await undocked(page))[0];
+    const handle = await cardPart(page, -1, 'handle');
+    await page.mouse.move(handle.x, handle.y);
+    await page.mouse.down();
+    await page.mouse.move(handle.x + 60, handle.y + 40, { steps: 6 });
+    await page.mouse.up();
+    const after = (await undocked(page))[0];
+    if (!before || !after) throw new Error('no box');
+    expect(after.x1 - before.x1).toBeGreaterThan(0);
+    expect(after.y1 - before.y1).toBeGreaterThan(0);
+    expect(after.x2 - after.x1).toBe(before.x2 - before.x1);
+    await page.keyboard.press('Control+z');
+    expect((await undocked(page))[0]).toEqual(before);
+
+    // the grip in the corner resizes it
+    await page.mouse.move(10, 10);
+    const grip = await cardPart(page, -1, 'resize');
+    await page.mouse.move(grip.x, grip.y);
+    await page.mouse.down();
+    await page.mouse.move(grip.x + 50, grip.y + 50, { steps: 6 });
+    await page.mouse.up();
+    const bigger = (await undocked(page))[0];
+    if (!bigger) throw new Error('no box');
+    expect(bigger.x1).toBe(before.x1);
+    expect(bigger.x2).toBeGreaterThan(before.x2);
+    expect(bigger.y2).toBeGreaterThan(before.y2);
+
+    // its menu docks it again, in a new column
+    const plot = await page.evaluate(
+      () => window.circuitjsNext?.controller.circuit.scopeElms()[0]?.elmScope.rect,
+    );
+    const box = await page.getByTestId('circuit-canvas').boundingBox();
+    if (!plot || !box) throw new Error('no plot');
+    await page.mouse.click(box.x + plot.x + plot.width / 2, box.y + plot.y + plot.height / 2, {
+      button: 'right',
+    });
+    await page.getByTestId('scope-dock').click();
+    expect(await undocked(page)).toHaveLength(0);
+    expect(await scopeCount(page)).toBe(3);
+  });
+
+  test('View in New Undocked Scope, the close button, and deleting what it shows', async ({
+    page,
+  }) => {
+    await page.goto(`/?ctz=${compressCircuit(LOOP)}`);
+    await ready(page);
+    const p = await at(page, 176, 96);
+    await page.mouse.move(p.x, p.y);
+    await page.mouse.click(p.x, p.y, { button: 'right' });
+    await page.getByTestId('ctx-view-in-undocked-scope').click();
+    expect(await undocked(page)).toHaveLength(1);
+    expect(await scopeCount(page)).toBe(0);
+
+    const close = await cardPart(page, -1, 'close');
+    await page.mouse.click(close.x, close.y);
+    await expect.poll(async () => (await undocked(page)).length).toBe(0);
+    await page.keyboard.press('Control+z');
+    await expect.poll(async () => (await undocked(page)).length).toBe(1);
+
+    // deleting the resistor takes its scope with it
+    await page.mouse.move(p.x, p.y);
+    await page.mouse.click(p.x, p.y, { button: 'right' });
+    await page.getByTestId('ctx-delete').click();
+    expect(await undocked(page)).toHaveLength(0);
+  });
+
+  test('an upstream file with undocked scopes loads them', async ({ page }) => {
+    await page.goto('/?startCircuit=multivib-a.txt');
+    await ready(page);
+    expect(await undocked(page)).toHaveLength(4);
+  });
+});
+
+test('the speed sliders open from a button', async ({ page }) => {
+  await page.goto('/?startCircuit=lrc.txt');
+  await ready(page);
+  await expect(page.getByTestId('speed-slider')).toHaveCount(0);
+  await page.getByTestId('speed-button').click();
+  await expect(page.getByTestId('speed-popover')).toBeVisible();
+  const before = await page.evaluate(() => window.circuitjsNext?.controller.circuit.options.speed);
+  await page.getByTestId('speed-slider').getByRole('slider').focus();
+  await page.keyboard.press('ArrowRight');
+  await expect
+    .poll(() => page.evaluate(() => window.circuitjsNext?.controller.circuit.options.speed))
+    .toBe((before ?? 0) + 1);
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('speed-popover')).toBeHidden();
+});
+
+test('a spectrum finds its peak, and the cursor snaps to it', async ({ page }) => {
+  await page.goto('/?startCircuit=lrc.txt');
+  await ready(page);
+  await page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes[0]?.fftPlot.show(true));
+  // the LC circuit rings at 1 / (2π √(1 H × 15 μF)) ≈ 41 Hz, less a little for its resistance
+  await expect
+    .poll(
+      async () => {
+        const f = await page.evaluate(
+          () => window.circuitjsNext?.controller.scopes.scopes[0]?.fftPlot.strongestPeak()?.freq,
+        );
+        return f !== undefined && f > 35 && f < 48;
+      },
+      { timeout: 20000 },
+    )
+    .toBe(true);
+  await page.evaluate(() => window.circuitjsNext?.controller.setRunning(false));
+  const peak = await page.evaluate(() => {
+    const f = window.circuitjsNext?.controller.scopes.scopes[0]?.fftPlot;
+    const pk = f?.strongestPeak();
+    return pk && f ? { freq: pk.freq, x: f.frequencyToX(pk.freq) } : null;
+  });
+  if (!peak) throw new Error('no peak');
+  const snapped = await page.evaluate(
+    (x) => window.circuitjsNext?.controller.scopes.scopes[0]?.fftPlot.cursorFrequency(x + 4),
+    peak.x,
+  );
+  expect(snapped).toBeCloseTo(peak.freq, 3);
 });

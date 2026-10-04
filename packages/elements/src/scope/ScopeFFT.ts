@@ -175,6 +175,99 @@ export class ScopeFFT {
     scope.drawInfoText(g, 'Phase angle: ' + showFormat(angle) + '°');
   }
 
+  // ---- peak finding for the card look's frequency cursor (this port's own) ------------------
+
+  /** Frequency step between spectrum bins (Hz). */
+  binFrequency(): number {
+    const scope = this.scope;
+    return 1 / (scope.sim.maxTimeStep * scope.speed * scope.scopePointCount);
+  }
+
+  /** Magnitude of bin i as last drawn, or 0. */
+  magnitudeAt(i: number): number {
+    const re = this.fftReal;
+    const im = this.fftImag;
+    if (re === null || im === null || i < 0 || i >= re.length) return 0;
+    return this.getFft().magnitude(re[i], im[i]);
+  }
+
+  /** Plot-area x (pixels) of a frequency. */
+  frequencyToX(f: number): number {
+    return (f / this.binFrequency()) * ((2 * this.scope.rect.width) / this.scope.scopePointCount);
+  }
+
+  /** Frequency at plot-area x (pixels). */
+  xToFrequency(x: number): number {
+    return (x * this.scope.scopePointCount * this.binFrequency()) / (2 * this.scope.rect.width);
+  }
+
+  /** Plot-area y of a magnitude, as draw() plots it. */
+  magnitudeToY(m: number): number {
+    const h = this.scope.rect.height;
+    const maxM = this.fftMaxMagnitude;
+    if (maxM <= 0) return h - 13;
+    if (!this.logSpectrum) return h - 1 - 12 - Math.trunc((m * (h - 1 - 12)) / maxM);
+    let db = (20 * Math.log(m / maxM)) / Math.log(10);
+    if (db < -80) db = -80;
+    return 5 + Math.trunc((-db * (h - 17)) / 80);
+  }
+
+  /** A peak at bin i, its frequency refined between bins (parabolic interpolation). */
+  private peakAt(i: number): { freq: number; magnitude: number; db: number } {
+    const a = this.magnitudeAt(i - 1);
+    const b = this.magnitudeAt(i);
+    const c = this.magnitudeAt(i + 1);
+    const den = a - 2 * b + c;
+    const d = den !== 0 ? Math.max(-0.5, Math.min(0.5, (0.5 * (a - c)) / den)) : 0;
+    const maxM = this.fftMaxMagnitude > 0 ? this.fftMaxMagnitude : 1;
+    return {
+      freq: (i + d) * this.binFrequency(),
+      magnitude: b,
+      db: (20 * Math.log(b / maxM)) / Math.log(10),
+    };
+  }
+
+  private isPeak(i: number): boolean {
+    const m = this.magnitudeAt(i);
+    return m > 0 && m >= this.magnitudeAt(i - 1) && m > this.magnitudeAt(i + 1);
+  }
+
+  /**
+   * The strongest local peak within `reach` pixels of plot-area x, or null. Bin 0 (DC) is never a
+   * peak; nor is anything under 1% of the largest magnitude.
+   */
+  peakNear(x: number, reach: number): { freq: number; magnitude: number; db: number } | null {
+    if (this.fftReal === null) return null;
+    const half = this.scope.scopePointCount / 2;
+    const perBin = (2 * this.scope.rect.width) / this.scope.scopePointCount;
+    const lo = Math.max(1, Math.floor((x - reach) / perBin));
+    const hi = Math.min(half - 2, Math.ceil((x + reach) / perBin));
+    let best = -1;
+    for (let i = lo; i <= hi; i++)
+      if (this.isPeak(i) && (best < 0 || this.magnitudeAt(i) > this.magnitudeAt(best))) best = i;
+    if (best < 0 || this.magnitudeAt(best) < this.fftMaxMagnitude * 0.01) return null;
+    return this.peakAt(best);
+  }
+
+  /** Peak reach of the frequency cursor (pixels): it snaps to a peak this close. */
+  static readonly SNAP = 8;
+
+  /** Frequency the cursor reads at plot-area x: a nearby peak's, else the frequency there. */
+  cursorFrequency(x: number): number {
+    return this.peakNear(x, ScopeFFT.SNAP)?.freq ?? this.xToFrequency(x);
+  }
+
+  /** The strongest peak above DC, or null. */
+  strongestPeak(): { freq: number; magnitude: number; db: number } | null {
+    if (this.fftReal === null) return null;
+    const half = this.scope.scopePointCount / 2;
+    let best = -1;
+    for (let i = 1; i < half - 1; i++)
+      if (this.isPeak(i) && (best < 0 || this.magnitudeAt(i) > this.magnitudeAt(best))) best = i;
+    if (best < 0 || this.magnitudeAt(best) < this.fftMaxMagnitude * 0.01) return null;
+    return this.peakAt(best);
+  }
+
   addCursorInfo(info: string[], mouseCursorX: number): void {
     const scope = this.scope;
     const maxFrequency = 1 / (scope.sim.maxTimeStep * scope.speed * 2);

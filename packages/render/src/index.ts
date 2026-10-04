@@ -13,4 +13,5 @@ export {
   ScopePalette,
   ScopeRenderer,
   type BottomAreaState,
+  type UndockedScopeItem,
 } from './ScopeRenderer.ts';

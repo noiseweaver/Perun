@@ -324,8 +324,15 @@ textarea,
   gap: 8px;
 }
 
-.control-sliders {
-  gap: 24px;
+.speed-popover {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 18px 16px;
+  background: var(--md-surface-container-high);
+  border-radius: var(--md-shape-xs);
+  box-shadow: var(--md-elevation-2);
+  z-index: 50;
 }
 
 .status {
@@ -1111,10 +1118,6 @@ textarea.field-input {
 
   .control-bar {
     gap: 8px 16px;
-  }
-
-  .control-sliders {
-    gap: 16px;
   }
 
   .slider {

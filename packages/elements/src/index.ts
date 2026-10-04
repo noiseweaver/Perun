@@ -80,6 +80,9 @@ export {
   CARD_GAP,
   cardHitTest,
   cardPlotRect,
+  drawLeader,
+  isMiniCard,
+  leaderPath,
   plotName,
   type CardHit,
 } from './scope/ScopeCardView.ts';
@@ -92,6 +95,7 @@ export {
   scopesFor,
   type ScopeHost,
 } from './scope/ScopeManager.ts';
+export { SCOPE_ELM_DUMP_TYPE, ScopeElm, ScopeElmType } from './scope/ScopeElm.ts';
 export { ScopePlot, V_POSITION_STEPS } from './scope/ScopePlot.ts';
 export { ScopeSerializer, type ScopeDefaultsStore } from './scope/ScopeSerializer.ts';
 export {

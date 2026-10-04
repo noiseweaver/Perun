@@ -20,6 +20,7 @@ import {
   VAL_VBE,
 } from './constants.ts';
 import type { Scope, ScopeRect } from './Scope.ts';
+import { ScopeFFT } from './ScopeFFT.ts';
 import type { ScopeGraphics, ScopeInk } from './ScopeGraphics.ts';
 import type { ScopePlot } from './ScopePlot.ts';
 
@@ -40,8 +41,26 @@ export function headerLines(slot: ScopeRect): number {
   return slot.height >= 120 ? 2 : 1;
 }
 
-/** The plot area inside a card. */
-export function cardPlotRect(slot: ScopeRect): ScopeRect {
+/**
+ * An undocked card too small for a header (upstream's undocked scopes can be tiny): just the
+ * plot, and the whole card moves it.
+ */
+export function isMiniCard(slot: ScopeRect): boolean {
+  return slot.height < 80 || slot.width < 150;
+}
+
+/** Inset of the plot in a mini card. */
+const MINI_PAD = 3;
+
+/** The plot area inside a card (`undocked`: on the circuit, where a small one has no header). */
+export function cardPlotRect(slot: ScopeRect, undocked = false): ScopeRect {
+  if (undocked && isMiniCard(slot))
+    return {
+      x: slot.x + MINI_PAD,
+      y: slot.y + MINI_PAD,
+      width: Math.max(4, slot.width - 2 * MINI_PAD),
+      height: Math.max(4, slot.height - 2 * MINI_PAD),
+    };
   const top = 6 + LINE * headerLines(slot);
   return {
     x: slot.x + PAD,
@@ -51,9 +70,12 @@ export function cardPlotRect(slot: ScopeRect): ScopeRect {
   };
 }
 
-/** Something clickable on a card. `index` is the plot (chip) or column (tab). */
+/**
+ * Something clickable on a card. `index` is the plot (chip) or column (tab). Undocked cards also
+ * have a drag handle (`handle`, the whole card when it is a mini one) and a resize grip.
+ */
 export interface CardHit {
-  kind: 'settings' | 'close' | 'chip' | 'tab';
+  kind: 'settings' | 'close' | 'chip' | 'tab' | 'handle' | 'resize';
   index: number;
   x: number;
   y: number;
@@ -306,6 +328,20 @@ function gear(g: ScopeGraphics, cx: number, cy: number): void {
   }
 }
 
+/** Width the six-dot handle takes in the header, with its gap. */
+const HANDLE_W = 14;
+
+/** Two columns of three dots, from (x, y) at the top left. */
+function sixDots(g: ScopeGraphics, x: number, y: number): void {
+  for (let r = 0; r !== 3; r++)
+    for (let c = 0; c !== 2; c++) g.fillOval(x + c * 5, y + r * 4.5, 2.6, 2.6);
+}
+
+/** Diagonal lines in the bottom right corner, to resize by. */
+function resizeGrip(g: ScopeGraphics, x: number, y: number): void {
+  for (let k = 1; k <= 2; k++) g.drawLine(x - 4 * k, y, x, y - 4 * k, 1);
+}
+
 function cross(g: ScopeGraphics, cx: number, cy: number): void {
   g.drawLine(cx - 4, cy - 4, cx + 4, cy + 4, 1.5);
   g.drawLine(cx - 4, cy + 4, cx + 4, cy - 4, 1.5);
@@ -407,8 +443,24 @@ function drawHeader(
     right -= 4;
   }
 
+  // undocked: a six-dot handle to drag the card by
+  let left = slot.x + PAD;
+  if (scope.position < 0) {
+    const handle: CardHit = {
+      kind: 'handle',
+      index: 0,
+      x: slot.x + 2,
+      y: slot.y + 2,
+      width: HANDLE_W + 6,
+      height: LINE,
+    };
+    g.setColor(over(handle) ? 'text' : 'textMuted');
+    sixDots(g, slot.x + PAD, slot.y + 6 + 2);
+    hits.push(handle);
+    left += HANDLE_W;
+  }
+
   // time scale (with one header line it goes after the chips, if they leave room)
-  const left = slot.x + PAD;
   if (scaleText !== null && lines === 2) {
     g.setTextStyle('value');
     const w = g.measureWidth(scaleText);
@@ -507,10 +559,30 @@ function drawCursor(scope: Scope, g: ScopeGraphics): void {
   const fft = scope.fftPlot.enabled;
   if (fft) {
     if (!here) return;
-    x = mgr.mouseCursorX;
-    const info: string[] = [];
-    scope.fftPlot.addCursorInfo(info, x);
-    for (const t of info) lines.push({ ink: null, text: t });
+    // the cursor snaps to a nearby peak and reads its frequency; a drag measures between two
+    const f = scope.fftPlot;
+    const px = mgr.mouseCursorX - r.x;
+    const peak = f.peakNear(px, ScopeFFT.SNAP);
+    const freq = peak?.freq ?? f.xToFrequency(px);
+    x = peak !== null ? r.x + Math.round(f.frequencyToX(freq)) : mgr.mouseCursorX;
+    lines.push({ ink: null, text: (peak !== null ? 'peak ' : '') + getUnitText(freq, 'Hz') });
+    if (peak !== null) {
+      lines.push({ ink: null, text: `${peak.db.toFixed(1)} dB` });
+      g.setColor('fft');
+      g.fillOval(x - 3, r.y + f.magnitudeToY(peak.magnitude) - 3, 7, 7);
+    }
+    if (mgr.dragStartFreq >= 0 && mgr.dragFreqScope === scope) {
+      const sx = r.x + Math.round(f.frequencyToX(mgr.dragStartFreq));
+      if (sx >= r.x && sx < r.x + r.width) {
+        g.setColor('measure');
+        g.drawLine(sx, r.y, sx, r.y + r.height - 1);
+      }
+      lines.push({ ink: null, text: 'from ' + getUnitText(mgr.dragStartFreq, 'Hz') });
+      lines.push({
+        ink: null,
+        text: 'Δf ' + getUnitText(Math.abs(freq - mgr.dragStartFreq), 'Hz'),
+      });
+    }
   } else {
     if (mgr.cursorTime < 0 || vp.length === 0) return;
     x = scope.timeToX(mgr.cursorTime);
@@ -581,20 +653,40 @@ function drawCursor(scope: Scope, g: ScopeGraphics): void {
   g.setTextStyle('normal');
 }
 
-/** Draw a docked scope in the card look (in place of Scope.draw's upstream look). */
+/** Draw a scope in the card look (in place of Scope.draw's upstream look). */
 export function drawScopeCard(scope: Scope, g: ScopeGraphics): void {
   const slot = scope.slot;
   const r = scope.rect;
   const hits: CardHit[] = [];
   cardHits.set(scope, hits);
+  const undocked = scope.position < 0;
+  const mini = undocked && isMiniCard(slot);
+  const radius = mini ? PLOT_RADIUS : CARD_RADIUS;
   g.setColor('card');
-  g.fillRoundRect(slot.x, slot.y, slot.width, slot.height, CARD_RADIUS);
+  g.fillRoundRect(slot.x, slot.y, slot.width, slot.height, radius);
   g.setColor('background');
-  g.fillRoundRect(r.x, r.y, r.width, r.height, PLOT_RADIUS);
+  g.fillRoundRect(r.x, r.y, r.width, r.height, mini ? PLOT_RADIUS - 2 : PLOT_RADIUS);
+  if (undocked) {
+    // resize grip first: it wins over the handle where they meet
+    const grip: CardHit = {
+      kind: 'resize',
+      index: 0,
+      x: slot.x + slot.width - 14,
+      y: slot.y + slot.height - 14,
+      width: 14,
+      height: 14,
+    };
+    hits.push(grip);
+    if (mini) hits.push({ kind: 'handle', index: 0, ...slot });
+  }
+  const header = (readouts: readonly string[], scale: string | null): void => {
+    if (!mini) drawHeader(scope, g, hits, readouts, scale);
+    if (undocked) drawUndockedChrome(scope, g, mini, radius);
+  };
 
   if (scope.plot2d.enabled) {
     scope.plot2d.draw(g);
-    drawHeader(scope, g, hits, [], null);
+    header([], null);
     return;
   }
 
@@ -624,6 +716,7 @@ export function drawScopeCard(scope: Scope, g: ScopeGraphics): void {
   if (scope.fftPlot.enabled) {
     scope.fftPlot.drawVerticalGridLines(g);
     scope.fftPlot.draw(g);
+    drawPeakLabel(scope, g);
   }
   scope.gridStepX = scope.calcGridStepX();
   const traces: Trace[] = [];
@@ -646,17 +739,141 @@ export function drawScopeCard(scope: Scope, g: ScopeGraphics): void {
   const readouts = vp.length > 0 ? scope.overlays.readouts(g) : [];
   const scale =
     vp.length > 0 && !scope.fftPlot.enabled ? getUnitText(scope.gridStepX, 's') + '/div' : null;
-  drawHeader(scope, g, hits, readouts, scale);
-  if (highlight || sel) {
+  header(mini ? [] : readouts, scale);
+  if (highlight || sel || scope.canvasSelected) {
     g.setColor('selection');
     g.strokeRoundRect(
       slot.x + 0.75,
       slot.y + 0.75,
       slot.width - 1.5,
       slot.height - 1.5,
-      CARD_RADIUS,
+      radius,
       1.5,
     );
   }
   drawCursor(scope, g);
+}
+
+/** The strongest peak of a spectrum, marked with its frequency (in plot-area coordinates). */
+function drawPeakLabel(scope: Scope, g: ScopeGraphics): void {
+  const f = scope.fftPlot;
+  const pk = f.strongestPeak();
+  if (pk === null) return;
+  const x = f.frequencyToX(pk.freq);
+  const y = f.magnitudeToY(pk.magnitude);
+  g.setColor('fft');
+  g.fillOval(x - 2.5, y - 2.5, 5, 5);
+  g.setTextStyle('value');
+  const label = getUnitText(pk.freq, 'Hz');
+  const w = g.measureWidth(label);
+  const tx = Math.max(2, Math.min(x + 6, scope.rect.width - w - 4));
+  g.drawString(label, tx, Math.max(12, y - 4));
+  g.setTextStyle('normal');
+}
+
+/** The resize grip of an undocked card, and a mini card's handle while the mouse is over it. */
+function drawUndockedChrome(scope: Scope, g: ScopeGraphics, mini: boolean, radius: number): void {
+  const slot = scope.slot;
+  const mgr = scope.mgr;
+  const mx = mgr.mouseCursorX;
+  const my = mgr.mouseCursorY;
+  const inside =
+    mx >= slot.x && my >= slot.y && mx < slot.x + slot.width && my < slot.y + slot.height;
+  if (!inside && !scope.canvasSelected) return;
+  g.setColor('textMuted');
+  resizeGrip(g, slot.x + slot.width - 4, slot.y + slot.height - 4);
+  if (mini) {
+    g.save();
+    g.setGlobalAlpha(0.85);
+    g.setColor('card');
+    g.fillRoundRect(slot.x + 2, slot.y + 2, 16, 18, Math.min(radius, 4));
+    g.restore();
+    g.setColor('text');
+    sixDots(g, slot.x + 6, slot.y + 6);
+  }
+}
+
+/**
+ * The leader line from an undocked card to what it shows: straight and 45° segments only, leaving
+ * the side of the card that faces the target, or null when the target is under the card.
+ */
+export function leaderPath(slot: ScopeRect, tx: number, ty: number): { x: number; y: number }[] {
+  const x1 = slot.x;
+  const y1 = slot.y;
+  const x2 = slot.x + slot.width;
+  const y2 = slot.y + slot.height;
+  const outX = tx < x1 ? x1 - tx : tx > x2 ? tx - x2 : 0;
+  const outY = ty < y1 ? y1 - ty : ty > y2 ? ty - y2 : 0;
+  if (outX === 0 && outY === 0) return [];
+  const inset = Math.min(CARD_RADIUS + 4, slot.width / 2, slot.height / 2);
+  const clamp = (v: number, lo: number, hi: number): number => Math.min(Math.max(v, lo), hi);
+  if (outX >= outY) {
+    // leave from the left or right side, level with the target if the side reaches it
+    const ax = tx < x1 ? x1 : x2;
+    const ay = clamp(ty, y1 + inset, y2 - inset);
+    const dx = tx - ax;
+    const dy = ty - ay;
+    const sx = Math.sign(dx);
+    const sy = Math.sign(dy);
+    if (Math.abs(dy) <= Math.abs(dx)) {
+      // straight out, then diagonally in
+      const bx = ax + sx * (Math.abs(dx) - Math.abs(dy));
+      return dedupe([
+        { x: ax, y: ay },
+        { x: bx, y: ay },
+        { x: tx, y: ty },
+      ]);
+    }
+    // diagonally out, then straight down or up
+    return dedupe([
+      { x: ax, y: ay },
+      { x: tx, y: ay + sy * Math.abs(dx) },
+      { x: tx, y: ty },
+    ]);
+  }
+  const ay = ty < y1 ? y1 : y2;
+  const ax = clamp(tx, x1 + inset, x2 - inset);
+  const dx = tx - ax;
+  const dy = ty - ay;
+  const sx = Math.sign(dx);
+  const sy = Math.sign(dy);
+  if (Math.abs(dx) <= Math.abs(dy)) {
+    const by = ay + sy * (Math.abs(dy) - Math.abs(dx));
+    return dedupe([
+      { x: ax, y: ay },
+      { x: ax, y: by },
+      { x: tx, y: ty },
+    ]);
+  }
+  return dedupe([
+    { x: ax, y: ay },
+    { x: ax + sx * Math.abs(dy), y: ty },
+    { x: tx, y: ty },
+  ]);
+}
+
+function dedupe(pts: { x: number; y: number }[]): { x: number; y: number }[] {
+  return pts.filter((p, i) => i === 0 || p.x !== pts[i - 1].x || p.y !== pts[i - 1].y);
+}
+
+/**
+ * Draw an undocked card's leader to (tx, ty): a thin line with a dot on the target. `active`
+ * (the card or its element is hovered or selected) draws it in the selection color.
+ */
+export function drawLeader(
+  scope: Scope,
+  g: ScopeGraphics,
+  tx: number,
+  ty: number,
+  active: boolean,
+): void {
+  const pts = leaderPath(scope.slot, tx, ty);
+  if (pts.length < 2) return;
+  const xs = pts.map((p) => p.x);
+  const ys = pts.map((p) => p.y);
+  g.setColor(active ? 'selection' : 'textMuted');
+  g.strokePolyline(xs, ys, pts.length, active ? 1.5 : 1);
+  g.fillOval(tx - 3, ty - 3, 6, 6);
+  const a = pts[0];
+  g.fillOval(a.x - 2, a.y - 2, 4, 4);
 }

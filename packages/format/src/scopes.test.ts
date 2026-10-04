@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
 
-import { plotName } from '@circuitjs-next/elements';
+import { ScopeElm, plotName } from '@circuitjs-next/elements';
 import { describe, expect, it } from 'vitest';
 import { Circuit, readCircuit } from './circuit.ts';
 
@@ -18,6 +18,37 @@ const LRC =
   'o 4 64 0 4099 20 0.05 0 2 4 3\n' +
   'o 3 64 0 4099 20 0.05 1 2 3 3\n' +
   'o 0 64 0 4099 0.625 0.05 2 2 0 3\n';
+
+/** upstream multivib-a.txt: four undocked scopes on the transistors and capacitors. */
+const MULTIVIB =
+  '$ 1 0.000005 8.281975887399955 50 5 50\n' +
+  'w 112 48 208 48 0\n' +
+  'w 208 48 288 48 0\n' +
+  'w 288 48 384 48 0\n' +
+  'r 112 48 112 176 0 330\n' +
+  'r 208 48 208 176 0 1020\n' +
+  'r 288 48 288 176 0 1020\n' +
+  'r 384 48 384 176 0 320\n' +
+  'c 112 176 208 176 0 0.000018 3.7024016598584764\n' +
+  'c 384 176 288 176 0 0.000018 -0.5571050333713464\n' +
+  'w 384 176 384 240 0\n' +
+  't 288 256 384 256 0 1 0.6334943517995971 0.6821481504454086 100\n' +
+  'w 208 176 288 256 0\n' +
+  'w 288 176 208 256 0\n' +
+  't 208 256 112 256 0 1 -3.778790978286727 0.6057588320171579 100\n' +
+  'w 112 176 112 240 0\n' +
+  'R 112 48 64 48 0 0 40 5 0 0 0.5\n' +
+  'g 112 272 112 304 0\n' +
+  'g 384 272 384 304 0\n' +
+  'x 159 212 179 215 4 16 C1\n' +
+  'x 317 213 337 216 4 16 C2\n' +
+  'x 85 260 106 263 4 16 Q1\n' +
+  'x 390 259 411 262 4 16 Q2\n' +
+  '403 192 208 224 240 0 12_256_0_4102_5_0.1_0_2_12_3\n' +
+  '403 272 208 304 240 0 11_256_0_4102_5_0.4_0_2_11_3\n' +
+  '403 320 128 352 160 0 8_128_0_4102_5_0.4_0_2_8_3\n' +
+  '403 144 128 176 160 0 7_128_0_4102_5_0.1_0_2_7_3\n' +
+  'o 13 64 6 4099 8.840953122049878 0.0001 0 2 10 6\n';
 
 const scopeRecords = (c: Circuit): string[] =>
   c
@@ -132,5 +163,49 @@ describe('scopes', () => {
     const all = mgr.scopes[0];
     if (!all) throw new Error('no scope');
     expect(all.plots.map((p) => plotName(all, p))).toEqual(['V1', 'I1', 'V2', 'I2', 'V3', 'I3']);
+  });
+
+  it('loads undocked scopes (ScopeElm) from text and XML, and saves them inside the element', () => {
+    const c = readCircuit(MULTIVIB);
+    expect(c.warnings).toEqual([]);
+    const elms = c.scopeElms();
+    expect(elms).toHaveLength(4);
+    const first = elms[0];
+    if (!first) throw new Error('no scope element');
+    expect(first.box()).toEqual({ x1: 192, y1: 208, x2: 224, y2: 240 });
+    // `12_256_0_4102_...`: element 12, speed 256
+    expect(first.elmScope.getElm()).toBe(c.elements[12]);
+    expect(first.elmScope.speed).toBe(256);
+    expect(first.elmScope.position).toBe(-1);
+    expect(c.undockedScopes()).toHaveLength(4);
+    // docked scopes still count the undocked ones as elements
+    expect(c.scopes.scopes[0]?.plots[0]?.elm).toBe(c.elements[13]);
+
+    const xml = c.dumpXml();
+    expect(xml).toContain('<Scope x="192 208 224 240" f="0">');
+    expect(xml).toMatch(/<Scope [^>]*>\n {4}<o en="12" sp="256"/);
+    const again = readCircuit(xml);
+    expect(again.scopeElms()).toHaveLength(4);
+    expect(again.scopeElms()[0]?.elmScope.getElm()).toBe(again.elements[12]);
+    // (docked scopes read from XML save their speed as 0, as upstream's do; undocked ones keep it)
+    const docked = (l: string): string => (l.startsWith('  <o ') ? l.replace(/ sp="\d+"/, '') : l);
+    expect(again.dumpXml().split('\n').map(docked)).toEqual(xml.split('\n').map(docked));
+
+    // the undocked scopes step with the simulation
+    const plot = first.elmScope.plots[0];
+    if (!plot) throw new Error('no plot');
+    const start = plot.ptr;
+    for (let k = 0; k < 20; k++) c.sim.step(50);
+    expect(plot.ptr).not.toBe(start);
+
+    // a copy leaves them out, as upstream's does
+    expect(c.dumpElementsXml(c.elements)).not.toContain('<Scope');
+
+    // deleting what one shows removes it
+    c.elements = c.elements.filter((e) => e !== c.elements[12]);
+    expect(c.removeUnusedScopeElms()).toBe(true);
+    expect(c.scopeElms()).toHaveLength(3);
+    expect(c.elements.some((e) => e === first)).toBe(false);
+    expect(first).toBeInstanceOf(ScopeElm);
   });
 });
