@@ -221,7 +221,10 @@ export class CircuitRenderer {
         this.painter.fillCircle({ x: p.x, y: p.y }, JUNCTION_RADIUS, { role: 'component' });
     for (const p of this.posts.bad) this.drawPost(p.x, p.y, 'badConnection');
 
-    if (this.pending !== null) this.drawElement(this.pending, frame);
+    // upstream UIManager draws the element being placed only once it has length; until the
+    // first drag some (MOSFET) have no post geometry yet
+    const pend = this.pending;
+    if (pend !== null && (pend.x !== pend.x2 || pend.y !== pend.y2)) this.drawElement(pend, frame);
     if (this.selectionRect !== null) this.drawSelectionRect(this.selectionRect);
   }
 

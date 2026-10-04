@@ -380,3 +380,23 @@ test('property checkboxes show their new state at once', async ({ page }) => {
   await box.click();
   await expect(box).not.toBeChecked();
 });
+
+test('placing a MOSFET draws nothing until it is dragged out', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await open(page, LOOP);
+  await page.getByTestId('palette-search').fill('mosfet');
+  await page.getByTestId('palette-NMosfetElm').click();
+  const a = await at(page, 416, 96);
+  const b = await at(page, 448, 96);
+  await page.mouse.move(a.x, a.y);
+  await page.mouse.down();
+  // a few frames with the new element still zero length
+  await page.waitForTimeout(150);
+  await page.mouse.move(b.x, b.y, { steps: 4 });
+  await page.mouse.up();
+  await expect
+    .poll(async () => (await elements(page)).some((e) => e.cls === 'NMosfetElm'))
+    .toBe(true);
+  expect(errors).toEqual([]);
+});

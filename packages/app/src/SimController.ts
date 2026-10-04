@@ -162,8 +162,16 @@ export class SimController {
     this.resize();
     this.detachInput = this.attachInput(canvas);
     const loop = (now: number): void => {
-      this.frame(now);
+      // schedule first: a bug in one frame must not stop drawing and editing for good
       this.raf = requestAnimationFrame(loop);
+      try {
+        this.frame(now);
+      } catch (e) {
+        console.error(e);
+        if (useApp.getState().running) {
+          useApp.setState({ running: false, error: `Internal error: ${String(e)}` });
+        }
+      }
     };
     this.raf = requestAnimationFrame(loop);
   }
