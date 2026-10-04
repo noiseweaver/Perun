@@ -62,7 +62,8 @@ const colorsIn = (page: Page, r: { x: number; y: number; width: number; height: 
       ?.getImageData(r.x * dpr, r.y * dpr, r.width * dpr, r.height * dpr).data;
     const seen = new Set<number>();
     if (d)
-      for (let i = 0; i < d.length; i += 4) seen.add((d[i]! << 16) | (d[i + 1]! << 8) | d[i + 2]!);
+      for (let i = 0; i < d.length; i += 4)
+        seen.add(((d[i] ?? 0) << 16) | ((d[i + 1] ?? 0) << 8) | (d[i + 2] ?? 0));
     return seen.size;
   }, r);
 
