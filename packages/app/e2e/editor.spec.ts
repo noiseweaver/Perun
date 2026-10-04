@@ -199,7 +199,9 @@ test('save downloads the circuit and export link reopens it', async ({ page }) =
   expect(again).toBe(saved);
 });
 
-test('a trackpad swipe pans, a pinch zooms, and a mouse wheel zooms', async ({ page }) => {
+test('a trackpad swipe pans, a pinch zooms, a mouse wheel zooms and shift+wheel pans', async ({
+  page,
+}) => {
   await open(page, LOOP);
   const view = () =>
     page.evaluate(() => {
@@ -208,7 +210,13 @@ test('a trackpad swipe pans, a pinch zooms, and a mouse wheel zooms', async ({ p
       const b = c?.toScreen(100, 0);
       return a && b ? { x: a.x, y: a.y, scale: (b.x - a.x) / 100 } : null;
     });
-  type Wheel = { deltaX?: number; deltaY?: number; deltaMode?: number; ctrlKey?: boolean };
+  type Wheel = {
+    deltaX?: number;
+    deltaY?: number;
+    deltaMode?: number;
+    ctrlKey?: boolean;
+    shiftKey?: boolean;
+  };
   const wheel = (init: Wheel) =>
     page.evaluate((init) => {
       const c = document.querySelector('[data-testid=circuit-canvas]');
@@ -238,6 +246,14 @@ test('a trackpad swipe pans, a pinch zooms, and a mouse wheel zooms', async ({ p
   await wheel({ deltaY: 3, deltaMode: 1 });
   const after = await view();
   expect(after?.scale).toBeLessThan(before?.scale ?? 0);
+  // shift + a mouse wheel notch pans sideways, whichever delta the browser put it in
+  await wheel({ deltaY: 3, deltaMode: 1, shiftKey: true });
+  const side = await view();
+  expect(side?.scale).toBe(after?.scale);
+  expect(side?.x).toBeCloseTo((after?.x ?? 0) - 48, 5);
+  expect(side?.y).toBe(after?.y);
+  await wheel({ deltaX: -100, shiftKey: true });
+  expect((await view())?.x).toBeCloseTo((side?.x ?? 0) + 100, 5);
 });
 
 test('the palette slides away and back, and stays as it was left', async ({ page }) => {

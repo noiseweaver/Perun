@@ -615,7 +615,7 @@ export class SimController {
       this.publishEditor();
     };
     // A trackpad's two-finger swipe pans and its pinch (which browsers send with ctrlKey) zooms;
-    // a mouse wheel zooms, as upstream's does.
+    // a mouse wheel zooms, as upstream's does, and pans sideways with shift held.
     const wheel = (e: WheelEvent): void => {
       e.preventDefault();
       const r = this.renderer;
@@ -625,6 +625,8 @@ export class SimController {
       const dx = e.deltaX * unit;
       const dy = e.deltaY * unit;
       if (e.ctrlKey || e.metaKey) r.viewport.zoomAt(Math.exp(-dy * 0.01), p.x, p.y);
+      // some browsers turn shift+wheel into deltaX themselves, others leave it in deltaY
+      else if (e.shiftKey) r.viewport.pan(-(dx !== 0 ? dx : dy), 0);
       else if (isMouseWheel(e)) r.viewport.zoomAt(Math.exp(-dy * 0.0015), p.x, p.y);
       else r.viewport.pan(-dx, -dy);
     };
