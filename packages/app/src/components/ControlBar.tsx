@@ -140,8 +140,8 @@ export function timeText(t: number): string {
     [1e-9, 'ns'],
   ];
   for (const [scale, unit] of units)
-    if (Math.abs(t) >= scale) return `${(t / scale).toFixed(3)} ${unit}`;
-  return t === 0 ? '0.000 s' : `${(t / 1e-12).toFixed(3)} ps`;
+    if (Math.abs(t) >= scale) return `${(t / scale).toFixed(3).padStart(7)} ${unit.padStart(2)}`;
+  return t === 0 ? '  0.000  s' : `${(t / 1e-12).toFixed(3).padStart(7)} ps`;
 }
 
 /**

@@ -39,6 +39,15 @@ ESLint enforces the dependency direction (`no-restricted-imports`, see eslint.co
 color literals everywhere except `packages/theme/src/builtins/` (`local/no-color-literals`). Views
 draw with semantic roles; the renderer maps roles to theme colors.
 
+## Live values on screen (owner's rule)
+
+Every displayed value that changes while the simulation runs (scope readouts, cursor boxes, the
+time readout, info boxes) gets a fixed character budget covering the sign, integer digits,
+decimals, unit prefix and unit, padded with spaces and drawn in the monospace font, so the text
+never shifts or flickers as digits, the minus sign or the prefix change. Reserve the minus sign's
+width even for positive values. Use `getFixedUnitText` (packages/elements/src/view/units.ts) or
+the same pattern; HTML readouts need `white-space: pre` so the padding survives.
+
 ## Commands
 
 ```sh

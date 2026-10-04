@@ -8,7 +8,7 @@
 // Scope.draw (CircuitJS1 Scope.java at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032), so switching
 // looks changes nothing but the picture.
 
-import { getFixedUnitText, getTimeText, getUnitText } from '../view/units.ts';
+import { getFixedUnitText, getUnitText } from '../view/units.ts';
 import type { WaveEventKind } from './ScopeSnap.ts';
 import {
   UNITS_A,
@@ -682,9 +682,9 @@ function drawCursor(scope: Scope, g: ScopeGraphics): void {
     const peak = f.peakNear(px, ScopeFFT.SNAP);
     const freq = peak?.freq ?? f.xToFrequency(px);
     x = peak !== null ? r.x + Math.round(f.frequencyToX(freq)) : mgr.mouseCursorX;
-    lines.push({ ink: null, text: (peak !== null ? 'peak ' : '') + getUnitText(freq, 'Hz') });
+    lines.push({ ink: null, text: (peak !== null ? 'peak ' : '') + getFixedUnitText(freq, 'Hz') });
     if (peak !== null) {
-      lines.push({ ink: null, text: `${peak.db.toFixed(1)} dB` });
+      lines.push({ ink: null, text: `${peak.db.toFixed(1).padStart(6)} dB` });
       g.setColor('fft');
       g.fillOval(x - 3, r.y + f.magnitudeToY(peak.magnitude) - 3, 7, 7);
     }
@@ -694,10 +694,10 @@ function drawCursor(scope: Scope, g: ScopeGraphics): void {
         g.setColor('measure');
         g.drawLine(sx, r.y, sx, r.y + r.height - 1);
       }
-      lines.push({ ink: null, text: 'from ' + getUnitText(mgr.dragStartFreq, 'Hz') });
+      lines.push({ ink: null, text: 'from ' + getFixedUnitText(mgr.dragStartFreq, 'Hz') });
       lines.push({
         ink: null,
-        text: 'Δf ' + getUnitText(Math.abs(freq - mgr.dragStartFreq), 'Hz'),
+        text: 'Δf ' + getFixedUnitText(Math.abs(freq - mgr.dragStartFreq), 'Hz'),
       });
     }
   } else {
@@ -731,11 +731,14 @@ function drawCursor(scope: Scope, g: ScopeGraphics): void {
       g.drawLine(dragX, r.y, dragX, r.y + r.height - 1);
       const start = scope.drawPlotDot(g, plot, dragX);
       const dt = Math.abs(mgr.cursorTime - mgr.dragStartTime);
-      lines.push({ ink: null, text: 'Δt ' + getTimeText(dt) });
-      if (dt > 0) lines.push({ ink: null, text: 'f ' + getUnitText(1 / dt, 'Hz') });
+      lines.push({ ink: null, text: 'Δt ' + getFixedUnitText(dt, 's') });
+      if (dt > 0) lines.push({ ink: null, text: 'f ' + getFixedUnitText(1 / dt, 'Hz') });
       const end = scope.drawPlotDot(g, plot, x);
       if (!Number.isNaN(start) && !Number.isNaN(end))
-        lines.push({ ink: plot.color, text: 'Δ ' + plot.getUnitText(end - start) });
+        lines.push({
+          ink: plot.color,
+          text: 'Δ ' + getFixedUnitText(end - start, plot.unitSymbol()),
+        });
     }
   }
   // snapped to a peak or crossing: name it, and the period to the like one before
@@ -751,12 +754,12 @@ function drawCursor(scope: Scope, g: ScopeGraphics): void {
     if (mgr.dragStartTime < 0) {
       lines.push({ ink: null, text: SNAP_NAMES[snap.kind] });
       if (snap.period > 0) {
-        lines.push({ ink: null, text: 'T ' + getTimeText(snap.period) });
-        lines.push({ ink: null, text: 'f ' + getUnitText(1 / snap.period, 'Hz') });
+        lines.push({ ink: null, text: 'T ' + getFixedUnitText(snap.period, 's') });
+        lines.push({ ink: null, text: 'f ' + getFixedUnitText(1 / snap.period, 'Hz') });
       }
     }
   }
-  if (!fft) lines.push({ ink: null, text: getTimeText(mgr.cursorTime) });
+  if (!fft) lines.push({ ink: null, text: getFixedUnitText(mgr.cursorTime, 's') });
   if (lines.length === 0) return;
 
   g.setTextStyle('value');

@@ -33,8 +33,9 @@ const FAILS =
 /** `cct=` the way upstream's export link writes it. */
 const cct = (text: string): string => encodeURIComponent(text).replaceAll('%24', '$');
 
+/** The time readout, with the spaces that pad it to a fixed width squeezed out. */
 const simTime = async (page: Page): Promise<string> =>
-  (await page.getByTestId('sim-time').textContent()) ?? '';
+  ((await page.getByTestId('sim-time').textContent()) ?? '').replace(/\s+/g, ' ');
 
 /** RGBA of one canvas pixel (CSS px). */
 const pixel = (page: Page, x: number, y: number) =>
@@ -291,7 +292,7 @@ test('the time step can be changed and undone', async ({ page }) => {
   await expect(page.getByTestId('time-step')).toHaveText(/1 μs/);
   await page.getByTestId('undo').click();
   await expect(page.getByTestId('time-step')).toHaveText(/5 μs/);
-  await expect(page.getByTestId('sim-time')).toHaveText(/^t = \d+\.\d{3} [mμ]?s$/);
+  await expect(page.getByTestId('sim-time')).toHaveText(/^t = +\d+\.\d{3} +[mμ]?s$/);
 });
 
 test('the text box font setting redraws text and is remembered', async ({ page }) => {

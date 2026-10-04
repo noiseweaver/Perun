@@ -59,12 +59,40 @@ export function getUnitText(v: number, u: string): string {
 }
 
 /**
- * Like getUnitText, but always three decimals and a space where a minus sign would go, so a live
- * value keeps its width in monospace as it changes (the scope cards, not upstream).
+ * Like getUnitText, but the same width whatever the value: a place for the sign, three integer
+ * digits, always three decimals and a place for the prefix, filled with spaces. In monospace a
+ * live value then never shifts as it changes (the scope cards, not upstream). Values of 1000 G
+ * and up don't fit and fall back to getUnitText.
  */
 export function getFixedUnitText(v: number, u: string): string {
-  const s = unitText(v, u, false, true);
-  return s.startsWith('-') ? s : ' ' + s;
+  // every part has a budget: sign, three integer digits, three decimals, one prefix letter
+  const prefixes: [number, string][] = [
+    [1e-12, 'p'],
+    [1e-9, 'n'],
+    [1e-6, MU],
+    [1e-3, 'm'],
+    [1, ' '],
+    [1e3, 'k'],
+    [1e6, 'M'],
+    [1e9, 'G'],
+  ];
+  if (Math.abs(v) >= 1e12) return getUnitText(v, u);
+  let num = '0.000';
+  let prefix = ' ';
+  if (Math.abs(v) >= 1e-14 && Number.isFinite(v)) {
+    let k = prefixes.length - 1;
+    while (k > 0 && Math.abs(v) < (prefixes[k]?.[0] ?? 1)) k--;
+    let [scale, p] = prefixes[k] ?? [1, ' '];
+    num = formatNumber(v / scale, 3, true);
+    // 999.9996 rounds up to 1000.000: say 1.000 of the next prefix instead
+    if (/^-?1000\./.test(num) && k + 1 < prefixes.length) {
+      [scale, p] = prefixes[k + 1] ?? [scale, p];
+      num = formatNumber(v / scale, 3, true);
+    }
+    prefix = p;
+  }
+  if (num === '-0.000') num = '0.000';
+  return `${num.padStart(8)} ${prefix}${u}`;
 }
 
 /** `1.5kΩ` style text with one decimal, used on the circuit. */

@@ -2,7 +2,13 @@
 // Copyright (C) 2026 circuitjs-next contributors
 
 import { describe, expect, it } from 'vitest';
-import { formatNumber, getShortUnitText, getUnitText, javaDoubleToString } from './units.ts';
+import {
+  formatNumber,
+  getFixedUnitText,
+  getShortUnitText,
+  getUnitText,
+  javaDoubleToString,
+} from './units.ts';
 
 describe('value formatting', () => {
   it('formats like GWT NumberFormat', () => {
@@ -26,5 +32,25 @@ describe('value formatting', () => {
   it('prints doubles like Java', () => {
     expect(javaDoubleToString(1)).toBe('1.0');
     expect(javaDoubleToString(-2.5)).toBe('-2.5');
+  });
+});
+
+describe('getFixedUnitText', () => {
+  it('keeps the same width for any sign, size and prefix', () => {
+    const values = [0, -0, 1.855, -1.726e-3, 312.4e-6, -999.9996, 9.9999, 1e-15, 12.5e3, -0.5];
+    const texts = values.map((v) => getFixedUnitText(v, 'V'));
+    expect(texts).toEqual([
+      '   0.000  V',
+      '   0.000  V',
+      '   1.855  V',
+      '  -1.726 mV',
+      ` 312.400 ${'μ'}V`,
+      '  -1.000 kV',
+      '  10.000  V',
+      '   0.000  V',
+      '  12.500 kV',
+      '-500.000 mV',
+    ]);
+    for (const t of texts) expect(t.length).toBe(texts[0]?.length);
   });
 });

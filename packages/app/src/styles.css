@@ -350,7 +350,8 @@ textarea,
   font-family: var(--mono-font);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  /* keep the padding spaces that hold a live value's width */
+  white-space: pre;
 }
 
 /* fixed widths (the font is monospaced) so the readouts don't shift as digits come and go */
