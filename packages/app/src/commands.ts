@@ -8,6 +8,7 @@
 import { SwitchElm } from '@circuitjs-next/elements';
 import { compressCircuit } from '@circuitjs-next/format';
 import { shortcutMap } from './editor/catalog.ts';
+import { download } from './download.ts';
 import { controller } from './SimController.ts';
 import { showToast, useApp } from './store.ts';
 
@@ -51,17 +52,7 @@ export function saveToFile(name: string): void {
   useApp.setState({ title: fname });
 }
 
-/** Offer text to the browser as a file download. */
-export function download(fileName: string, text: string, type: string): void {
-  const url = URL.createObjectURL(new Blob([text], { type }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 10000);
-}
+export { download };
 
 /** This page's address without its query, the base of exported links. */
 export function pageBase(): string {

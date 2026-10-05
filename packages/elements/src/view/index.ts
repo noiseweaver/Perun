@@ -158,6 +158,22 @@ import { GyratorElm } from '../elm/GyratorElm.ts';
 import { LEDArrayElm } from '../elm/LEDArrayElm.ts';
 import { ThreePhaseMotorElm } from '../elm/ThreePhaseMotorElm.ts';
 import { MotorProtectionSwitchElm } from '../elm/MotorProtectionSwitchElm.ts';
+import { FuseElm } from '../elm/FuseElm.ts';
+import {
+  dataRecorderView,
+  fuseView,
+  ldrView,
+  stopTriggerView,
+  testPointView,
+  thermistorView,
+  wattmeterView,
+} from './meters.ts';
+import { LDRElm } from '../elm/LDRElm.ts';
+import { ThermistorNTCElm } from '../elm/ThermistorNTCElm.ts';
+import { TestPointElm } from '../elm/TestPointElm.ts';
+import { StopTriggerElm } from '../elm/StopTriggerElm.ts';
+import { DataRecorderElm } from '../elm/DataRecorderElm.ts';
+import { WattmeterElm, WattmeterTrueElm } from '../elm/WattmeterElm.ts';
 
 /** Undocked scopes are drawn by the scope renderer, over the circuit; this only places them. */
 const scopeElmView: ElementView<ScopeElm> = {
@@ -240,6 +256,14 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [ChipElm, chipView],
   [ThreePhaseMotorElm, threePhaseMotorView],
   [MotorProtectionSwitchElm, motorProtectionSwitchView],
+  [FuseElm, fuseView],
+  [LDRElm, ldrView],
+  [ThermistorNTCElm, thermistorView],
+  [TestPointElm, testPointView],
+  [StopTriggerElm, stopTriggerView],
+  [DataRecorderElm, dataRecorderView],
+  [WattmeterElm, wattmeterView],
+  [WattmeterTrueElm, wattmeterView],
   [GyratorElm, gyratorView],
   [TransformerElm, transformerView],
   [TappedTransformerElm, tappedTransformerView],

@@ -250,6 +250,28 @@
       "source": "upstream:auto-tests/capac.txt",
       "tags": ["linear", "upstream-test", "xml"],
       "stepsPerSample": 100
+    },
+    {
+      "name": "fuse-blow",
+      "description": "Fuse with a low I2t rating blowing on a 10 V DC load (Phase 8)",
+      "source": "circuits/fuse-blow.txt",
+      "tags": ["phase8"],
+      "stepsPerSample": 10
+    },
+    {
+      "name": "ldr-thermistor",
+      "description": "Photoresistor and NTC thermistor divider on an AC source (Phase 8)",
+      "source": "circuits/ldr-thermistor.txt",
+      "tags": ["phase8"],
+      "samples": 20,
+      "stepsPerSample": 20
+    },
+    {
+      "name": "wattmeters",
+      "description": "Old and true wattmeters measuring AC into resistors (Phase 8, XML)",
+      "source": "circuits/wattmeters.txt",
+      "tags": ["phase8", "xml"],
+      "stepsPerSample": 100
     }
   ]
 }

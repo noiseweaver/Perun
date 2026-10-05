@@ -101,6 +101,8 @@ export class Simulation {
   adjustTimeStep = false;
   timeStepAccum = 0;
   timeStepCount = 0;
+  /** An element asked to pause the simulation (see requestPause). */
+  pauseRequested = false;
   solverType: SolverType = SolverType.AUTO;
   usingSparse = false;
 
@@ -159,6 +161,7 @@ export class Simulation {
   resetTime(): void {
     this.t = this.timeStepAccum = 0;
     this.timeStepCount = 0;
+    this.pauseRequested = false;
   }
 
   /** Zero every node voltage (dev-ts `resetNodes`, used by the reset button). */
@@ -711,6 +714,14 @@ export class Simulation {
     this.needsStamp = false;
   }
 
+  /**
+   * Pause without an error (upstream `app.setSimRunning(false)`, used by the stop trigger). The
+   * step loop ends after the current step; the host clears the flag and stops running.
+   */
+  requestPause(): void {
+    this.pauseRequested = true;
+  }
+
   stop(message: string, ce: SimElement | null): void {
     this.stopMessage = message;
     this.stopElm = ce;
@@ -982,6 +993,7 @@ export class Simulation {
       // stepFinished can stop the simulation (max current exceeded); upstream then leaves the
       // loop because stop() clears simRunning
       if (this.stopMessage !== null) break;
+      if (this.pauseRequested) break;
     }
     if (delayWireProcessing) this.calcWireCurrents();
     return done;

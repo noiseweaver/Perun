@@ -82,15 +82,22 @@ export function drawValues(
  * Text at the free end of a labeled-node style lead from pt1 to pt2: beyond the end of a vertical
  * lead, beside a horizontal one. A leading "/" draws a bar over the text.
  */
-export function drawLabeledNode(ctx: DrawContext, str: string, pt1: Pt, pt2: Pt, ink: Ink): void {
+export function drawLabeledNode(
+  ctx: DrawContext,
+  str: string,
+  pt1: Pt,
+  pt2: Pt,
+  ink: Ink,
+  font: TextStyle = UNITS_FONT,
+): void {
   const p = ctx.painter;
   let lineOver = false;
   if (str.startsWith('/')) {
     lineOver = true;
     str = str.substring(1);
   }
-  const w = Math.trunc(p.measureText(str, UNITS_FONT));
-  const h = Math.trunc(p.fontSize(UNITS_FONT));
+  const w = Math.trunc(p.measureText(str, font));
+  const h = Math.trunc(p.fontSize(font));
   let x = pt2.x;
   let y = pt2.y;
   if (pt1.y !== pt2.y) {
@@ -98,7 +105,7 @@ export function drawLabeledNode(ctx: DrawContext, str: string, pt1: Pt, pt2: Pt,
     y += sign(pt2.y - pt1.y) * h;
   } else if (pt2.x > pt1.x) x += 4;
   else x -= 4 + w;
-  p.text(str, { x, y }, ink, { ...UNITS_FONT, baseline: 'middle' });
+  p.text(str, { x, y }, ink, { ...font, baseline: 'middle' });
   if (lineOver) {
     const ya = y - Math.trunc(h / 2) - 1;
     p.line({ x, y: ya }, { x: x + w, y: ya }, ink, { width: 1 });

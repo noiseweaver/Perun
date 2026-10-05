@@ -42,7 +42,15 @@ describe('circuitjs-next engine on the golden circuits', () => {
     it(`${entry.name}: XML round trip is byte-identical`, () => {
       // Upstream reads scope plots from XML without resetting them, so saving right after an XML
       // load writes sp="0" (auto-lrc's fixture shows it); the rest is unchanged.
-      const expected = fixture.export.replace(/(<o en="-?\d+") sp="\d+"/g, '$1 sp="0"');
+      // An LDR's slider position is quantized again on every load and never settles (upstream
+      // does the same: position = trunc(100 ps) * 0.0099 + 0.0001), so its ps moves one step.
+      const expected = fixture.export
+        .replace(/(<o en="-?\d+") sp="\d+"/g, '$1 sp="0"')
+        .replace(
+          /(<LDR [^>]*ps=")([^"]+)"/g,
+          (_m, head: string, ps: string) =>
+            `${head}${String(Math.trunc(Number(ps) * 100) * 0.0099 + 0.0001)}"`,
+        );
       expect(readCircuit(fixture.export).dumpXml()).toBe(expected);
     });
   }

@@ -1,0 +1,1 @@
+{"root":["./playwright.config.ts","./vitest.config.ts","./eslint.config.js","./tools/eslint-rules/no-color-literals.js","./tools/eslint-rules/no-color-literals.test.js","./packages/app/vite.config.ts","./packages/app/vite-plugin-examples.ts"],"version":"6.0.3"}

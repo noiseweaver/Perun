@@ -130,6 +130,13 @@ import { LEDArrayElmType } from './elm/LEDArrayElm.ts';
 import { CustomLogicElmType } from './elm/CustomLogicElm.ts';
 import { ThreePhaseMotorElmType } from './elm/ThreePhaseMotorElm.ts';
 import { MotorProtectionSwitchElmType } from './elm/MotorProtectionSwitchElm.ts';
+import { FuseElmType } from './elm/FuseElm.ts';
+import { LDRElmType } from './elm/LDRElm.ts';
+import { ThermistorNTCElmType } from './elm/ThermistorNTCElm.ts';
+import { TestPointElmType } from './elm/TestPointElm.ts';
+import { StopTriggerElmType } from './elm/StopTriggerElm.ts';
+import { DataRecorderElmType } from './elm/DataRecorderElm.ts';
+import { WattmeterElmType, WattmeterTrueElmType } from './elm/WattmeterElm.ts';
 
 /** Every ported element class. */
 export const ELEMENT_TYPES: readonly ElementType[] = [
@@ -273,6 +280,14 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   CustomLogicElmType,
   ThreePhaseMotorElmType,
   MotorProtectionSwitchElmType,
+  FuseElmType,
+  LDRElmType,
+  ThermistorNTCElmType,
+  TestPointElmType,
+  StopTriggerElmType,
+  DataRecorderElmType,
+  WattmeterElmType,
+  WattmeterTrueElmType,
 ];
 
 /** Old class names upstream's constructElement still accepts (saved shortcuts, subcircuits). */

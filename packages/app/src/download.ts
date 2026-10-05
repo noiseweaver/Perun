@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Copyright (C) 2026 circuitjs-next contributors
+
+/** Offer text to the browser as a file download. */
+export function download(fileName: string, text: string, type: string): void {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 10000);
+}

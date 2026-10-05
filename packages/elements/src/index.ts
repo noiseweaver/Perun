@@ -174,6 +174,8 @@ export {
 } from './elm/compositeParts.ts';
 export { CC2Elm, CC2NegElm } from './elm/CC2Elm.ts';
 export { AudioOutputElm } from './elm/AudioOutputElm.ts';
+export { CustomLogicElm } from './elm/CustomLogicElm.ts';
+export { DataRecorderElm } from './elm/DataRecorderElm.ts';
 export { RoutedWireElm } from './elm/RoutedWireElm.ts';
 export { ROMElm, SRAMElm } from './elm/SRAMElm.ts';
 export { InstructionDisplayElm } from './elm/InstructionDisplayElm.ts';

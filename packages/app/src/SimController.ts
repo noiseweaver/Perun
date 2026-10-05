@@ -14,6 +14,8 @@ import {
   VAL_CURRENT,
   AudioOutputElm,
   CustomCompositeElm,
+  CustomLogicElm,
+  DataRecorderElm,
   VAL_VOLTAGE,
   VoltageElm,
   cardHitTest,
@@ -49,6 +51,7 @@ import {
   type EditorHost,
   type Modifiers,
 } from './editor/Editor.ts';
+import { download } from './download.ts';
 import { showToast, shownTheme, useApp, type AppState, type EditorState } from './store.ts';
 
 /** Simulation time per frame before the frame is cut short (upstream `frameTimeLimit`). */
@@ -138,6 +141,8 @@ export class SimController {
         editModel: later,
         alert: (m) => window.alert(m),
       };
+      CustomLogicElm.editModel = () => window.alert('Editing logic models is not available yet.');
+      DataRecorderElm.download = (name, text) => download(name, text, 'text/plain');
     }
   }
 
@@ -328,6 +333,14 @@ export class SimController {
         this.steps += done;
         this.stepsOwed -= k;
         if (sim.stopMessage !== null) break;
+        if (sim.pauseRequested) {
+          // a stop trigger fired: pause, as upstream's setSimRunning(false)
+          sim.pauseRequested = false;
+          this.stepsOwed = 0;
+          running = false;
+          useApp.setState({ running: false });
+          break;
+        }
         if (performance.now() - start > FRAME_BUDGET_MS) {
           // the circuit is too slow for this speed: drop the backlog rather than spiral
           this.stepsOwed = 0;
