@@ -41,9 +41,11 @@ function names(e: CircuitElm): string[] {
 /** Upstream gives the antenna no fields. */
 const NO_FIELDS = new Set([
   'AntennaElm',
+  'BoxElm',
   'CC2Elm',
   'CC2NegElm',
   'DarlingtonElm',
+  'LineElm',
   'NDarlingtonElm',
   'NortonAmpElm',
   'PDarlingtonElm',
@@ -65,7 +67,8 @@ describe('edit fields', () => {
       }
       // the list is the same after setting every field to its own value
       expect(fields(e).length).toBe(list.length);
-      expect(e.getDialogTitle()).not.toBe('Edit Component');
+      // drawing-only elements have no info lines (and no fields), as upstream
+      if (e.getPostCount() > 0) expect(e.getDialogTitle()).not.toBe('Edit Component');
     });
   }
 

@@ -162,6 +162,7 @@ export { SparkGapElm } from './elm/SparkGapElm.ts';
 export { LampElm } from './elm/LampElm.ts';
 export { SCRElm } from './elm/SCRElm.ts';
 export { TriacElm } from './elm/TriacElm.ts';
+export { BoxElm, GraphicElm, LineElm } from './elm/GraphicElm.ts';
 export { CompositeElm } from './elm/CompositeElm.ts';
 export {
   CrystalElm,

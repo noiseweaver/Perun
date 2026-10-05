@@ -44,6 +44,7 @@ import { SparkGapElmType } from './elm/SparkGapElm.ts';
 import { LampElmType } from './elm/LampElm.ts';
 import { SCRElmType } from './elm/SCRElm.ts';
 import { TriacElmType } from './elm/TriacElm.ts';
+import { BoxElmType, LineElmType } from './elm/GraphicElm.ts';
 import {
   CrystalElmType,
   DarlingtonElmType,
@@ -244,6 +245,8 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   NDarlingtonElmType,
   PDarlingtonElmType,
   CrystalElmType,
+  BoxElmType,
+  LineElmType,
 ];
 
 /** Old class names upstream's constructElement still accepts (saved shortcuts, subcircuits). */

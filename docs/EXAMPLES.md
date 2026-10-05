@@ -9,7 +9,7 @@ steps 1, 2, 5, 10, 20, 50, 100, 200, 500 and 1000 match within the golden tolera
 (tools/golden/README.md). "Same save" means our XML save after loading is byte for byte
 upstream's.
 
-**Pass: 354 of 373 (94.9%).** Same save: 352 (94.4%).
+**Pass: 356 of 373 (95.4%).** Same save: 354 (94.9%).
 
 Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 
@@ -26,7 +26,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | 3way.txt | pass | yes |  |
 | 4way.txt | pass | yes |  |
 | 555dutycycle.txt | pass | yes |  |
-| 555int.txt | fail | no | unrecognized dump type: b |
+| 555int.txt | pass | yes |  |
 | 555lowduty.txt | pass | yes |  |
 | 555missing.txt | pass | yes |  |
 | 555monostable.txt | pass | yes |  |
@@ -42,7 +42,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | adder4-sc.txt | fail | no | model element <ccm> is not supported yet; unrecognized xml element: cc |
 | allpass1.txt | pass | yes |  |
 | allpass2.txt | pass | yes |  |
-| alu74181.txt | fail | no | unrecognized xml element: Line; unrecognized xml element: ins |
+| alu74181.txt | fail | no | unrecognized xml element: ins |
 | amdetect.txt | pass | yes |  |
 | amp-dfdx.txt | pass | yes |  |
 | amp-diff.txt | pass | yes |  |
@@ -368,7 +368,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | ttlnor.txt | pass | yes |  |
 | twint.txt | pass | yes |  |
 | ujtosc.txt | fail | no | unrecognized dump type: 417 |
-| unishiftreg.txt | fail | no | unrecognized dump type: 423 |
+| unishiftreg.txt | pass | yes |  |
 | updownctr.txt | pass | yes |  |
 | varactor.txt | pass | yes |  |
 | varactorvco.txt | pass | yes |  |

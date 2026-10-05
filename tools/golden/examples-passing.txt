@@ -8,6 +8,7 @@
 3way.txt
 4way.txt
 555dutycycle.txt
+555int.txt
 555lowduty.txt
 555missing.txt
 555monostable.txt
@@ -333,6 +334,7 @@ ttlinverter.txt
 ttlnand.txt
 ttlnor.txt
 twint.txt
+unishiftreg.txt
 updownctr.txt
 varactor.txt
 varactorvco.txt
