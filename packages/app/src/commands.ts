@@ -23,6 +23,7 @@ export type DialogKind =
   | 'scopeProperties'
   | 'sliders'
   | 'model'
+  | 'subcircuit'
   | 'about'
   | 'install'
   | 'themes'

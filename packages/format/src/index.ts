@@ -6,9 +6,11 @@ export { JavaRandom } from '@circuitjs-next/elements';
 export {
   Circuit,
   OptionFlag,
+  getCircuitAsComposite,
   isSupportedElementTag,
   readCircuit,
   type CircuitOptions,
+  type CompositeResult,
   type Hint,
 } from './circuit.ts';
 export {

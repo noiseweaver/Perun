@@ -102,6 +102,7 @@ export interface AppState {
     | 'scopeProperties'
     | 'sliders'
     | 'model'
+    | 'subcircuit'
     | 'about'
     | 'install'
     | 'themes'
@@ -109,6 +110,10 @@ export interface AppState {
     | null;
   /** Bumped to move keyboard focus to the property panel (double-click, Enter). */
   inspectorFocus: number;
+  /** Subcircuits whose parts are shown, and the model whose circuit is being edited. */
+  subcircuitBar: { viewing: string[]; editing: string | null };
+  /** Subcircuit models that can be placed, by name. */
+  subcircuitModels: string[];
   /** Text for screen readers (a polite live region): what keyboard selection picked. */
   announcement: string;
   /** The catalog the interface shows (`en`, `de`, ...); the app tree is keyed by it. */
@@ -285,6 +290,8 @@ export const useApp = create<AppState>(() => ({
   updateReady: false,
   offlineReady: false,
   inspectorFocus: 0,
+  subcircuitBar: { viewing: [], editing: null },
+  subcircuitModels: [],
   announcement: '',
   language: 'en',
   dialog: null,

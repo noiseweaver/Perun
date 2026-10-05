@@ -202,7 +202,16 @@ export {
   CustomCompositeModel,
   CustomCompositeModels,
   ExtListEntry,
+  type ModelStorage,
 } from './models/CustomCompositeModel.ts';
+export {
+  PinDrag,
+  adjustChipSize,
+  createPinsFromModel,
+  findNearestPin,
+  layoutNewModel,
+  preservePinLayout,
+} from './models/compositeLayout.ts';
 export { CCCSElm, CCVSElm, VCCSElm, VCVSElm } from './elm/VCCSElm.ts';
 export { Expr, ExprParser, ExprState } from './Expr.ts';
 export { DiacElm } from './elm/DiacElm.ts';

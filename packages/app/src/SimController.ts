@@ -14,6 +14,10 @@ import {
   VAL_CURRENT,
   AudioOutputElm,
   CustomCompositeElm,
+  type CustomCompositeModel,
+  layoutNewModel,
+  modelsFor,
+  preservePinLayout,
   modelEditor,
   type ModelEditRequest,
   DataRecorderElm,
@@ -42,7 +46,7 @@ import {
   type ScopeManager,
   type ScopeRect,
 } from '@circuitjs-next/elements';
-import { Circuit, OptionFlag } from '@circuitjs-next/format';
+import { Circuit, OptionFlag, getCircuitAsComposite } from '@circuitjs-next/format';
 import {
   CircuitRenderer,
   ScopeRenderer,
@@ -144,14 +148,19 @@ export class SimController {
       AudioOutputElm.confirmAdjustTimestep = (m) => window.confirm(m);
       AudioOutputElm.notify = (m) => window.alert(m);
       AudioOutputElm.player = playSamples;
-      // the subcircuit editors are not built yet (PROGRESS.md open issues)
-      const later = () => window.alert('Editing subcircuits is not available yet.');
       CustomCompositeElm.hooks = {
-        editPinLayout: later,
-        viewComponents: later,
-        editModel: later,
-        alert: (m) => window.alert(m),
+        editPinLayout: (e) => this.editPinLayout(e),
+        viewComponents: (e) => this.viewComponents(e),
+        editModel: (e) => this.editSubcircuitModel(e),
+        alert: (m) => window.alert(t(m)),
       };
+      const lib = modelsFor(this.circuit.sim).composite;
+      try {
+        lib.storage = window.localStorage;
+        lib.loadModelsFromStorage(this.circuit.sim);
+      } catch {
+        // storage disabled: models last for the session
+      }
       modelEditor.open = (req) => {
         this.modelRequest = req;
         useApp.setState({ dialog: 'model' });
@@ -168,6 +177,12 @@ export class SimController {
    */
   load(text: string, title: string, running = true, undoable = false): boolean {
     const history = this.editor.history;
+    // a new circuit ends any model editing (upstream resetEditingContext)
+    if (this.contextStack.length > 0) {
+      this.contextStack.length = 0;
+      this.circuit.keepLocalModels = false;
+      history.clear();
+    }
     if (undoable) history.begin('Open');
     else history.cancel();
     try {
@@ -193,6 +208,7 @@ export class SimController {
   }
 
   private afterLoad(title: string, running: boolean, fit = true): void {
+    this.viewStack = [];
     const o = this.circuit.options;
     useApp.setState({
       title,
@@ -217,6 +233,7 @@ export class SimController {
     this.resize();
     this.publishEditor(true);
     this.publishStatus(true);
+    this.publishSubcircuits();
   }
 
   /** Upstream reset button: restart the simulation from t = 0. */
@@ -451,7 +468,10 @@ export class SimController {
     this.slidersChanged();
     this.circuit.sim.setElements(this.circuit.elements);
     if (this.renderer) {
-      this.renderer.elementsChanged(this.circuit.elements);
+      const viewed = this.viewStack.at(-1);
+      this.renderer.elementsChanged(
+        viewed === undefined ? this.circuit.elements : viewed.buildDisplayElmList(),
+      );
       this.renderer.stopElm = null;
     }
     this.unsavedChanges = true;
@@ -1216,6 +1236,230 @@ export class SimController {
     }
   }
 
+  // ---- subcircuits (upstream EditCompositeModelDialog, CirSim contexts, SubcircuitBar) --------
+
+  /** What the pin layout dialog edits. */
+  subcircuitDialog: {
+    model: CustomCompositeModel;
+    /** A new model: the dialog asks for its name. */
+    askName: boolean;
+    /** Saving a model's edited circuit: OK goes back to the circuit that uses it. */
+    popContext: boolean;
+  } | null = null;
+
+  /** Circuits set aside while a subcircuit's own circuit is edited (upstream contextStack). */
+  private readonly contextStack: {
+    circuitDump: string;
+    title: string;
+    history: ReturnType<Editor['history']['stash']>;
+    view: { scale: number; offsetX: number; offsetY: number } | null;
+    modelName: string;
+    changedModels: CustomCompositeModel[];
+  }[] = [];
+
+  /** Subcircuits whose parts are shown, outermost first (upstream `subcircuitStack`). */
+  viewStack: CustomCompositeElm[] = [];
+
+  private publishSubcircuits(): void {
+    const lib = modelsFor(this.circuit.sim).composite;
+    useApp.setState({
+      subcircuitBar: {
+        viewing: this.viewStack.map((e) => e.modelName),
+        editing: this.contextStack.at(-1)?.modelName ?? null,
+      },
+      subcircuitModels: lib.getModelList(this.circuit.sim).map((m) => m.name),
+    });
+  }
+
+  /** File > Create Subcircuit: the circuit (or selection) as a new model, then its pin layout. */
+  createSubcircuit(): void {
+    const model = this.circuitAsModel();
+    if (model === null) return;
+    this.openSubcircuitDialog(model, true, false);
+  }
+
+  /** The circuit as a laid-out model without a name, or null (after telling the user why). */
+  private circuitAsModel(): CustomCompositeModel | null {
+    const r = getCircuitAsComposite(this.circuit);
+    // the nodes were numbered for the model: analyze again before running
+    this.circuitChanged();
+    if (!('model' in r)) {
+      if (r.error !== null) window.alert(t(r.error));
+      return null;
+    }
+    const err = layoutNewModel(r.model);
+    if (err !== null) {
+      window.alert(t(err));
+      return null;
+    }
+    return r.model;
+  }
+
+  editPinLayout(e: CustomCompositeElm): void {
+    if (e.model === null) return;
+    this.openSubcircuitDialog(e.model, false, false);
+  }
+
+  private openSubcircuitDialog(model: CustomCompositeModel, askName: boolean, pop: boolean): void {
+    this.subcircuitDialog = { model, askName, popContext: pop };
+    useApp.setState({ dialog: 'subcircuit' });
+  }
+
+  /** Where a model lives: 0 this circuit, 1 this session, 2 saved across sessions. */
+  subcircuitScope(model: CustomCompositeModel): number {
+    const lib = modelsFor(this.circuit.sim).composite;
+    if (lib.isSaved(model)) return 2;
+    if (model.name.length > 0 && lib.globalModelMap.has(model.name)) return 1;
+    return 0;
+  }
+
+  /**
+   * The pin layout dialog's OK (upstream `enterPressed`): name the model, put it where the user
+   * chose, and have every subcircuit refetch its model. Returns an error message, or null.
+   */
+  commitSubcircuit(model: CustomCompositeModel, name: string | null, scope: number): string | null {
+    const lib = modelsFor(this.circuit.sim).composite;
+    if (name !== null) {
+      if (name.length === 0) return 'Please enter a model name.';
+      lib.lastModelName = name;
+      lib.setName(model, name);
+    }
+    const popContext = this.subcircuitDialog?.popContext ?? false;
+    this.subcircuitDialog = null;
+    const place = (): void => {
+      lib.localModelMap.delete(model.name);
+      lib.globalModelMap.delete(model.name);
+      lib.setSaved(model, false);
+      if (scope === 0) lib.localModelMap.set(model.name, model);
+      else if (scope === 1) lib.globalModelMap.set(model.name, model);
+      else lib.setSaved(model, true);
+      lib.sequenceNumber++;
+    };
+    if (!popContext) {
+      this.editor.history.record('Subcircuit', () => {
+        place();
+        this.updateModels();
+        return true;
+      });
+      this.circuitChanged();
+      const top = this.contextStack.at(-1);
+      // remembered, so the change survives going back to the outer circuit
+      if (top !== undefined) top.changedModels.push(model);
+    } else {
+      place();
+      // back to the circuit that uses the model, then put the new model (and any changed deeper
+      // down) in place of the old ones it brings back
+      const changed = this.popContext();
+      changed.push(model);
+      for (const m of changed) {
+        lib.replaceModel(m);
+        this.refreshModels(m.name);
+      }
+      this.contextStack.at(-1)?.changedModels.push(...changed);
+      this.circuitChanged();
+    }
+    this.publishSubcircuits();
+    this.publishEditor(true);
+    return null;
+  }
+
+  /** Upstream `refreshModels`: subcircuits using this model fetch it again. */
+  private refreshModels(modelName: string): void {
+    for (const e of this.circuit.elements)
+      if (e instanceof CustomCompositeElm && e.modelName === modelName) {
+        e.model = null;
+        e.updateModels();
+      }
+  }
+
+  /** Edit Model: open the model's own circuit, setting this one aside. */
+  editSubcircuitModel(e: CustomCompositeElm): void {
+    const model = e.model;
+    if (model === null) return;
+    this.pushContext(model.name);
+    if (model.modelCircuit !== null && model.modelCircuit.length > 0)
+      this.circuit.read(model.modelCircuit);
+    else this.circuit.readElementsDoc(model.elmDoc);
+    this.afterLoad(useApp.getState().title, useApp.getState().running);
+    this.publishSubcircuits();
+  }
+
+  private pushContext(modelName: string): void {
+    const r = this.renderer;
+    this.contextStack.push({
+      circuitDump: this.circuit.dumpXml(),
+      title: useApp.getState().title,
+      history: this.editor.history.stash(),
+      view: r
+        ? { scale: r.viewport.scale, offsetX: r.viewport.offsetX, offsetY: r.viewport.offsetY }
+        : null,
+      modelName,
+      changedModels: [],
+    });
+    this.circuit.keepLocalModels = true;
+  }
+
+  /** Back to the circuit set aside; returns the models changed while it was away. */
+  popContext(): CustomCompositeModel[] {
+    const ctx = this.contextStack.pop();
+    if (ctx === undefined) return [];
+    this.circuit.keepLocalModels = this.contextStack.length > 0;
+    try {
+      this.circuit.read(ctx.circuitDump);
+    } catch {
+      // it was saved by this app a moment ago
+    }
+    this.afterLoad(ctx.title, useApp.getState().running, ctx.view === null);
+    const r = this.renderer;
+    if (r && ctx.view !== null) {
+      r.viewport.scale = ctx.view.scale;
+      r.viewport.offsetX = ctx.view.offsetX;
+      r.viewport.offsetY = ctx.view.offsetY;
+    }
+    this.editor.history.unstash(ctx.history);
+    this.publishSubcircuits();
+    return ctx.changedModels;
+  }
+
+  /** The subcircuit bar's Save (keep the name) and Save Copy (a new name). */
+  saveSubcircuitModel(copy: boolean): void {
+    const modelName = this.contextStack.at(-1)?.modelName;
+    if (modelName === undefined) return;
+    const model = this.circuitAsModel();
+    if (model === null) return;
+    const lib = modelsFor(this.circuit.sim).composite;
+    // look up the old model before setName puts the new one under its name
+    const existing = lib.getModelWithName(modelName, this.circuit.sim);
+    if (!copy) lib.setName(model, modelName);
+    if (existing !== null) preservePinLayout(model, existing);
+    this.openSubcircuitDialog(model, copy, true);
+  }
+
+  /** View Components: show the subcircuit's parts, running, until Back. */
+  viewComponents(e: CustomCompositeElm): void {
+    this.viewStack.push(e);
+    this.showViewed();
+  }
+
+  /** Back from viewing a subcircuit's parts, or from editing a model's circuit. */
+  subcircuitBack(): void {
+    if (this.viewStack.length > 0) {
+      this.viewStack.pop();
+      this.showViewed();
+    } else this.popContext();
+  }
+
+  private showViewed(): void {
+    const top = this.viewStack.at(-1);
+    const list = top === undefined ? this.circuit.elements : top.buildDisplayElmList();
+    this.editor.clearSelection();
+    this.editor.leave();
+    this.renderer?.setElements(list);
+    this.needsFit = true;
+    this.publishSubcircuits();
+    this.publishEditor();
+  }
+
   /** The model the model dialog edits. */
   modelRequest: ModelEditRequest | null = null;
 
@@ -1606,7 +1850,11 @@ export class SimController {
         ed.mouseMode === MouseMode.SELECT &&
         ed.pick(g.x, g.y).elm === null;
       joinedBefore = this.renderer?.connectionKeys() ?? null;
-      const res = ed.pointerDown(g.x, g.y, mods(e), e.button === 1 || touchPan);
+      // a subcircuit's parts can be looked at, not edited
+      const res =
+        this.viewStack.length > 0
+          ? 'pan'
+          : ed.pointerDown(g.x, g.y, mods(e), e.button === 1 || touchPan);
       if (res === 'pan') pan = { x: p.x, y: p.y, id: e.pointerId };
       gestureId = e.pointerId;
       try {
@@ -1727,7 +1975,7 @@ export class SimController {
       }
       const g = grid(p);
       if (ed.isDragging && gestureId === e.pointerId) ed.pointerDrag(g.x, g.y, mods(e));
-      else if (!ed.isDragging) ed.hover(g.x, g.y);
+      else if (!ed.isDragging && this.viewStack.length === 0) ed.hover(g.x, g.y);
       this.publishEditor();
       updateCursor(g.x, g.y);
     };
@@ -1828,6 +2076,10 @@ export class SimController {
       } else r.viewport.pan(-dx, -dy);
     };
     const contextMenu = (e: MouseEvent): void => {
+      if (this.viewStack.length > 0) {
+        e.preventDefault();
+        return;
+      }
       // the browser's own long-press menu event: same as ours, so the timer is not needed
       if (press !== null) {
         const id = press.id;
@@ -1884,9 +2136,15 @@ export class SimController {
           this.openScopeProperties(s);
         return;
       }
+      if (this.viewStack.length > 0) return;
       const g = grid(lp);
       const elm = ed.pick(g.x, g.y).elm;
       if (elm === null || elm instanceof SwitchElm) return;
+      // upstream: a subcircuit with part positions opens to show them
+      if (elm instanceof CustomCompositeElm && elm.canViewComponents()) {
+        this.viewComponents(elm);
+        return;
+      }
       ed.select(elm);
       useApp.setState({ inspectorFocus: useApp.getState().inspectorFocus + 1 });
     };

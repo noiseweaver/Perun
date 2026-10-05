@@ -8,6 +8,17 @@
 // License, or (at your option) any later version. See LICENSE.
 
 import {
+  CustomCompositeModel,
+  ExtListEntry,
+  GraphicElm,
+  GroundElm,
+  LabeledNodeElm,
+  SIDE_E,
+  SIDE_N,
+  SIDE_S,
+  SIDE_W,
+  SwitchElm,
+  WireElm,
   ADJ_FLAG_LOG,
   ADJ_FLAG_SHARED,
   Adjustable,
@@ -147,6 +158,8 @@ export class Circuit {
       defaultsStore: ui.defaultsStore,
     };
   }
+  /** A subcircuit's circuit is open for editing: loading keeps the circuit's own models. */
+  keepLocalModels = false;
   /** What upstream would print to its console while loading (unknown or broken records). */
   warnings: string[] = [];
 
@@ -174,7 +187,7 @@ export class Circuit {
     this.adjustables = [];
     this.scopes.clearScopes();
     // upstream keeps them while a subcircuit is open for editing (its context stack)
-    modelsFor(sim).composite.clearLocalModels();
+    if (!this.keepLocalModels) modelsFor(sim).composite.clearLocalModels();
   }
 
   private setGrid(): void {
@@ -215,6 +228,22 @@ export class Circuit {
       this.endRead();
     }
     // upstream finishReadCircuit: drop the adjustables that get no slider
+    this.adjustables = this.adjustables.filter((a) => a.createSlider());
+    this.finishRead();
+  }
+
+  /**
+   * Load the parts of a subcircuit model as a circuit, to edit them (upstream
+   * `XMLDeserializer.readCircuit(Document)`).
+   */
+  readElementsDoc(root: XmlElement): void {
+    this.clear();
+    this.beginRead();
+    try {
+      this.readElements(root, false);
+    } finally {
+      this.endRead();
+    }
     this.adjustables = this.adjustables.filter((a) => a.createSlider());
     this.finishRead();
   }
@@ -436,7 +465,13 @@ export class Circuit {
       sim.solverType = r.parseIntAttr('st', sim.solverType) as typeof sim.solverType;
       this.setGrid();
     }
+    this.readElements(root, retain);
+  }
 
+  /** The records under `root`: elements, scopes, sliders, models (upstream `readElements`). */
+  private readElements(root: XmlElement, retain: boolean): void {
+    const sim = this.sim;
+    const r = new AttrReader(root);
     for (const elem of root.elements()) {
       const tag = elem.name;
       r.elem = elem;
@@ -627,6 +662,121 @@ export class Circuit {
       if (!(ce instanceof ScopeElm)) appendElement(root, doc, ce);
     return prettyPrint(root);
   }
+}
+
+/** A subcircuit model made from a circuit, or why it can't be made. */
+export type CompositeResult = { model: CustomCompositeModel } | { error: string | null };
+
+/**
+ * Upstream `SimulationManager.getCircuitAsComposite`: the circuit (or the selected part of it) as
+ * a subcircuit model. Labeled nodes become its pins, on the side their label points to. The model
+ * has no name and is in no model map yet. `error` is null when the circuit can't be analyzed (the
+ * simulation shows why).
+ */
+export function getCircuitAsComposite(circuit: Circuit): CompositeResult {
+  const sim = circuit.sim;
+  const elements = circuit.elements;
+  const elmRoot = new XmlElement('elms');
+  modelsFor(sim).clearDumpedFlags();
+  const sideLabels: LabeledNodeElm[][] = [[], [], [], []];
+  const extList: ExtListEntry[] = [];
+  const sel = elements.some((ce) => ce.selected);
+
+  // open closed switches for a moment, so the model's node numbers reflect the open topology
+  // (loading it closed merges them again)
+  const closedSwitches: SwitchElm[] = [];
+  for (const ce of elements)
+    if (ce instanceof SwitchElm && ce.position === 0) {
+      closedSwitches.push(ce);
+      ce.position = 1;
+    }
+  // number the nodes again without picking a ground
+  sim.setElements(elements);
+  const ok = sim.preStampCircuit(true);
+  for (const se of closedSwitches) se.position = 0;
+  // the simulation must analyze the circuit again before it runs
+  sim.analyzeFlag = true;
+  if (!ok) return { error: null };
+
+  const nodeCount = sim.nodeList.length;
+  const used = new Array<boolean>(nodeCount).fill(false);
+  const extnodes = new Array<boolean>(nodeCount).fill(false);
+
+  // the labeled nodes, from the flat list as upstream (composite parts included)
+  for (const ce of sim.elmList as CircuitElm[]) {
+    if (sel && !ce.selected) continue;
+    if (!(ce instanceof LabeledNodeElm)) continue;
+    if (ce.isInternal()) continue;
+    if (extnodes[ce.getNode(0).index]) continue;
+    let side = SIDE_W;
+    if (Math.abs(ce.dx) >= Math.abs(ce.dy) && ce.dx > 0) side = SIDE_E;
+    if (Math.abs(ce.dx) <= Math.abs(ce.dy) && ce.dy < 0) side = SIDE_N;
+    if (Math.abs(ce.dx) <= Math.abs(ce.dy) && ce.dy > 0) side = SIDE_S;
+    sideLabels[side].push(ce);
+    for (let j = 0; j < ce.busWidth; j++) {
+      extnodes[ce.getNode(j).index] = true;
+      if (ce.getNode(j).index === 0)
+        return { error: `Node "${ce.text}" can't be connected to ground` };
+    }
+  }
+  sideLabels[SIDE_W].sort((a, b) => Math.sign(a.y - b.y));
+  sideLabels[SIDE_E].sort((a, b) => Math.sign(a.y - b.y));
+  sideLabels[SIDE_N].sort((a, b) => Math.sign(a.x - b.x));
+  sideLabels[SIDE_S].sort((a, b) => Math.sign(a.x - b.x));
+  for (let side = 0; side < sideLabels.length; side++) {
+    for (let pos = 0; pos < sideLabels[side].length; pos++) {
+      const lne = sideLabels[side][pos];
+      for (let j = 0; j < lne.busWidth; j++) {
+        const ent = new ExtListEntry(lne.text, lne.getNode(j).index, pos, side);
+        ent.busWidth = lne.busWidth;
+        ent.busZ = j;
+        extList.push(ent);
+      }
+    }
+  }
+
+  // the parts first, then wires, labels, scopes, graphics and grounds (from the top-level list,
+  // not the flattened composite parts)
+  const dumpList: CircuitElm[] = [];
+  const extraList: CircuitElm[] = [];
+  for (const ce of elements) {
+    if (sel && !ce.selected) continue;
+    if (
+      ce instanceof WireElm ||
+      ce instanceof LabeledNodeElm ||
+      ce instanceof ScopeElm ||
+      ce instanceof GraphicElm ||
+      ce instanceof GroundElm
+    )
+      extraList.push(ce);
+    else dumpList.push(ce);
+  }
+  dumpList.push(...extraList);
+
+  const doc = docWriter(elmRoot);
+  for (const ce of dumpList) {
+    const nn: number[] = [];
+    for (let j = 0; j !== ce.getPostCount(); j++) {
+      const n = ce.getNode(j).index;
+      used[n] = true;
+      nn.push(n);
+    }
+    ce.dumpXmlModels(doc);
+    const child = new XmlElement(ce.getXmlDumpType());
+    const w = new AttrWriter(child);
+    w.dumpAttr('nn', nn.join(' '));
+    // a model definition, not an instance: no state
+    ce.dumpXml(w);
+    elmRoot.appendChild(child);
+  }
+
+  for (const ent of extList)
+    if (!used[ent.node]) return { error: `Node "${ent.name}" is not used!` };
+
+  const ccm = new CustomCompositeModel();
+  ccm.elmDoc = elmRoot;
+  ccm.extList = extList;
+  return { model: ccm };
 }
 
 function docWriter(root: XmlElement): XmlDocWriter {

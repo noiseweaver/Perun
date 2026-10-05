@@ -13,7 +13,7 @@ import { parseJavaInt } from '../java.ts';
 import { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlDocWriter } from '../xml.ts';
 import { AttrReader, AttrWriter, copyInto } from '../xmlattrs.ts';
-import { XmlElement } from '../xmldoc.ts';
+import { XmlElement, parseXml, prettyPrint } from '../xmldoc.ts';
 import { modelsFor } from './ModelLibrary.ts';
 
 /** A pin of a subcircuit: its name, internal node, and place on the chip outline. */
@@ -238,6 +238,17 @@ export class CustomCompositeModel {
   }
 }
 
+/** Where models saved across sessions live (the browser's localStorage). */
+export interface ModelStorage {
+  readonly length: number;
+  key(i: number): string | null;
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+}
+
+const STORAGE_PREFIX = 'subcircuit:';
+
 /**
  * The subcircuit models a circuit can use. Upstream keeps a global map (saved and built-in
  * models) and a local one (models loaded with the current circuit), both static.
@@ -250,6 +261,8 @@ export class CustomCompositeModels {
   /** Upstream `CustomCompositeElm.lastModelName`: the model for new subcircuits. */
   lastModelName = 'default';
   private initialized = false;
+  /** Saved models; null where there is no storage (tests, Node). */
+  storage: ModelStorage | null = null;
 
   /** Upstream `initModelMap`: the default stub model and the built-in ones. */
   private init(sim: Simulation): void {
@@ -339,6 +352,83 @@ export class CustomCompositeModels {
     model.name = r.parseStringAttr('nm', null) ?? 'null';
     model.parseXmlElement(r, sim);
     this.globalModelMap.set(model.name, model);
+    this.sequenceNumber++;
+  }
+
+  /** Upstream `loadModelsFromStorage`: every saved model becomes a global one. */
+  loadModelsFromStorage(sim: Simulation): void {
+    this.init(sim);
+    const stor = this.storage;
+    if (stor === null) return;
+    for (let i = 0; i !== stor.length; i++) {
+      const key = stor.key(i);
+      if (key === null || !key.startsWith(STORAGE_PREFIX)) continue;
+      const data = stor.getItem(key);
+      if (data === null) continue;
+      try {
+        if (data.startsWith('<')) {
+          this.loadModelFromStorage(data, parseXml, sim);
+        } else {
+          // old format: the model line, then the model's own circuit
+          const lineLen = data.indexOf('\n');
+          const firstLine = lineLen !== -1 ? data.substring(0, lineLen) : data;
+          const st = new StringTokenizer(firstLine, ' ');
+          if (st.nextToken() === '.') {
+            const model = this.undumpModel(st, sim);
+            if (lineLen !== -1) model.modelCircuit = data.substring(lineLen + 1);
+            this.localModelMap.delete(model.name);
+            this.globalModelMap.set(model.name, model);
+          }
+        }
+      } catch {
+        // upstream logs the exception and skips the model
+      }
+    }
+  }
+
+  /** Upstream `setName`: rename a model in whichever map holds it (global if neither). */
+  setName(model: CustomCompositeModel, n: string): void {
+    if (this.localModelMap.get(model.name) === model) {
+      this.localModelMap.delete(model.name);
+      model.name = n;
+      this.localModelMap.set(n, model);
+    } else {
+      this.globalModelMap.delete(model.name);
+      model.name = n;
+      this.globalModelMap.set(n, model);
+    }
+    this.sequenceNumber++;
+  }
+
+  /** Whether the model is saved across sessions. */
+  isSaved(model: CustomCompositeModel): boolean {
+    if (model.name.length === 0 || this.storage === null) return false;
+    return this.storage.getItem(STORAGE_PREFIX + model.name) !== null;
+  }
+
+  /** Save the model across sessions (it also becomes a global model), or forget it. */
+  setSaved(model: CustomCompositeModel, sv: boolean): void {
+    const stor = this.storage;
+    if (stor === null) return;
+    if (sv) {
+      const root = new XmlElement('ccm');
+      model.buildXmlElement(new AttrWriter(root));
+      stor.setItem(STORAGE_PREFIX + model.name, prettyPrint(root));
+      this.globalModelMap.set(model.name, model);
+    } else stor.removeItem(STORAGE_PREFIX + model.name);
+  }
+
+  /** Delete a model everywhere. */
+  remove(model: CustomCompositeModel): void {
+    this.setSaved(model, false);
+    this.localModelMap.delete(model.name);
+    this.globalModelMap.delete(model.name);
+    this.sequenceNumber++;
+  }
+
+  /** Put a model in the local map (after editing a model's circuit, upstream `replaceModel`). */
+  replaceModel(model: CustomCompositeModel): void {
+    this.localModelMap.set(model.name, model);
     this.sequenceNumber++;
   }
 
