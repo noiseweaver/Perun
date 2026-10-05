@@ -44,6 +44,10 @@ export class AttrWriter implements XmlAttrWriter {
     this.elem.setAttribute(name, value);
   }
 
+  appendText(text: string): void {
+    this.elem.appendChild({ text });
+  }
+
   addChild(tag: string): AttrWriter {
     const e = new XmlElement(tag);
     this.elem.appendChild(e);
@@ -61,6 +65,10 @@ export class AttrReader implements XmlAttrReader {
 
   getTagName(): string {
     return this.elem.name;
+  }
+
+  parseContents(): string | null {
+    return this.elem.firstText();
   }
 
   getChildElements(): AttrReader[] {

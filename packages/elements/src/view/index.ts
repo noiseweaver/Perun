@@ -34,7 +34,16 @@ import {
   wireView,
 } from './passive.ts';
 import { diodeView, ledView, mosfetView, opAmpView, transistorView, zenerView } from './semis.ts';
-import { currentView, railView, voltageView } from './sources.ts';
+import {
+  batteryView,
+  currentView,
+  modulatedView,
+  railView,
+  sweepView,
+  voltageView,
+} from './sources.ts';
+import { BatteryElm } from '../elm/BatteryElm.ts';
+import { AMElm, FMElm, SweepElm } from '../elm/SweepElm.ts';
 import { switchView } from './switches.ts';
 
 /** Undocked scopes are drawn by the scope renderer, over the circuit; this only places them. */
@@ -68,6 +77,10 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [MosfetElm, mosfetView],
   [OpAmpElm, opAmpView],
   [ScopeElm, scopeElmView],
+  [SweepElm, sweepView],
+  [AMElm, modulatedView('AM')],
+  [FMElm, modulatedView('FM')],
+  [BatteryElm, batteryView],
 ];
 
 const cache = new Map<unknown, ElementView | null>();

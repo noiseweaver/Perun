@@ -30,6 +30,18 @@ import { SwitchElmType } from './elm/SwitchElm.ts';
 import { ACVoltageElm, DCVoltageElm, VoltageElmType } from './elm/VoltageElm.ts';
 import { WireElmType } from './elm/WireElm.ts';
 import { ScopeElmType } from './scope/ScopeElm.ts';
+import { AudioInputElmType, DataInputElmType } from './elm/AudioInputElm.ts';
+import { BatteryElmType } from './elm/BatteryElm.ts';
+import {
+  ACRailElmType,
+  AntennaElmType,
+  ClockElmType,
+  ExtVoltageElmType,
+  NoiseElmType,
+  SquareRailElmType,
+  VarRailElmType,
+} from './elm/RailVariants.ts';
+import { AMElmType, FMElmType, SweepElmType } from './elm/SweepElm.ts';
 import type { StringTokenizer } from './StringTokenizer.ts';
 
 /** Every ported element class. */
@@ -63,6 +75,20 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   PMosfetElmType,
   elementType('DCVoltageElm', DCVoltageElm),
   elementType('ACVoltageElm', ACVoltageElm),
+  // Phase 8: inputs and sources
+  ACRailElmType,
+  SquareRailElmType,
+  ClockElmType,
+  SweepElmType,
+  BatteryElmType,
+  VarRailElmType,
+  AntennaElmType,
+  AMElmType,
+  FMElmType,
+  NoiseElmType,
+  AudioInputElmType,
+  DataInputElmType,
+  ExtVoltageElmType,
 ];
 
 const byClassName = new Map<string, ElementType>();
@@ -76,10 +102,11 @@ for (const type of ELEMENT_TYPES) {
   byClassName.set(type.className, type);
   // upstream registers a sample element of each class and asks it for its dump types
   const sample = type.create(0, 0, sampleSim);
+  const cls = type.dumpClass ?? type.className;
   const t = sample.getDumpType();
-  if (t > 0 && !dumpTypeMap.has(t)) dumpTypeMap.set(t, type.className);
+  if (t > 0 && !dumpTypeMap.has(t)) dumpTypeMap.set(t, cls);
   const xt = sample.getXmlDumpType();
-  if (!xmlDumpTypeMap.has(xt)) xmlDumpTypeMap.set(xt, type.className);
+  if (!xmlDumpTypeMap.has(xt)) xmlDumpTypeMap.set(xt, cls);
 }
 
 /**
@@ -111,6 +138,8 @@ export function createCe(
   st: StringTokenizer,
   sim: Simulation = new Simulation(),
 ): CircuitElm | null {
+  // for old files
+  if (tint === 'n'.charCodeAt(0)) return NoiseElmType.load(x1, y1, x2, y2, f, st, sim);
   const name = dumpTypeMap.get(tint);
   if (name === undefined) return null;
   return byClassName.get(name)?.load(x1, y1, x2, y2, f, st, sim) ?? null;

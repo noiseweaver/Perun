@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
-// Geometry learned from CircuitJS1 VoltageElm, RailElm and CurrentElm
-// (src/com/lushprojects/circuitjs1/client/, master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032;
-// the drawing code is new.
+// Geometry learned from CircuitJS1 VoltageElm, RailElm, CurrentElm, SweepElm, AMElm, FMElm and
+// BatteryElm (src/com/lushprojects/circuitjs1/client/, master) at
+// 5a707168778216bb6ed01bfdd62e8bbf7ae0a032; the drawing code is new.
 
+import type { CircuitElm } from '../CircuitElm.ts';
+import { BatteryElm } from '../elm/BatteryElm.ts';
 import type { CurrentElm } from '../elm/CurrentElm.ts';
+import type { AMElm, FMElm, SweepElm } from '../elm/SweepElm.ts';
 import { RailElm } from '../elm/RailElm.ts';
 import { VoltageElm } from '../elm/VoltageElm.ts';
 import {
@@ -187,11 +190,15 @@ export const voltageView: ElementView<VoltageElm> = {
 export const railView: ElementView<RailElm> = {
   draw(e, ctx) {
     const p = ctx.painter;
-    let w = CIRCLE_SIZE;
+    const rt = e.getRailText();
+    let w = rt === null ? CIRCLE_SIZE : p.measureText(rt, UNITS_FONT) / 2;
     if (w > e.dn * 0.8) w = e.dn * 0.8;
     const lead1 = interp(e.point1, e.point2, 1 - w / e.dn);
     p.line(e.point1, lead1, vInk(volt(e, 0)));
-    if (e.waveform === VoltageElm.WF_SQUARE && e.hasFlag(RailElm.FLAG_CLOCK)) {
+    const label = e.railLabel();
+    if (label !== null) {
+      drawLabeledNode(ctx, label, e.point1, lead1, COMPONENT);
+    } else if (e.waveform === VoltageElm.WF_SQUARE && e.hasFlag(RailElm.FLAG_CLOCK)) {
       drawLabeledNode(ctx, 'CLK', e.point1, lead1, COMPONENT);
     } else if (e.waveform === VoltageElm.WF_DC || e.waveform === VoltageElm.WF_VAR) {
       const v = e.getVoltage();
@@ -221,4 +228,72 @@ export const currentView: ElementView<CurrentElm> = {
       drawValues(e, ctx, getShortUnitText(e.current, 'A'), 12);
   },
   bbox: (e) => elementBox(e, 12),
+};
+
+/** A one-terminal source drawn as a lead to a circle at point 2 (sweep, AM, FM). */
+function drawGroundedCircle(e: CircuitElm, ctx: DrawContext): Pt {
+  const p = ctx.painter;
+  const lead1 = interp(e.point1, e.point2, 1 - CIRCLE_SIZE / e.dn);
+  p.line(e.point1, lead1, vInk(volt(e, 0)));
+  p.circle(e.point2, CIRCLE_SIZE * 0.98, MUTED);
+  p.dots(e.point1, lead1, ctx.dotCount(0, -e.current));
+  return lead1;
+}
+
+export const sweepView: ElementView<SweepElm> = {
+  draw(e, ctx) {
+    drawGroundedCircle(e, ctx);
+    const xc = e.point2.x;
+    const yc = e.point2.y;
+    const wl = 8;
+    const xl = 10;
+    // the sine gets denser as the sweep frequency rises
+    const range = e.maxF - e.minF;
+    const w = 1 + (range > 0 ? (2 * (e.frequency - e.minF)) / range : 0);
+    const wave: Pt[] = [];
+    for (let i = -xl; i <= xl; i++)
+      wave.push(pt(xc + i, yc + Math.trunc(0.95 * Math.sin((i * Math.PI * w) / xl) * wl)));
+    ctx.painter.polyline(wave, MUTED);
+    if (ctx.showValues && (e.dx === 0 || e.dy === 0))
+      drawValues(e, ctx, getShortUnitText(e.frequency, 'Hz'), CIRCLE_SIZE);
+  },
+  bbox: (e) => elementBox(e, CIRCLE_SIZE),
+};
+
+/** AM and FM sources: a circle labeled with the modulation. */
+export function modulatedView(label: string): ElementView<AMElm | FMElm> {
+  return {
+    draw(e, ctx) {
+      drawGroundedCircle(e, ctx);
+      ctx.painter.text(label, e.point2, COMPONENT, {
+        ...UNITS_FONT,
+        align: 'center',
+        baseline: 'middle',
+      });
+    },
+    bbox: (e) => elementBox(e, CIRCLE_SIZE),
+  };
+}
+
+export const batteryView: ElementView<BatteryElm> = {
+  draw(e, ctx) {
+    const p = ctx.painter;
+    const [lead1, lead2] = calcLeads(e.point1, e.point2, e.dn, 8);
+    draw2Leads(e, ctx, lead1, lead2);
+    const [a1, a2] = interp2(lead1, lead2, 0, 10);
+    p.line(a1, a2, vInk(volt(e, 0)));
+    const hs = 16;
+    const [b1, b2] = interp2(lead1, lead2, 1, hs);
+    p.line(b1, b2, vInk(volt(e, 1)));
+    if (e.dx === 0 || e.dy === 0) {
+      const showV = e.hasFlag(BatteryElm.FLAG_SHOW_VOLTAGE);
+      const showSoc = e.hasFlag(BatteryElm.FLAG_SHOW_SOC);
+      const v = getShortUnitText(e.getVoltageForSoc(e.soc), 'V');
+      const s =
+        showV && showSoc ? v + ' ' + e.getSocText() : showV ? v : showSoc ? e.getSocText() : null;
+      drawValues(e, ctx, s, hs);
+    }
+    doDots(e, ctx);
+  },
+  bbox: (e) => elementBox(e, 16),
 };

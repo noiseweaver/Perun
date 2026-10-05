@@ -13,6 +13,8 @@ export interface XmlAttrWriter {
   setAttribute(name: string, value: string): void;
   /** Append a child element and return a writer for it (scopes write `<o>` and `<p>`). */
   addChild(tag: string): XmlAttrWriter;
+  /** Append text content (upstream `appendChild(doc.createTextNode(s))`). */
+  appendText(text: string): void;
 }
 
 export interface XmlAttrReader {
@@ -22,6 +24,8 @@ export interface XmlAttrReader {
   parseStringAttr(name: string, def: string): string;
   parseStringAttr(name: string, def: string | null): string | null;
   getTagName(): string;
+  /** The element's first child as text, or null (upstream `parseContents`). */
+  parseContents(): string | null;
   /** Readers for the child elements, in order (upstream `getChildElements` + `parseChildElement`). */
   getChildElements(): XmlAttrReader[];
 }

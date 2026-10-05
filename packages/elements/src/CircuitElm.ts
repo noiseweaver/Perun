@@ -7,7 +7,7 @@
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
-import { Point, SimElement, type Simulation } from '@circuitjs-next/engine';
+import { FindPathInfo, PathType, Point, SimElement, type Simulation } from '@circuitjs-next/engine';
 import type { EditInfo } from './edit/EditInfo.ts';
 import { UNITS_A, UNITS_V, UNITS_W, VAL_CURRENT, VAL_POWER } from './scope/constants.ts';
 import { getCurrentDText, getVoltageDText } from './view/units.ts';
@@ -80,6 +80,19 @@ export abstract class CircuitElm extends SimElement {
         Math.floor(a.y * (1 - f) + b.y * f - g * gy + 0.48),
       ),
     ];
+  }
+
+  /**
+   * Upstream `CircuitElm.validateRailNode`: a one-terminal source shorted to ground stops the
+   * simulation (RailElm overrides this to add a small resistance instead).
+   */
+  validateRailNode(n: number): boolean {
+    const fpi = new FindPathInfo(PathType.VOLTAGE, this, this.getNode(n), this.sim);
+    if (fpi.findPath(this.sim.ground)) {
+      this.sim.stop('Path to ground with no resistance!', this);
+      return false;
+    }
+    return true;
   }
 
   setPosition(x: number, y: number, x2: number, y2: number): void {
@@ -376,6 +389,12 @@ export function lineDistanceSq(
 export interface ElementType {
   /** Upstream class name (`getClassName()`). */
   className: string;
+  /**
+   * Upstream `getDumpClass()` when it differs: the class files name this one by, which loads it
+   * (NDarlingtonElm saves as DarlingtonElm). Menu variants registered after their base class
+   * (ACRailElm after RailElm) need not set it: the first class to register a dump type keeps it.
+   */
+  dumpClass?: string;
   /**
    * A new element at (x, y), as the user would place it. `sim` is the simulation it will join;
    * elements with models look them up there (upstream's model maps are global).

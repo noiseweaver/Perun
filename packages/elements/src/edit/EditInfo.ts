@@ -20,6 +20,18 @@ export interface EditChoice {
 }
 
 /**
+ * A file picker field (upstream puts a `FileUpload` widget in `EditInfo.widget`). The UI reads the
+ * chosen file and hands it over: decoded audio (first channel) or text.
+ */
+export type EditFile =
+  | {
+      kind: 'audio';
+      accept: string;
+      onLoad(name: string, samples: ArrayLike<number>, sampleRate: number): void;
+    }
+  | { kind: 'text'; accept: string; onLoad(name: string, text: string): void };
+
+/**
  * One editable property of an element, as upstream's edit dialog shows it. Elements describe
  * their properties with `getEditInfo(n)` for n = 0, 1, ... until null, and take changes back
  * through `setEditValue(n, ei)`. Which fields appear can depend on other values (a voltage
@@ -37,6 +49,10 @@ export class EditInfo {
   maxVal = 0;
   choice: EditChoice | null = null;
   checkbox: EditCheckbox | null = null;
+  /** A file picker; no value of its own. */
+  file: EditFile | null = null;
+  /** A button that runs `onClick` (upstream `EditInfo.button`); no value of its own. */
+  button: { label: string; onClick(): void } | null = null;
   /** A multi-line text field (upstream `textArea`). */
   multiline = false;
   /** The field list must be rebuilt after this field changes. */
@@ -77,6 +93,18 @@ export class EditInfo {
   static createChoice(name: string, items: string[], selected: number): EditInfo {
     const ei = new EditInfo(name, selected, -1, -1);
     ei.choice = { items, selected };
+    return ei;
+  }
+
+  static createFile(file: EditFile): EditInfo {
+    const ei = new EditInfo('', 0, -1, -1);
+    ei.file = file;
+    return ei;
+  }
+
+  static createButton(label: string, onClick: () => void): EditInfo {
+    const ei = new EditInfo('', 0, -1, -1);
+    ei.button = { label, onClick };
     return ei;
   }
 
@@ -125,11 +153,17 @@ export class EditInfo {
 
   /** A number field (not a choice, checkbox or text). */
   isNumeric(): boolean {
-    return this.choice === null && this.checkbox === null && this.text === null;
+    return (
+      this.choice === null &&
+      this.checkbox === null &&
+      this.text === null &&
+      this.file === null &&
+      this.button === null
+    );
   }
 
   canCreateAdjustable(): boolean {
-    return this.choice === null && this.checkbox === null && !this.multiline && !this.noSliders;
+    return this.isNumeric() && !this.multiline && !this.noSliders;
   }
 }
 

@@ -17,6 +17,7 @@ export {
   unitString,
   type EditCheckbox,
   type EditChoice,
+  type EditFile,
   type Editable,
 } from './edit/EditInfo.ts';
 export { SCALE_AUTO, SCALE_1, SCALE_M, SCALE_MU } from './constants.ts';
@@ -58,6 +59,18 @@ export { ResistorElm } from './elm/ResistorElm.ts';
 export { SwitchElm } from './elm/SwitchElm.ts';
 export { ACVoltageElm, DCVoltageElm, VoltageElm } from './elm/VoltageElm.ts';
 export { WireElm } from './elm/WireElm.ts';
+export { AudioInputElm, DataInputElm } from './elm/AudioInputElm.ts';
+export { BatteryElm } from './elm/BatteryElm.ts';
+export {
+  ACRailElm,
+  AntennaElm,
+  ClockElm,
+  ExtVoltageElm,
+  NoiseElm,
+  SquareRailElm,
+  VarRailElm,
+} from './elm/RailVariants.ts';
+export { AMElm, FMElm, SweepElm } from './elm/SweepElm.ts';
 
 // The engine types loaders and runners need, so packages above elements need not depend on the
 // engine directly (eslint.config.js dependency direction).
