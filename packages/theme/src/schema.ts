@@ -38,8 +38,24 @@ export interface Theme {
     badConnection: string;
   };
   scope: {
+    /** Plot area. */
     background: string;
+    /** Card around each scope, with its header and legend (card look only). */
+    card: string;
+    /** Grid lines. */
     grid: string;
+    /** Zero line, every tenth time line, muted plots. */
+    gridMajor: string;
+    /** Labels, readouts, cursor, power and other non-V/I plots. */
+    text: string;
+    /** Current plots. */
+    current: string;
+    /** Trigger level and state. */
+    trigger: string;
+    /** Spectrum (FFT) trace and labels. */
+    fft: string;
+    fftGrid: string;
+    /** The first entry draws voltage plots; later plots of one kind cycle through the rest. */
     traces: string[];
   };
   ui: {
@@ -62,6 +78,11 @@ export interface Theme {
     font: string;
     /** Component values on the canvas and numeric readouts. */
     monoFont: string;
+    /**
+     * How scopes look: `classic` draws them as upstream does, `cards` puts each one in a card
+     * with a header, legend and labeled axes.
+     */
+    scopeLook: 'classic' | 'cards';
   };
 }
 
@@ -116,7 +137,18 @@ export const themeInputSchema = z.object({
     .partial()
     .optional(),
   scope: z
-    .object({ background: color, grid: color, traces: z.array(color).min(1).max(16) })
+    .object({
+      background: color,
+      card: color,
+      grid: color,
+      gridMajor: color,
+      text: color,
+      current: color,
+      trigger: color,
+      fft: color,
+      fftGrid: color,
+      traces: z.array(color).min(1).max(16),
+    })
     .partial()
     .optional(),
   ui: z
@@ -138,6 +170,7 @@ export const themeInputSchema = z.object({
       grid: z.enum(['none', 'dots', 'lines']),
       font: fontFamily,
       monoFont: fontFamily,
+      scopeLook: z.enum(['classic', 'cards']),
     })
     .partial()
     .optional(),

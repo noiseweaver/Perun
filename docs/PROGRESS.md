@@ -1,5 +1,78 @@
 # Progress
 
+## 2026-10-04: Phase 6 (scopes and measurement)
+
+### Done
+
+- Scope model ported from upstream master (`packages/elements/src/scope`): `Scope`, `ScopePlot`,
+  `ScopePlot2d` (X-Y), triggers, FFT, the overlays and cursor readouts, and `ScopeSerializer`
+  (text `o` lines old and new style, XML `<o>`/`<p>` records, saved defaults). `ScopeManager`
+  holds what upstream kept on `CirSim`: layout, stack, unstack, combine, separate, View in New
+  Scope, Add to Scope. Drawing goes through a `ScopeGraphics` interface with semantic inks; the
+  renderer maps them to the theme's new scope keys (`gridMajor`, `text`, `current`, `trigger`,
+  `fft`, `fftGrid`, plus `traces`).
+- Engine hooks: `Simulation.onTimeStep` (after each step, after wire currents) feeds the plots,
+  and `canDelayWireProcessing` follows upstream.
+- `Circuit` reads scopes from text and XML and saves them from the live scopes, as upstream does.
+  Element numbers count upstream's full element list (unported elements keep a placeholder), so
+  scopes find the right element even when earlier ones are skipped.
+- UI: scopes draw on the circuit canvas in upstream's bottom area with a draggable splitter, the
+  hover info beside them, or in a box at the bottom right when there are none. Element menu: View
+  in New Scope, Add to Scope. Scope menu: Remove, Max Scale, Stack, Unstack, Combine, Remove
+  Plot, Reset, Export CSV, Properties. A Scopes menu arranges them all. The properties dialog
+  covers plots, X-Y, vertical scale (auto, max, manual per channel, position, AC/DC, divisions),
+  speed, trigger, the info shown and a label. Mouse wheel over a scope changes its speed, alt or
+  middle drag moves a plot, double-click opens properties, undo covers every scope change.
+- Acceptance: `pnpm golden:scopes` loads every bundled upstream example that has scopes (259
+  files, 550 scopes) in the reference build and records upstream's save in
+  `fixtures/scopes/upstream-examples.json`; `tools/golden/src/scopes.test.ts` loads the same
+  files here and requires our `<o>` records to match. 440 scopes restore identically; the other
+  110 show elements not ported yet and are dropped with a warning (docs/DEVIATIONS.md). Unit
+  tests in `packages/format/src/scopes.test.ts`, browser tests in `packages/app/e2e/scopes.spec.ts`.
+- On phones the app bar menus scroll sideways instead of widening the page (the Scopes menu made
+  them overflow).
+- Scope card look (Gady chose all seven restyle ideas, 2026-10-04), drawn by
+  `packages/elements/src/scope/ScopeCardView.ts` from the same data and scales as the ported
+  `Scope.draw`. Each scope sits in a card with a header (title, time per division, settings and
+  close buttons), legend chips with live values (clicking V or I hides and shows that trace), the
+  peak, frequency and other readouts, dotted minor grid lines with value labels, smooth 1.5 px
+  traces with a shaded min/max band, and a crosshair that reads every trace (drag still measures
+  Δt and Δ). The info text gets a card of its own. On screens under 600 px one scope column shows
+  at a time, with numbered tabs and a sideways swipe. Themes choose the look with the new
+  `style.scopeLook` key (`cards` for Dark and the community themes, `classic` for Classic) and
+  color the card with `scope.card`.
+- Undocked scopes (Gady, 2026-10-04): `ScopeElm` (dump type 403) ported in
+  `packages/elements/src/scope/ScopeElm.ts`, loaded from text and XML and saved with its `<o>`
+  inside the element, so upstream's `multivib-a` and `qam-256` now load them. Scope menu Undock
+  Scope and Dock Scope, element menu View in New Undocked Scope. In the card look each is a card on
+  the circuit with a leader line to what it shows, a six-dot handle to drag it by and a resize
+  grip; buttons, chips, crosshair and measuring work as on docked cards.
+- The info box in the corner uses the monospace font and only grows while it shows the same
+  element, so it no longer jitters (card look). The speed sliders moved into a popover behind a
+  speed button beside Reset.
+- Spectrum view (card look): the cursor snaps to peaks and reads their frequency and level, the
+  strongest peak is labeled, and dragging measures Δf.
+- Last round (Gady, 2026-10-04): a freeze button on scope cards; Ctrl+wheel and two-finger pinch
+  zoom the time scale; the time cursor snaps to peaks, troughs and crossings and reads period and
+  frequency; a selected undocked card's leader end drags onto a post of what it shows (saved as
+  `lp`). Feedback animations across the app: cards fly when docked and undocked and grow in when
+  new, elements pop in and fade out, a ring marks newly joined ends, toasts for undo and redo,
+  pressed buttons, Run/Stop icon turn, and panels, menus, dialogs and the toast slide or fade in.
+  All of it respects reduced motion.
+- Follow-ups (Gady, 2026-10-04): moving an undocked card no longer opens the property panel (it
+  leaves scope cards out); the property panel has View in new scope and View in new undocked
+  scope buttons; scope chip and cursor values keep three decimals and a sign space so they don't
+  jump; the card look draws the spectrum as one smooth antialiased line over a faint fill; on
+  phones the Circuits menu is a full-screen sheet with search and groups that open in place.
+
+### Next
+
+- Phase 7: theme system complete.
+
+### Open issues
+
+- Sliders (`38` lines, `<adj>`) are still kept verbatim, not live.
+
 ## 2026-10-02: Phase 5 (editor)
 
 ### Done

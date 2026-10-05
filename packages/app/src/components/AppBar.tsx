@@ -9,7 +9,9 @@ import { openDialog } from '../commands.ts';
 import { controller } from '../SimController.ts';
 import { openExample } from '../startup.ts';
 import { updateSettings, useApp, type CircuitDisplay, setPaletteOpen } from '../store.ts';
+import { CircuitsSheet } from './CircuitsSheet.tsx';
 import { Icon } from './Icon.tsx';
+import { useNarrow } from './useNarrow.ts';
 import { OpenLinkDialog } from './OpenLinkDialog.tsx';
 
 function ExampleItems({ menu }: { menu: ExampleMenu }) {
@@ -75,6 +77,8 @@ export function AppBar() {
   const examples = useApp((s) => s.examples);
   const fileInput = useRef<HTMLInputElement>(null);
   const [linkOpen, setLinkOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const narrow = useNarrow();
 
   const setDisplay = (patch: Partial<CircuitDisplay>): void =>
     useApp.setState({ display: { ...useApp.getState().display, ...patch } });
@@ -183,8 +187,29 @@ export function AppBar() {
           <Item label="Centre Circuit" onSelect={() => controller.fit()} />
         </AppMenu>
 
-        <AppMenu label="Circuits" disabled={examples === null} testId="circuits-menu">
-          {examples && <ExampleItems menu={examples.root} />}
+        {narrow ? (
+          <button
+            type="button"
+            className="menu-trigger"
+            disabled={examples === null}
+            data-testid="circuits-menu"
+            data-state={sheetOpen ? 'open' : 'closed'}
+            onClick={() => setSheetOpen(true)}
+          >
+            Circuits
+            <Icon name="dropDown" size={18} />
+          </button>
+        ) : (
+          <AppMenu label="Circuits" disabled={examples === null} testId="circuits-menu">
+            {examples && <ExampleItems menu={examples.root} />}
+          </AppMenu>
+        )}
+        {narrow && sheetOpen && examples && (
+          <CircuitsSheet root={examples.root} onClose={() => setSheetOpen(false)} />
+        )}
+
+        <AppMenu label="Scopes" testId="scopes-menu">
+          <ScopesMenuItems />
         </AppMenu>
 
         <AppMenu label="Options" testId="options-menu">
@@ -390,5 +415,37 @@ function Check({ on }: { on: boolean }) {
     <span className="menu-check" aria-hidden>
       {on && <Icon name="check" size={18} />}
     </span>
+  );
+}
+
+/** Upstream's Scopes menu: arrange all docked scopes at once. */
+function ScopesMenuItems() {
+  const mgr = controller.scopes;
+  const n = mgr.scopeCount;
+  const last = mgr.scopes[n - 1];
+  return (
+    <>
+      <Item
+        label="Stack All"
+        disabled={!(n > 1 && last !== undefined && last.position > 0)}
+        onSelect={() => controller.allScopes('stackAll')}
+      />
+      <Item
+        label="Unstack All"
+        disabled={!(n > 1 && last !== undefined && last.position !== n - 1)}
+        onSelect={() => controller.allScopes('unstackAll')}
+      />
+      <Item
+        label="Combine All"
+        disabled={n <= 1}
+        onSelect={() => controller.allScopes('combineAll')}
+      />
+      <Item
+        label="Separate All"
+        disabled={n === 0}
+        testId="scopes-separate-all"
+        onSelect={() => controller.allScopes('separateAll')}
+      />
+    </>
   );
 }

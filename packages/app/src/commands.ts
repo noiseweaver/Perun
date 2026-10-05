@@ -9,22 +9,24 @@ import { SwitchElm } from '@circuitjs-next/elements';
 import { compressCircuit } from '@circuitjs-next/format';
 import { shortcutMap } from './editor/catalog.ts';
 import { controller } from './SimController.ts';
-import { useApp } from './store.ts';
+import { showToast, useApp } from './store.ts';
 
 /** Dialogs the commands open; the App renders whichever is set. */
 export type DialogKind =
-  'save' | 'exportLink' | 'exportText' | 'importText' | 'shortcuts' | 'simSettings' | null;
+  | 'save'
+  | 'exportLink'
+  | 'exportText'
+  | 'importText'
+  | 'shortcuts'
+  | 'simSettings'
+  | 'scopeProperties'
+  | null;
 
 export function openDialog(kind: DialogKind): void {
   useApp.setState({ dialog: kind });
 }
 
-export function showToast(text: string): void {
-  useApp.setState({ toast: text });
-  window.setTimeout(() => {
-    if (useApp.getState().toast === text) useApp.setState({ toast: null });
-  }, 2500);
-}
+export { showToast } from './store.ts';
 
 /** Upstream's default file name: circuitjs-yyyyMMdd-HHmmss.txt. */
 export function defaultFileName(): string {

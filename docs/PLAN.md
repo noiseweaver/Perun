@@ -254,8 +254,8 @@ Acceptance: upstream links using tier-1 elements load and animate correctly. Swi
 Acceptance: a circuit built in the new app opens correctly in upstream, and the reverse. Playwright e2e tests cover core editing flows.
 
 ### Phase 6: Scopes and measurement
-- [ ] Scopes: voltage, current and power traces, multiple traces, stacking, scale controls, X-Y mode, all themed.
-- [ ] Hover info (voltage, current, power) and measurement tools.
+- [x] Scopes: voltage, current and power traces, multiple traces, stacking, scale controls, X-Y mode, all themed.
+- [x] Hover info (voltage, current, power) and measurement tools.
 
 Acceptance: scope `o` lines from upstream files restore equivalent scopes.
 

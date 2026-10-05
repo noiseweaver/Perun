@@ -13,6 +13,8 @@ import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaDouble } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import { getUnitText } from '../view/units.ts';
+import { UNITS_C, VAL_CHARGE } from '../scope/constants.ts';
 
 export class CapacitorElm extends CircuitElm {
   static readonly FLAG_BACK_EULER = 2;
@@ -170,6 +172,28 @@ export class CapacitorElm extends CircuitElm {
       }
     }
     return true;
+  }
+
+  override getInfo(arr: string[]): void {
+    arr[0] = 'capacitor';
+    this.getBasicInfo(arr);
+    arr[3] = 'C = ' + getUnitText(this.capacitance, 'F');
+    arr[4] = 'P = ' + getUnitText(this.getPower(), 'W');
+    arr[5] = 'Q = ' + getUnitText(this.capacitance * this.voltdiff, 'C');
+  }
+
+  override getScopeText(_v: number): string {
+    return 'capacitor, ' + getUnitText(this.capacitance, 'F');
+  }
+
+  override getScopeValue(x: number): number {
+    if (x === VAL_CHARGE) return this.capacitance * this.voltdiff;
+    return super.getScopeValue(x);
+  }
+
+  override getScopeUnits(x: number): number {
+    if (x === VAL_CHARGE) return UNITS_C;
+    return super.getScopeUnits(x);
   }
 
   override getElmType(): string {

@@ -13,6 +13,7 @@ import { EditInfo } from '../edit/EditInfo.ts';
 import { javaDoubleToInt, parseJavaDouble } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import { OHM, getCurrentDText, getUnitText, getVoltageDText } from '../view/units.ts';
 
 /**
  * Potentiometer. Upstream drives `position` from a 0..100 slider in the side panel, so a loaded
@@ -163,6 +164,15 @@ export class PotElm extends CircuitElm {
     if (newLink === this.link) return;
     this.link = newLink;
     this.createSlider();
+  }
+
+  override getInfo(arr: string[]): void {
+    arr[0] = 'potentiometer';
+    arr[1] = 'Vd = ' + getVoltageDText(this.getVoltageDiff());
+    arr[2] = 'R1 = ' + getUnitText(this.resistance1, OHM);
+    arr[3] = 'R2 = ' + getUnitText(this.resistance2, OHM);
+    arr[4] = 'I1 = ' + getCurrentDText(this.current1);
+    arr[5] = 'I2 = ' + getCurrentDText(this.current2);
   }
 
   override getElmType(): string {

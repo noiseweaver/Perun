@@ -9,6 +9,8 @@
 
 import { CircuitNode, Point, SimElement, type Simulation } from '@circuitjs-next/engine';
 import type { EditInfo } from './edit/EditInfo.ts';
+import { UNITS_A, UNITS_V, UNITS_W, VAL_CURRENT, VAL_POWER } from './scope/constants.ts';
+import { getCurrentDText, getVoltageDText } from './view/units.ts';
 import type { StringTokenizer } from './StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from './xml.ts';
 
@@ -297,6 +299,53 @@ export abstract class CircuitElm extends SimElement {
   /** Upstream `getInfo(arr)[0]`: the element's kind in lower case ("resistor"), or null. */
   getElmType(): string | null {
     return null;
+  }
+
+  // ---- info box and scopes (upstream getInfo, getScopeValue ...) ---------------------------
+
+  /**
+   * Lines for the info box shown while the mouse is over the element (upstream `getInfo(arr)`;
+   * the first line names the element). Lines are left undefined past the last one.
+   */
+  getInfo(_arr: string[]): void {}
+
+  /** The current and voltage lines most elements show; returns the next free line. */
+  getBasicInfo(arr: string[]): number {
+    arr[1] = 'I = ' + getCurrentDText(this.getCurrent());
+    arr[2] = 'Vd = ' + getVoltageDText(this.getVoltageDiff());
+    return 3;
+  }
+
+  getPower(): number {
+    return this.getVoltageDiff() * this.current;
+  }
+
+  getScopeValue(x: number): number {
+    return x === VAL_CURRENT
+      ? this.getCurrent()
+      : x === VAL_POWER
+        ? this.getPower()
+        : this.getVoltageDiff();
+  }
+
+  getScopeUnits(x: number): number {
+    return x === VAL_CURRENT ? UNITS_A : x === VAL_POWER ? UNITS_W : UNITS_V;
+  }
+
+  /** Label a scope shows for one of this element's plots. */
+  getScopeText(_v: number): string | null {
+    const info: string[] = [];
+    this.getInfo(info);
+    return info[0] ?? null;
+  }
+
+  canViewInScope(): boolean {
+    return this.getPostCount() <= 2;
+  }
+
+  /** Extra values (resistance) this element offers a scope. */
+  canShowValueInScope(_v: number): boolean {
+    return false;
   }
 
   getDialogTitle(): string {

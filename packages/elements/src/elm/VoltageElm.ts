@@ -13,6 +13,7 @@ import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaDouble, parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import { getCurrentText, getUnitText, getVoltageText } from '../view/units.ts';
 
 const pi = Math.PI;
 
@@ -298,6 +299,34 @@ export class VoltageElm extends CircuitElm {
       default:
         return 1;
     }
+  }
+
+  override getPower(): number {
+    return -this.getVoltageDiff() * this.current;
+  }
+
+  override getInfo(arr: string[]): void {
+    arr[0] = this.getElmType() ?? '';
+    arr[1] = 'I = ' + getCurrentText(this.getCurrent());
+    arr[2] = (this.isRail() ? 'V = ' : 'Vd = ') + getVoltageText(this.getVoltageDiff());
+    let i = 3;
+    const wf = this.waveform;
+    if (wf !== VoltageElm.WF_DC && wf !== VoltageElm.WF_VAR && wf !== VoltageElm.WF_NOISE) {
+      arr[i++] = 'f = ' + getUnitText(this.frequency, 'Hz');
+      arr[i++] = 'Vmax = ' + getVoltageText(this.maxVoltage);
+      if (this.bias === 0)
+        arr[i++] = 'V(rms) = ' + getVoltageText(this.maxVoltage * this.getRmsMultiplier());
+      if (this.bias !== 0) arr[i++] = 'Voff = ' + getVoltageText(this.bias);
+      else if (this.frequency > 500)
+        arr[i++] = 'wavelength = ' + getUnitText(2.9979e8 / this.frequency, 'm');
+    }
+    // upstream's "(R = ...)" line needs the showResistanceInVoltageSources option, off by default
+    arr[i] = 'P = ' + getUnitText(this.getPower(), 'W');
+  }
+
+  /** RailElm says "V =" where two-terminal sources say "Vd =". */
+  isRail(): boolean {
+    return false;
   }
 
   override getElmType(): string | null {

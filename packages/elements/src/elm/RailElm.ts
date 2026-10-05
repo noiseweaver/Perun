@@ -26,6 +26,10 @@ export class RailElm extends VoltageElm {
     return 1;
   }
 
+  override isRail(): boolean {
+    return true;
+  }
+
   override getVoltageDiff(): number {
     return this.nodes[0].v;
   }

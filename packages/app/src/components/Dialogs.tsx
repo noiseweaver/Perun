@@ -6,7 +6,7 @@
 
 import { getUnitText, parseUnits } from '@circuitjs-next/elements';
 import * as Dialog from '@radix-ui/react-dialog';
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import {
   UPSTREAM_PAGE,
   circuitLink,
@@ -19,32 +19,8 @@ import {
 import { paletteGroups } from '../editor/catalog.ts';
 import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
-
-function Shell(props: {
-  title: string;
-  description?: string;
-  wide?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <Dialog.Root open onOpenChange={(o) => !o && openDialog(null)}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content className={`dialog-content${props.wide ? ' dialog-wide' : ''}`}>
-          <Dialog.Title className="dialog-title">{props.title}</Dialog.Title>
-          {props.description !== undefined ? (
-            <Dialog.Description className="dialog-description">
-              {props.description}
-            </Dialog.Description>
-          ) : (
-            <Dialog.Description className="visually-hidden">{props.title}</Dialog.Description>
-          )}
-          {props.children}
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
-  );
-}
+import { Shell } from './DialogShell.tsx';
+import { ScopePropertiesDialog } from './ScopeDialog.tsx';
 
 function SaveDialog() {
   const [name, setName] = useState(defaultFileName);
@@ -373,6 +349,8 @@ export function Dialogs() {
       return <ShortcutsDialog />;
     case 'simSettings':
       return <SimSettingsDialog />;
+    case 'scopeProperties':
+      return <ScopePropertiesDialog />;
     default:
       return null;
   }

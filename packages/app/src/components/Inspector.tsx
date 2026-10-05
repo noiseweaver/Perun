@@ -16,6 +16,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
+import { useNarrow } from './useNarrow.ts';
 import { Icon, type IconName } from './Icon.tsx';
 
 /** Upstream unitString(ei), with voltage sources shown in rms when that is shorter. */
@@ -242,11 +243,17 @@ function ChoiceField(props: FieldProps) {
   );
 }
 
-function ActionButton(props: { icon: IconName; label: string; onClick: () => void }) {
+function ActionButton(props: {
+  icon: IconName;
+  label: string;
+  onClick: () => void;
+  testId?: string;
+}) {
   return (
     <button
       type="button"
       className="icon-button"
+      data-testid={props.testId}
       aria-label={props.label}
       title={props.label}
       onClick={props.onClick}
@@ -267,6 +274,22 @@ function SelectionActions({ elm }: { elm: CircuitElm | null }) {
       {elm !== null && elm.getPostCount() === 2 && (
         <ActionButton icon="swap" label="Swap terminals" onClick={() => ed.swapTerminals(elm)} />
       )}
+      {elm !== null && elm.canViewInScope() && (
+        <>
+          <ActionButton
+            icon="scope"
+            label="View in new scope"
+            testId="action-view-in-scope"
+            onClick={() => controller.viewInScope(elm)}
+          />
+          <ActionButton
+            icon="scopeUndocked"
+            label="View in new undocked scope"
+            testId="action-view-in-undocked-scope"
+            onClick={() => controller.viewInUndockedScope(elm)}
+          />
+        </>
+      )}
       <ActionButton icon="copy" label="Duplicate" onClick={() => ed.duplicate(null)} />
       <ActionButton icon="delete" label="Delete" onClick={() => ed.deleteSelected(null)} />
     </div>
@@ -274,19 +297,6 @@ function SelectionActions({ elm }: { elm: CircuitElm | null }) {
 }
 
 /** Properties of the selected element, or what to do with a multiple selection. */
-/** Narrow screens show the panel as a bottom sheet (matches the CSS breakpoint). */
-const NARROW = '(max-width: 719px)';
-
-function useNarrow(): boolean {
-  const [narrow, setNarrow] = useState(() => window.matchMedia(NARROW).matches);
-  useEffect(() => {
-    const mq = window.matchMedia(NARROW);
-    const on = (): void => setNarrow(mq.matches);
-    mq.addEventListener('change', on);
-    return () => mq.removeEventListener('change', on);
-  }, []);
-  return narrow;
-}
 
 type SheetSnap = 'peek' | 'half' | 'full';
 /** The sheet keeps the height the user last chose while the app is open. */
@@ -371,8 +381,8 @@ function SheetHandle(props: {
 }
 
 export function Inspector() {
-  const selected = useApp((s) => s.editor.selected);
-  const count = useApp((s) => s.editor.selectionCount);
+  const selected = useApp((s) => s.editor.panelElm);
+  const count = useApp((s) => s.editor.panelCount);
   const revision = useApp((s) => s.editor.revision);
   const focus = useApp((s) => s.inspectorFocus);
   const [error, setError] = useState<string | null>(null);

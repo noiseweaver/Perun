@@ -319,14 +319,26 @@ export class Editor {
     gy: number,
     mods: Modifiers,
     pan = false,
+    grab: { elm: CircuitElm; post: number } | null = null,
   ): 'switch' | 'pan' | 'edit' | 'none' {
     this.mousePos = { x: gx, y: gy };
-    this.mouseSelect(gx, gy);
+    if (grab !== null) {
+      // the app picked the element (an undocked scope's handle or resize grip)
+      this.dragGridX = this.snapGrid(gx);
+      this.dragGridY = this.snapGrid(gy);
+      this.mousePost = -1;
+      if (this.mouseElm !== grab.elm) {
+        this.mouseElm = grab.elm;
+        this.host.selectionChanged();
+      }
+    } else this.mouseSelect(gx, gy);
+    this.draggingPost = -1;
     this.mouseDragging = true;
     this.moved = false;
 
     let mode: MouseMode = this.mouseMode;
-    if (pan) mode = MouseMode.DRAG_ALL;
+    if (grab !== null) mode = grab.post >= 0 ? MouseMode.DRAG_POST : MouseMode.SELECT;
+    else if (pan) mode = MouseMode.DRAG_ALL;
     else if (mods.alt && mods.meta) mode = MouseMode.DRAG_COLUMN;
     else if (mods.alt && mods.shift) mode = MouseMode.DRAG_ROW;
     else if (mods.shift) mode = MouseMode.SELECT;
@@ -342,6 +354,7 @@ export class Editor {
 
     // grab a resize handle in select mode when it is far enough from the other end
     if (
+      grab === null &&
       mode === MouseMode.SELECT &&
       this.mouseElm !== null &&
       this.mouseElm.getHandleGrabbedClose(gx, gy, POSTGRABSQ, MINPOSTGRABSIZE) >= 0 &&
@@ -352,6 +365,7 @@ export class Editor {
     if (this.tempMouseMode !== MouseMode.SELECT && this.tempMouseMode !== MouseMode.DRAG_SELECTED)
       this.clearSelection();
 
+    if (grab !== null && grab.post >= 0) this.draggingPost = grab.post;
     this.history.begin(this.tempMouseMode === MouseMode.ADD_ELM ? 'Add' : 'Move');
     this.initDragGridX = gx;
     this.initDragGridY = gy;
@@ -698,6 +712,8 @@ export class Editor {
     if (doomed.size === 0) return;
     this.history.record('Delete', () => {
       this.circuit.elements = this.elements.filter((e) => !doomed.has(e));
+      // undocked scopes of what was deleted go too (upstream deleteUnusedScopeElms)
+      this.circuit.removeUnusedScopeElms();
       if (this.mouseElm !== null && doomed.has(this.mouseElm)) this.mouseElm = null;
     });
     this.host.circuitChanged();

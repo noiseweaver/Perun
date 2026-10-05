@@ -12,6 +12,7 @@ import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaDouble } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import { OHM, getUnitText } from '../view/units.ts';
 
 export class ResistorElm extends CircuitElm {
   resistance = 0;
@@ -47,6 +48,17 @@ export class ResistorElm extends CircuitElm {
 
   override stamp(): void {
     this.sim.stampResistor(this.nodes[0], this.nodes[1], this.resistance);
+  }
+
+  override getInfo(arr: string[]): void {
+    arr[0] = 'resistor';
+    this.getBasicInfo(arr);
+    arr[3] = 'R = ' + getUnitText(this.resistance, OHM);
+    arr[4] = 'P = ' + getUnitText(this.getPower(), 'W');
+  }
+
+  override getScopeText(_v: number): string {
+    return 'resistor, ' + getUnitText(this.resistance, OHM);
   }
 
   override getElmType(): string {

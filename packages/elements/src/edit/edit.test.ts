@@ -39,7 +39,8 @@ function names(e: CircuitElm): string[] {
 }
 
 describe('edit fields', () => {
-  for (const type of ELEMENT_TYPES) {
+  // an undocked scope is edited in the scope properties dialog, as upstream's
+  for (const type of ELEMENT_TYPES.filter((t) => t.className !== 'ScopeElm')) {
     it(`${type.className} lists and round-trips its fields`, () => {
       const e = make(type.className);
       const list = fields(e);

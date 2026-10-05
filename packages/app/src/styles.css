@@ -324,8 +324,15 @@ textarea,
   gap: 8px;
 }
 
-.control-sliders {
-  gap: 24px;
+.speed-popover {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 18px 16px;
+  background: var(--md-surface-container-high);
+  border-radius: var(--md-shape-xs);
+  box-shadow: var(--md-elevation-2);
+  z-index: 50;
 }
 
 .status {
@@ -343,7 +350,8 @@ textarea,
   font-family: var(--mono-font);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  /* keep the padding spaces that hold a live value's width */
+  white-space: pre;
 }
 
 /* fixed widths (the font is monospaced) so the readouts don't shift as digits come and go */
@@ -1101,12 +1109,16 @@ textarea.field-input {
     padding: 0 4px 0 10px;
   }
 
-  .control-bar {
-    gap: 8px 16px;
+  /* five menus don't fit a phone: they scroll sideways instead of widening the page */
+  .app-bar-menus {
+    flex-shrink: 1;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
 
-  .control-sliders {
-    gap: 16px;
+  .control-bar {
+    gap: 8px 16px;
   }
 
   .slider {
@@ -1188,4 +1200,339 @@ textarea.field-input {
   .app-bar-actions {
     display: none;
   }
+}
+
+/* ---- scope properties --------------------------------------------------------------------- */
+
+.scope-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.scope-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.scope-section:last-child {
+  border-bottom: 0;
+}
+
+.scope-section-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ui-accent);
+}
+
+.scope-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  column-gap: 16px;
+}
+
+.scope-radios {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 20px;
+}
+
+.scope-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  cursor: pointer;
+}
+
+.scope-radio input {
+  margin: 0;
+  accent-color: var(--ui-accent);
+}
+
+.scope-xy-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.text-input.scope-select,
+.text-input.scope-short-input,
+.scope-scale-input .text-input {
+  height: 40px;
+  font-size: 14px;
+  padding: 0 12px;
+}
+
+.text-input.scope-short-input {
+  width: 96px;
+}
+
+.scope-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.scope-slider-row input[type='range'] {
+  flex: 1;
+  accent-color: var(--ui-accent);
+}
+
+.scope-value {
+  min-width: 88px;
+  text-align: right;
+  font-family: var(--mono-font);
+  font-size: 13px;
+}
+
+.scope-channels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.chip.chip-selected {
+  border-color: transparent;
+  background: var(--md-secondary-container);
+}
+
+.scope-scale-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.scope-scale-input {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 220px;
+}
+
+.scope-scale-input .text-input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--mono-font);
+}
+
+.field-disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---- motion: small answers to what the user does ------------------------------------------ */
+
+/* buttons give a little under the finger */
+.button,
+.icon-button,
+.menu-trigger {
+  transition:
+    background-color 150ms var(--md-motion),
+    transform 120ms var(--md-motion);
+}
+
+.button:active:not(:disabled),
+.icon-button:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+/* Run and Stop swap icons with a turn */
+.icon-swap {
+  animation: icon-swap 260ms var(--md-motion);
+}
+
+@keyframes icon-swap {
+  from {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
+  }
+}
+
+.tooltip {
+  transform-origin: var(--radix-tooltip-content-transform-origin);
+  animation: pop-in 120ms var(--md-motion);
+}
+
+.speed-popover {
+  transform-origin: var(--radix-popover-content-transform-origin);
+  animation: pop-in 160ms var(--md-motion);
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+.dialog-content {
+  animation: dialog-in 220ms var(--md-motion);
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px) scale(0.96);
+  }
+}
+
+/* the property panel slides in beside the canvas (up from the bottom on phones) */
+.inspector {
+  animation: panel-in 220ms var(--md-motion);
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+
+@media (max-width: 719px) {
+  .inspector {
+    animation-name: sheet-in;
+  }
+
+  @keyframes sheet-in {
+    from {
+      transform: translateY(40%);
+      opacity: 0;
+    }
+  }
+}
+
+.toast {
+  animation: toast-in 240ms var(--md-motion);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(16px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---- Circuits sheet (phones) -------------------------------------------------------------- */
+
+.circuits-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: var(--md-surface-container-high);
+  color: var(--ui-text);
+  animation: sheet-up 240ms var(--md-motion);
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+.circuits-sheet-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 20px;
+}
+
+.circuits-sheet-title {
+  flex: 1;
+  margin: 0;
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 400;
+}
+
+.circuits-sheet-search {
+  flex: none;
+  margin: 0 16px 8px;
+}
+
+.circuits-sheet-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+
+.circuits-sheet-empty {
+  padding: 16px 20px;
+}
+
+.sheet-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sheet-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 6px 16px;
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  color: var(--ui-text);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.sheet-row:active {
+  background: color-mix(in srgb, var(--ui-text) 8%, transparent);
+}
+
+.sheet-group {
+  flex-direction: row;
+  align-items: center;
+  font-weight: 500;
+}
+
+.sheet-row-title {
+  flex: 1;
+}
+
+.sheet-row-path {
+  font-size: 12px;
+  color: var(--ui-text-muted);
+}
+
+.sheet-chevron {
+  color: var(--ui-text-muted);
+  transition: transform 150ms var(--md-motion);
+}
+
+.sheet-group[aria-expanded='true'] .sheet-chevron {
+  transform: rotate(90deg);
 }

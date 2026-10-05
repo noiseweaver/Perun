@@ -33,8 +33,9 @@ const FAILS =
 /** `cct=` the way upstream's export link writes it. */
 const cct = (text: string): string => encodeURIComponent(text).replaceAll('%24', '$');
 
+/** The time readout, with the spaces that pad it to a fixed width squeezed out. */
 const simTime = async (page: Page): Promise<string> =>
-  (await page.getByTestId('sim-time').textContent()) ?? '';
+  ((await page.getByTestId('sim-time').textContent()) ?? '').replace(/\s+/g, ' ');
 
 /** RGBA of one canvas pixel (CSS px). */
 const pixel = (page: Page, x: number, y: number) =>
@@ -291,7 +292,7 @@ test('the time step can be changed and undone', async ({ page }) => {
   await expect(page.getByTestId('time-step')).toHaveText(/1 μs/);
   await page.getByTestId('undo').click();
   await expect(page.getByTestId('time-step')).toHaveText(/5 μs/);
-  await expect(page.getByTestId('sim-time')).toHaveText(/^t = \d+\.\d{3} [mμ]?s$/);
+  await expect(page.getByTestId('sim-time')).toHaveText(/^t = +\d+\.\d{3} +[mμ]?s$/);
 });
 
 test('the text box font setting redraws text and is remembered', async ({ page }) => {
@@ -318,4 +319,34 @@ test('Circuits submenus open to the right of the menu', async ({ page }) => {
   const a = await top.boundingBox();
   const b = await sub.boundingBox();
   expect(b?.x ?? 0).toBeGreaterThanOrEqual((a?.x ?? 0) + (a?.width ?? 0) - 1);
+});
+
+test.describe('Circuits on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('open as a full-screen sheet with groups and search', async ({ page }) => {
+    await page.goto(`/?cct=${cct(RC)}`);
+    await expect(page.getByTestId('circuits-menu')).toBeEnabled();
+    await page.getByTestId('circuits-menu').tap();
+    const sheet = page.getByTestId('circuits-sheet');
+    await expect(sheet).toBeVisible();
+    const box = await sheet.boundingBox();
+    expect(box?.width).toBe(390);
+    // a group opens in place
+    await sheet.getByRole('button', { name: 'Basics' }).tap();
+    await expect(sheet.getByRole('button', { name: 'Basics' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    // search finds circuits in any group, and one opens
+    await page.getByTestId('circuits-search').fill('lrc');
+    await sheet
+      .getByRole('button', { name: /LRC Circuit/ })
+      .first()
+      .tap();
+    await expect(sheet).toBeHidden();
+    await expect
+      .poll(() => page.evaluate(() => window.circuitjsNext?.controller.circuit.scopes.scopeCount))
+      .toBe(3);
+  });
 });

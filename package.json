@@ -21,7 +21,8 @@
     "reference:serve": "tools/reference-build/serve.sh",
     "golden:record": "node tools/golden/src/record.ts",
     "golden:check": "node tools/golden/src/record.ts --check",
-    "golden:compare": "node tools/golden/src/compare-cli.ts"
+    "golden:compare": "node tools/golden/src/compare-cli.ts",
+    "golden:scopes": "node tools/golden/src/record-scopes.ts"
   },
   "dependencies": {
     "@circuitjs-next/format": "workspace:*"

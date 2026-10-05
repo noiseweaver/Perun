@@ -13,6 +13,7 @@ import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import { getCurrentText } from '../view/units.ts';
 
 export class GroundElm extends CircuitElm {
   /** Needed for old subcircuits which have GroundElm dumped. */
@@ -102,6 +103,11 @@ export class GroundElm extends CircuitElm {
   }
   override getCurrentIntoNode(_n: number): number {
     return -this.current;
+  }
+
+  override getInfo(arr: string[]): void {
+    arr[0] = 'ground';
+    arr[1] = 'I = ' + getCurrentText(this.getCurrent());
   }
 
   override getElmType(): string {

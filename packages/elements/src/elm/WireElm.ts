@@ -10,6 +10,8 @@
 import { Point } from '@circuitjs-next/engine';
 import { CircuitElm, elementType, lineDistanceSq } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
+import { getCurrentDText, getVoltageText } from '../view/units.ts';
+import { labelForNode } from './LabeledNodeElm.ts';
 
 export class WireElm extends CircuitElm {
   static readonly FLAG_SHOWCURRENT = 1;
@@ -88,6 +90,19 @@ export class WireElm extends CircuitElm {
   }
   mustShowBusValueHex(): boolean {
     return (this.flags & WireElm.FLAG_SHOW_BUS_VALUE_HEX) !== 0;
+  }
+
+  override getInfo(arr: string[]): void {
+    // bus wires (busWidth > 1) come with digital elements
+    arr[0] = 'wire';
+    arr[1] = 'I = ' + getCurrentDText(this.getCurrent());
+    arr[2] = 'V = ' + getVoltageText(this.getPostVoltage(0));
+    const label = labelForNode(this.sim.labelList, this.nodes[0]);
+    if (label !== null) arr[3] = label;
+  }
+
+  override getPower(): number {
+    return 0;
   }
 
   override getElmType(): string {

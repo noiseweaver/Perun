@@ -30,9 +30,16 @@ export const dark: Theme = {
     badConnection: '#e06c75',
   },
   scope: {
-    background: '#16191f',
-    grid: '#2a2f3a',
-    traces: ['#98c379', '#61afef', '#e5c07b', '#c678dd', '#e06c75'],
+    background: '#14171c',
+    card: '#21252c',
+    grid: '#343a46',
+    gridMajor: '#4b5263',
+    text: '#e2e2e9',
+    current: '#e5c07b',
+    trigger: '#d19a66',
+    fft: '#e06c75',
+    fftGrid: '#5c2f34',
+    traces: ['#98c379', '#61afef', '#c678dd', '#56b6c2', '#e06c75', '#d19a66'],
   },
   ui: {
     surface: '#111318',
@@ -49,5 +56,6 @@ export const dark: Theme = {
     grid: 'dots',
     font: "'Roboto Variable', Roboto, system-ui, sans-serif",
     monoFont: "'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace",
+    scopeLook: 'cards',
   },
 };

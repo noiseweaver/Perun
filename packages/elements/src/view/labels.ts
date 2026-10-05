@@ -84,10 +84,7 @@ export const probeView: ElementView<ProbeElm> = {
     p.line(e.point1, lead1, vInk(volt(e, 0)));
     p.line(lead2, e.point2, vInk(volt(e, 1)));
     if (showValue) {
-      // RMS, peak, frequency and the other meter modes need probe statistics (not ported yet)
-      const s =
-        e.meter === ProbeElm.TP_VOL ? getUnitTextWithScale(e.getVoltageDiff(), 'V', e.scale) : '';
-      drawValues(e, ctx, s, showCircle ? PROBE_CIRCLE + 3 : 4);
+      drawValues(e, ctx, e.meterValueText(), showCircle ? PROBE_CIRCLE + 3 : 4);
     }
     const plus = interp(e.point1, e.point2, (e.dn / 2 - len / 2 - 4) / e.dn, -10 * e.dsign);
     let py = plus.y;

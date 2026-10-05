@@ -18,6 +18,19 @@ import { modelsFor } from '../models/ModelLibrary.ts';
 import type { TransistorModel } from '../models/TransistorModel.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from '../xml.ts';
+import { getCurrentText, getUnitText, getVoltageText, showFormat } from '../view/units.ts';
+import {
+  UNITS_A,
+  UNITS_V,
+  UNITS_W,
+  VAL_IB,
+  VAL_IC,
+  VAL_IE,
+  VAL_POWER,
+  VAL_VBC,
+  VAL_VBE,
+  VAL_VCE,
+} from '../scope/constants.ts';
 
 /** Electron thermal voltage at SPICE's default temperature of 27 C (300.15 K). */
 const vt = 0.025865;
@@ -480,6 +493,95 @@ export class TransistorElm extends CircuitElm {
   /** The circle around the symbol, a setting shared by every transistor (upstream static). */
   hasCircle(): boolean {
     return (modelsFor(this.sim).transistorGlobalFlags & TransistorElm.FLAG_CIRCLE) !== 0;
+  }
+
+  override getPower(): number {
+    const v = (n: number): number => this.getPostVoltage(n);
+    return (v(0) - v(2)) * this.ib + (v(1) - v(2)) * this.ic;
+  }
+
+  override getScopeText(x: number): string {
+    let t = '';
+    switch (x) {
+      case VAL_IB:
+        t = 'Ib';
+        break;
+      case VAL_IC:
+        t = 'Ic';
+        break;
+      case VAL_IE:
+        t = 'Ie';
+        break;
+      case VAL_VBE:
+        t = 'Vbe';
+        break;
+      case VAL_VBC:
+        t = 'Vbc';
+        break;
+      case VAL_VCE:
+        t = 'Vce';
+        break;
+      case VAL_POWER:
+        t = 'P';
+        break;
+    }
+    return 'transistor, ' + t;
+  }
+
+  override getInfo(arr: string[]): void {
+    const pnp = this.pnp;
+    arr[0] = 'transistor' + (pnp === -1 ? ' (PNP)' : ' (NPN)');
+    arr[1] = (this.model?.name ?? '') + ', \u03b2=' + showFormat(this.beta);
+    const v = (n: number): number => this.getPostVoltage(n);
+    const vbc = v(0) - v(1);
+    const vbe = v(0) - v(2);
+    const vce = v(1) - v(2);
+    if (vbc * pnp > 0.2) arr[2] = vbe * pnp > 0.2 ? 'saturation' : 'reverse active';
+    else arr[2] = vbe * pnp > 0.2 ? 'fwd active' : 'cutoff';
+    arr[3] = 'Ic = ' + getCurrentText(this.ic);
+    arr[4] = 'Ib = ' + getCurrentText(this.ib);
+    arr[5] = 'Vbe = ' + getVoltageText(vbe);
+    arr[6] = 'Vbc = ' + getVoltageText(vbc);
+    arr[7] = 'Vce = ' + getVoltageText(vce);
+    arr[8] = 'P = ' + getUnitText(this.getPower(), 'W');
+  }
+
+  override getScopeValue(x: number): number {
+    const v = (n: number): number => this.getPostVoltage(n);
+    switch (x) {
+      case VAL_IB:
+        return this.ib;
+      case VAL_IC:
+        return this.ic;
+      case VAL_IE:
+        return this.ie;
+      case VAL_VBE:
+        return v(0) - v(2);
+      case VAL_VBC:
+        return v(0) - v(1);
+      case VAL_VCE:
+        return v(1) - v(2);
+      case VAL_POWER:
+        return this.getPower();
+    }
+    return 0;
+  }
+
+  override getScopeUnits(x: number): number {
+    switch (x) {
+      case VAL_IB:
+      case VAL_IC:
+      case VAL_IE:
+        return UNITS_A;
+      case VAL_POWER:
+        return UNITS_W;
+      default:
+        return UNITS_V;
+    }
+  }
+
+  override canViewInScope(): boolean {
+    return true;
   }
 
   override getElmType(): string {

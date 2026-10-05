@@ -363,6 +363,8 @@ test.describe('on a touch screen', () => {
     await clickCircuit(page, 176, 96);
     const sheet = page.getByTestId('inspector');
     await expect(sheet).toHaveAttribute('data-sheet', 'half');
+    // let it finish sliding in before measuring where its handle is
+    await expect.poll(() => sheet.evaluate((e) => e.getAnimations().length)).toBe(0);
     const height = () => sheet.evaluate((e) => (e as HTMLElement).offsetHeight);
     const half = await height();
     const handle = await page.getByTestId('sheet-handle').boundingBox();

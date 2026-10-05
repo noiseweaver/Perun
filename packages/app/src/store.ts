@@ -38,8 +38,14 @@ export interface EditorState {
   /** Class placed by dragging on the canvas, or null in select mode. */
   addClass: string | null;
   selectionCount: number;
-  /** The one selected element (property panel), else null. */
+  /** The one selected element, else null. */
   selected: CircuitElm | null;
+  /**
+   * What the property panel shows: the selection less undocked scope cards (moving a card selects
+   * it, and its settings are behind its cog), and the one element of it, else null.
+   */
+  panelCount: number;
+  panelElm: CircuitElm | null;
   canUndo: boolean;
   canRedo: boolean;
   canPaste: boolean;
@@ -67,7 +73,15 @@ export interface AppState {
   /** Text of a short notice ("Link copied"), or null. */
   toast: string | null;
   /** Open dialog (commands.ts DialogKind). */
-  dialog: 'save' | 'exportLink' | 'exportText' | 'importText' | 'shortcuts' | 'simSettings' | null;
+  dialog:
+    | 'save'
+    | 'exportLink'
+    | 'exportText'
+    | 'importText'
+    | 'shortcuts'
+    | 'simSettings'
+    | 'scopeProperties'
+    | null;
   /** Bumped to move keyboard focus to the property panel (double-click, Enter). */
   inspectorFocus: number;
 }
@@ -158,6 +172,8 @@ export const useApp = create<AppState>(() => ({
   editor: {
     addClass: null,
     selectionCount: 0,
+    panelCount: 0,
+    panelElm: null,
     selected: null,
     canUndo: false,
     canRedo: false,
@@ -185,4 +201,12 @@ export function updateSettings(patch: Partial<UserSettings>): void {
   const settings = { ...useApp.getState().settings, ...patch };
   useApp.setState({ settings });
   saveSettings(settings);
+}
+
+/** A short message at the bottom of the canvas, gone after a moment. */
+export function showToast(text: string): void {
+  useApp.setState({ toast: text });
+  window.setTimeout(() => {
+    if (useApp.getState().toast === text) useApp.setState({ toast: null });
+  }, 2500);
 }

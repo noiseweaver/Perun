@@ -116,6 +116,14 @@ export class TextElm extends CircuitElm {
     this.y2 = yy;
   }
 
+  override getInfo(arr: string[]): void {
+    arr[0] = this.text;
+  }
+
+  override canViewInScope(): boolean {
+    return false;
+  }
+
   override getElmType(): string {
     return 'text';
   }

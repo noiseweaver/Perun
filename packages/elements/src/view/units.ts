@@ -36,12 +36,12 @@ function exponentFormat(v: number): string {
   return `${mant}E${exp < 0 ? '-' : ''}${String(Math.abs(exp)).padStart(3, '0')}`;
 }
 
-function unitText(v: number, u: string, sf: boolean): string {
+function unitText(v: number, u: string, sf: boolean, fixed = false): string {
   const sp = sf ? '' : ' ';
-  const f = sf ? shortFormat : showFormat;
+  const f = fixed ? fixedFormat : sf ? shortFormat : showFormat;
   const va = Math.abs(v);
   // this used to return null, but then wires would display "null" with 0V
-  if (va < 1e-14) return '0' + sp + u;
+  if (va < 1e-14) return (fixed ? fixedFormat(0) : '0') + sp + u;
   if (va < 1e-9) return f(v * 1e12) + sp + 'p' + u;
   if (va < 1e-6) return f(v * 1e9) + sp + 'n' + u;
   if (va < 1e-3) return f(v * 1e6) + sp + MU + u;
@@ -56,6 +56,43 @@ function unitText(v: number, u: string, sf: boolean): string {
 /** `1.5 kΩ` style text with three decimals. */
 export function getUnitText(v: number, u: string): string {
   return unitText(v, u, false);
+}
+
+/**
+ * Like getUnitText, but the same width whatever the value: a place for the sign, three integer
+ * digits, always three decimals and a place for the prefix, filled with spaces. In monospace a
+ * live value then never shifts as it changes (the scope cards, not upstream). Values of 1000 G
+ * and up don't fit and fall back to getUnitText.
+ */
+export function getFixedUnitText(v: number, u: string): string {
+  // every part has a budget: sign, three integer digits, three decimals, one prefix letter
+  const prefixes: [number, string][] = [
+    [1e-12, 'p'],
+    [1e-9, 'n'],
+    [1e-6, MU],
+    [1e-3, 'm'],
+    [1, ' '],
+    [1e3, 'k'],
+    [1e6, 'M'],
+    [1e9, 'G'],
+  ];
+  if (Math.abs(v) >= 1e12) return getUnitText(v, u);
+  let num = '0.000';
+  let prefix = ' ';
+  if (Math.abs(v) >= 1e-14 && Number.isFinite(v)) {
+    let k = prefixes.length - 1;
+    while (k > 0 && Math.abs(v) < (prefixes[k]?.[0] ?? 1)) k--;
+    let [scale, p] = prefixes[k] ?? [1, ' '];
+    num = formatNumber(v / scale, 3, true);
+    // 999.9996 rounds up to 1000.000: say 1.000 of the next prefix instead
+    if (/^-?1000\./.test(num) && k + 1 < prefixes.length) {
+      [scale, p] = prefixes[k + 1] ?? [scale, p];
+      num = formatNumber(v / scale, 3, true);
+    }
+    prefix = p;
+  }
+  if (num === '-0.000') num = '0.000';
+  return `${num.padStart(8)} ${prefix}${u}`;
 }
 
 /** `1.5kΩ` style text with one decimal, used on the circuit. */
@@ -76,4 +113,36 @@ export function getUnitTextWithScale(val: number, utext: string, scale: number, 
 export function javaDoubleToString(v: number): string {
   const s = String(v);
   return Number.isInteger(v) && Math.abs(v) < 1e7 ? s + '.0' : s;
+}
+
+export function getVoltageText(v: number): string {
+  return getUnitText(v, 'V');
+}
+
+export function getVoltageDText(v: number): string {
+  return getUnitText(Math.abs(v), 'V');
+}
+
+export function getCurrentText(i: number): string {
+  return getUnitText(i, 'A');
+}
+
+export function getCurrentDText(i: number): string {
+  return getUnitText(Math.abs(i), 'A');
+}
+
+/**
+ * Upstream `getTimeText`: seconds with a unit prefix, or h:mm:ss.sss from a minute up. The hour
+ * and minute counts are doubles concatenated in GWT, so they print without ".0".
+ */
+export function getTimeText(v: number): string {
+  if (v >= 60) {
+    const h = Math.floor(v / 3600);
+    v -= 3600 * h;
+    const m = Math.floor(v / 60);
+    v -= 60 * m;
+    if (h === 0) return `${m}:${v >= 10 ? '' : '0'}${showFormat(v)}`;
+    return `${h}:${m >= 10 ? '' : '0'}${m}:${v >= 10 ? '' : '0'}${showFormat(v)}`;
+  }
+  return getUnitText(v, 's');
 }

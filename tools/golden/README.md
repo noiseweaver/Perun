@@ -8,6 +8,7 @@ pnpm reference:build                    # Docker build of upstream + tools/refer
 pnpm golden:record [name | tag:x ...]   # record fixtures/golden/<name>.json
 pnpm golden:check                       # record again in memory, fail if any fixture differs
 pnpm golden:compare [--engine next|stub] [--json report.json] [name | tag:x ...]
+pnpm golden:scopes [--check]            # record fixtures/scopes/upstream-examples.json (scopes of every example)
 ```
 
 Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to use a local Chromium. The recorder serves `.reference-site/`
