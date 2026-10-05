@@ -51,7 +51,7 @@ export const nord: Theme = {
     text: '#eceff4',
     textMuted: '#a5adbd',
     accent: '#88c0d0',
-    danger: '#bf616a',
+    danger: '#d8848c',
   },
   style: { ...dark.style },
 };
@@ -96,7 +96,7 @@ export const solarizedDark: Theme = {
     text: '#eee8d5',
     textMuted: '#93a1a1',
     accent: '#268bd2',
-    danger: '#dc322f',
+    danger: '#f0625f',
   },
   style: { ...dark.style },
 };

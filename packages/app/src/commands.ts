@@ -20,6 +20,8 @@ export type DialogKind =
   | 'shortcuts'
   | 'simSettings'
   | 'scopeProperties'
+  | 'themes'
+  | 'themeEditor'
   | null;
 
 export function openDialog(kind: DialogKind): void {
@@ -44,17 +46,21 @@ export function saveToFile(name: string): void {
   let fname = name.trim() || defaultFileName();
   if (!fname.includes('.')) fname += '.txt';
   controller.lastFileName = fname;
-  const blob = new Blob([controller.saveText()], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
+  download(fname, controller.saveText(), 'text/plain');
+  controller.unsavedChanges = false;
+  useApp.setState({ title: fname });
+}
+
+/** Offer text to the browser as a file download. */
+export function download(fileName: string, text: string, type: string): void {
+  const url = URL.createObjectURL(new Blob([text], { type }));
   const a = document.createElement('a');
   a.href = url;
-  a.download = fname;
+  a.download = fileName;
   document.body.appendChild(a);
   a.click();
   a.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 10000);
-  controller.unsavedChanges = false;
-  useApp.setState({ title: fname });
 }
 
 /** This page's address without its query, the base of exported links. */

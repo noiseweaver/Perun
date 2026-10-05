@@ -236,11 +236,13 @@ test.describe('the card look', () => {
     await page.goto('/?startCircuit=lrc.txt');
     await ready(page);
     await page.getByTestId('options-menu').click();
+    await page.getByTestId('menu-theme').click();
     await page.getByTestId('theme-classic').click();
     await expect
       .poll(() => page.evaluate(() => window.circuitjsNext?.controller.scopes.look))
       .toBe('classic');
     await page.getByTestId('options-menu').click();
+    await page.getByTestId('menu-theme').click();
     await page.getByTestId('theme-dark').click();
   });
 });

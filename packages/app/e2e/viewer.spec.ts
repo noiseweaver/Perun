@@ -104,6 +104,7 @@ test('Classic and Dark restyle the canvas and UI without a reload', async ({ pag
     );
   const pick = async (id: string) => {
     await page.getByTestId('options-menu').click();
+    await page.getByTestId('menu-theme').click();
     await page.getByTestId(`theme-${id}`).click();
   };
 
@@ -223,6 +224,7 @@ test('a stop from an element leaves the canvas drawing', async ({ page }) => {
   // the frame loop survived the stop: a theme change still repaints the canvas
   const before = await canvasHash(page);
   await page.getByTestId('options-menu').click();
+  await page.getByTestId('menu-theme').click();
   await page.getByTestId('theme-classic').click();
   await expect.poll(() => canvasHash(page)).not.toBe(before);
   expect(errors).toEqual([]);
@@ -257,6 +259,7 @@ test('the community dark themes apply', async ({ page }) => {
   await page.goto(`/?cct=${cct(RC)}`);
   for (const id of ['nord', 'solarized-dark', 'gruvbox-dark', 'adwaita-dark']) {
     await page.getByTestId('options-menu').click();
+    await page.getByTestId('menu-theme').click();
     await page.getByTestId(`theme-${id}`).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', id);
     // reopen only once the menu has closed, or the click lands on the closing menu
