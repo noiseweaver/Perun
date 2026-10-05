@@ -24,6 +24,8 @@ export class ModelLibrary {
   transistorGlobalFlags = 0;
   /** Upstream `MosfetElm.lastModelName`: the model for new MOSFETs, set when one is edited. */
   mosfetLastModelName = 'default';
+  /** Upstream `JfetElm.lastJfetModelName`: the model for new JFETs. */
+  jfetLastModelName = 'default-jfet';
   /** Upstream `RelayElm.lastModelName`: the model for new relays, set when one is edited. */
   relayLastModelName = 'default';
 

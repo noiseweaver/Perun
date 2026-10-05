@@ -9,7 +9,7 @@ steps 1, 2, 5, 10, 20, 50, 100, 200, 500 and 1000 match within the golden tolera
 (tools/golden/README.md). "Same save" means our XML save after loading is byte for byte
 upstream's.
 
-**Pass: 278 of 373 (74.5%).** Same save: 269 (72.1%).
+**Pass: 311 of 373 (83.4%).** Same save: 310 (83.1%).
 
 Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 
@@ -54,7 +54,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | amp-rect.txt | pass | yes |  |
 | amp-schmitt.txt | pass | yes |  |
 | amp-sum.txt | pass | yes |  |
-| analogrecip.txt | fail | no | unrecognized dump type: j |
+| analogrecip.txt | pass | yes |  |
 | avr8js-analog.txt | pass | yes |  |
 | avr8js-logic.txt | pass | yes |  |
 | avr8js-strobe.txt | pass | yes |  |
@@ -68,8 +68,8 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | butter10lo.txt | pass | yes |  |
 | butter10loaud.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
 | butterbandstop.txt | pass | yes |  |
-| cap.txt | pass | no |  |
-| capac.txt | pass | no |  |
+| cap.txt | pass | yes |  |
+| capac.txt | pass | yes |  |
 | capmult.txt | pass | yes |  |
 | capmultcaps.txt | pass | yes |  |
 | capmultfreq.txt | pass | yes |  |
@@ -102,9 +102,9 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | cmosxor.txt | pass | yes |  |
 | colpitts.txt | pass | yes |  |
 | comb.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
-| conv-boost.txt | fail | no | unrecognized xml element: pc |
-| conv-buck.txt | fail | no | unrecognized xml element: pc |
-| conv-buckboost.txt | pass | no |  |
+| conv-boost.txt | pass | yes |  |
+| conv-buck.txt | pass | yes |  |
+| conv-buckboost.txt | pass | yes |  |
 | conv-cuk.txt | pass | yes |  |
 | conv-sepic.txt | pass | yes |  |
 | counter.txt | pass | yes |  |
@@ -185,36 +185,36 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | indmultind.txt | pass | yes |  |
 | indpar.txt | pass | yes |  |
 | indseries.txt | pass | yes |  |
-| induct.txt | pass | no |  |
-| inductac.txt | pass | no |  |
+| induct.txt | pass | yes |  |
+| inductac.txt | pass | yes |  |
 | inductkick-block.txt | pass | yes |  |
 | inductkick-snub.txt | pass | yes |  |
 | inductkick.txt | pass | yes |  |
 | inv-osc.txt | pass | yes |  |
 | invertamp.txt | pass | yes |  |
-| itov.txt | pass | no |  |
+| itov.txt | pass | yes |  |
 | jerk.txt | pass | yes |  |
-| jfetamp.txt | fail | no | unrecognized dump type: j |
-| jfetcurrentsrc.txt | fail | no | unrecognized dump type: j |
-| jfetfollower-nooff.txt | fail | no | unrecognized dump type: j |
-| jfetfollower.txt | fail | no | unrecognized dump type: j |
+| jfetamp.txt | pass | yes |  |
+| jfetcurrentsrc.txt | pass | yes |  |
+| jfetfollower-nooff.txt | pass | yes |  |
+| jfetfollower.txt | pass | yes |  |
 | jkff.txt | pass | yes |  |
 | johnsonctr.txt | pass | yes |  |
 | joule-thief.txt | pass | yes |  |
 | jsinterface.txt | pass | yes |  |
 | ladder.txt | pass | yes |  |
-| lambda-diode-osc.txt | fail | no | unrecognized dump type: j |
-| lambda-diode.txt | fail | no | unrecognized dump type: j |
+| lambda-diode-osc.txt | pass | yes |  |
+| lambda-diode.txt | pass | yes |  |
 | latchingrelay.txt | pass | yes |  |
 | leadingedge.txt | pass | yes |  |
 | ledarray.txt | fail | no | custom logic models are not supported yet; unrecognized dump type: 208; unrecognized dump type: 405 |
 | ledflasher.txt | pass | yes |  |
-| lightbulb.txt | fail | no | unrecognized dump type: 181; a scope shows an element that is not supported yet |
+| lightbulb.txt | pass | yes |  |
 | lissa.txt | pass | yes |  |
 | logconvert.txt | pass | yes |  |
 | longdist.txt | pass | yes |  |
 | lrc-critical.txt | pass | yes |  |
-| lrc.txt | pass | no |  |
+| lrc.txt | pass | yes |  |
 | majority.txt | pass | yes |  |
 | masterslaveff.txt | pass | yes |  |
 | mirror.txt | pass | yes |  |
@@ -225,13 +225,13 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | mosmirror.txt | pass | yes |  |
 | mosswitch.txt | pass | yes |  |
 | motorprotect.txt | fail | no | unrecognized dump type: 428 |
-| mr-crossbar.txt | fail | no | unrecognized dump type: m |
-| mr-sine.txt | fail | no | unrecognized dump type: m; a scope shows an element that is not supported yet |
-| mr-sine2.txt | fail | no | unrecognized dump type: m; a scope shows an element that is not supported yet |
-| mr-sine3.txt | fail | no | unrecognized dump type: m; a scope shows an element that is not supported yet |
-| mr-square.txt | fail | no | unrecognized dump type: m; a scope shows an element that is not supported yet |
-| mr-triangle.txt | fail | no | unrecognized dump type: m; a scope shows an element that is not supported yet |
-| mr.txt | fail | no | unrecognized dump type: m; a scope shows an element that is not supported yet |
+| mr-crossbar.txt | pass | yes |  |
+| mr-sine.txt | pass | yes |  |
+| mr-sine2.txt | pass | yes |  |
+| mr-sine3.txt | pass | yes |  |
+| mr-square.txt | pass | yes |  |
+| mr-triangle.txt | pass | yes |  |
+| mr.txt | pass | yes |  |
 | multivib-a.txt | pass | no |  |
 | multivib-bi.txt | pass | yes |  |
 | multivib-mono.txt | pass | yes |  |
@@ -315,13 +315,13 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | satcore-transformer.txt | pass | yes |  |
 | sawtooth.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
 | schmitt.txt | pass | yes |  |
-| scr.txt | fail | no | unrecognized dump type: 177 |
-| scractrig.txt | fail | no | unrecognized dump type: 177 |
+| scr.txt | pass | yes |  |
+| scractrig.txt | pass | yes |  |
 | sine.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
 | sinediode.txt | pass | yes |  |
 | sipo-sr.txt | pass | yes |  |
-| spark-marx.txt | fail | no | unrecognized dump type: 187; a scope shows an element that is not supported yet |
-| spark-sawtooth.txt | fail | no | unrecognized dump type: 187 |
+| spark-marx.txt | pass | yes |  |
+| spark-sawtooth.txt | pass | yes |  |
 | spikegen.txt | pass | yes |  |
 | sram.txt | pass | yes |  |
 | switchedcap.txt | pass | yes |  |
@@ -333,10 +333,10 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | td4-ctr-up-dn.txt | fail | no | unrecognized xml element: rw; model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: ins; unrecognized xml element: ROM |
 | td4-ctr.txt | fail | no | unrecognized xml element: rw; model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: ins; unrecognized xml element: ROM |
 | td4.txt | fail | no | unrecognized xml element: rw; model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: ins; unrecognized xml element: ROM |
-| tdiode.txt | fail | no | unrecognized dump type: 175; a scope shows an element that is not supported yet |
-| tdosc.txt | fail | no | unrecognized dump type: 175; a scope shows an element that is not supported yet |
-| tdrelax.txt | fail | no | unrecognized dump type: 175; a scope shows an element that is not supported yet |
-| tesla.txt | fail | no | unrecognized dump type: 187; a scope shows an element that is not supported yet |
+| tdiode.txt | pass | yes |  |
+| tdosc.txt | pass | yes |  |
+| tdrelax.txt | pass | yes |  |
+| tesla.txt | pass | yes |  |
 | thevenin.txt | pass | yes |  |
 | tl.txt | pass | yes |  |
 | tlfreq.txt | pass | yes |  |
@@ -356,13 +356,13 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | transformerdc.txt | pass | yes |  |
 | transformerdown.txt | pass | yes |  |
 | transformerup.txt | pass | yes |  |
-| transrectifier.txt | pass | no |  |
+| transrectifier.txt | pass | yes |  |
 | transswitch.txt | pass | yes |  |
-| triacdimmer.txt | fail | no | unrecognized dump type: 206; unrecognized dump type: 203; unrecognized dump type: 181 |
+| triacdimmer.txt | pass | yes |  |
 | triangle.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
 | trianglevco.txt | pass | yes |  |
-| triode.txt | fail | no | unrecognized dump type: 173 |
-| triodeamp.txt | fail | no | unrecognized dump type: 173 |
+| triode.txt | pass | yes |  |
+| triodeamp.txt | pass | yes |  |
 | ttlinverter.txt | pass | yes |  |
 | ttlnand.txt | pass | yes |  |
 | ttlnor.txt | pass | yes |  |
@@ -370,8 +370,8 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | ujtosc.txt | fail | no | unrecognized dump type: 417 |
 | unishiftreg.txt | fail | no | unrecognized dump type: 423 |
 | updownctr.txt | pass | yes |  |
-| varactor.txt | fail | no | unrecognized dump type: 176; a scope shows an element that is not supported yet |
-| varactorvco.txt | fail | no | unrecognized dump type: 176 |
+| varactor.txt | pass | yes |  |
+| varactorvco.txt | pass | yes |  |
 | vco.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
 | vilnius.txt | pass | yes |  |
 | voltdivide.txt | pass | yes |  |
@@ -380,9 +380,9 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | voltinvert.txt | pass | yes |  |
 | voltquad.txt | pass | yes |  |
 | volttriple.txt | pass | yes |  |
-| volume.txt | fail | no | unrecognized dump type: j |
-| wheatstone.txt | fail | no | unrecognized dump type: 370 |
-| wienbridge.txt | fail | no | unrecognized dump type: 181; a scope shows an element that is not supported yet |
+| volume.txt | pass | yes |  |
+| wheatstone.txt | pass | yes |  |
+| wienbridge.txt | pass | yes |  |
 | xor.txt | pass | yes |  |
 | xorphasedet.txt | pass | yes |  |
 | zeneriv.txt | pass | yes |  |

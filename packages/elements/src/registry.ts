@@ -12,6 +12,7 @@ import { CapacitorElmType } from './elm/CapacitorElm.ts';
 import { DiodeElmType } from './elm/DiodeElm.ts';
 import { LEDElmType } from './elm/LEDElm.ts';
 import { MosfetElmType, NMosfetElmType, PMosfetElmType } from './elm/MosfetElm.ts';
+import { JfetElmType, NJfetElmType, PJfetElmType } from './elm/JfetElm.ts';
 import { OpAmpElmType } from './elm/OpAmpElm.ts';
 import { PushSwitchElmType } from './elm/PushSwitchElm.ts';
 import { RailElmType } from './elm/RailElm.ts';
@@ -34,6 +35,17 @@ import { TappedTransformerElmType } from './elm/TappedTransformerElm.ts';
 import { TransLineElmType } from './elm/TransLineElm.ts';
 import { RelayElmType } from './elm/RelayElm.ts';
 import { RelayCoilElmType, RelayContactElmType } from './elm/RelayCoilElm.ts';
+import { PolarCapacitorElmType } from './elm/PolarCapacitorElm.ts';
+import { VaractorElmType } from './elm/VaractorElm.ts';
+import { TunnelDiodeElmType } from './elm/TunnelDiodeElm.ts';
+import { MemristorElmType } from './elm/MemristorElm.ts';
+import { SparkGapElmType } from './elm/SparkGapElm.ts';
+import { LampElmType } from './elm/LampElm.ts';
+import { SCRElmType } from './elm/SCRElm.ts';
+import { TriacElmType } from './elm/TriacElm.ts';
+import { DiacElmType } from './elm/DiacElm.ts';
+import { TriodeElmType } from './elm/TriodeElm.ts';
+import { AmmeterElmType } from './elm/AmmeterElm.ts';
 import { ScopeElmType } from './scope/ScopeElm.ts';
 import { AudioInputElmType, DataInputElmType } from './elm/AudioInputElm.ts';
 import { BatteryElmType } from './elm/BatteryElm.ts';
@@ -193,6 +205,20 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   RelayElmType,
   RelayCoilElmType,
   RelayContactElmType,
+  JfetElmType,
+  NJfetElmType,
+  PJfetElmType,
+  PolarCapacitorElmType,
+  VaractorElmType,
+  TunnelDiodeElmType,
+  MemristorElmType,
+  SparkGapElmType,
+  LampElmType,
+  SCRElmType,
+  TriacElmType,
+  DiacElmType,
+  TriodeElmType,
+  AmmeterElmType,
 ];
 
 /** Old class names upstream's constructElement still accepts (saved shortcuts, subcircuits). */

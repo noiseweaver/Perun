@@ -24,6 +24,7 @@ import {
   type ScopeHost,
   type ScopeManager,
   type XmlDocWriter,
+  unescapeToken,
 } from '@circuitjs-next/elements';
 import { AttrReader, AttrWriter } from './attrs.ts';
 import { XmlElement, parseXml, prettyPrint } from './xml.ts';
@@ -80,8 +81,6 @@ export class Circuit {
    * until sliders are ported (see docs/DEVIATIONS.md).
    */
   xmlExtras: XmlElement[] = [];
-  /** Slider (`38`) lines from a text file. Not written back (DEVIATIONS.md). */
-  textExtras: string[] = [];
   /**
    * While reading: every element record so far, with null for those this port can't load, so
    * scope element numbers count as upstream's do.
@@ -170,7 +169,6 @@ export class Circuit {
     this.options = { flags: 0, speed: 117, currentBar: 50, powerBar: 50, voltageRange: 5 };
     this.setGrid();
     this.xmlExtras = [];
-    this.textExtras = [];
     this.scopes.clearScopes();
   }
 
@@ -318,7 +316,7 @@ export class Circuit {
           continue;
         }
         if (tint === 38) {
-          this.textExtras.push(line);
+          if (!retain) this.readTextAdjustable(st);
           continue;
         }
         if (type.charAt(0) === '.') {
@@ -349,6 +347,56 @@ export class Circuit {
         this.warnings.push(`exception while undumping ${String(e)}`);
       }
     }
+  }
+
+  /**
+   * Upstream `Adjustable(StringTokenizer)`: a text-format slider. Upstream saves every slider as
+   * an `adj` record, so turn it into one here and keep it with the XML sliders.
+   */
+  private readTextAdjustable(st: StringTokenizer): void {
+    const e = parseJavaInt(st.nextToken());
+    if (e === -1) return;
+    let flags = 0;
+    let editItem = 0;
+    let minValue = 0;
+    let maxValue = 0;
+    let shared = -1;
+    let sliderText = '';
+    let sliderStep = 0;
+    try {
+      let ei = st.nextToken();
+      // the initial code forgot a flags field, so it is an optional "F" token
+      if (ei.startsWith('F')) {
+        flags = parseJavaInt(ei.substring(1));
+        ei = st.nextToken();
+      }
+      editItem = parseJavaInt(ei);
+      minValue = parseJavaDouble(st.nextToken());
+      maxValue = parseJavaDouble(st.nextToken());
+      if ((flags & ADJ_FLAG_SHARED) !== 0) shared = parseJavaInt(st.nextToken());
+      sliderText = unescapeToken(st.nextToken());
+    } catch {
+      // upstream keeps whatever it read before the record ran out
+    }
+    try {
+      sliderStep = parseJavaDouble(st.nextToken());
+    } catch {
+      // older records have no step
+    }
+    const ce = this.elements[e];
+    if (ce === undefined) return;
+    const adj = new XmlElement('adj');
+    const w = new AttrWriter(adj);
+    w.dumpAttr('e', e);
+    w.dumpAttr('ei', editItem);
+    w.dumpAttr('en', ce.getEditInfo(editItem)?.name ?? '');
+    w.dumpAttr('mn', minValue);
+    w.dumpAttr('mx', maxValue);
+    w.dumpAttr('st', sliderText);
+    if (sliderStep > 0) w.dumpAttr('stp', sliderStep);
+    if (shared !== -1) w.dumpAttr('ss', shared);
+    if ((flags & ADJ_FLAG_LOG) !== 0) w.dumpAttr('log', 1);
+    this.xmlExtras.push(adj);
   }
 
   private readOptions(st: StringTokenizer): void {
@@ -554,6 +602,10 @@ export function readCircuit(text: string): Circuit {
  * to the saved index (`ei`), so a save writes the index the element has now. We keep `adj`
  * records verbatim, so fix the index in place the same way.
  */
+/** Upstream `Adjustable.FLAG_SHARED` and `FLAG_LOG`. */
+const ADJ_FLAG_SHARED = 1;
+const ADJ_FLAG_LOG = 2;
+
 function resolveAdjEditItem(elem: XmlElement, ce: CircuitElm | undefined): void {
   const en = elem.getAttribute('en');
   if (ce === undefined || en === null || en.length === 0) return;

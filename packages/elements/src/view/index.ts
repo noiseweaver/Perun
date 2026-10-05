@@ -10,6 +10,7 @@ import { InductorElm } from '../elm/InductorElm.ts';
 import { LabeledNodeElm } from '../elm/LabeledNodeElm.ts';
 import { LEDElm } from '../elm/LEDElm.ts';
 import { MosfetElm } from '../elm/MosfetElm.ts';
+import { JfetElm } from '../elm/JfetElm.ts';
 import { OpAmpElm } from '../elm/OpAmpElm.ts';
 import { OutputElm } from '../elm/OutputElm.ts';
 import { PotElm } from '../elm/PotElm.ts';
@@ -24,6 +25,30 @@ import { WireElm } from '../elm/WireElm.ts';
 import { ZenerElm } from '../elm/ZenerElm.ts';
 import { ScopeElm } from '../scope/ScopeElm.ts';
 import type { ElementView } from './common.ts';
+import { PolarCapacitorElm } from '../elm/PolarCapacitorElm.ts';
+import { VaractorElm } from '../elm/VaractorElm.ts';
+import { TunnelDiodeElm } from '../elm/TunnelDiodeElm.ts';
+import { MemristorElm } from '../elm/MemristorElm.ts';
+import { SparkGapElm } from '../elm/SparkGapElm.ts';
+import { LampElm } from '../elm/LampElm.ts';
+import { SCRElm } from '../elm/SCRElm.ts';
+import { TriacElm } from '../elm/TriacElm.ts';
+import { DiacElm } from '../elm/DiacElm.ts';
+import { TriodeElm } from '../elm/TriodeElm.ts';
+import { AmmeterElm } from '../elm/AmmeterElm.ts';
+import {
+  ammeterView,
+  diacView,
+  lampView,
+  memristorView,
+  polarCapacitorView,
+  scrView,
+  sparkGapView,
+  triacView,
+  triodeView,
+  tunnelDiodeView,
+  varactorView,
+} from './tier3.ts';
 import { TransformerElm } from '../elm/TransformerElm.ts';
 import { TappedTransformerElm } from '../elm/TappedTransformerElm.ts';
 import { TransLineElm } from '../elm/TransLineElm.ts';
@@ -46,7 +71,15 @@ import {
   resistorView,
   wireView,
 } from './passive.ts';
-import { diodeView, ledView, mosfetView, opAmpView, transistorView, zenerView } from './semis.ts';
+import {
+  diodeView,
+  jfetView,
+  ledView,
+  mosfetView,
+  opAmpView,
+  transistorView,
+  zenerView,
+} from './semis.ts';
 import {
   batteryView,
   currentView,
@@ -95,6 +128,17 @@ type AnyCtor = abstract new (...args: never[]) => CircuitElm;
 
 /** Views by element class, subclasses before their base classes. */
 const VIEWS: [AnyCtor, ElementView<never>][] = [
+  [PolarCapacitorElm, polarCapacitorView],
+  [VaractorElm, varactorView],
+  [TunnelDiodeElm, tunnelDiodeView],
+  [MemristorElm, memristorView],
+  [SparkGapElm, sparkGapView],
+  [LampElm, lampView],
+  [SCRElm, scrView],
+  [TriacElm, triacView],
+  [DiacElm, diacView],
+  [TriodeElm, triodeView],
+  [AmmeterElm, ammeterView],
   [WireElm, wireView],
   [GroundElm, groundView],
   [ResistorElm, resistorView],
@@ -127,6 +171,7 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [ZenerElm, zenerView],
   [DiodeElm, diodeView],
   [TransistorElm, transistorView],
+  [JfetElm, jfetView],
   [MosfetElm, mosfetView],
   [OpAmpElm, opAmpView],
   [ScopeElm, scopeElmView],
