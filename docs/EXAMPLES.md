@@ -9,7 +9,7 @@ steps 1, 2, 5, 10, 20, 50, 100, 200, 500 and 1000 match within the golden tolera
 (tools/golden/README.md). "Same save" means our XML save after loading is byte for byte
 upstream's.
 
-**Pass: 371 of 373 (99.5%).** Same save: 369 (98.9%).
+**Pass: 373 of 373 (100.0%).** Same save: 371 (99.5%).
 
 Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 
@@ -21,7 +21,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | 3-f220.txt | pass | yes |  |
 | 3-f221.txt | pass | yes |  |
 | 3-invert.txt | pass | yes |  |
-| 3motor.txt | fail | no | unrecognized dump type: 427 |
+| 3motor.txt | pass | yes |  |
 | 3phasewye.txt | pass | yes |  |
 | 3way.txt | pass | yes |  |
 | 4way.txt | pass | yes |  |
@@ -224,7 +224,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | mosfollower.txt | pass | yes |  |
 | mosmirror.txt | pass | yes |  |
 | mosswitch.txt | pass | yes |  |
-| motorprotect.txt | fail | no | unrecognized dump type: 428 |
+| motorprotect.txt | pass | yes |  |
 | mr-crossbar.txt | pass | yes |  |
 | mr-sine.txt | pass | yes |  |
 | mr-sine2.txt | pass | yes |  |

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
 // Geometry learned from CircuitJS1 TransformerElm, TappedTransformerElm, TransLineElm, GyratorElm,
-// RelayElm, RelayCoilElm and RelayContactElm draw() (src/com/lushprojects/circuitjs1/client/, master) at
+// RelayElm, RelayCoilElm, RelayContactElm and ThreePhaseMotorElm draw() (src/com/lushprojects/circuitjs1/client/, master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032; the drawing code is new.
 
 import type { GyratorElm } from '../elm/GyratorElm.ts';
 import { RelayCoilElm, type RelayContactElm } from '../elm/RelayCoilElm.ts';
 import type { RelayElm } from '../elm/RelayElm.ts';
+import type { ThreePhaseMotorElm } from '../elm/ThreePhaseMotorElm.ts';
 import type { TappedTransformerElm } from '../elm/TappedTransformerElm.ts';
 import { TransformerElm } from '../elm/TransformerElm.ts';
 import type { TransLineElm } from '../elm/TransLineElm.ts';
@@ -299,4 +300,57 @@ export const gyratorView: ElementView<GyratorElm> = {
     }
   },
   bbox: (e) => rectOf(e.ptEnds),
+};
+
+/** Upstream `interpPointFix`: g is a fraction of the length, perpendicular, rounded. */
+function interpFix(a: Pt, b: Pt, f: number, g: number): Pt {
+  const gx = b.y - a.y;
+  const gy = a.x - b.x;
+  return pt(
+    Math.round(a.x * (1 - f) + b.x * f + g * gx),
+    Math.round(a.y * (1 - f) + b.y * f + g * gy),
+  );
+}
+
+const MOTOR_R = 37;
+
+export const threePhaseMotorView: ElementView<ThreePhaseMotorElm> = {
+  draw(e, ctx) {
+    const p = ctx.painter;
+    const { posts, leads } = e;
+    for (let i = 0; i !== 6; i++) p.line(posts[i], leads[i], vInk(volt(e, i)));
+    for (let i = 0; i !== 3; i++) {
+      const c = ctx.dotCount(i, e.coilCurrents[i]);
+      p.dots(posts[i * 2], leads[i * 2], c);
+      p.dots(leads[i * 2 + 1], posts[i * 2 + 1], c);
+    }
+    // stator, rotor disc and three rotor bars turning with the shaft angle
+    const center = e.motorCenter;
+    p.fillCircle(center, MOTOR_R, MUTED);
+    p.fillCircle(center, MOTOR_R / 2.2, LABEL);
+    const a = Math.round(e.angle * 300.0) / 300.0;
+    const q = (((0.28 * 1.7 * 36) / e.dn) * 37) / 27;
+    for (let k = 0; k !== 3; k++) {
+      const t = a + (k * Math.PI) / 3;
+      const ps1 = interpFix(e.point1, e.point2, 0.5 + q * Math.cos(t), q * Math.sin(t));
+      const ps2 = interpFix(e.point1, e.point2, 0.5 - q * Math.cos(t), -q * Math.sin(t));
+      p.line(ps1, ps2, LABEL, { width: 6 });
+    }
+    const vertical = Math.abs(e.dy) > Math.abs(e.dx);
+    for (let i = 0; i !== 3; i++) {
+      const name = 'UVW'.charAt(i);
+      const a1 = posts[i * 2];
+      const a2 = posts[i * 2 + 1];
+      if (vertical) {
+        p.text(name + '1', pt(a1.x + 5, a1.y + 8), LABEL, UNITS_FONT);
+        p.text(name + '2', pt(a2.x + 5, a2.y - 2), LABEL, UNITS_FONT);
+      } else {
+        const style = { ...UNITS_FONT, align: 'center' as const };
+        p.text(name + '1', pt(a1.x + 11, a1.y - 7), LABEL, style);
+        p.text(name + '2', pt(a2.x - 11, a2.y - 7), LABEL, style);
+      }
+    }
+    e.filterSpeed();
+  },
+  bbox: (e) => elementBox(e, MOTOR_R),
 };

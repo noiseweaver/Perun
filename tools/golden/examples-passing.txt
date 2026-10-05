@@ -4,6 +4,7 @@
 3-f220.txt
 3-f221.txt
 3-invert.txt
+3motor.txt
 3phasewye.txt
 3way.txt
 4way.txt
@@ -206,6 +207,7 @@ mosfetamp.txt
 mosfollower.txt
 mosmirror.txt
 mosswitch.txt
+motorprotect.txt
 mr-crossbar.txt
 mr-sine.txt
 mr-sine2.txt

@@ -60,6 +60,7 @@ import {
   relayContactView,
   relayView,
   tappedTransformerView,
+  threePhaseMotorView,
   transLineView,
   transformerView,
 } from './magnetics.ts';
@@ -133,6 +134,7 @@ import {
   logicInputView,
   logicOutputView,
   mbbSwitchView,
+  motorProtectionSwitchView,
   switch2View,
   switchView,
 } from './switches.ts';
@@ -154,6 +156,8 @@ import { chipView, decimalDisplayView, ledArrayView, sevenSegView, vcoView } fro
 import { OhmMeterElm } from '../elm/OhmMeterElm.ts';
 import { GyratorElm } from '../elm/GyratorElm.ts';
 import { LEDArrayElm } from '../elm/LEDArrayElm.ts';
+import { ThreePhaseMotorElm } from '../elm/ThreePhaseMotorElm.ts';
+import { MotorProtectionSwitchElm } from '../elm/MotorProtectionSwitchElm.ts';
 
 /** Undocked scopes are drawn by the scope renderer, over the circuit; this only places them. */
 const scopeElmView: ElementView<ScopeElm> = {
@@ -234,6 +238,8 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [VCOElm, vcoView],
   [LEDArrayElm, ledArrayView],
   [ChipElm, chipView],
+  [ThreePhaseMotorElm, threePhaseMotorView],
+  [MotorProtectionSwitchElm, motorProtectionSwitchView],
   [GyratorElm, gyratorView],
   [TransformerElm, transformerView],
   [TappedTransformerElm, tappedTransformerView],

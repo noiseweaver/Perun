@@ -29,6 +29,11 @@ export type Ink =
         readonly v2: number;
       };
     }
+  /**
+   * A fuse element's color: the voltage color heating through red and yellow as `level` (heat
+   * over its limit) goes from 0 to 1, then the label color once blown (upstream `getTempColor`).
+   */
+  | { readonly heat: { readonly voltage: number; readonly level: number } }
   /** A color that is circuit data, not styling (LED light, a text element's own color). 0..255. */
   | { readonly rgb: readonly [number, number, number] };
 

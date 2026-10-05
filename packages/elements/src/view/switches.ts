@@ -2,13 +2,14 @@
 // Copyright (C) 2026 circuitjs-next contributors
 // Geometry learned from CircuitJS1 SwitchElm, Switch2Elm, DPDTSwitchElm, MBBSwitchElm,
 // CrossSwitchElm, LogicInputElm, LogicOutputElm, BusLogicInputElm, AnalogSwitchElm and
-// AnalogSwitch2Elm (src/com/lushprojects/circuitjs1/client/, master) at
+// AnalogSwitch2Elm and MotorProtectionSwitchElm (src/com/lushprojects/circuitjs1/client/, master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032; the drawing code is new.
 
 import type { CircuitElm } from '../CircuitElm.ts';
 import { AnalogSwitch2Elm, AnalogSwitchElm } from '../elm/AnalogSwitchElm.ts';
 import { BusLogicInputElm, LogicInputElm, LogicOutputElm } from '../elm/LogicInputElm.ts';
 import { CrossSwitchElm, DPDTSwitchElm, MBBSwitchElm, Switch2Elm } from '../elm/Switch2Elm.ts';
+import type { MotorProtectionSwitchElm } from '../elm/MotorProtectionSwitchElm.ts';
 import { SwitchElm } from '../elm/SwitchElm.ts';
 import {
   COMPONENT,
@@ -16,6 +17,7 @@ import {
   draw2Leads,
   drawCenteredText,
   elementBox,
+  LABEL,
   MUTED,
   UNITS_FONT,
   vInk,
@@ -288,3 +290,75 @@ export function switchRect(e: SwitchElm): Rect {
   const [lead1, lead2] = calcLeads(e.point1, e.point2, e.dn, 32);
   return rectOf([lead1, lead2, interp(lead1, lead2, 0, OPEN_HS)]);
 }
+
+const MPS_LABEL_FONT = { font: 'units', size: 12, align: 'center', baseline: 'middle' } as const;
+const MPS_I_FONT = {
+  font: 'serif',
+  size: 30,
+  italic: true,
+  align: 'center',
+  baseline: 'middle',
+} as const;
+
+export const motorProtectionSwitchView: ElementView<MotorProtectionSwitchElm> = {
+  draw(e, ctx) {
+    const p = ctx.painter;
+    // upstream draws in coordinates relative to the top-left post
+    const at = (x: number, y: number): Pt => pt(e.x + x, e.y + y);
+    const thin = { width: 1 };
+    const spx = 48;
+    const squareX = -spx - 12;
+    const squareY = 48 - 12;
+    const blown = e.blown;
+
+    // dotted linkage from the thermal elements to the switches and the hand lever
+    const dash = { width: 1, dash: [4, 4] };
+    p.line(at(squareX + 28, squareY + 12), at(96 - (blown ? 8 : 0), squareY + 12), MUTED, dash);
+    p.line(at(squareX + 12, squareY + 28), at(squareX + 12, 152), MUTED, dash);
+    p.line(at(squareX + 12, 152), at(-spx / 2, 152), MUTED, dash);
+    p.line(at(squareX + 12, 104), at(-spx / 2, 104), MUTED, dash);
+
+    for (let i = 0; i !== 3; i++) {
+      const x = i * spx;
+      const top = vInk(volt(e, i * 2));
+      p.line(at(x, 0), at(x, 32), top);
+      if (blown) p.line(at(x - 4, 32), at(x + 4, 32), top);
+      const sw = blown ? 16 : 0;
+      p.line(at(x - sw, 32), at(x, 64), top);
+      p.line(at(x, 64), at(x, 80), top);
+      p.line(at(x - 4, 12), at(x + 4, 20), top, thin);
+      p.line(at(x + 4, 12), at(x - 4, 20), top, thin);
+      p.line(at(x, 176), at(x, 192), vInk(volt(e, i * 2 + 1)));
+      // the heater loop, colored by its heat
+      const heat: Ink = { heat: { voltage: volt(e, i * 2), level: e.heatLevel(i) } };
+      const q = 12;
+      p.polyline(
+        [at(x, 80), at(x, 96), at(x - q, 96), at(x - q, 112), at(x, 112), at(x, 128)],
+        heat,
+        thin,
+      );
+      p.text('I >', at(x, 152), MUTED, MPS_I_FONT);
+    }
+    for (let i = 0; i !== 3; i++)
+      p.line(at(-spx / 2, 80 + 48 * i), at(2 * spx + spx / 2, 80 + 48 * i), MUTED, thin);
+    for (let i = 0; i !== 4; i++)
+      p.line(at(i * spx - spx / 2, 80), at(i * spx - spx / 2, 176), MUTED, thin);
+    for (let i = 0; i !== 3; i++)
+      p.line(at(squareX + 12 * i, squareY), at(squareX + 12 * i, squareY + 24), MUTED, thin);
+    for (let i = 0; i !== 3; i++)
+      p.line(at(squareX, squareY + 12 * i), at(squareX + 24, squareY + 12 * i), MUTED, thin);
+    p.line(at(squareX - spx / 2, squareY + 12), at(squareX, squareY + 12), MUTED, thin);
+    p.line(at(squareX - spx / 2, squareY), at(squareX - spx / 2, squareY + 24), MUTED, thin);
+    if (e.label !== '') p.text(e.label, at(120, squareY + 12), LABEL, MPS_LABEL_FONT);
+
+    if (!blown)
+      for (let i = 0; i !== 3; i++) {
+        const c = ctx.dotCount(i, e.currents[i]);
+        p.dots(e.posts[i * 2], e.leads[i * 2], c);
+        p.dots(e.posts[i * 2 + 1], e.leads[i * 2 + 1], -c);
+      }
+    e.setSwitchPositions();
+  },
+  bbox: (e) =>
+    unionRect(rectOf(e.posts), rectOf([pt(e.x - 84, e.y + 36), pt(e.x + 120, e.y + 192)])),
+};

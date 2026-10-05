@@ -128,6 +128,8 @@ import { OhmMeterElmType } from './elm/OhmMeterElm.ts';
 import { GyratorElmType } from './elm/GyratorElm.ts';
 import { LEDArrayElmType } from './elm/LEDArrayElm.ts';
 import { CustomLogicElmType } from './elm/CustomLogicElm.ts';
+import { ThreePhaseMotorElmType } from './elm/ThreePhaseMotorElm.ts';
+import { MotorProtectionSwitchElmType } from './elm/MotorProtectionSwitchElm.ts';
 
 /** Every ported element class. */
 export const ELEMENT_TYPES: readonly ElementType[] = [
@@ -269,6 +271,8 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   GyratorElmType,
   LEDArrayElmType,
   CustomLogicElmType,
+  ThreePhaseMotorElmType,
+  MotorProtectionSwitchElmType,
 ];
 
 /** Old class names upstream's constructElement still accepts (saved shortcuts, subcircuits). */
