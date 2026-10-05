@@ -342,4 +342,5 @@ export {
   getVoltageDText,
   getVoltageText,
   showFormat,
+  withFixedWidthValues,
 } from './units.ts';

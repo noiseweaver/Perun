@@ -513,8 +513,8 @@ export class ScopeRenderer {
 
     const info = state.info;
     if (info.length > 0) {
-      // the card look reads values in the monospace font, so they don't shift as digits change
-      c.font = cards ? `${FONT_SIZE}px ${theme.style.monoFont}` : g.font;
+      // values are fixed-width text: in the monospace font they don't shift as digits change
+      c.font = `${FONT_SIZE}px ${theme.style.monoFont}`;
       c.textBaseline = 'alphabetic';
       if (hasScopes && !mgr.compact && !cards) {
         // upstream: right of the scopes

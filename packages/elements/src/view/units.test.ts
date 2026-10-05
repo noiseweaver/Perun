@@ -6,9 +6,15 @@ import {
   formatNumber,
   getFixedUnitText,
   getShortUnitText,
+  getTimeText,
   getUnitText,
+  getUnitTextWithScale,
+  getVoltageText,
   javaDoubleToString,
+  showFormat,
+  withFixedWidthValues,
 } from './units.ts';
+import { SCALE_M } from '../constants.ts';
 
 describe('value formatting', () => {
   it('formats like GWT NumberFormat', () => {
@@ -52,5 +58,28 @@ describe('getFixedUnitText', () => {
       '-500.000 mV',
     ]);
     for (const t of texts) expect(t.length).toBe(texts[0]?.length);
+  });
+});
+
+describe('withFixedWidthValues', () => {
+  it('makes the info helpers fixed width, and only inside', () => {
+    const width = (v: number) => withFixedWidthValues(() => getVoltageText(v)).length;
+    expect(new Set([0, 1e-3, -1e-3, 5, -12.3456, 999.9999, 2.5e6, -7e-12].map(width))).toEqual(
+      new Set([width(0)]),
+    );
+    expect(withFixedWidthValues(() => getUnitText(-0.0123, 'A'))).toBe(
+      getFixedUnitText(-0.0123, 'A'),
+    );
+    expect(getVoltageText(5)).toBe('5 V');
+    const sf = (v: number) => withFixedWidthValues(() => showFormat(v));
+    expect(sf(0.5)).toBe('    0.500');
+    expect(sf(-12.25).length).toBe(sf(1).length);
+    const t = (v: number) => withFixedWidthValues(() => getTimeText(v));
+    expect(t(59.5).length).toBe(t(1e-6).length);
+    expect(t(61).length).toBe(t(1e-6).length);
+    const ws = (v: number, scale: number) =>
+      withFixedWidthValues(() => getUnitTextWithScale(v, 'V', scale));
+    expect(ws(-0.0021, SCALE_M)).toBe('  -2.100 mV');
+    expect(ws(0.0021, SCALE_M).length).toBe(ws(-0.0021, SCALE_M).length);
   });
 });

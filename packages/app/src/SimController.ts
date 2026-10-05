@@ -24,6 +24,7 @@ import {
   getTimeText,
   getUnitText,
   showFormat,
+  withFixedWidthValues,
   switchRect,
   viewFor,
   type CardHit,
@@ -686,16 +687,19 @@ export class SimController {
     const sim = this.circuit.sim;
     const elm = ed.mouseElm ?? this.scopeHoverElm;
     const arr: string[] = [];
-    if (elm !== null) {
-      if (elm === ed.mouseElm && ed.mousePost >= 0)
-        arr.push('V = ' + getUnitText(elm.getPostVoltage(ed.mousePost), 'V'));
-      else elm.getInfo(arr);
-    } else if (mgr.scopeCount > 0 && !mgr.compact) {
-      arr[0] = 't = ' + getTimeText(sim.t);
-      const timerate = 160 * this.circuit.getIterCount() * sim.timeStep;
-      if (timerate >= 0.1) arr[0] += ' (' + showFormat(timerate) + 'x)';
-      arr[1] = 'time step = ' + getTimeText(sim.timeStep);
-    }
+    // every value keeps its width as it changes (owner's rule), in the monospace info font
+    withFixedWidthValues(() => {
+      if (elm !== null) {
+        if (elm === ed.mouseElm && ed.mousePost >= 0)
+          arr.push('V = ' + getUnitText(elm.getPostVoltage(ed.mousePost), 'V'));
+        else elm.getInfo(arr);
+      } else if (mgr.scopeCount > 0 && !mgr.compact) {
+        arr[0] = 't = ' + getTimeText(sim.t);
+        const timerate = 160 * this.circuit.getIterCount() * sim.timeStep;
+        if (timerate >= 0.1) arr[0] += ' (' + showFormat(timerate).trimStart().padStart(8) + 'x)';
+        arr[1] = 'time step = ' + getTimeText(sim.timeStep);
+      }
+    });
     // upstream stops at the first empty slot
     const info: string[] = [];
     for (const line of arr) {
