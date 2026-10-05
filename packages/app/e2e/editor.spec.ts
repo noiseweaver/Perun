@@ -92,6 +92,8 @@ test('a circuit built from the palette runs', async ({ page }) => {
   await open(page, BLANK);
   // a source by drag and drop from the palette
   const item = page.getByTestId('palette-DCVoltageElm');
+  // the palette is longer than the window now that it lists more parts
+  await item.scrollIntoViewIfNeeded();
   const ib = await item.boundingBox();
   const drop = await at(page, 96, 96);
   if (!ib) throw new Error('no palette');
