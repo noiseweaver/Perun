@@ -57,6 +57,19 @@ async function themeMenu(page: Page): Promise<void> {
   await page.getByTestId('menu-theme').click();
 }
 
+/**
+ * Picks an item in Options > Theme. The submenu can close under the pointer while it is still
+ * placing itself (the pointer crosses the parent menu on its way), so a miss reopens it and
+ * tries again rather than waiting out the test timeout.
+ */
+async function pickFromThemeMenu(page: Page, testId: string): Promise<void> {
+  await expect(async () => {
+    while ((await page.getByRole('menu').count()) > 0) await page.keyboard.press('Escape');
+    await themeMenu(page);
+    await page.getByTestId(testId).click({ timeout: 3000 });
+  }).toPass({ timeout: 20000 });
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.evaluate(async () => {
@@ -71,8 +84,7 @@ test.beforeEach(async ({ page }) => {
 test('every built-in theme applies', async ({ page }) => {
   await page.goto(`/?cct=${cct(RC)}`);
   for (const [id, t] of Object.entries(BUILTIN_THEMES)) {
-    await themeMenu(page);
-    await page.getByTestId(`theme-${id}`).click();
+    await pickFromThemeMenu(page, `theme-${id}`);
     await expect(page.locator('html')).toHaveAttribute('data-theme', id);
     await expect.poll(() => pixel(page, 2, 2)).toEqual(rgbOf(t.canvas.background));
   }
@@ -130,8 +142,7 @@ test('a theme only link opens the default circuit in the preview', async ({ page
 
 test('Export link can carry the theme with the circuit', async ({ page, context }) => {
   await page.goto(`/?cct=${cct(RC)}`);
-  await themeMenu(page);
-  await page.getByTestId('theme-high-contrast').click();
+  await pickFromThemeMenu(page, 'theme-high-contrast');
   await page.getByTestId('file-menu').click();
   await page.getByRole('menuitem', { name: /Export link/ }).click();
   await expect(page.getByTestId('link-here')).not.toHaveValue(/theme=/);
@@ -160,8 +171,7 @@ test('theme files import and export', async ({ page }) => {
   await expect(page.locator('html')).toHaveAttribute('data-theme', /^user:/);
   await expect.poll(() => pixel(page, 2, 2)).toEqual([0x2a, 0x10, 0x40]);
 
-  await themeMenu(page);
-  await page.getByTestId('menu-themes').click();
+  await pickFromThemeMenu(page, 'menu-themes');
   const download = page.waitForEvent('download');
   await page.getByTestId('theme-row-Night Bench').getByTestId('theme-row-export').click();
   const file = await download;
@@ -183,8 +193,7 @@ test('a file that is not a theme is refused with a reason', async ({ page }) => 
 
 test('the editor previews live, warns about contrast, and saves', async ({ page }) => {
   await page.goto(`/?cct=${cct(RC)}`);
-  await themeMenu(page);
-  await page.getByTestId('menu-edit-theme').click();
+  await pickFromThemeMenu(page, 'menu-edit-theme');
   await expect(page.getByTestId('theme-preview')).toBeVisible();
   await expect(page.getByTestId('text-name')).toHaveValue('Custom Dark');
   await expect(page.getByTestId('theme-contrast')).toContainText('enough contrast');
@@ -219,8 +228,7 @@ test('the editor previews live, warns about contrast, and saves', async ({ page 
 
 test('Cancel in the editor puts the theme back', async ({ page }) => {
   await page.goto(`/?cct=${cct(RC)}`);
-  await themeMenu(page);
-  await page.getByTestId('menu-edit-theme').click();
+  await pickFromThemeMenu(page, 'menu-edit-theme');
   await page.getByTestId('color-canvas.background').fill('#ff0000');
   await expect.poll(() => pixel(page, 2, 2)).toEqual([255, 0, 0]);
   await page.getByRole('button', { name: 'Cancel' }).click();
@@ -231,16 +239,14 @@ test('Cancel in the editor puts the theme back', async ({ page }) => {
 test('the library edits and deletes saved themes', async ({ page }) => {
   await page.goto(`/?cct=${cct(RC)}&theme=${await encodeThemeParam(SHARED)}`);
   await page.getByTestId('theme-banner-apply').click();
-  await themeMenu(page);
-  await page.getByTestId('menu-themes').click();
+  await pickFromThemeMenu(page, 'menu-themes');
   const row = page.getByTestId('theme-row-Night Bench');
   await row.getByTestId('theme-row-edit').click();
   await expect(page.getByTestId('text-name')).toHaveValue('Night Bench');
   await page.getByTestId('text-name').fill('Night Bench 2');
   await page.getByTestId('theme-editor-save').click();
 
-  await themeMenu(page);
-  await page.getByTestId('menu-themes').click();
+  await pickFromThemeMenu(page, 'menu-themes');
   // edited in place, not added
   await expect(page.getByTestId('theme-row-Night Bench')).toHaveCount(0);
   const edited = page.getByTestId('theme-row-Night Bench 2');
