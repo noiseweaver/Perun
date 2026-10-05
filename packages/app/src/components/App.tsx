@@ -16,6 +16,7 @@ import { Dialogs } from './Dialogs.tsx';
 import { Inspector } from './Inspector.tsx';
 import { Icon } from './Icon.tsx';
 import { Palette } from './Palette.tsx';
+import { SliderPanel } from './SliderPanel.tsx';
 import { ThemeLinkBanner } from './ThemeDialogs.tsx';
 
 let started = false;
@@ -64,6 +65,7 @@ export function App() {
               </button>
             )}
             <CircuitCanvas />
+            <SliderPanel />
             <ModeChip />
             <ThemeLinkBanner />
             <Toast />

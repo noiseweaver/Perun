@@ -139,6 +139,8 @@ export function AppBar() {
             onSelect={() => openDialog('exportLink')}
           />
           <Item label="Export as text…" onSelect={() => openDialog('exportText')} />
+          <Menu.Separator className="menu-separator" />
+          <Item label="About…" testId="menu-about" onSelect={() => openDialog('about')} />
         </AppMenu>
 
         <AppMenu label="Edit" testId="edit-menu">

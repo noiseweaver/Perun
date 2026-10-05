@@ -20,6 +20,17 @@ export {
   type EditFile,
   type Editable,
 } from './edit/EditInfo.ts';
+export {
+  ADJ_FLAG_LOG,
+  ADJ_FLAG_SHARED,
+  Adjustable,
+  SLIDER_MAX,
+  clampPosition,
+  findAdjustable,
+  findEditItemByName,
+  reorderAdjustables,
+  sliderBeingShared,
+} from './edit/Adjustable.ts';
 export { SCALE_AUTO, SCALE_1, SCALE_M, SCALE_MU } from './constants.ts';
 export { escapeToken, unescapeToken } from './escape.ts';
 export {
@@ -54,6 +65,8 @@ export { Inductor, InductorElm } from './elm/InductorElm.ts';
 export { LabeledNodeElm } from './elm/LabeledNodeElm.ts';
 export { OutputElm } from './elm/OutputElm.ts';
 export { PotElm } from './elm/PotElm.ts';
+export { LDRElm } from './elm/LDRElm.ts';
+export { ThermistorNTCElm } from './elm/ThermistorNTCElm.ts';
 export { ProbeElm } from './elm/ProbeElm.ts';
 export { ResistorElm } from './elm/ResistorElm.ts';
 export { SwitchElm } from './elm/SwitchElm.ts';

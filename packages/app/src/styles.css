@@ -544,6 +544,84 @@ textarea,
   box-shadow: 0 0 0 10px color-mix(in srgb, var(--ui-accent) 12%, transparent);
 }
 
+/* ---- the circuit's sliders (upstream's side panel) ---------------------------------------- */
+
+.slider-panel {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  width: 248px;
+  max-height: calc(100% - 24px);
+  border-radius: var(--md-shape-m);
+  background: color-mix(in srgb, var(--md-surface-container-high) 92%, transparent);
+  box-shadow: var(--md-elevation-2);
+  animation: fade-in 150ms var(--md-motion);
+}
+
+.slider-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--md-shape-m);
+  background: none;
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.slider-panel-header:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: -2px;
+}
+
+.slider-panel-header .menu-trailing {
+  margin-left: auto;
+}
+
+.slider-panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 14px 10px;
+  overflow-y: auto;
+}
+
+.slider-row-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.slider-row-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ui-text-muted);
+  font-weight: 500;
+}
+
+.slider-row-value {
+  font-family: var(--mono-font);
+  white-space: pre;
+  color: var(--ui-text);
+}
+
+.slider-wide {
+  width: 100%;
+}
+
 /* ---- dialog ------------------------------------------------------------------------------- */
 
 .dialog-overlay {
@@ -1972,4 +2050,68 @@ ul.theme-contrast {
 
 .theme-contrast-item:hover {
   background: color-mix(in srgb, var(--ui-danger) 10%, transparent);
+}
+
+/* ---- Sliders dialog ------------------------------------------------------------------------ */
+
+.slider-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slider-dialog-row {
+  margin: 0;
+  padding: 4px 0;
+  border: none;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.slider-dialog-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0 8px 32px;
+}
+
+.slider-dialog-range {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+/* ---- About dialog -------------------------------------------------------------------------- */
+
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.about p {
+  margin: 0;
+}
+
+.about a {
+  color: var(--ui-accent);
+}
+
+.about-version {
+  font-family: var(--mono-font);
+  color: var(--ui-text-muted);
+}
+
+.about-thanks summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.about-thanks ul,
+.about-links {
+  margin: 6px 0 0;
+  padding-left: 20px;
 }

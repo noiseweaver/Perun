@@ -8,6 +8,11 @@
 // License, or (at your option) any later version. See LICENSE.
 
 import {
+  ADJ_FLAG_LOG,
+  ADJ_FLAG_SHARED,
+  Adjustable,
+  findEditItemByName,
+  reorderAdjustables,
   ScopeElm,
   Simulation,
   StringTokenizer,
@@ -76,11 +81,8 @@ export class Circuit {
   elements: CircuitElm[] = [];
   options: CircuitOptions = { flags: 0, speed: 117, currentBar: 50, powerBar: 50, voltageRange: 5 };
   hint: Hint = { type: -1, item1: 0, item2: 0 };
-  /**
-   * Slider (`adj`) records from an XML file, kept verbatim and written back after the scopes
-   * until sliders are ported (see docs/DEVIATIONS.md).
-   */
-  xmlExtras: XmlElement[] = [];
+  /** Sliders (upstream `CirSim.adjustables`), those with their own slider first. */
+  adjustables: Adjustable[] = [];
   /**
    * While reading: every element record so far, with null for those this port can't load, so
    * scope element numbers count as upstream's do.
@@ -168,7 +170,7 @@ export class Circuit {
     sim.minTimeStep = 50e-12;
     this.options = { flags: 0, speed: 117, currentBar: 50, powerBar: 50, voltageRange: 5 };
     this.setGrid();
-    this.xmlExtras = [];
+    this.adjustables = [];
     this.scopes.clearScopes();
     // upstream keeps them while a subcircuit is open for editing (its context stack)
     modelsFor(sim).composite.clearLocalModels();
@@ -211,6 +213,8 @@ export class Circuit {
     } finally {
       this.endRead();
     }
+    // upstream finishReadCircuit: drop the adjustables that get no slider
+    this.adjustables = this.adjustables.filter((a) => a.createSlider());
     this.finishRead();
   }
 
@@ -351,10 +355,7 @@ export class Circuit {
     }
   }
 
-  /**
-   * Upstream `Adjustable(StringTokenizer)`: a text-format slider. Upstream saves every slider as
-   * an `adj` record, so turn it into one here and keep it with the XML sliders.
-   */
+  /** Upstream `Adjustable(StringTokenizer)`: a text-format slider (`38` record). */
   private readTextAdjustable(st: StringTokenizer): void {
     const e = parseJavaInt(st.nextToken());
     if (e === -1) return;
@@ -362,7 +363,7 @@ export class Circuit {
     let editItem = 0;
     let minValue = 0;
     let maxValue = 0;
-    let shared = -1;
+    let shared: Adjustable | null = null;
     let sliderText = '';
     let sliderStep = 0;
     try {
@@ -375,7 +376,10 @@ export class Circuit {
       editItem = parseJavaInt(ei);
       minValue = parseJavaDouble(st.nextToken());
       maxValue = parseJavaDouble(st.nextToken());
-      if ((flags & ADJ_FLAG_SHARED) !== 0) shared = parseJavaInt(st.nextToken());
+      if ((flags & ADJ_FLAG_SHARED) !== 0) {
+        const ano = parseJavaInt(st.nextToken());
+        shared = ano === -1 ? null : (this.adjustables[ano] ?? null);
+      }
       sliderText = unescapeToken(st.nextToken());
     } catch {
       // upstream keeps whatever it read before the record ran out
@@ -385,20 +389,16 @@ export class Circuit {
     } catch {
       // older records have no step
     }
-    const ce = this.elements[e];
-    if (ce === undefined) return;
-    this.xmlExtras.push(
-      adjElement(ce, {
-        e,
-        editItem,
-        minValue,
-        maxValue,
-        sliderText,
-        sliderStep,
-        shared,
-        log: (flags & ADJ_FLAG_LOG) !== 0,
-      }),
-    );
+    const ce = this.loadList[e];
+    if (ce === undefined || ce === null) return;
+    const adj = new Adjustable(ce, editItem);
+    adj.minValue = minValue;
+    adj.maxValue = maxValue;
+    adj.sharedSlider = shared;
+    adj.sliderText = sliderText;
+    adj.sliderStep = sliderStep;
+    adj.logarithmic = (flags & ADJ_FLAG_LOG) !== 0;
+    this.adjustables.push(adj);
   }
 
   private readOptions(st: StringTokenizer): void {
@@ -451,9 +451,7 @@ export class Circuit {
         continue;
       }
       if (tag === 'adj') {
-        if (!retain) {
-          this.xmlExtras.push(readXmlAdjustable(elem, r, this.elements[r.parseIntAttr('e', -1)]));
-        }
+        if (!retain) this.readXmlAdjustable(r);
         continue;
       }
       if (tag === 'h') {
@@ -523,6 +521,66 @@ export class Circuit {
     }
   }
 
+  /** Upstream `Adjustable.undumpXml`. */
+  private readXmlAdjustable(r: AttrReader): void {
+    const e = r.parseIntAttr('e', -1);
+    if (e === -1) return;
+    const elm = this.loadList[e];
+    if (elm === undefined || elm === null) {
+      this.warnings.push('a slider controls an element that could not be loaded');
+      return;
+    }
+    const item = findEditItemByName(elm, r.parseStringAttr('en', null), r.parseIntAttr('ei', 0));
+    const adj = new Adjustable(elm, item);
+    adj.minValue = r.parseDoubleAttr('mn', 1);
+    adj.maxValue = r.parseDoubleAttr('mx', 1000);
+    adj.sliderText = r.parseStringAttr('st', '');
+    adj.sliderStep = r.parseDoubleAttr('stp', 0);
+    const ss = r.parseIntAttr('ss', -1);
+    if (ss !== -1) adj.sharedSlider = this.adjustables[ss] ?? null;
+    adj.logarithmic = r.parseIntAttr('log', 0) !== 0;
+    this.adjustables.push(adj);
+  }
+
+  /** An `adj` record as upstream `Adjustable.dumpXml` writes it. */
+  private adjElement(a: Adjustable): XmlElement {
+    const adj = new XmlElement('adj');
+    const w = new AttrWriter(adj);
+    w.dumpAttr('e', this.elements.indexOf(a.elm));
+    w.dumpAttr('ei', a.editItem);
+    w.dumpAttr('en', a.getEditItemName());
+    w.dumpAttr('mn', a.minValue);
+    w.dumpAttr('mx', a.maxValue);
+    w.dumpAttr('st', a.sliderText);
+    if (a.sliderStep > 0) w.dumpAttr('stp', a.sliderStep);
+    if (a.sharedSlider !== null) w.dumpAttr('ss', this.adjustables.indexOf(a.sharedSlider));
+    if (a.logarithmic) w.dumpAttr('log', 1);
+    return adj;
+  }
+
+  /**
+   * Drop the sliders of elements no longer in the circuit (upstream `deleteSliders`, called as
+   * elements are deleted). A slider others share passes to the first of them.
+   */
+  pruneAdjustables(): boolean {
+    const live = new Set(this.elements);
+    const gone = this.adjustables.filter((a) => !live.has(a.elm));
+    if (gone.length === 0) return false;
+    let list = this.adjustables.filter((a) => live.has(a.elm));
+    for (const g of gone) {
+      const heirs = list.filter((a) => a.sharedSlider === g);
+      const heir = heirs[0];
+      if (heir === undefined) continue;
+      heir.sharedSlider = null;
+      if (heir.sliderText.length === 0) heir.sliderText = g.sliderText;
+      heir.position = g.position;
+      for (const a of heirs.slice(1)) a.sharedSlider = heir;
+    }
+    list = reorderAdjustables(list);
+    this.adjustables = list;
+    return true;
+  }
+
   // ---- saving --------------------------------------------------------------------------------
 
   /** The circuit as upstream saves it (`XMLSerializer.dumpCircuit()`). */
@@ -543,7 +601,7 @@ export class Circuit {
     const doc = docWriter(root);
     for (const ce of this.elements) appendElement(root, doc, ce);
     for (const sc of this.scopes.scopes) sc.serializer.dumpXml(w);
-    for (const e of this.xmlExtras) if (e.name === 'adj') root.appendChild(e);
+    for (const a of this.adjustables) root.appendChild(this.adjElement(a));
     if (this.hint.type !== -1) {
       const h = new XmlElement('h');
       const hw = new AttrWriter(h);
@@ -600,71 +658,4 @@ export function readCircuit(text: string): Circuit {
   const c = new Circuit();
   c.read(text);
   return c;
-}
-
-/** Upstream `Adjustable.FLAG_SHARED` and `FLAG_LOG`. */
-const ADJ_FLAG_SHARED = 1;
-const ADJ_FLAG_LOG = 2;
-
-interface AdjFields {
-  e: number;
-  editItem: number;
-  minValue: number;
-  maxValue: number;
-  sliderText: string;
-  sliderStep: number;
-  shared: number;
-  log: boolean;
-}
-
-/** An `adj` record as upstream `Adjustable.dumpXml` writes it. */
-function adjElement(ce: CircuitElm, a: AdjFields): XmlElement {
-  const adj = new XmlElement('adj');
-  const w = new AttrWriter(adj);
-  w.dumpAttr('e', a.e);
-  w.dumpAttr('ei', a.editItem);
-  w.dumpAttr('en', ce.getEditInfo(a.editItem)?.name ?? '');
-  w.dumpAttr('mn', a.minValue);
-  w.dumpAttr('mx', a.maxValue);
-  w.dumpAttr('st', a.sliderText);
-  if (a.sliderStep > 0) w.dumpAttr('stp', a.sliderStep);
-  if (a.shared !== -1) w.dumpAttr('ss', a.shared);
-  if (a.log) w.dumpAttr('log', 1);
-  return adj;
-}
-
-/**
- * Upstream `Adjustable.undumpXml`, then `dumpXml` again: the slider's edit item is found by its
- * name (`en`), falling back to the saved index (`ei`), and the record is rewritten in upstream's
- * attribute order. A record whose element this port can't load is kept verbatim.
- */
-function readXmlAdjustable(
-  elem: XmlElement,
-  r: AttrReader,
-  ce: CircuitElm | undefined,
-): XmlElement {
-  const e = r.parseIntAttr('e', -1);
-  if (ce === undefined || e === -1) return elem;
-  let editItem = r.parseIntAttr('ei', 0);
-  const en = r.parseStringAttr('en', null);
-  if (en !== null && en.length > 0) {
-    for (let i = 0; ; i++) {
-      const ei = ce.getEditInfo(i);
-      if (ei === null) break;
-      if (ei.name === en) {
-        editItem = i;
-        break;
-      }
-    }
-  }
-  return adjElement(ce, {
-    e,
-    editItem,
-    minValue: r.parseDoubleAttr('mn', 1),
-    maxValue: r.parseDoubleAttr('mx', 1000),
-    sliderText: r.parseStringAttr('st', ''),
-    sliderStep: r.parseDoubleAttr('stp', 0),
-    shared: r.parseIntAttr('ss', -1),
-    log: r.parseIntAttr('log', 0) !== 0,
-  });
 }

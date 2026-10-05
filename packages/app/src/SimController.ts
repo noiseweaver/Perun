@@ -25,6 +25,11 @@ import {
   getUnitText,
   showFormat,
   withFixedWidthValues,
+  Adjustable,
+  PotElm,
+  VarRailElm,
+  findAdjustable,
+  reorderAdjustables,
   switchRect,
   viewFor,
   type CardHit,
@@ -53,6 +58,7 @@ import {
   type Modifiers,
 } from './editor/Editor.ts';
 import { download } from './download.ts';
+import { sliderEntries, type SliderEntry } from './sliders.ts';
 import { showToast, shownTheme, useApp, type AppState, type EditorState } from './store.ts';
 
 /** Simulation time per frame before the frame is cut short (upstream `frameTimeLimit`). */
@@ -101,6 +107,8 @@ export class SimController {
   private splitterHot = false;
   /** Element of the scope under the mouse (highlighted on the circuit, shown in the info). */
   private scopeHoverElm: CircuitElm | null = null;
+  /** The element of the slider under the pointer (upstream Scrollbar.onMouseOver). */
+  private sliderHoverElm: CircuitElm | null = null;
   /** Undocked scope whose card is under the mouse (card look), or null. */
   private hoverUndocked: ScopeElm | null = null;
   /** Play feedback animations (not when the user prefers reduced motion). */
@@ -198,6 +206,8 @@ export class SimController {
     this.lastFrame = 0;
     this.renderer?.setElements(this.circuit.elements);
     this.editor.circuitReplaced();
+    this.sliderHoverElm = null;
+    this.slidersChanged();
     if (fit) this.needsFit = true;
     this.resize();
     this.publishEditor(true);
@@ -432,6 +442,8 @@ export class SimController {
   /** The element list or an element changed: analyze again (upstream `needAnalyze`). */
   circuitChanged(): void {
     this.circuit.removeUnusedScopeElms();
+    this.circuit.pruneAdjustables();
+    this.slidersChanged();
     this.circuit.sim.setElements(this.circuit.elements);
     if (this.renderer) {
       this.renderer.elementsChanged(this.circuit.elements);
@@ -462,7 +474,7 @@ export class SimController {
     const prev = useApp.getState().editor;
     const r = this.renderer;
     if (r) {
-      r.hovered = ed.mouseElm ?? this.scopeHoverElm;
+      r.hovered = ed.mouseElm ?? this.scopeHoverElm ?? this.sliderHoverElm;
       r.pending = ed.dragElm;
       r.selectionRect = ed.selectedArea;
     }
@@ -647,13 +659,15 @@ export class SimController {
     const mgr = this.circuit.scopes;
     mgr.look = this.theme.style.scopeLook;
     mgr.compact = this.cssWidth < COMPACT_WIDTH;
-    const infoWidth = mgr.compact ? 0 : INFO_WIDTH;
+    // the card look's info card holds fixed-width values in the monospace font ("time step =
+    // 5.000 μs" needs 23 characters), so it gets more room than upstream's 160 px
+    const infoWidth = mgr.compact ? 0 : mgr.look === 'cards' ? CARD_INFO_WIDTH : INFO_WIDTH;
     const before = mgr.scopeCount;
     mgr.setupScopes(this.scopeArea(), infoWidth);
     // removing the last scope gives its room back to the circuit
     if (mgr.scopeCount !== before) mgr.setupScopes(this.scopeArea(), infoWidth);
     mgr.dialogShowing = useApp.getState().dialog !== null;
-    mgr.mouseElm = this.editor.mouseElm ?? this.scopeHoverElm;
+    mgr.mouseElm = this.editor.mouseElm ?? this.scopeHoverElm ?? this.sliderHoverElm;
     mgr.cursorScope = null;
     mgr.cursorTime = -1;
     mgr.cursorSnap = null;
@@ -685,7 +699,7 @@ export class SimController {
     const ed = this.editor;
     const mgr = this.circuit.scopes;
     const sim = this.circuit.sim;
-    const elm = ed.mouseElm ?? this.scopeHoverElm;
+    const elm = ed.mouseElm ?? this.scopeHoverElm ?? this.sliderHoverElm;
     const arr: string[] = [];
     // every value keeps its width as it changes (owner's rule), in the monospace info font
     withFixedWidthValues(() => {
@@ -920,11 +934,17 @@ export class SimController {
     // the first spot on screen that leaves the other undocked scopes uncovered
     const r = this.renderer;
     const others = this.circuit.scopeElms().map((e) => e.box());
+    const panels = this.overlayRects();
     const fits = (p: { x1: number; y1: number }, screen: boolean): boolean => {
       if (screen && r) {
         const tl = r.viewport.toCircuit(0, 0);
         const br = r.viewport.toCircuit(this.cssWidth, this.circuitHeight());
         if (p.x1 < tl.x || p.y1 < tl.y || p.x1 + W > br.x || p.y1 + H > br.y) return false;
+        // nor under a panel floating over the canvas (the sliders)
+        const a = r.viewport.toScreen(p.x1, p.y1);
+        const b = r.viewport.toScreen(p.x1 + W, p.y1 + H);
+        if (panels.some((o) => a.x < o.right && o.left < b.x && a.y < o.bottom && o.top < b.y))
+          return false;
       }
       return !others.some((o) => p.x1 < o.x2 && o.x1 < p.x1 + W && p.y1 < o.y2 && o.y1 < p.y1 + H);
     };
@@ -932,6 +952,22 @@ export class SimController {
     const x1 = spot?.x1 ?? right;
     const y1 = spot?.y1 ?? above;
     return { x1, y1, x2: x1 + UNDOCKED_WIDTH, y2: y1 + UNDOCKED_HEIGHT };
+  }
+
+  /** Panels floating over the canvas (the sliders), in canvas coordinates. */
+  private overlayRects(): { left: number; top: number; right: number; bottom: number }[] {
+    const canvas = this.renderer?.canvas;
+    if (!canvas) return [];
+    const c = canvas.getBoundingClientRect();
+    return [...document.querySelectorAll('[data-canvas-overlay]')].map((el) => {
+      const b = el.getBoundingClientRect();
+      return {
+        left: b.left - c.left,
+        top: b.top - c.top,
+        right: b.right - c.left,
+        bottom: b.bottom - c.top,
+      };
+    });
   }
 
   private newScopeElm(elm: CircuitElm): ScopeElm | null {
@@ -1071,7 +1107,78 @@ export class SimController {
 
   applyEdit(e: CircuitElm, n: number, ei: EditInfo): void {
     this.editor.history.record('Edit', () => e.setEditValue(n, ei));
+    // upstream EditDialog.apply: a slider on this value moves to it
+    if (ei.error === null) findAdjustable(this.circuit.adjustables, e, n)?.setSliderValue(ei.value);
     this.circuitChanged();
+  }
+
+  // ---- sliders -------------------------------------------------------------------------------
+
+  /** The sliders to show (upstream's side panel), rebuilt on each call. */
+  sliders(): SliderEntry[] {
+    return sliderEntries(this.circuit.elements, this.circuit.adjustables, () => {
+      this.circuit.sim.analyzeFlag = true;
+      this.unsavedChanges = true;
+    });
+  }
+
+  /** Tell the slider panel to read the sliders again. */
+  slidersChanged(): void {
+    useApp.setState((s) => ({ sliderRevision: s.sliderRevision + 1 }));
+  }
+
+  /** A slider drag starts: everything until it ends is one undoable edit. */
+  beginSliderDrag(): void {
+    this.editor.history.begin('Slider');
+  }
+
+  setSlider(entry: SliderEntry, position: number): void {
+    if (!this.editor.history.inEdit) this.editor.history.begin('Slider');
+    entry.set(position);
+    this.editor.history.touch();
+    this.slidersChanged();
+    this.publishEditor(true);
+  }
+
+  endSliderDrag(): void {
+    this.editor.history.commit();
+    this.publishEditor();
+  }
+
+  /** Hovering a slider highlights its element and shows its info (upstream). */
+  setSliderHover(elm: CircuitElm | null): void {
+    this.sliderHoverElm = elm;
+    if (this.renderer) this.renderer.hovered = this.editor.mouseElm ?? this.scopeHoverElm ?? elm;
+  }
+
+  /** Element menu "Sliders…" is offered (upstream MouseManager.sliderItemEnabled). */
+  canAddSliders(elm: CircuitElm): boolean {
+    // prevent confusion: these have sliders of their own
+    if (elm instanceof VarRailElm || elm instanceof PotElm) return false;
+    for (let i = 0; ; i++) {
+      const ei = elm.getEditInfo(i);
+      if (ei === null) return false;
+      if (ei.canCreateAdjustable()) return true;
+    }
+  }
+
+  /** The element the Sliders dialog edits. */
+  sliderDialogElm: CircuitElm | null = null;
+
+  openSliderDialog(elm: CircuitElm): void {
+    this.sliderDialogElm = elm;
+    useApp.setState({ dialog: 'sliders' });
+  }
+
+  /** Replace the circuit's sliders with what `build` returns (the Sliders dialog), undoably. */
+  setAdjustables(build: () => Adjustable[]): void {
+    this.editor.history.record('Sliders', () => {
+      this.circuit.adjustables = reorderAdjustables(build());
+      return true;
+    });
+    this.unsavedChanges = true;
+    this.slidersChanged();
+    this.publishEditor();
   }
 
   /** Simulation settings (upstream EditOptions time step fields), undoable, then re-analyze. */
@@ -1786,6 +1893,9 @@ function scopeAnchor(elm: CircuitElm, post = -1): { x: number; y: number } {
   if (b === undefined) return { x: (elm.x + elm.x2) / 2, y: (elm.y + elm.y2) / 2 };
   return { x: (b.x1 + b.x2) / 2, y: (b.y1 + b.y2) / 2 };
 }
+
+/** Width of the info card beside docked scopes in the card look. */
+const CARD_INFO_WIDTH = 200;
 
 /** Natural log of the zoom factor for one mouse wheel notch. */
 const WHEEL_ZOOM_PER_NOTCH = 0.08;

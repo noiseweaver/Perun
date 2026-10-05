@@ -42,6 +42,10 @@ const PATHS = {
   add: 'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z',
   minus: 'M19 13H5v-2h14v2z',
   pointer: 'M7 2v15.5l4-4 2.5 6 2.3-1-2.5-5.9H19L7 2z',
+  tune: 'M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z',
+  expandMore: 'M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z',
+  expandLess: 'M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z',
+  info: 'M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z',
 } as const;
 
 export type IconName = keyof typeof PATHS;

@@ -88,6 +88,12 @@ export function CircuitCanvas() {
                   useApp.setState({ inspectorFocus: useApp.getState().inspectorFocus + 1 });
                 }}
               />
+              <Item
+                label="Sliders…"
+                disabled={!controller.canAddSliders(menuElm)}
+                testId="ctx-sliders"
+                onSelect={() => controller.openSliderDialog(menuElm)}
+              />
               <Ctx.Separator className="menu-separator" />
               <Item label="Cut" hint={`${MOD}X`} onSelect={() => controller.cut(menuElm)} />
               <Item label="Copy" hint={`${MOD}C`} onSelect={() => controller.copy(menuElm)} />

@@ -81,6 +81,8 @@ export interface AppState {
   paletteOpen: boolean;
   /** Text of a short notice ("Link copied"), or null. */
   toast: string | null;
+  /** Bumped when the sliders or their values change (the slider panel reads them again). */
+  sliderRevision: number;
   /** Open dialog (commands.ts DialogKind). */
   dialog:
     | 'save'
@@ -90,6 +92,10 @@ export interface AppState {
     | 'shortcuts'
     | 'simSettings'
     | 'scopeProperties'
+    | 'sliders'
+    | 'about'
+    | 'about'
+    | 'sliders'
     | 'themes'
     | 'themeEditor'
     | null;
@@ -259,6 +265,7 @@ export const useApp = create<AppState>(() => ({
   },
   paletteOpen: initialPaletteOpen(),
   toast: null,
+  sliderRevision: 0,
   inspectorFocus: 0,
   dialog: null,
   theme: themeFor(initialSettings.themeId, []),

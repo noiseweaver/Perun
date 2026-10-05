@@ -379,6 +379,14 @@ function SelectionActions({ elm }: { elm: CircuitElm | null }) {
           />
         </>
       )}
+      {elm !== null && controller.canAddSliders(elm) && (
+        <ActionButton
+          icon="tune"
+          label="Sliders…"
+          testId="action-sliders"
+          onClick={() => controller.openSliderDialog(elm)}
+        />
+      )}
       <ActionButton icon="copy" label="Duplicate" onClick={() => ed.duplicate(null)} />
       <ActionButton icon="delete" label="Delete" onClick={() => ed.deleteSelected(null)} />
     </div>

@@ -21,6 +21,8 @@ export type DialogKind =
   | 'shortcuts'
   | 'simSettings'
   | 'scopeProperties'
+  | 'sliders'
+  | 'about'
   | 'themes'
   | 'themeEditor'
   | null;

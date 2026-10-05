@@ -167,7 +167,7 @@ test('hovering an element shows its info', async ({ page }) => {
     .toEqual(
       expect.arrayContaining([
         expect.stringMatching(/^resistor/),
-        expect.stringMatching(/^I = 10 mA/),
+        expect.stringMatching(/^I = +10\.000 mA/),
       ]),
     );
 });

@@ -20,8 +20,10 @@ import { paletteGroups } from '../editor/catalog.ts';
 import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
 import { themeLink } from '../themes.ts';
+import { AboutDialog } from './AboutDialog.tsx';
 import { Shell } from './DialogShell.tsx';
 import { ScopePropertiesDialog } from './ScopeDialog.tsx';
+import { SliderDialog } from './SliderDialog.tsx';
 import { ThemeEditorDialog, ThemesDialog } from './ThemeDialogs.tsx';
 
 function SaveDialog() {
@@ -380,6 +382,10 @@ export function Dialogs() {
       return <SimSettingsDialog />;
     case 'scopeProperties':
       return <ScopePropertiesDialog />;
+    case 'sliders':
+      return <SliderDialog />;
+    case 'about':
+      return <AboutDialog />;
     case 'themes':
       return <ThemesDialog />;
     case 'themeEditor':
