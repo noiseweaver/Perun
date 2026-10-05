@@ -188,6 +188,28 @@
         }
       }
     },
+    "teaching": {
+      "description": "Teaching tools: the pencil and the laser pointer.",
+      "type": "object",
+      "properties": {
+        "pens": {
+          "minItems": 1,
+          "maxItems": 8,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "A pencil color."
+          },
+          "description": "Pencil colors for drawing on the circuit; the first is the default."
+        },
+        "laser": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "The laser pointer's fading trail."
+        }
+      }
+    },
     "ui": {
       "description": "The app around the canvas.",
       "type": "object",

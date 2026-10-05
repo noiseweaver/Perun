@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
-// Icon paths from Google's Material Icons (Apache License 2.0), 24 px grid.
+// Icon paths from Google's Material Icons (Apache License 2.0), 24 px grid; `laser` and `eraser`
+// are drawn here.
 
 const PATHS = {
   play: 'M8 5v14l11-7z',
@@ -45,6 +46,10 @@ const PATHS = {
   tune: 'M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z',
   expandMore: 'M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z',
   expandLess: 'M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z',
+  laser:
+    'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM11 1h2v4h-2zm0 18h2v4h-2zM1 11h4v2H1zm18 0h4v2h-4zM4.2 5.6l1.4-1.4 2.8 2.8L7 8.4zm11.4 11.4 1.4-1.4 2.8 2.8-1.4 1.4zM4.2 18.4l2.8-2.8 1.4 1.4-2.8 2.8zM15.6 7l2.8-2.8 1.4 1.4L17 8.4z',
+  eraser:
+    'M15.1 3.6 21 9.5a1.5 1.5 0 0 1 0 2.1L12.6 20H20v2H8.5l-5.6-5.6a1.5 1.5 0 0 1 0-2.1L13 3.6a1.5 1.5 0 0 1 2.1 0zM9.6 10.6 5 15.3l4.6 4.7h.2l4.4-4.6z',
   info: 'M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z',
 } as const;
 

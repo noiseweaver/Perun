@@ -58,6 +58,8 @@ const PAIRS: [string, string, number][] = [
   ['circuit.hover', 'canvas.background', GRAPHIC_CONTRAST],
   ['scope.traces.0', 'scope.background', GRAPHIC_CONTRAST],
   ['scope.current', 'scope.background', GRAPHIC_CONTRAST],
+  ['teaching.pens.0', 'canvas.background', GRAPHIC_CONTRAST],
+  ['teaching.laser', 'canvas.background', GRAPHIC_CONTRAST],
 ];
 
 /**

@@ -19,6 +19,7 @@ import { Icon } from './Icon.tsx';
 import { Palette } from './Palette.tsx';
 import { SliderPanel } from './SliderPanel.tsx';
 import { SubcircuitBar } from './SubcircuitBar.tsx';
+import { TeachBar } from './TeachBar.tsx';
 import { ThemeLinkBanner } from './ThemeDialogs.tsx';
 import { t, tItem } from '../i18n.ts';
 
@@ -75,6 +76,7 @@ export function App() {
             <SliderPanel />
             <ModeChip />
             <SubcircuitBar />
+            <TeachBar />
             <ThemeLinkBanner />
             <Toast />
             <UpdateBanner />

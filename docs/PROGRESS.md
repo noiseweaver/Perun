@@ -23,13 +23,19 @@
   circuit, this session or saved in the browser), a Subcircuits palette group, Edit Model with a
   Back / Save / Save Copy bar, View Components (double-click), and File > Subcircuit Manager to
   delete models.
+- Teaching tools (Gady said go, 2026-10-05): the pencil button in the bottom bar opens a drawing
+  toolbar with a pencil (the theme's pen colors), a laser pointer whose glowing trail fades in
+  under a second, an eraser that removes whole strokes, Undo (also Ctrl+Z while drawing), Clear and
+  Done (or Escape). Strokes stay on the circuit as you pan and zoom, work with mouse, pen and
+  touch (a second finger pinches instead), and are never saved in the circuit file. Themes gained
+  a `teaching` section (`pens`, `laser`), checked for contrast against the canvas.
+- Theme colors with surrounding whitespace (`"#fff\n"`) are now refused; the theme fuzz test
+  found one reaching a CSS custom property.
 - README, About dialog (version, upstream credits, GPL notice, links to the source, LICENSE.txt and
   third-party-licenses.txt, which the build writes).
 
 ### Next
 
-- Teaching tools (pencil and fading laser, PR #8's plan entry): wait for the owner's go; they must
-  ship before release.
 - Release: merge PR #11, then this phase's PR (retargeted to main).
 
 ### Open issues

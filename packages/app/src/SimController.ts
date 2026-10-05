@@ -48,6 +48,7 @@ import {
 } from '@circuitjs-next/elements';
 import { Circuit, OptionFlag, getCircuitAsComposite } from '@circuitjs-next/format';
 import {
+  AnnotationLayer,
   CircuitRenderer,
   ScopeRenderer,
   currentMultiplier,
@@ -64,7 +65,14 @@ import {
 } from './editor/Editor.ts';
 import { download } from './download.ts';
 import { sliderEntries, type SliderEntry } from './sliders.ts';
-import { showToast, shownTheme, useApp, type AppState, type EditorState } from './store.ts';
+import {
+  showToast,
+  shownTheme,
+  useApp,
+  type AppState,
+  type EditorState,
+  type TeachTool,
+} from './store.ts';
 import { t } from './i18n.ts';
 
 /** Simulation time per frame before the frame is cut short (upstream `frameTimeLimit`). */
@@ -139,6 +147,7 @@ export class SimController {
     });
     this.circuit.read('');
     this.editor = new Editor(this.circuit, this.makeHost());
+    this.annotations.onChange = () => this.publishTeach();
     this.editor.history.onChange = () => this.publishEditor();
     const stored = readClipboard();
     if (stored !== null) this.editor.setClipboard(stored);
@@ -414,6 +423,7 @@ export class SimController {
       r.circuitHeight = this.circuitHeight();
       r.render(frame);
       this.drawScopes();
+      this.drawAnnotations();
       this.frames++;
     }
     this.publishStatus(false);
@@ -1236,6 +1246,57 @@ export class SimController {
     }
   }
 
+  // ---- teaching tools: pencil, laser and eraser (not upstream; never saved) ---------------------
+
+  /** Strokes and the laser trail drawn over the circuit and scopes. */
+  readonly annotations = new AnnotationLayer();
+
+  private drawAnnotations(): void {
+    const r = this.renderer;
+    const a = this.annotations;
+    if (!r || (a.strokes.length === 0 && !a.active)) return;
+    const ctx = r.canvas.getContext('2d');
+    if (ctx === null) return;
+    a.draw(ctx, r.viewport, window.devicePixelRatio || 1, r.theme, performance.now());
+  }
+
+  private publishTeach(): void {
+    const a = this.annotations;
+    useApp.setState((s) => ({
+      teach: { ...s.teach, strokes: a.strokes.length, canUndo: a.canUndo },
+    }));
+  }
+
+  /** Pick a teaching tool, or null to go back to editing. */
+  setTeachTool(tool: TeachTool | null): void {
+    if (tool !== null) {
+      // placing an element and drawing don't mix
+      this.editor.setSelectMode();
+      this.editor.leave();
+    }
+    this.annotations.laserUp();
+    useApp.setState((s) => ({ teach: { ...s.teach, tool } }));
+    this.publishTeach();
+    const c = this.renderer?.canvas;
+    if (c) c.style.cursor = teachCursor(tool);
+  }
+
+  setTeachPen(pen: number): void {
+    useApp.setState((s) => ({
+      teach: { ...s.teach, pen, tool: s.teach.tool === 'laser' ? s.teach.tool : 'pencil' },
+    }));
+    const c = this.renderer?.canvas;
+    if (c) c.style.cursor = teachCursor(useApp.getState().teach.tool);
+  }
+
+  teachUndo(): void {
+    this.annotations.undo();
+  }
+
+  teachClear(): void {
+    this.annotations.clear();
+  }
+
   // ---- subcircuits (upstream EditCompositeModelDialog, CirSim contexts, SubcircuitBar) --------
 
   /** What the pin layout dialog edits. */
@@ -1824,11 +1885,76 @@ export class SimController {
       split = null;
     };
 
+    // Teaching tools: while one is picked, the first finger, pen or left button draws (or points,
+    // or erases) instead of editing; a second finger cancels the stroke and pinches as usual.
+    let teachId: number | null = null;
+    const teachDown = (e: PointerEvent, p: { x: number; y: number }): boolean => {
+      const { tool, pen } = useApp.getState().teach;
+      const r = this.renderer;
+      if (tool === null || !r) return false;
+      if (teachId !== null) {
+        if (e.pointerType !== 'touch') return true;
+        // a second finger: this was a pinch, not a stroke
+        if (tool === 'pencil') this.annotations.cancelStroke();
+        else if (tool === 'eraser') this.annotations.endErase();
+        else this.annotations.laserUp();
+        teachId = null;
+        return false;
+      }
+      if (e.button !== 0) return false;
+      const c = r.viewport.toCircuit(p.x, p.y);
+      const now = performance.now();
+      if (tool === 'pencil') this.annotations.beginStroke(c, pen, r.viewport.scale);
+      else if (tool === 'eraser') this.annotations.eraseAt(c, r.viewport.scale);
+      else this.annotations.laserTo(c, now);
+      teachId = e.pointerId;
+      // remembered so a second finger becomes a pinch
+      if (e.pointerType === 'touch') touches.set(e.pointerId, p);
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {
+        // already released
+      }
+      e.preventDefault();
+      return true;
+    };
+    const teachMove = (e: PointerEvent, p: { x: number; y: number }): boolean => {
+      const tool = useApp.getState().teach.tool;
+      const r = this.renderer;
+      if (tool === null || !r) return false;
+      if (e.pointerType === 'touch') touches.set(e.pointerId, p);
+      const c = r.viewport.toCircuit(p.x, p.y);
+      if (teachId === e.pointerId) {
+        if (tool === 'pencil') this.annotations.extendStroke(c);
+        else if (tool === 'eraser') this.annotations.eraseAt(c, r.viewport.scale);
+        else this.annotations.laserTo(c, performance.now());
+        return true;
+      }
+      // a mouse points with the laser without pressing a button
+      if (tool === 'laser' && e.pointerType === 'mouse' && teachId === null) {
+        this.annotations.laserTo(c, performance.now());
+        return true;
+      }
+      // a pinch goes on as usual; hovering does nothing while drawing
+      return teachId === null && e.pointerType !== 'touch';
+    };
+    const teachUp = (e: PointerEvent): boolean => {
+      if (teachId !== e.pointerId) return false;
+      teachId = null;
+      touches.delete(e.pointerId);
+      const tool = useApp.getState().teach.tool;
+      this.annotations.endStroke();
+      this.annotations.endErase();
+      if (tool !== 'laser' || e.pointerType !== 'mouse') this.annotations.laserUp();
+      if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+      return true;
+    };
     const down = (e: PointerEvent): void => {
       if (e.button === 2) return; // the context menu handles it
       canvas.focus({ preventScroll: true });
       const p = local(e);
       this.mouse = p;
+      if (teachDown(e, p)) return;
       if (scopePinchDown(e, p)) return;
       if (leaderDown(e, p)) return;
       if (
@@ -1885,6 +2011,7 @@ export class SimController {
       if (!r) return;
       const p = local(e);
       this.mouse = p;
+      if (teachMove(e, p)) return;
       if (split === e.pointerId) {
         const f = 1 - p.y / Math.max(1, this.cssHeight);
         this.scopeHeightFraction = Math.min(0.9, Math.max(0.1, f));
@@ -1993,6 +2120,7 @@ export class SimController {
       updateCursor(g.x, g.y);
     };
     const up = (e: PointerEvent): void => {
+      if (teachUp(e)) return;
       const drag = this.leaderDrag;
       if (drag !== null && drag.id === e.pointerId) {
         this.leaderDrag = null;
@@ -2047,6 +2175,8 @@ export class SimController {
       updateCursor(g.x, g.y);
     };
     const leave = (e: PointerEvent): void => {
+      if (e.pointerId !== teachId && useApp.getState().teach.tool === 'laser')
+        this.annotations.laserTo(null, performance.now());
       if (gestureId !== null || split !== null || scopeGesture !== null) return; // captured
       this.mouse = null;
       this.splitterHot = false;
@@ -2134,6 +2264,7 @@ export class SimController {
       this.publishEditor();
     };
     const dblclick = (e: MouseEvent): void => {
+      if (useApp.getState().teach.tool !== null) return;
       const lp = local(e);
       const u = this.undockedAt(lp.x, lp.y);
       if (u !== null) {
@@ -2229,6 +2360,13 @@ export class SimController {
 }
 
 /** Size of a new undocked scope (circuit units). */
+/** The canvas cursor for a teaching tool (the laser draws its own dot). */
+function teachCursor(tool: TeachTool | null): string {
+  if (tool === 'pencil' || tool === 'eraser') return 'crosshair';
+  if (tool === 'laser') return 'none';
+  return 'default';
+}
+
 const UNDOCKED_WIDTH = 224;
 const UNDOCKED_HEIGHT = 144;
 

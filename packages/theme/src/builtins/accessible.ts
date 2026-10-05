@@ -38,6 +38,7 @@ export const highContrast: Theme = {
     fftGrid: '#7a2a2a',
     traces: ['#3dff6e', '#00e5ff', '#ff9cff', '#ffa94d', '#ff6b6b'],
   },
+  teaching: { pens: ['#ffff00', '#00ffff', '#ff00ff', '#ffffff'], laser: '#ff3030' },
   ui: {
     surface: '#000000',
     surfaceAlt: '#141414',
@@ -78,5 +79,6 @@ export const colorblindSafe: Theme = {
     fftGrid: '#4d2f40',
     traces: ['#56b4e9', '#e69f00', '#009e73', '#f0e442', '#cc79a7', '#d55e00'],
   },
+  teaching: { pens: ['#f0e442', '#e69f00', '#56b4e9', '#009e73', '#cc79a7'], laser: '#d55e00' },
   ui: { ...dark.ui, accent: '#56b4e9', danger: '#f0a35e' },
 };

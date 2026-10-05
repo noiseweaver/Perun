@@ -110,6 +110,20 @@ export function installShortcuts(): () => void {
       e.stopPropagation();
     };
 
+    // while drawing, Escape puts the tools away and undo takes back strokes, not edits
+    if (useApp.getState().teach.tool !== null) {
+      if (e.key === 'Escape') {
+        controller.setTeachTool(null);
+        return done();
+      }
+      if (mod && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'z') {
+        controller.teachUndo();
+        return done();
+      }
+      // element shortcuts would start placing an element
+      if (!mod && keys.has(e.key)) return;
+    }
+
     if (mod && !e.altKey) {
       switch (e.key.toLowerCase()) {
         case 'z':

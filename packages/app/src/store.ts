@@ -64,6 +64,8 @@ export interface EditorState {
   revision: number;
 }
 
+export type TeachTool = 'pencil' | 'laser' | 'eraser';
+
 export interface AppState {
   title: string;
   running: boolean;
@@ -115,6 +117,8 @@ export interface AppState {
   subcircuitBar: { viewing: string[]; editing: string | null };
   /** Subcircuit models that can be placed, by name. */
   subcircuitModels: string[];
+  /** Teaching tools: the tool in use (null: editing as usual), the pen and the strokes' state. */
+  teach: { tool: TeachTool | null; pen: number; strokes: number; canUndo: boolean };
   /** Text for screen readers (a polite live region): what keyboard selection picked. */
   announcement: string;
   /** The catalog the interface shows (`en`, `de`, ...); the app tree is keyed by it. */
@@ -293,6 +297,7 @@ export const useApp = create<AppState>(() => ({
   inspectorFocus: 0,
   subcircuitBar: { viewing: [], editing: null },
   subcircuitModels: [],
+  teach: { tool: null, pen: 0, strokes: 0, canUndo: false },
   announcement: '',
   language: 'en',
   dialog: null,

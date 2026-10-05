@@ -42,6 +42,7 @@ export const light: Theme = {
     fftGrid: '#f1c4c4',
     traces: ['#2e7d32', '#1565c0', '#8e24aa', '#00838f', '#c62828', '#b25e00'],
   },
+  teaching: { pens: ['#d62828', '#1d4ed8', '#15803d', '#7c3aed', '#111827'], laser: '#e11d48' },
   ui: {
     surface: '#f9f9ff',
     surfaceAlt: '#ededf4',

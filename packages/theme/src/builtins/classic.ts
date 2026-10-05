@@ -50,6 +50,7 @@ export const classic: Theme = {
       '#00ffff',
     ],
   },
+  teaching: { pens: ['#ffff00', '#ff4040', '#00ffff', '#00ff00', '#ffffff'], laser: '#ff2020' },
   ui: {
     surface: '#1e1e1e',
     surfaceAlt: '#2b2b2b',

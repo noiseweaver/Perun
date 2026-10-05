@@ -2252,3 +2252,56 @@ ul.theme-contrast {
   height: auto;
   padding: 4px;
 }
+
+/* ---- teaching tools: the drawing toolbar ------------------------------------------------- */
+
+.teach-bar {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 12px;
+  max-width: calc(100% - 24px);
+  padding: 4px 8px;
+  border-radius: var(--md-shape-l);
+  background: var(--md-surface-container-highest);
+  box-shadow: var(--md-elevation-2);
+  animation: fade-in 150ms var(--md-motion);
+}
+
+.teach-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.teach-bar .icon-button[aria-pressed='true'] {
+  color: var(--ui-surface);
+  background: var(--ui-accent);
+}
+
+.teach-swatch {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--ui-border);
+  cursor: pointer;
+}
+
+.teach-swatch[aria-checked='true'] {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+.teach-bar .button {
+  height: 36px;
+}
+
+.icon-button[aria-pressed='true'][data-testid='draw-toggle'] {
+  color: var(--ui-accent);
+}

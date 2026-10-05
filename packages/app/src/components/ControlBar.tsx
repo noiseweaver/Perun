@@ -41,6 +41,33 @@ function LabeledSlider(props: {
   );
 }
 
+/** Turns the teaching tools (pencil, laser, eraser) on and off. */
+function DrawButton() {
+  const on = useApp((s) => s.teach.tool !== null);
+  const label = on ? 'Stop drawing' : 'Draw on the circuit';
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>
+        <button
+          type="button"
+          className="icon-button"
+          onClick={() => controller.setTeachTool(on ? null : 'pencil')}
+          aria-label={t(label)}
+          aria-pressed={on}
+          data-testid="draw-toggle"
+        >
+          <Icon name="edit" />
+        </button>
+      </Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content className="tooltip" sideOffset={6}>
+          {t(label)}
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  );
+}
+
 /** An icon button with a plain tooltip. */
 function IconButton(props: {
   label: string;
@@ -181,6 +208,7 @@ export function ControlBar() {
           <Icon name="fit" />
         </IconButton>
         <SpeedButton />
+        <DrawButton />
       </div>
 
       <div className="status">

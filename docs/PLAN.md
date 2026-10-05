@@ -275,6 +275,7 @@ Acceptance: at least 95% of upstream examples pass golden compare (threshold to 
 ### Phase 9: Polish and release
 - [x] Profile performance (matrix size, allocations per step). Move the engine to a worker if decided. (Stays on the main thread: ENGINE-NOTES.md section 13.)
 - [x] Accessibility pass, responsive layout, PWA offline support.
+- [x] Teaching tools: a pencil for drawing on the circuit and a laser pointer whose trail fades out, for highlighting things while teaching. Work with mouse, pen and touch. Annotations are a temporary overlay with a clear button and are not saved in the circuit file, so the upstream format stays untouched. (Added 2026-10-04 by owner; built 2026-10-05: the pencil button in the bottom bar.)
 - [x] Optional i18n hooks. (Options > Language, using upstream's locale catalogs; `pnpm i18n` reports coverage.)
 - [x] README, credits, GPL notices, About dialog.
 
