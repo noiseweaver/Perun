@@ -83,6 +83,11 @@ export class EditInfo {
     return ei;
   }
 
+  /** A field name that links to a help page (upstream keeps the HTML in the name). */
+  static makeLink(file: string, text: string): string {
+    return '<a href="' + file + '" target="_blank">' + text + '</a>';
+  }
+
   static createCheckbox(name: string, flag: boolean): EditInfo {
     const ei = new EditInfo('', 0, -1, -1);
     ei.checkbox = { label: name, state: flag };

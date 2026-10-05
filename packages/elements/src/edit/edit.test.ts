@@ -39,7 +39,17 @@ function names(e: CircuitElm): string[] {
 }
 
 /** Upstream gives the antenna no fields. */
-const NO_FIELDS = new Set(['AntennaElm', 'CC2Elm', 'CC2NegElm', 'TunnelDiodeElm', 'VCOElm']);
+const NO_FIELDS = new Set([
+  'AntennaElm',
+  'CC2Elm',
+  'CC2NegElm',
+  'DarlingtonElm',
+  'NDarlingtonElm',
+  'NortonAmpElm',
+  'PDarlingtonElm',
+  'TunnelDiodeElm',
+  'VCOElm',
+]);
 
 describe('edit fields', () => {
   // an undocked scope is edited in the scope properties dialog, as upstream's

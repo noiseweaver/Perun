@@ -91,6 +91,8 @@ coupled1.txt
 coupled2.txt
 coupled3.txt
 crossover.txt
+crystalosc.txt
+crystalosc2.txt
 cs-currentadder.txt
 cs-diff.txt
 cs-fullrectifier.txt
@@ -216,6 +218,9 @@ nmosinverter.txt
 nmosinverter2.txt
 nmosinverter3.txt
 nmosnand.txt
+norton-invert.txt
+norton-noninvert.txt
+norton-saw.txt
 norton.txt
 notch.txt
 npn.txt
@@ -227,6 +232,10 @@ opint-current.txt
 opint-invert-amp.txt
 opint-slew.txt
 opint.txt
+ota-gain.txt
+ota-ringmod.txt
+ota-vca.txt
+ota-vcf-single.txt
 peak-detect.txt
 phasecomp.txt
 phasecompint.txt

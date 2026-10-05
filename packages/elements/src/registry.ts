@@ -8,6 +8,7 @@
 
 import { Simulation } from '@circuitjs-next/engine';
 import { elementType, type CircuitElm, type ElementType } from './CircuitElm.ts';
+import { elementFactory } from './factory.ts';
 import { CapacitorElmType } from './elm/CapacitorElm.ts';
 import { DiodeElmType } from './elm/DiodeElm.ts';
 import { LEDElmType } from './elm/LEDElm.ts';
@@ -43,6 +44,14 @@ import { SparkGapElmType } from './elm/SparkGapElm.ts';
 import { LampElmType } from './elm/LampElm.ts';
 import { SCRElmType } from './elm/SCRElm.ts';
 import { TriacElmType } from './elm/TriacElm.ts';
+import {
+  CrystalElmType,
+  DarlingtonElmType,
+  NDarlingtonElmType,
+  NortonAmpElmType,
+  OTAElmType,
+  PDarlingtonElmType,
+} from './elm/compositeParts.ts';
 import { CC2ElmType, CC2NegElmType } from './elm/CC2Elm.ts';
 import { AudioOutputElmType } from './elm/AudioOutputElm.ts';
 import { CCCSElmType, CCVSElmType, VCCSElmType, VCVSElmType } from './elm/VCCSElm.ts';
@@ -229,6 +238,12 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   AudioOutputElmType,
   CC2ElmType,
   CC2NegElmType,
+  OTAElmType,
+  NortonAmpElmType,
+  DarlingtonElmType,
+  NDarlingtonElmType,
+  PDarlingtonElmType,
+  CrystalElmType,
 ];
 
 /** Old class names upstream's constructElement still accepts (saved shortcuts, subcircuits). */
@@ -239,6 +254,11 @@ const byClassName = new Map<string, ElementType>();
 const dumpTypeMap = new Map<number, string>();
 /** XML tag to class name, first registration wins. */
 const xmlDumpTypeMap = new Map<string, string>();
+
+// composites build their parts through this while their samples are made below
+elementFactory.construct = constructElement;
+elementFactory.createCe = createCe;
+elementFactory.classNameForXmlTag = classNameForXmlTag;
 
 const sampleSim = new Simulation();
 for (const type of ELEMENT_TYPES) {

@@ -191,7 +191,12 @@ export class VCCSElm extends ChipElm {
 
   override getChipEditInfo(n: number): EditInfo | null {
     if (n === 0) {
-      const ei = new EditInfo('Output Function', 0, -1, -1);
+      const ei = new EditInfo(
+        EditInfo.makeLink('customfunction.html', 'Output Function'),
+        0,
+        -1,
+        -1,
+      );
       ei.text = this.exprString;
       ei.disallowSliders();
       return ei;

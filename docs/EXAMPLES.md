@@ -9,7 +9,7 @@ steps 1, 2, 5, 10, 20, 50, 100, 200, 500 and 1000 match within the golden tolera
 (tools/golden/README.md). "Same save" means our XML save after loading is byte for byte
 upstream's.
 
-**Pass: 345 of 373 (92.5%).** Same save: 343 (92.0%).
+**Pass: 354 of 373 (94.9%).** Same save: 352 (94.4%).
 
 Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 
@@ -113,8 +113,8 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | coupled2.txt | pass | yes |  |
 | coupled3.txt | pass | yes |  |
 | crossover.txt | pass | yes |  |
-| crystalosc.txt | fail | no | unrecognized xml element: cr |
-| crystalosc2.txt | fail | no | unrecognized xml element: cr |
+| crystalosc.txt | pass | yes |  |
+| crystalosc2.txt | pass | yes |  |
 | cs-currentadder.txt | pass | yes |  |
 | cs-diff.txt | pass | yes |  |
 | cs-fullrectifier.txt | pass | yes |  |
@@ -244,9 +244,9 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | nmosinverter2.txt | pass | yes |  |
 | nmosinverter3.txt | pass | yes |  |
 | nmosnand.txt | pass | yes |  |
-| norton-invert.txt | fail | no | unrecognized xml element: nor |
-| norton-noninvert.txt | fail | no | unrecognized xml element: nor |
-| norton-saw.txt | fail | no | unrecognized xml element: nor |
+| norton-invert.txt | pass | yes |  |
+| norton-noninvert.txt | pass | yes |  |
+| norton-saw.txt | pass | yes |  |
 | norton.txt | pass | yes |  |
 | notch.txt | pass | yes |  |
 | npn.txt | pass | yes |  |
@@ -258,10 +258,10 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | opint-invert-amp.txt | pass | yes |  |
 | opint-slew.txt | pass | yes |  |
 | opint.txt | pass | yes |  |
-| ota-gain.txt | fail | no | unrecognized dump type: 402 |
-| ota-ringmod.txt | fail | no | unrecognized dump type: 402; unrecognized dump type: 400 |
-| ota-vca.txt | fail | no | unrecognized dump type: 402 |
-| ota-vcf-single.txt | fail | no | unrecognized dump type: 402; unrecognized dump type: 400 |
+| ota-gain.txt | pass | yes |  |
+| ota-ringmod.txt | pass | yes |  |
+| ota-vca.txt | pass | yes |  |
+| ota-vcf-single.txt | pass | yes |  |
 | peak-detect.txt | pass | yes |  |
 | phasecomp.txt | pass | yes |  |
 | phasecompint.txt | pass | yes |  |

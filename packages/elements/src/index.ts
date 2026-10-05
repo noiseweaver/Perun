@@ -162,6 +162,15 @@ export { SparkGapElm } from './elm/SparkGapElm.ts';
 export { LampElm } from './elm/LampElm.ts';
 export { SCRElm } from './elm/SCRElm.ts';
 export { TriacElm } from './elm/TriacElm.ts';
+export { CompositeElm } from './elm/CompositeElm.ts';
+export {
+  CrystalElm,
+  DarlingtonElm,
+  NDarlingtonElm,
+  NortonAmpElm,
+  OTAElm,
+  PDarlingtonElm,
+} from './elm/compositeParts.ts';
 export { CC2Elm, CC2NegElm } from './elm/CC2Elm.ts';
 export { AudioOutputElm } from './elm/AudioOutputElm.ts';
 export { CCCSElm, CCVSElm, VCCSElm, VCVSElm } from './elm/VCCSElm.ts';
@@ -170,3 +179,12 @@ export { DiacElm } from './elm/DiacElm.ts';
 export { TriodeElm } from './elm/TriodeElm.ts';
 export { AmmeterElm } from './elm/AmmeterElm.ts';
 export { RelayModel, RelayModels } from './models/RelayModel.ts';
+export {
+  XmlElement,
+  XmlParseError,
+  escapeXml,
+  parseXml,
+  prettyPrint,
+  type XmlText,
+} from './xmldoc.ts';
+export { AttrReader, AttrWriter } from './xmlattrs.ts';

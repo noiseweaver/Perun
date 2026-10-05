@@ -64,6 +64,8 @@ import {
 } from './magnetics.ts';
 import { audioOutputView, labeledNodeView, outputView, probeView, textView } from './labels.ts';
 import { AudioOutputElm } from '../elm/AudioOutputElm.ts';
+import { CrystalElm, DarlingtonElm, NortonAmpElm, OTAElm } from '../elm/compositeParts.ts';
+import { crystalView, darlingtonView, nortonAmpView, otaView } from './composites.ts';
 import {
   capacitorView,
   groundView,
@@ -168,6 +170,10 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [ProbeElm, probeView],
   [OutputElm, outputView],
   [AudioOutputElm, audioOutputView],
+  [OTAElm, otaView],
+  [NortonAmpElm, nortonAmpView],
+  [DarlingtonElm, darlingtonView],
+  [CrystalElm, crystalView],
   [TextElm, textView],
   [LEDElm, ledView],
   [ZenerElm, zenerView],
