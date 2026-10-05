@@ -15,7 +15,7 @@ const ICON_W = 44;
 const ICON_H = 32;
 
 /** The element drawn small with the current theme. */
-function Preview({ className }: { className: string }) {
+export function Preview({ className }: { className: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const theme = useApp(shownTheme);
   useEffect(() => {

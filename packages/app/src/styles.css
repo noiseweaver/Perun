@@ -273,6 +273,42 @@ textarea,
   color: var(--ui-accent);
 }
 
+/* leading icon column of the context menu (also holds the check of a checkbox item) */
+.menu-icon {
+  display: inline-flex;
+  flex: none;
+  justify-content: center;
+  width: 20px;
+  color: var(--ui-text-muted);
+}
+
+.menu-icon.menu-check {
+  color: var(--ui-accent);
+}
+
+/* a disabled item was drawn like an enabled one; dim it as the app bar's disabled menus are */
+.menu-item[data-disabled],
+.menu-item[data-disabled] .menu-icon,
+.menu-item[data-disabled] .menu-trailing {
+  color: color-mix(in srgb, var(--ui-text) 38%, transparent);
+}
+
+.icon-turned {
+  transform: rotate(90deg);
+}
+
+/* an example circuit category: a small drawing of a component from that category */
+.category-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 32px;
+  margin: -4px 0;
+  color: var(--ui-text-muted);
+}
+
 .menu-label {
   padding: 12px 12px 4px;
   color: var(--ui-text-muted);
@@ -1632,6 +1668,7 @@ textarea.field-input {
 .sheet-group {
   flex-direction: row;
   align-items: center;
+  gap: 12px;
   font-weight: 500;
 }
 

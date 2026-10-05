@@ -37,6 +37,10 @@
   drawing toolbar sits along the bottom of the canvas on phones. The laser trail is drawn as
   quadratic curves through the sample midpoints with butt caps, so it no longer shows a dot at
   every sample.
+- The canvas context menu (right click or long press) has an icon beside every item, and
+  disabled menu items are now dimmed (they looked enabled). Example circuit categories in the
+  Circuits menu and the phone Circuits sheet show a small drawing of a component from the
+  category (a plain icon where that would be an unreadable chip).
 - Theme colors with surrounding whitespace (`"#fff\n"`) are now refused; the theme fuzz test
   found one reaching a CSS custom property.
 - README, About dialog (version, upstream credits, GPL notice, links to the source, LICENSE.txt and

@@ -5,6 +5,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { useMemo, useState } from 'react';
 import type { ExampleItem, ExampleMenu } from '../examples.ts';
 import { openExample } from '../startup.ts';
+import { CategoryIcon } from './CategoryIcon.tsx';
 import { Icon } from './Icon.tsx';
 import { t } from '../i18n.ts';
 
@@ -31,6 +32,7 @@ function Group(props: { menu: ExampleMenu; depth: number; pick: (it: ExampleItem
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
+        <CategoryIcon title={menu.title} />
         <span className="sheet-row-title">{menu.title}</span>
         <Icon name="chevronRight" className="icon sheet-chevron" />
       </button>

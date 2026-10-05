@@ -16,6 +16,7 @@ import { openDialog } from '../commands.ts';
 import { controller } from '../SimController.ts';
 import { openExample } from '../startup.ts';
 import { updateSettings, useApp, type CircuitDisplay, setPaletteOpen } from '../store.ts';
+import { CategoryIcon } from './CategoryIcon.tsx';
 import { CircuitsSheet } from './CircuitsSheet.tsx';
 import { Icon } from './Icon.tsx';
 import { useNarrow } from './useNarrow.ts';
@@ -31,6 +32,7 @@ function ExampleItems({ menu }: { menu: ExampleMenu }) {
         it.kind === 'menu' ? (
           <Menu.Sub key={`m${i}`}>
             <Menu.SubTrigger className="menu-item">
+              <CategoryIcon title={it.title} />
               {t(it.title)}
               <Icon name="chevronRight" className="icon menu-trailing" />
             </Menu.SubTrigger>
