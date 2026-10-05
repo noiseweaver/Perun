@@ -29,6 +29,11 @@ import { ResistorElmType } from './elm/ResistorElm.ts';
 import { SwitchElmType } from './elm/SwitchElm.ts';
 import { ACVoltageElm, DCVoltageElm, VoltageElmType } from './elm/VoltageElm.ts';
 import { WireElmType } from './elm/WireElm.ts';
+import { TransformerElmType } from './elm/TransformerElm.ts';
+import { TappedTransformerElmType } from './elm/TappedTransformerElm.ts';
+import { TransLineElmType } from './elm/TransLineElm.ts';
+import { RelayElmType } from './elm/RelayElm.ts';
+import { RelayCoilElmType, RelayContactElmType } from './elm/RelayCoilElm.ts';
 import { ScopeElmType } from './scope/ScopeElm.ts';
 import { AudioInputElmType, DataInputElmType } from './elm/AudioInputElm.ts';
 import { BatteryElmType } from './elm/BatteryElm.ts';
@@ -182,6 +187,12 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   DACElmType,
   ADCElmType,
   VCOElmType,
+  TransformerElmType,
+  TappedTransformerElmType,
+  TransLineElmType,
+  RelayElmType,
+  RelayCoilElmType,
+  RelayContactElmType,
 ];
 
 /** Old class names upstream's constructElement still accepts (saved shortcuts, subcircuits). */

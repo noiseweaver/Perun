@@ -24,6 +24,19 @@ import { WireElm } from '../elm/WireElm.ts';
 import { ZenerElm } from '../elm/ZenerElm.ts';
 import { ScopeElm } from '../scope/ScopeElm.ts';
 import type { ElementView } from './common.ts';
+import { TransformerElm } from '../elm/TransformerElm.ts';
+import { TappedTransformerElm } from '../elm/TappedTransformerElm.ts';
+import { TransLineElm } from '../elm/TransLineElm.ts';
+import { RelayElm } from '../elm/RelayElm.ts';
+import { RelayCoilElm, RelayContactElm } from '../elm/RelayCoilElm.ts';
+import {
+  relayCoilView,
+  relayContactView,
+  relayView,
+  tappedTransformerView,
+  transformerView,
+  transLineView,
+} from './magnetics.ts';
 import { labeledNodeView, outputView, probeView, textView } from './labels.ts';
 import {
   capacitorView,
@@ -125,6 +138,12 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [DecimalDisplayElm, decimalDisplayView],
   [VCOElm, vcoView],
   [ChipElm, chipView],
+  [TransformerElm, transformerView],
+  [TappedTransformerElm, tappedTransformerView],
+  [TransLineElm, transLineView],
+  [RelayElm, relayView],
+  [RelayCoilElm, relayCoilView],
+  [RelayContactElm, relayContactView],
 ];
 
 const cache = new Map<unknown, ElementView | null>();

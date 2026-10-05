@@ -4,6 +4,7 @@
 import type { Simulation } from '@circuitjs-next/engine';
 import { DiodeModels } from './DiodeModel.ts';
 import { MosfetModels } from './MosfetModel.ts';
+import { RelayModels } from './RelayModel.ts';
 import { TransistorModels } from './TransistorModel.ts';
 
 /**
@@ -15,6 +16,7 @@ export class ModelLibrary {
   readonly diode = new DiodeModels();
   readonly transistor = new TransistorModels();
   readonly mosfet = new MosfetModels();
+  readonly relay = new RelayModels();
   /**
    * Upstream `TransistorElm.globalFlags`: display flags (the circle) shared by every transistor,
    * taken from the last one loaded.
@@ -22,11 +24,14 @@ export class ModelLibrary {
   transistorGlobalFlags = 0;
   /** Upstream `MosfetElm.lastModelName`: the model for new MOSFETs, set when one is edited. */
   mosfetLastModelName = 'default';
+  /** Upstream `RelayElm.lastModelName`: the model for new relays, set when one is edited. */
+  relayLastModelName = 'default';
 
   clearDumpedFlags(): void {
     this.diode.clearDumpedFlags();
     this.transistor.clearDumpedFlags();
     this.mosfet.clearDumpedFlags();
+    this.relay.clearDumpedFlags();
   }
 }
 

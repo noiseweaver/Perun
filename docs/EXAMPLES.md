@@ -9,7 +9,7 @@ steps 1, 2, 5, 10, 20, 50, 100, 200, 500 and 1000 match within the golden tolera
 (tools/golden/README.md). "Same save" means our XML save after loading is byte for byte
 upstream's.
 
-**Pass: 249 of 373 (66.8%).** Same save: 240 (64.3%).
+**Pass: 278 of 373 (74.5%).** Same save: 269 (72.1%).
 
 Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 
@@ -200,19 +200,19 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | jfetfollower.txt | fail | no | unrecognized dump type: j |
 | jkff.txt | pass | yes |  |
 | johnsonctr.txt | pass | yes |  |
-| joule-thief.txt | fail | no | unrecognized dump type: T |
+| joule-thief.txt | pass | yes |  |
 | jsinterface.txt | pass | yes |  |
 | ladder.txt | pass | yes |  |
 | lambda-diode-osc.txt | fail | no | unrecognized dump type: j |
 | lambda-diode.txt | fail | no | unrecognized dump type: j |
-| latchingrelay.txt | fail | no | unrecognized dump type: 425; unrecognized dump type: 426 |
+| latchingrelay.txt | pass | yes |  |
 | leadingedge.txt | pass | yes |  |
 | ledarray.txt | fail | no | custom logic models are not supported yet; unrecognized dump type: 208; unrecognized dump type: 405 |
 | ledflasher.txt | pass | yes |  |
 | lightbulb.txt | fail | no | unrecognized dump type: 181; a scope shows an element that is not supported yet |
 | lissa.txt | pass | yes |  |
 | logconvert.txt | pass | yes |  |
-| longdist.txt | fail | no | unrecognized dump type: T |
+| longdist.txt | pass | yes |  |
 | lrc-critical.txt | pass | yes |  |
 | lrc.txt | pass | no |  |
 | majority.txt | pass | yes |  |
@@ -224,7 +224,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | mosfollower.txt | pass | yes |  |
 | mosmirror.txt | pass | yes |  |
 | mosswitch.txt | pass | yes |  |
-| motorprotect.txt | fail | no | unrecognized dump type: 428; unrecognized dump type: 426 |
+| motorprotect.txt | fail | no | unrecognized dump type: 428 |
 | mr-crossbar.txt | fail | no | unrecognized dump type: m |
 | mr-sine.txt | fail | no | unrecognized dump type: m; a scope shows an element that is not supported yet |
 | mr-sine2.txt | fail | no | unrecognized dump type: m; a scope shows an element that is not supported yet |
@@ -288,22 +288,22 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | r2rladder.txt | pass | yes |  |
 | rectify.txt | pass | yes |  |
 | relaxosc.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
-| relay.txt | fail | no | unrecognized dump type: 178 |
-| relayand.txt | fail | no | unrecognized dump type: 178 |
-| relayctr.txt | fail | no | unrecognized dump type: 178 |
-| relayff.txt | fail | no | unrecognized dump type: 178 |
-| relaymux.txt | fail | no | unrecognized dump type: 178 |
-| relayor.txt | fail | no | unrecognized dump type: 178 |
-| relayosc.txt | fail | no | unrecognized dump type: 178 |
-| relays.txt | fail | no | unrecognized dump type: 425; unrecognized dump type: 426 |
-| relaytff.txt | fail | no | unrecognized dump type: 178 |
-| relayxor.txt | fail | no | unrecognized dump type: 178 |
+| relay.txt | pass | yes |  |
+| relayand.txt | pass | yes |  |
+| relayctr.txt | pass | yes |  |
+| relayff.txt | pass | yes |  |
+| relaymux.txt | pass | yes |  |
+| relayor.txt | pass | yes |  |
+| relayosc.txt | pass | yes |  |
+| relays.txt | pass | yes |  |
+| relaytff.txt | pass | yes |  |
+| relayxor.txt | pass | yes |  |
 | res-par.txt | pass | yes |  |
 | res-series.txt | pass | yes |  |
 | resistors.txt | pass | yes |  |
 | ringcascade.txt | pass | yes |  |
 | ringing.txt | pass | yes |  |
-| ringmod.txt | fail | no | unrecognized dump type: 169 |
+| ringmod.txt | pass | yes |  |
 | rmsconverter.txt | pass | yes |  |
 | rossler.txt | pass | yes |  |
 | rtlinverter.txt | pass | yes |  |
@@ -312,7 +312,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | samplenhold.txt | pass | yes |  |
 | satcore-comparison.txt | pass | yes |  |
 | satcore-inductor.txt | pass | yes |  |
-| satcore-transformer.txt | fail | no | unrecognized dump type: T |
+| satcore-transformer.txt | pass | yes |  |
 | sawtooth.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
 | schmitt.txt | pass | yes |  |
 | scr.txt | fail | no | unrecognized dump type: 177 |
@@ -336,26 +336,26 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | tdiode.txt | fail | no | unrecognized dump type: 175; a scope shows an element that is not supported yet |
 | tdosc.txt | fail | no | unrecognized dump type: 175; a scope shows an element that is not supported yet |
 | tdrelax.txt | fail | no | unrecognized dump type: 175; a scope shows an element that is not supported yet |
-| tesla.txt | fail | no | unrecognized dump type: T; unrecognized dump type: 187; a scope shows an element that is not supported yet |
+| tesla.txt | fail | no | unrecognized dump type: 187; a scope shows an element that is not supported yet |
 | thevenin.txt | pass | yes |  |
-| tl.txt | fail | no | unrecognized dump type: 171 |
-| tlfreq.txt | fail | no | unrecognized dump type: 171 |
-| tllight.txt | fail | no | unrecognized dump type: 171 |
-| tllopass.txt | fail | no | unrecognized dump type: 171 |
-| tlmatch1.txt | fail | no | unrecognized dump type: 171 |
-| tlmatch2.txt | fail | no | unrecognized dump type: 171 |
-| tlmis1.txt | fail | no | unrecognized dump type: 171 |
-| tlmismatch.txt | fail | no | unrecognized dump type: 171 |
-| tlstand.txt | fail | no | unrecognized dump type: 171 |
-| tlterm.txt | fail | no | unrecognized dump type: 171 |
+| tl.txt | pass | yes |  |
+| tlfreq.txt | pass | yes |  |
+| tllight.txt | pass | yes |  |
+| tllopass.txt | pass | yes |  |
+| tlmatch1.txt | pass | yes |  |
+| tlmatch2.txt | pass | yes |  |
+| tlmis1.txt | pass | yes |  |
+| tlmismatch.txt | pass | yes |  |
+| tlstand.txt | pass | yes |  |
+| tlterm.txt | pass | yes |  |
 | traffic.txt | pass | yes |  |
 | trans-diffamp-common.txt | pass | yes |  |
 | trans-diffamp-cursrc.txt | pass | yes |  |
 | trans-diffamp.txt | pass | yes |  |
-| transformer.txt | fail | no | unrecognized dump type: T |
-| transformerdc.txt | fail | no | unrecognized dump type: T |
-| transformerdown.txt | fail | no | unrecognized dump type: T |
-| transformerup.txt | fail | no | unrecognized dump type: T |
+| transformer.txt | pass | yes |  |
+| transformerdc.txt | pass | yes |  |
+| transformerdown.txt | pass | yes |  |
+| transformerup.txt | pass | yes |  |
 | transrectifier.txt | pass | no |  |
 | transswitch.txt | pass | yes |  |
 | triacdimmer.txt | fail | no | unrecognized dump type: 206; unrecognized dump type: 203; unrecognized dump type: 181 |

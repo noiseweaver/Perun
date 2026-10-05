@@ -428,7 +428,11 @@ export class Circuit {
         modelsFor(sim).mosfet.undumpModelXml(r);
         continue;
       }
-      if (['rlm', 'clm', 'ccm'].includes(tag)) {
+      if (tag === 'rlm') {
+        modelsFor(sim).relay.undumpModelXml(r);
+        continue;
+      }
+      if (['clm', 'ccm'].includes(tag)) {
         this.warnings.push(`model element <${tag}> is not supported yet`);
         continue;
       }

@@ -148,3 +148,9 @@ export { DecimalDisplayElm, SevenSegDecoderElm, SevenSegElm } from './elm/SevenS
 export { BusSplitterElm, BusTransceiverElm } from './elm/BusElm.ts';
 export { MonostableElm, PhaseCompElm, TimerElm, VCOElm } from './elm/TimerElm.ts';
 export { ADCElm, DACElm } from './elm/ConverterElm.ts';
+export { TransformerElm } from './elm/TransformerElm.ts';
+export { TappedTransformerElm } from './elm/TappedTransformerElm.ts';
+export { TransLineElm } from './elm/TransLineElm.ts';
+export { RelayElm } from './elm/RelayElm.ts';
+export { RelayCoilElm, RelayContactElm } from './elm/RelayCoilElm.ts';
+export { RelayModel, RelayModels } from './models/RelayModel.ts';

@@ -130,7 +130,7 @@ export const capacitorView: ElementView<CapacitorElm> = {
 };
 
 /** A coil of half-circle loops from p1 to p2, bulging hs to the left (upstream `drawCoil`). */
-function coilLoops(p1: Pt, p2: Pt, hs: number): Pt[][] {
+export function coilLoops(p1: Pt, p2: Pt, hs: number): Pt[][] {
   const len = distance(p1, p2);
   const at = localFrame(p1, p2, hs < 0);
   const loopCt = Math.ceil(len / 11);
