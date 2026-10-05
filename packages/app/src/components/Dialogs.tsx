@@ -70,6 +70,7 @@ function LinkRow(props: { label: string; url: string; testId: string }) {
           className="text-input"
           readOnly
           value={props.url}
+          aria-label={`${props.label} link`}
           onFocus={(e) => e.currentTarget.select()}
           data-testid={props.testId}
         />
@@ -309,6 +310,8 @@ const EDIT_KEYS: [string, string][] = [
   ['Alt+drag, middle drag', 'Pan the view'],
   ['Wheel', 'Zoom'],
   ['Double-click, Enter', 'Edit properties'],
+  ['] / [', 'Select the next / previous element'],
+  ['Shift+F10, Menu key', 'Menu for the selection'],
   ['Arrow keys', 'Move the selection'],
   ['Delete, Backspace', 'Delete'],
   ['Esc', 'Stop placing, clear selection'],
@@ -364,7 +367,6 @@ function ShortcutsDialog() {
   );
 }
 
-/** Whichever dialog the store names. */
 /** Installing on iPhone and iPad, where Safari has no install prompt. */
 function InstallDialog() {
   return (
@@ -391,6 +393,7 @@ function InstallDialog() {
   );
 }
 
+/** Whichever dialog the store names. */
 export function Dialogs() {
   const dialog = useApp((s) => s.dialog);
   switch (dialog) {

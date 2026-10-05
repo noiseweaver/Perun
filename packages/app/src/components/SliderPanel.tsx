@@ -7,26 +7,27 @@ import { controller } from '../SimController.ts';
 import { SLIDER_MAX } from '../sliders.ts';
 import { useApp } from '../store.ts';
 import { Icon } from './Icon.tsx';
-import { useNarrow } from './useNarrow.ts';
+import { useCompact } from './useNarrow.ts';
 
 /**
  * The circuit's sliders (upstream shows them in its side panel under the buttons): pots, LDRs,
  * thermistors, variable rails and the sliders added with "Sliders…". A card over the top right of
- * the canvas; on phones it starts folded.
+ * the canvas; on phones (either way up) it starts folded.
  */
 export function SliderPanel() {
   useApp((s) => s.sliderRevision);
-  const narrow = useNarrow();
+  const compact = useCompact();
   const [folded, setFolded] = useState<boolean | null>(null);
   const entries = controller.sliders();
   if (entries.length === 0) return null;
-  const isFolded = folded ?? narrow;
+  const isFolded = folded ?? compact;
   return (
     <section
       className="slider-panel"
       aria-label="Sliders"
       data-testid="slider-panel"
       data-canvas-overlay
+      data-folded={isFolded || undefined}
     >
       <button
         type="button"

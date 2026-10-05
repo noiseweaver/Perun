@@ -108,6 +108,8 @@ export interface AppState {
     | null;
   /** Bumped to move keyboard focus to the property panel (double-click, Enter). */
   inspectorFocus: number;
+  /** Text for screen readers (a polite live region): what keyboard selection picked. */
+  announcement: string;
   /** The user's theme (settings.themeId resolved). */
   theme: Theme;
   /**
@@ -235,10 +237,11 @@ export function themeFor(themeId: string, library: readonly SavedTheme[]): Theme
 
 const PALETTE_KEY = 'circuitjs-next.paletteOpen';
 
-/** Open on wide screens unless the user slid it away last time; shut on narrow ones. */
+/** Open on large screens unless the user slid it away last time; shut on phones. */
 function initialPaletteOpen(): boolean {
   if (typeof window === 'undefined') return true;
-  if (window.innerWidth < 720) return false;
+  // phones, and phones on their side
+  if (window.innerWidth < 720 || window.innerHeight < 560) return false;
   try {
     return localStorage.getItem(PALETTE_KEY) !== 'false';
   } catch {
@@ -277,6 +280,7 @@ export const useApp = create<AppState>(() => ({
   updateReady: false,
   offlineReady: false,
   inspectorFocus: 0,
+  announcement: '',
   dialog: null,
   theme: themeFor(initialSettings.themeId, []),
   preview: null,

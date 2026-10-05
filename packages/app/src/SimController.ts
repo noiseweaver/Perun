@@ -1112,6 +1112,48 @@ export class SimController {
     this.circuitChanged();
   }
 
+  // ---- keyboard selection ------------------------------------------------------------------
+
+  /**
+   * Select the next (or previous) element in circuit order, for keyboard users (`]` and `[`):
+   * brings it into view and tells screen readers what it is.
+   */
+  selectNext(dir: 1 | -1): void {
+    const els = this.circuit.elements;
+    if (els.length === 0) return;
+    const cur = this.editor.selectedElements();
+    const at = cur.length === 1 && cur[0] ? els.indexOf(cur[0]) : -1;
+    const i = at < 0 ? (dir > 0 ? 0 : els.length - 1) : (at + dir + els.length) % els.length;
+    const e = els[i];
+    if (e === undefined) return;
+    this.editor.select(e);
+    this.renderer?.reveal(e);
+    this.publishEditor();
+    useApp.setState({ announcement: `${describeElement(e)}. ${i + 1} of ${els.length}.` });
+  }
+
+  private keyboardMenuElm: CircuitElm | null = null;
+
+  /** Open the element menu on the selected element (keyboard). Returns whether it opened. */
+  openMenuAtSelection(): boolean {
+    const r = this.renderer;
+    const e = this.editor.selectedElements()[0];
+    if (!r || e === undefined) return false;
+    r.reveal(e);
+    this.keyboardMenuElm = e;
+    const mid = r.viewport.toScreen((e.x + e.x2) / 2, (e.y + e.y2) / 2);
+    const rect = r.canvas.getBoundingClientRect();
+    r.canvas.dispatchEvent(
+      new MouseEvent('contextmenu', {
+        bubbles: true,
+        cancelable: true,
+        clientX: rect.left + mid.x,
+        clientY: rect.top + mid.y,
+      }),
+    );
+    return true;
+  }
+
   // ---- sliders -------------------------------------------------------------------------------
 
   /** The sliders to show (upstream's side panel), rebuilt on each call. */
@@ -1782,10 +1824,12 @@ export class SimController {
         this.publishEditor();
         return;
       }
-      // pick what is under the mouse now (a touch long-press has no hover before it)
+      // pick what is under the mouse now (a touch long-press has no hover before it), or the
+      // selected element for a menu opened from the keyboard
       const g = grid(lp);
       ed.hover(g.x, g.y);
-      this.menuElm = ed.mouseElm;
+      this.menuElm = this.keyboardMenuElm ?? ed.mouseElm;
+      this.keyboardMenuElm = null;
       this.menuPos = g;
       this.publishEditor();
     };
@@ -1892,6 +1936,18 @@ function scopeAnchor(elm: CircuitElm, post = -1): { x: number; y: number } {
   const b = viewFor(elm)?.bbox(elm);
   if (b === undefined) return { x: (elm.x + elm.x2) / 2, y: (elm.y + elm.y2) / 2 };
   return { x: (b.x1 + b.x2) / 2, y: (b.y1 + b.y2) / 2 };
+}
+
+/** An element in words for screen readers: its info lines, without the fixed-width padding. */
+export function describeElement(e: CircuitElm): string {
+  const arr: string[] = [];
+  e.getInfo(arr);
+  const lines: string[] = [];
+  for (const l of arr) {
+    if (typeof l !== 'string') break;
+    lines.push(l.replace(/\s+/g, ' ').trim());
+  }
+  return lines.join(', ') || e.getClassName();
 }
 
 /** Width of the info card beside docked scopes in the card look. */

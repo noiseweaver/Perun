@@ -565,6 +565,10 @@ textarea,
   animation: fade-in 150ms var(--md-motion);
 }
 
+.slider-panel[data-folded] {
+  width: auto;
+}
+
 .slider-panel-header {
   display: flex;
   align-items: center;
@@ -1771,6 +1775,11 @@ textarea.field-input {
   text-overflow: ellipsis;
 }
 
+.theme-row-active .theme-row-desc {
+  /* muted text on the tinted row falls short of 4.5:1 in some themes */
+  color: var(--ui-text);
+}
+
 .theme-row-actions {
   display: flex;
   flex: none;
@@ -2147,4 +2156,9 @@ ul.theme-contrast {
   margin: 0 0 8px;
   padding-left: 22px;
   line-height: 24px;
+}
+
+.about-links a {
+  display: inline-block;
+  padding: 4px 0;
 }

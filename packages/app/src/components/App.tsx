@@ -78,6 +78,7 @@ export function App() {
         </div>
         <ControlBar />
         <Dialogs />
+        <Announcer />
       </div>
     </Tooltip.Provider>
   );
@@ -119,6 +120,16 @@ function UpdateBanner() {
       >
         <Icon name="close" size={20} />
       </button>
+    </div>
+  );
+}
+
+/** Screen reader announcements (keyboard selection). */
+function Announcer() {
+  const text = useApp((s) => s.announcement);
+  return (
+    <div className="visually-hidden" aria-live="polite" data-testid="announcer">
+      {text}
     </div>
   );
 }

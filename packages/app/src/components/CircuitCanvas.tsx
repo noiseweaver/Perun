@@ -40,6 +40,7 @@ export function CircuitCanvas() {
   const [menuScope, setMenuScope] = useState(-1);
   const [menuUndocked, setMenuUndocked] = useState<ScopeElm | null>(null);
   const canPaste = useApp((s) => s.editor.canPaste);
+  const title = useApp((s) => s.title);
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
@@ -66,10 +67,15 @@ export function CircuitCanvas() {
           ref={ref}
           className="circuit-canvas"
           data-testid="circuit-canvas"
-          aria-label="Circuit"
+          aria-label={`Circuit: ${title}`}
+          aria-describedby="canvas-help"
           tabIndex={0}
         />
       </Ctx.Trigger>
+      <p id="canvas-help" className="visually-hidden">
+        Press ] and [ to step through the elements, Enter to edit the selected one, arrow keys to
+        move it, Delete to remove it, and Shift+F10 for its menu. Press ? for all shortcuts.
+      </p>
       <Ctx.Portal>
         <Ctx.Content className="menu-content" data-testid="context-menu">
           {menuUndocked !== null ? (

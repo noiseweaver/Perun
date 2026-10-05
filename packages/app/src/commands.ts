@@ -141,6 +141,12 @@ export function installShortcuts(): () => void {
       return;
     }
 
+    // the element menu from the keyboard, at the selected element
+    if (e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey)) {
+      if (controller.openMenuAtSelection()) done();
+      return;
+    }
+
     switch (e.key) {
       case 'Delete':
       case 'Backspace':
@@ -187,6 +193,11 @@ export function installShortcuts(): () => void {
     }
     if (e.key === ' ') {
       ed.setSelectMode();
+      return done();
+    }
+    // keyboard selection: step through the elements
+    if (e.key === ']' || e.key === '[') {
+      controller.selectNext(e.key === ']' ? 1 : -1);
       return done();
     }
     if (e.key === '?') {

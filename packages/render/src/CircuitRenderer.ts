@@ -231,6 +231,22 @@ export class CircuitRenderer {
     return r;
   }
 
+  /** Pan so an element is on screen (keyboard selection), keeping the zoom. */
+  reveal(e: CircuitElm): void {
+    const v = viewFor(e);
+    const b = v ? v.bbox(e) : { x1: e.x, y1: e.y, x2: e.x2, y2: e.y2 };
+    const vp = this.viewport;
+    const h =
+      this.circuitHeight === null ? this.cssHeight : Math.min(this.circuitHeight, this.cssHeight);
+    const a = vp.toScreen(b.x1, b.y1);
+    const z = vp.toScreen(b.x2, b.y2);
+    const m = 24;
+    if (a.x < m) vp.offsetX += m - a.x;
+    else if (z.x > this.cssWidth - m) vp.offsetX -= z.x - (this.cssWidth - m);
+    if (a.y < m) vp.offsetY += m - a.y;
+    else if (z.y > h - m) vp.offsetY -= z.y - (h - m);
+  }
+
   /** Centre the circuit in the canvas. */
   fit(): void {
     const h =
