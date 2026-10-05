@@ -381,6 +381,11 @@ export abstract class CircuitElm extends SimElement {
    * Lines for the info box shown while the mouse is over the element (upstream `getInfo(arr)`;
    * the first line names the element). Lines are left undefined past the last one.
    */
+  /** Drawn in the selection color whatever the mouse does (upstream ORs a flag into `needsHighlight()`). */
+  drawsHighlighted(): boolean {
+    return false;
+  }
+
   getInfo(_arr: string[]): void {}
 
   /** The current and voltage lines most elements show; returns the next free line. */

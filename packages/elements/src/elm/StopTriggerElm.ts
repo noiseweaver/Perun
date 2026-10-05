@@ -124,6 +124,11 @@ export class StopTriggerElm extends CircuitElm {
     return this.volts[0];
   }
 
+  // upstream draws the trigger selected once it has stopped the simulation
+  override drawsHighlighted(): boolean {
+    return this.stopped;
+  }
+
   override getInfo(arr: string[]): void {
     arr[0] = 'stop trigger';
     arr[1] = 'V = ' + getVoltageText(this.volts[0]);

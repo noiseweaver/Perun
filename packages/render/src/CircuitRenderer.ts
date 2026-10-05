@@ -355,11 +355,12 @@ export class CircuitRenderer {
       (e === this.hovered ||
         e === this.stopElm ||
         e.selected ||
+        e.drawsHighlighted() ||
         e === this.pending ||
         this.scopeHighlights.has(e));
     painter.highlighted = highlighted;
     painter.highlightColor =
-      e === this.stopElm || e.selected || e === this.pending
+      e === this.stopElm || e.selected || e.drawsHighlighted() || e === this.pending
         ? this.palette.selection
         : this.palette.hover;
     const dots = this.dots;
