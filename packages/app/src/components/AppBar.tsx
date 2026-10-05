@@ -143,6 +143,11 @@ export function AppBar() {
             onSelect={() => openDialog('exportLink')}
           />
           <Item label="Export as text…" onSelect={() => openDialog('exportText')} />
+          <Item
+            label="Create Subcircuit…"
+            testId="menu-create-subcircuit"
+            onSelect={() => controller.createSubcircuit()}
+          />
           <Menu.Separator className="menu-separator" />
           {install !== 'none' && (
             <Item

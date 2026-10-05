@@ -4,7 +4,7 @@
 import { Simulation, constructElement } from '@circuitjs-next/elements';
 import { drawPreview } from '@circuitjs-next/render';
 import { useEffect, useRef, useState } from 'react';
-import { searchPalette, type PaletteItem } from '../editor/catalog.ts';
+import { searchPalette, type PaletteGroup, type PaletteItem } from '../editor/catalog.ts';
 import { controller } from '../SimController.ts';
 import { setPaletteOpen, shownTheme, useApp } from '../store.ts';
 import { Icon } from './Icon.tsx';
@@ -21,7 +21,9 @@ function Preview({ className }: { className: string }) {
   useEffect(() => {
     const c = ref.current;
     if (!c) return;
-    const e = constructElement(className, 0, 0, previewSim);
+    // a user's subcircuit is found through the circuit's own model list
+    const sim = className.startsWith('CustomCompositeElm:') ? controller.circuit.sim : previewSim;
+    const e = constructElement(className, 0, 0, sim);
     if (!e) return;
     e.dragPlace(0, 0, false);
     drawPreview(c, e, theme, ICON_W, ICON_H, window.devicePixelRatio || 1);
@@ -123,12 +125,33 @@ function saveCollapsed(c: Set<string>): void {
   }
 }
 
+/**
+ * The circuit's and the session's subcircuit models as a last group, as upstream's Subcircuits
+ * menu (UIManager's subcircuit menu update), matched by name when searching.
+ */
+function withSubcircuits(groups: PaletteGroup[], models: string[], query: string): PaletteGroup[] {
+  const words = query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 0);
+  const items: PaletteItem[] = models
+    .filter((name) => words.every((w) => `${name} subcircuit`.toLowerCase().includes(w)))
+    .map((name) => ({
+      className: `CustomCompositeElm:${name}`,
+      label: name,
+      keywords: 'subcircuit',
+      shortcut: null,
+    }));
+  return items.length === 0 ? groups : [...groups, { title: 'Subcircuits', items }];
+}
+
 /** Searchable list of the elements that can be placed. */
 export function Palette() {
   const [query, setQuery] = useState('');
   const addClass = useApp((s) => s.editor.addClass);
   const open = useApp((s) => s.paletteOpen);
-  const groups = searchPalette(query);
+  const models = useApp((s) => s.subcircuitModels);
+  const groups = withSubcircuits(searchPalette(query), models, query);
   const [collapsed, setCollapsed] = useState(loadCollapsed);
   const toggleGroup = (title: string): void => {
     const next = new Set(collapsed);

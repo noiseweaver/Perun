@@ -36,6 +36,7 @@ export class Palette {
       post: c.post,
       currentDot: c.currentDot,
       badConnection: c.badConnection,
+      selection: c.selection,
     };
     this.selection = c.selection;
     this.hover = c.hover;

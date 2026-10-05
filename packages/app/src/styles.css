@@ -2188,3 +2188,61 @@ ul.theme-contrast {
   font-family: var(--mono-font);
   resize: vertical;
 }
+
+/* ---- subcircuits: pin layout dialog, viewing/editing bar ---------------------------------- */
+
+.dialog-content.subcircuit-dialog {
+  top: 5%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.subcircuit-dialog form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.subcircuit-canvas {
+  width: min(400px, 100%, 40vh);
+  aspect-ratio: 1;
+  align-self: center;
+  border-radius: var(--md-shape-s);
+  border: 1px solid var(--ui-border);
+  touch-action: none;
+  cursor: pointer;
+}
+
+.subcircuit-size {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.subcircuit-size .button {
+  min-width: 40px;
+}
+
+.subcircuit-size .field-label + .button {
+  margin-left: 4px;
+}
+
+.subcircuit-size .button + .field-label {
+  margin-left: 12px;
+}
+
+.subcircuit-bar {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  max-width: calc(100% - 24px);
+  padding: 4px 4px 4px 16px;
+  border-radius: var(--md-shape-l);
+  background: var(--md-surface-container-highest);
+  box-shadow: var(--md-elevation-2);
+}
