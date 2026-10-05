@@ -42,6 +42,18 @@ import {
   VarRailElmType,
 } from './elm/RailVariants.ts';
 import { AMElmType, FMElmType, SweepElmType } from './elm/SweepElm.ts';
+import {
+  CrossSwitchElmType,
+  DPDTSwitchElmType,
+  MBBSwitchElmType,
+  Switch2ElmType,
+} from './elm/Switch2Elm.ts';
+import {
+  BusLogicInputElmType,
+  LogicInputElmType,
+  LogicOutputElmType,
+} from './elm/LogicInputElm.ts';
+import { AnalogSwitch2ElmType, AnalogSwitchElmType } from './elm/AnalogSwitchElm.ts';
 import type { StringTokenizer } from './StringTokenizer.ts';
 
 /** Every ported element class. */
@@ -89,6 +101,16 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   AudioInputElmType,
   DataInputElmType,
   ExtVoltageElmType,
+  // Phase 8: switches, logic input and output
+  Switch2ElmType,
+  DPDTSwitchElmType,
+  MBBSwitchElmType,
+  CrossSwitchElmType,
+  LogicInputElmType,
+  LogicOutputElmType,
+  BusLogicInputElmType,
+  AnalogSwitchElmType,
+  AnalogSwitch2ElmType,
 ];
 
 const byClassName = new Map<string, ElementType>();

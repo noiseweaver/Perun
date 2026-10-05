@@ -118,3 +118,6 @@ export {
   TRIGGER_FREERUN,
   TRIGGER_NORMAL,
 } from './scope/ScopeTrigger.ts';
+export { CrossSwitchElm, DPDTSwitchElm, MBBSwitchElm, Switch2Elm } from './elm/Switch2Elm.ts';
+export { BusLogicInputElm, LogicInputElm, LogicOutputElm } from './elm/LogicInputElm.ts';
+export { AnalogSwitch2Elm, AnalogSwitchElm } from './elm/AnalogSwitchElm.ts';

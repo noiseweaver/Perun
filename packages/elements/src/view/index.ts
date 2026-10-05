@@ -44,7 +44,21 @@ import {
 } from './sources.ts';
 import { BatteryElm } from '../elm/BatteryElm.ts';
 import { AMElm, FMElm, SweepElm } from '../elm/SweepElm.ts';
-import { switchView } from './switches.ts';
+import {
+  analogSwitch2View,
+  analogSwitchView,
+  busLogicInputView,
+  crossSwitchView,
+  dpdtSwitchView,
+  logicInputView,
+  logicOutputView,
+  mbbSwitchView,
+  switch2View,
+  switchView,
+} from './switches.ts';
+import { AnalogSwitch2Elm, AnalogSwitchElm } from '../elm/AnalogSwitchElm.ts';
+import { BusLogicInputElm, LogicInputElm, LogicOutputElm } from '../elm/LogicInputElm.ts';
+import { CrossSwitchElm, DPDTSwitchElm, MBBSwitchElm, Switch2Elm } from '../elm/Switch2Elm.ts';
 
 /** Undocked scopes are drawn by the scope renderer, over the circuit; this only places them. */
 const scopeElmView: ElementView<ScopeElm> = {
@@ -65,7 +79,16 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [RailElm, railView],
   [VoltageElm, voltageView],
   [CurrentElm, currentView],
+  [Switch2Elm, switch2View],
+  [DPDTSwitchElm, dpdtSwitchView],
+  [MBBSwitchElm, mbbSwitchView],
+  [CrossSwitchElm, crossSwitchView],
+  [LogicInputElm, logicInputView],
+  [BusLogicInputElm, busLogicInputView],
   [SwitchElm, switchView],
+  [LogicOutputElm, logicOutputView],
+  [AnalogSwitch2Elm, analogSwitch2View],
+  [AnalogSwitchElm, analogSwitchView],
   [LabeledNodeElm, labeledNodeView],
   [ProbeElm, probeView],
   [OutputElm, outputView],

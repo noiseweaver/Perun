@@ -9,40 +9,40 @@ steps 1, 2, 5, 10, 20, 50, 100, 200, 500 and 1000 match within the golden tolera
 (tools/golden/README.md). "Same save" means our XML save after loading is byte for byte
 upstream's.
 
-**Pass: 145 of 373 (38.9%).** Same save: 136 (36.5%).
+**Pass: 188 of 373 (50.4%).** Same save: 177 (47.5%).
 
 Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 
 | Example | Result | Same save | First difference |
 | ------- | ------ | --------- | ---------------- |
-| 3-cgand.txt | fail | no | unrecognized dump type: M; unrecognized dump type: L |
-| 3-cgor.txt | fail | no | unrecognized dump type: M; unrecognized dump type: L |
-| 3-f211.txt | fail | no | unrecognized dump type: M; unrecognized dump type: L |
-| 3-f220.txt | fail | no | unrecognized dump type: M; unrecognized dump type: L |
-| 3-f221.txt | fail | no | unrecognized dump type: M; unrecognized dump type: L |
-| 3-invert.txt | fail | no | unrecognized dump type: M; unrecognized dump type: L |
+| 3-cgand.txt | pass | yes |  |
+| 3-cgor.txt | pass | yes |  |
+| 3-f211.txt | pass | yes |  |
+| 3-f220.txt | pass | yes |  |
+| 3-f221.txt | pass | yes |  |
+| 3-invert.txt | pass | yes |  |
 | 3motor.txt | fail | no | unrecognized dump type: 427 |
 | 3phasewye.txt | pass | yes |  |
-| 3way.txt | fail | no | unrecognized dump type: S |
-| 4way.txt | fail | no | unrecognized dump type: S |
+| 3way.txt | pass | yes |  |
+| 4way.txt | pass | yes |  |
 | 555dutycycle.txt | fail | no | unrecognized dump type: 165 |
 | 555int.txt | fail | no | unrecognized dump type: 153; unrecognized dump type: b; unrecognized dump type: I |
 | 555lowduty.txt | fail | no | unrecognized dump type: 165 |
-| 555missing.txt | fail | no | unrecognized dump type: 165; unrecognized dump type: 152; unrecognized dump type: L |
-| 555monostable.txt | fail | no | unrecognized dump type: 165; unrecognized dump type: L; a scope shows an element that is not supported yet |
+| 555missing.txt | fail | no | unrecognized dump type: 165; unrecognized dump type: 152 |
+| 555monostable.txt | fail | no | unrecognized dump type: 165 |
 | 555pulsemod.txt | fail | no | unrecognized dump type: 165 |
 | 555saw.txt | fail | no | unrecognized dump type: 165 |
 | 555schmitt.txt | fail | no | unrecognized dump type: 165 |
-| 555sequencer.txt | fail | no | unrecognized dump type: 165; unrecognized dump type: L; unrecognized dump type: M; a scope shows an element that is not supported yet |
+| 555sequencer.txt | fail | no | unrecognized dump type: 165 |
 | 555square.txt | fail | no | unrecognized dump type: 165 |
-| 7segdecoder.txt | fail | no | unrecognized dump type: 157; unrecognized dump type: I; unrecognized dump type: L; unrecognized dump type: 151; unrecognized dump type: 150 |
+| 7segdecoder.txt | fail | no | unrecognized dump type: 157; unrecognized dump type: I; unrecognized dump type: 151; unrecognized dump type: 150 |
 | actbutterband.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
 | actbutterhi.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
 | actbutterlo.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
-| adder4-sc.txt | fail | no | unrecognized xml element: L; unrecognized xml element: SevenSegDecoder; unrecognized xml element: ssd; unrecognized xml element: M; model element <ccm> is not supported yet; unrecognized xml element: cc |
+| adder4-sc.txt | fail | no | unrecognized xml element: SevenSegDecoder; unrecognized xml element: ssd; model element <ccm> is not supported yet; unrecognized xml element: cc |
 | allpass1.txt | pass | yes |  |
 | allpass2.txt | pass | yes |  |
-| alu74181.txt | fail | no | unrecognized xml element: And; unrecognized xml element: I; unrecognized xml element: L; unrecognized xml element: Nor; unrecognized xml element: Nand; unrecognized xml element: Xor; unrecognized xml element: M; unrecognized xml element: Line; unrecognized xml element: bs; unrecognized xml element: ins |
+| alu74181.txt | fail | no | unrecognized xml element: And; unrecognized xml element: I; unrecognized xml element: Nor; unrecognized xml element: Nand; unrecognized xml element: Xor; unrecognized xml element: Line; unrecognized xml element: bs; unrecognized xml element: ins |
 | amdetect.txt | pass | yes |  |
 | amp-dfdx.txt | pass | yes |  |
 | amp-diff.txt | pass | yes |  |
@@ -55,26 +55,26 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | amp-schmitt.txt | pass | yes |  |
 | amp-sum.txt | pass | yes |  |
 | analogrecip.txt | fail | no | unrecognized dump type: j |
-| avr8js-analog.txt | fail | no | unrecognized dump type: M; a scope shows an element that is not supported yet |
-| avr8js-logic.txt | fail | no | unrecognized dump type: M; unrecognized dump type: L |
+| avr8js-analog.txt | pass | yes |  |
+| avr8js-logic.txt | pass | yes |  |
 | avr8js-strobe.txt | pass | yes |  |
 | bandnoise.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
 | bandpass.txt | pass | yes |  |
 | besselbutter.txt | pass | yes |  |
 | blank.txt | pass | yes |  |
-| brentkung.txt | fail | no | unrecognized xml element: Xor; unrecognized xml element: And; unrecognized xml element: L; unrecognized xml element: Or; unrecognized xml element: M; unrecognized xml element: dd; model element <ccm> is not supported yet; unrecognized xml element: cc |
+| brentkung.txt | fail | no | unrecognized xml element: Xor; unrecognized xml element: And; unrecognized xml element: Or; unrecognized xml element: dd; model element <ccm> is not supported yet; unrecognized xml element: cc |
 | butter10hi.txt | pass | yes |  |
 | butter10hiaud.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
 | butter10lo.txt | pass | yes |  |
 | butter10loaud.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
 | butterbandstop.txt | pass | yes |  |
-| cap.txt | fail | no | unrecognized dump type: S |
+| cap.txt | pass | no |  |
 | capac.txt | pass | no |  |
 | capmult.txt | pass | yes |  |
 | capmultcaps.txt | pass | yes |  |
 | capmultfreq.txt | pass | yes |  |
-| cappar.txt | fail | no | unrecognized dump type: S |
-| capseries.txt | fail | no | unrecognized dump type: S |
+| cappar.txt | pass | yes |  |
+| capseries.txt | pass | yes |  |
 | cc2.txt | fail | no | unrecognized dump type: 179 |
 | cc2imp.txt | pass | yes |  |
 | cc2impn.txt | pass | yes |  |
@@ -83,23 +83,23 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | cciamp.txt | fail | no | unrecognized dump type: 179 |
 | ccinductor.txt | fail | no | unrecognized dump type: 179 |
 | ccint.txt | fail | no | unrecognized dump type: 179 |
-| ccitov.txt | fail | no | unrecognized dump type: S; unrecognized dump type: 179 |
+| ccitov.txt | fail | no | unrecognized dump type: 179 |
 | ccvccs.txt | fail | no | unrecognized dump type: 179 |
 | ceamp.txt | pass | yes |  |
 | chaos1.txt | pass | yes |  |
 | chaos2.txt | pass | yes |  |
 | chua.txt | pass | yes |  |
 | classd.txt | pass | yes |  |
-| clockedsrff.txt | fail | no | unrecognized dump type: 151; unrecognized dump type: M; unrecognized dump type: L; a scope shows an element that is not supported yet |
-| cmosff.txt | fail | no | unrecognized dump type: L; unrecognized dump type: M |
-| cmosinverter.txt | fail | no | unrecognized dump type: L; unrecognized dump type: M |
-| cmosinvertercap.txt | fail | no | unrecognized xml element: M; unrecognized xml element: L; a scope shows an element that is not supported yet |
-| cmosinverterslow.txt | fail | no | unrecognized dump type: M; unrecognized dump type: L |
-| cmosmsff.txt | fail | no | unrecognized dump type: 159; unrecognized dump type: I; unrecognized dump type: L; unrecognized dump type: M |
-| cmosnand.txt | fail | no | unrecognized dump type: M; unrecognized dump type: L |
-| cmosnor.txt | fail | no | unrecognized dump type: M; unrecognized dump type: L |
-| cmostransgate.txt | fail | no | unrecognized dump type: I; unrecognized dump type: L |
-| cmosxor.txt | fail | no | unrecognized dump type: L; unrecognized dump type: I; unrecognized dump type: M |
+| clockedsrff.txt | fail | no | unrecognized dump type: 151 |
+| cmosff.txt | pass | yes |  |
+| cmosinverter.txt | pass | yes |  |
+| cmosinvertercap.txt | pass | yes |  |
+| cmosinverterslow.txt | pass | yes |  |
+| cmosmsff.txt | fail | no | unrecognized dump type: I |
+| cmosnand.txt | pass | yes |  |
+| cmosnor.txt | pass | yes |  |
+| cmostransgate.txt | fail | no | unrecognized dump type: I |
+| cmosxor.txt | fail | no | unrecognized dump type: I |
 | colpitts.txt | pass | yes |  |
 | comb.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
 | conv-boost.txt | fail | no | unrecognized xml element: pc |
@@ -107,8 +107,8 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | conv-buckboost.txt | pass | no |  |
 | conv-cuk.txt | pass | no |  |
 | conv-sepic.txt | pass | no |  |
-| counter.txt | fail | no | unrecognized dump type: 156; unrecognized dump type: M; unrecognized dump type: 419; a scope shows an element that is not supported yet |
-| counter8.txt | fail | no | unrecognized dump type: 156; unrecognized dump type: M; unrecognized dump type: 419; a scope shows an element that is not supported yet |
+| counter.txt | fail | no | unrecognized dump type: 156; unrecognized dump type: 419 |
+| counter8.txt | fail | no | unrecognized dump type: 156; unrecognized dump type: 419 |
 | coupled1.txt | pass | yes |  |
 | coupled2.txt | pass | yes |  |
 | coupled3.txt | pass | yes |  |
@@ -131,32 +131,32 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | currentsrc.txt | pass | yes |  |
 | currentsrcelm.txt | pass | yes |  |
 | currentsrcramp.txt | pass | yes |  |
-| dac.txt | fail | no | unrecognized dump type: L |
+| dac.txt | pass | yes |  |
 | darlington.txt | pass | yes |  |
 | dcrestoration.txt | pass | yes |  |
-| deccounter.txt | fail | no | unrecognized dump type: 156; unrecognized dump type: M; unrecognized dump type: 150; unrecognized dump type: 419; a scope shows an element that is not supported yet |
-| decoder.txt | fail | no | unrecognized dump type: 150; unrecognized dump type: I; unrecognized dump type: L; unrecognized dump type: M |
-| delayrc.txt | fail | no | unrecognized dump type: L; unrecognized dump type: M; a scope shows an element that is not supported yet |
+| deccounter.txt | fail | no | unrecognized dump type: 156; unrecognized dump type: 150; unrecognized dump type: 419 |
+| decoder.txt | fail | no | unrecognized dump type: 150; unrecognized dump type: I |
+| delayrc.txt | pass | yes |  |
 | delta-pwm.txt | fail | no | unrecognized dump type: 183 |
-| deltasigma.txt | fail | no | unrecognized dump type: 160; unrecognized dump type: 155; unrecognized dump type: 164; unrecognized dump type: 168; unrecognized dump type: M; unrecognized dump type: 153; a scope shows an element that is not supported yet |
+| deltasigma.txt | fail | no | unrecognized dump type: 155; unrecognized dump type: 164; unrecognized dump type: 168; unrecognized dump type: 153 |
 | diff.txt | pass | yes |  |
-| digcompare.txt | fail | no | unrecognized dump type: L; unrecognized dump type: I; unrecognized dump type: 154; unrecognized dump type: 151; unrecognized dump type: 152; unrecognized dump type: M; unrecognized dump type: 153 |
+| digcompare.txt | fail | no | unrecognized dump type: I; unrecognized dump type: 154; unrecognized dump type: 151; unrecognized dump type: 152; unrecognized dump type: 153 |
 | digsine.txt | fail | no | unrecognized dump type: 155 |
 | diodeclip.txt | pass | yes |  |
 | diodecurve.txt | pass | yes |  |
 | diodelimit.txt | pass | yes |  |
 | diodevar.txt | pass | yes |  |
-| divideby2.txt | fail | no | unrecognized dump type: 155; unrecognized dump type: M; a scope shows an element that is not supported yet |
-| divideby3.txt | fail | no | unrecognized dump type: 155; unrecognized dump type: M; unrecognized dump type: 153; a scope shows an element that is not supported yet |
-| dram.txt | fail | no | unrecognized dump type: 150; unrecognized dump type: I; unrecognized dump type: L; unrecognized dump type: 159; unrecognized dump type: M |
-| dtlinverter.txt | fail | no | unrecognized dump type: M; unrecognized dump type: L |
-| dtlnand.txt | fail | no | unrecognized dump type: M; unrecognized dump type: L |
-| dtlnor.txt | fail | no | unrecognized dump type: M; unrecognized dump type: L |
+| divideby2.txt | fail | no | unrecognized dump type: 155 |
+| divideby3.txt | fail | no | unrecognized dump type: 155; unrecognized dump type: 153 |
+| dram.txt | fail | no | unrecognized dump type: 150; unrecognized dump type: I |
+| dtlinverter.txt | pass | yes |  |
+| dtlnand.txt | pass | yes |  |
+| dtlnor.txt | pass | yes |  |
 | early.txt | pass | yes |  |
-| eclnor.txt | fail | no | unrecognized dump type: L; unrecognized dump type: M |
+| eclnor.txt | pass | yes |  |
 | eclosc.txt | pass | yes |  |
-| edgedff.txt | fail | no | unrecognized dump type: 151; unrecognized dump type: L; unrecognized dump type: M; a scope shows an element that is not supported yet |
-| fanout.txt | fail | no | unrecognized dump type: L |
+| edgedff.txt | fail | no | unrecognized dump type: 151 |
+| fanout.txt | pass | yes |  |
 | filt-hipass-l.txt | pass | yes |  |
 | filt-hipass.txt | pass | yes |  |
 | filt-lopass-l.txt | pass | yes |  |
@@ -166,26 +166,26 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | flashadc.txt | fail | no | unrecognized dump type: 154; unrecognized dump type: 419 |
 | follower.txt | pass | yes |  |
 | freqdouble.txt | fail | no | unrecognized xml element: VCO; unrecognized xml element: PhaseComp; unrecognized xml element: DFlipFlop |
-| fulladd.txt | fail | no | unrecognized dump type: 154; unrecognized dump type: M; unrecognized dump type: L; unrecognized dump type: 150; unrecognized dump type: 152 |
+| fulladd.txt | fail | no | unrecognized dump type: 154; unrecognized dump type: 150; unrecognized dump type: 152 |
 | fullrect-sc.txt | fail | no | model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: rw |
 | fullrect.txt | pass | yes |  |
 | fullrectf.txt | pass | yes |  |
 | gilbertcell.txt | pass | yes |  |
-| graycode.txt | fail | no | unrecognized dump type: 154; unrecognized dump type: M; unrecognized dump type: 164; a scope shows an element that is not supported yet |
+| graycode.txt | fail | no | unrecognized dump type: 154; unrecognized dump type: 164 |
 | grid.txt | pass | yes |  |
 | grid2.txt | pass | yes |  |
 | gyrator.txt | pass | yes |  |
 | gyratorelm.txt | fail | no | unrecognized xml element: Gyrator; unrecognized xml element: rw; a scope shows an element that is not supported yet |
-| halfadd.txt | fail | no | unrecognized dump type: 154; unrecognized dump type: 150; unrecognized dump type: L; unrecognized dump type: M |
+| halfadd.txt | fail | no | unrecognized dump type: 154; unrecognized dump type: 150 |
 | hartley.txt | pass | yes |  |
 | hfadc.txt | fail | no | unrecognized dump type: 166; unrecognized dump type: 167; unrecognized dump type: 419 |
 | howland.txt | pass | yes |  |
 | impedance.txt | pass | yes |  |
 | indmultfreq.txt | pass | yes |  |
 | indmultind.txt | pass | yes |  |
-| indpar.txt | fail | no | unrecognized dump type: S |
-| indseries.txt | fail | no | unrecognized dump type: S |
-| induct.txt | fail | no | unrecognized dump type: S |
+| indpar.txt | pass | yes |  |
+| indseries.txt | pass | yes |  |
+| induct.txt | pass | no |  |
 | inductac.txt | pass | no |  |
 | inductkick-block.txt | pass | yes |  |
 | inductkick-snub.txt | pass | yes |  |
@@ -198,25 +198,25 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | jfetcurrentsrc.txt | fail | no | unrecognized dump type: j |
 | jfetfollower-nooff.txt | fail | no | unrecognized dump type: j |
 | jfetfollower.txt | fail | no | unrecognized dump type: j |
-| jkff.txt | fail | no | unrecognized dump type: 151; unrecognized dump type: I; unrecognized dump type: M; unrecognized dump type: L; a scope shows an element that is not supported yet |
-| johnsonctr.txt | fail | no | unrecognized dump type: 155; unrecognized dump type: 150; unrecognized dump type: M |
+| jkff.txt | fail | no | unrecognized dump type: 151; unrecognized dump type: I |
+| johnsonctr.txt | fail | no | unrecognized dump type: 155; unrecognized dump type: 150 |
 | joule-thief.txt | fail | no | unrecognized dump type: T |
 | jsinterface.txt | fail | no | unrecognized dump type: 156 |
 | ladder.txt | pass | yes |  |
 | lambda-diode-osc.txt | fail | no | unrecognized dump type: j |
 | lambda-diode.txt | fail | no | unrecognized dump type: j |
 | latchingrelay.txt | fail | no | unrecognized dump type: 425; unrecognized dump type: 426 |
-| leadingedge.txt | fail | no | unrecognized dump type: M; a scope shows an element that is not supported yet |
+| leadingedge.txt | pass | yes |  |
 | ledarray.txt | fail | no | unrecognized dump type: 185; unrecognized dump type: 164; custom logic models are not supported yet; unrecognized dump type: 208; unrecognized dump type: 405 |
-| ledflasher.txt | fail | no | unrecognized dump type: 163; unrecognized dump type: L |
+| ledflasher.txt | fail | no | unrecognized dump type: 163 |
 | lightbulb.txt | fail | no | unrecognized dump type: 181; a scope shows an element that is not supported yet |
 | lissa.txt | pass | yes |  |
 | logconvert.txt | pass | yes |  |
 | longdist.txt | fail | no | unrecognized dump type: T |
 | lrc-critical.txt | pass | yes |  |
 | lrc.txt | pass | no |  |
-| majority.txt | fail | no | unrecognized dump type: L; unrecognized dump type: 151; unrecognized dump type: M |
-| masterslaveff.txt | fail | no | unrecognized dump type: 151; unrecognized dump type: I; unrecognized dump type: M; unrecognized dump type: L; a scope shows an element that is not supported yet |
+| majority.txt | fail | no | unrecognized dump type: 151 |
+| masterslaveff.txt | fail | no | unrecognized dump type: 151; unrecognized dump type: I |
 | mirror.txt | pass | yes |  |
 | moscurrentramp.txt | pass | yes |  |
 | moscurrentsrc.txt | pass | yes |  |
@@ -225,7 +225,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | mosmirror.txt | pass | yes |  |
 | mosswitch.txt | pass | yes |  |
 | motorprotect.txt | fail | no | unrecognized dump type: 428; unrecognized dump type: 426 |
-| mr-crossbar.txt | fail | no | unrecognized dump type: m; unrecognized dump type: S |
+| mr-crossbar.txt | fail | no | unrecognized dump type: m |
 | mr-sine.txt | fail | no | unrecognized dump type: m; a scope shows an element that is not supported yet |
 | mr-sine2.txt | fail | no | unrecognized dump type: m; a scope shows an element that is not supported yet |
 | mr-sine3.txt | fail | no | unrecognized dump type: m; a scope shows an element that is not supported yet |
@@ -233,17 +233,17 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | mr-triangle.txt | fail | no | unrecognized dump type: m; a scope shows an element that is not supported yet |
 | mr.txt | fail | no | unrecognized dump type: m; a scope shows an element that is not supported yet |
 | multivib-a.txt | pass | no |  |
-| multivib-bi.txt | fail | no | unrecognized dump type: M; unrecognized dump type: L |
+| multivib-bi.txt | pass | yes |  |
 | multivib-mono.txt | pass | yes |  |
-| mux.txt | fail | no | unrecognized dump type: I; unrecognized dump type: L |
-| mux3state.txt | fail | no | unrecognized dump type: 151; unrecognized dump type: 150; unrecognized dump type: L; unrecognized dump type: M; unrecognized dump type: I |
-| nandff.txt | fail | no | unrecognized dump type: 151; unrecognized dump type: L; unrecognized dump type: M |
+| mux.txt | fail | no | unrecognized dump type: I |
+| mux3state.txt | fail | no | unrecognized dump type: 151; unrecognized dump type: 150; unrecognized dump type: I |
+| nandff.txt | fail | no | unrecognized dump type: 151 |
 | nic-r.txt | pass | yes |  |
 | nmosfet.txt | pass | yes |  |
-| nmosinverter.txt | fail | no | unrecognized dump type: L; unrecognized dump type: M |
-| nmosinverter2.txt | fail | no | unrecognized dump type: L; unrecognized dump type: M |
-| nmosinverter3.txt | fail | no | unrecognized dump type: L; unrecognized dump type: M |
-| nmosnand.txt | fail | no | unrecognized dump type: M; unrecognized dump type: L |
+| nmosinverter.txt | pass | yes |  |
+| nmosinverter2.txt | pass | yes |  |
+| nmosinverter3.txt | pass | yes |  |
+| nmosnand.txt | pass | yes |  |
 | norton-invert.txt | fail | no | unrecognized xml element: nor |
 | norton-noninvert.txt | fail | no | unrecognized xml element: nor |
 | norton-saw.txt | fail | no | unrecognized xml element: nor |
@@ -258,17 +258,17 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | opint-invert-amp.txt | pass | yes |  |
 | opint-slew.txt | pass | yes |  |
 | opint.txt | pass | yes |  |
-| ota-gain.txt | fail | no | unrecognized dump type: 402; unrecognized dump type: S |
+| ota-gain.txt | fail | no | unrecognized dump type: 402 |
 | ota-ringmod.txt | fail | no | unrecognized dump type: 402; unrecognized dump type: 400 |
 | ota-vca.txt | fail | no | unrecognized dump type: 402 |
-| ota-vcf-single.txt | fail | no | unrecognized dump type: 402; unrecognized dump type: 400; unrecognized dump type: S |
+| ota-vcf-single.txt | fail | no | unrecognized dump type: 402; unrecognized dump type: 400 |
 | peak-detect.txt | pass | yes |  |
 | phasecomp.txt | fail | no | unrecognized dump type: 161 |
 | phasecompint.txt | fail | no | unrecognized dump type: 155; unrecognized dump type: 150 |
 | phaseseq.txt | pass | yes |  |
 | phaseshiftosc.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
 | phasesplit.txt | pass | yes |  |
-| piso-sr.txt | fail | no | unrecognized dump type: 155; unrecognized dump type: 184; unrecognized dump type: L; unrecognized dump type: M; unrecognized dump type: I; a scope shows an element that is not supported yet |
+| piso-sr.txt | fail | no | unrecognized dump type: 155; unrecognized dump type: 184; unrecognized dump type: I |
 | pll.txt | fail | no | unrecognized dump type: 158; unrecognized dump type: 154 |
 | pll2.txt | fail | no | unrecognized xml element: VCO; unrecognized xml element: PhaseComp |
 | pll2a.txt | fail | no | unrecognized xml element: VCO; unrecognized xml element: PhaseComp |
@@ -281,35 +281,35 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | potdivide.txt | pass | yes |  |
 | powerfactor1.txt | pass | yes |  |
 | powerfactor2.txt | pass | yes |  |
-| priencoder.txt | fail | no | unrecognized dump type: 152; unrecognized dump type: 150; unrecognized dump type: I; unrecognized dump type: L; unrecognized dump type: M |
+| priencoder.txt | fail | no | unrecognized dump type: 152; unrecognized dump type: 150; unrecognized dump type: I |
 | pushpull.txt | pass | yes |  |
 | pushpullxover.txt | pass | yes |  |
-| qam-256.txt | fail | no | unrecognized dump type: 166; unrecognized dump type: 164; unrecognized dump type: 182; unrecognized dump type: 213; unrecognized dump type: 167; unrecognized dump type: 168; unrecognized dump type: 160; unrecognized dump type: 193; unrecognized dump type: 212; unrecognized dump type: M |
-| r2rladder.txt | fail | no | unrecognized dump type: 160; unrecognized dump type: L |
+| qam-256.txt | fail | no | unrecognized dump type: 166; unrecognized dump type: 164; unrecognized dump type: 182; unrecognized dump type: 213; unrecognized dump type: 167; unrecognized dump type: 168; unrecognized dump type: 193; unrecognized dump type: 212 |
+| r2rladder.txt | pass | yes |  |
 | rectify.txt | pass | yes |  |
 | relaxosc.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
 | relay.txt | fail | no | unrecognized dump type: 178 |
-| relayand.txt | fail | no | unrecognized dump type: 178; unrecognized dump type: L; unrecognized dump type: M |
-| relayctr.txt | fail | no | unrecognized dump type: 178; unrecognized dump type: 159 |
+| relayand.txt | fail | no | unrecognized dump type: 178 |
+| relayctr.txt | fail | no | unrecognized dump type: 178 |
 | relayff.txt | fail | no | unrecognized dump type: 178 |
-| relaymux.txt | fail | no | unrecognized dump type: 178; unrecognized dump type: L; unrecognized dump type: M |
-| relayor.txt | fail | no | unrecognized dump type: 178; unrecognized dump type: L; unrecognized dump type: M |
+| relaymux.txt | fail | no | unrecognized dump type: 178 |
+| relayor.txt | fail | no | unrecognized dump type: 178 |
 | relayosc.txt | fail | no | unrecognized dump type: 178 |
-| relays.txt | fail | no | unrecognized dump type: 425; unrecognized dump type: 426; unrecognized dump type: 430 |
+| relays.txt | fail | no | unrecognized dump type: 425; unrecognized dump type: 426 |
 | relaytff.txt | fail | no | unrecognized dump type: 178 |
-| relayxor.txt | fail | no | unrecognized dump type: 178; unrecognized dump type: L; unrecognized dump type: M |
+| relayxor.txt | fail | no | unrecognized dump type: 178 |
 | res-par.txt | pass | yes |  |
 | res-series.txt | pass | yes |  |
 | resistors.txt | pass | yes |  |
-| ringcascade.txt | fail | no | unrecognized dump type: 163; unrecognized dump type: 150; unrecognized dump type: I; unrecognized dump type: M |
+| ringcascade.txt | fail | no | unrecognized dump type: 163; unrecognized dump type: 150; unrecognized dump type: I |
 | ringing.txt | pass | yes |  |
 | ringmod.txt | fail | no | unrecognized dump type: 169 |
 | rmsconverter.txt | pass | yes |  |
 | rossler.txt | pass | yes |  |
-| rtlinverter.txt | fail | no | unrecognized dump type: L; unrecognized dump type: M |
-| rtlnand.txt | fail | no | unrecognized dump type: L; unrecognized dump type: M |
-| rtlnor.txt | fail | no | unrecognized dump type: L; unrecognized dump type: M |
-| samplenhold.txt | fail | no | unrecognized dump type: I; unrecognized dump type: L |
+| rtlinverter.txt | pass | yes |  |
+| rtlnand.txt | pass | yes |  |
+| rtlnor.txt | pass | yes |  |
+| samplenhold.txt | fail | no | unrecognized dump type: I |
 | satcore-comparison.txt | pass | yes |  |
 | satcore-inductor.txt | pass | yes |  |
 | satcore-transformer.txt | fail | no | unrecognized dump type: T |
@@ -319,20 +319,20 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | scractrig.txt | fail | no | unrecognized dump type: 177 |
 | sine.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
 | sinediode.txt | pass | yes |  |
-| sipo-sr.txt | fail | no | unrecognized dump type: 155; unrecognized dump type: L; unrecognized dump type: M |
+| sipo-sr.txt | fail | no | unrecognized dump type: 155 |
 | spark-marx.txt | fail | no | unrecognized dump type: 187; a scope shows an element that is not supported yet |
 | spark-sawtooth.txt | fail | no | unrecognized dump type: 187 |
 | spikegen.txt | pass | yes |  |
-| sram.txt | fail | no | unrecognized dump type: L; unrecognized dump type: 159; unrecognized dump type: I; unrecognized dump type: M |
-| switchedcap.txt | fail | no | unrecognized dump type: 159; unrecognized dump type: I |
-| switchfilter.txt | fail | no | unrecognized dump type: I; unrecognized dump type: L |
-| swtreedac.txt | fail | no | unrecognized dump type: 160; unrecognized dump type: L |
+| sram.txt | fail | no | unrecognized dump type: I |
+| switchedcap.txt | fail | no | unrecognized dump type: I |
+| switchfilter.txt | fail | no | unrecognized dump type: I |
+| swtreedac.txt | pass | yes |  |
 | synccounter.txt | fail | no | unrecognized dump type: 156; unrecognized dump type: 150; unrecognized dump type: 419 |
-| td4-add2.txt | fail | no | unrecognized xml element: ctr2; unrecognized xml element: mux; unrecognized xml element: rw; unrecognized xml element: FullAdder; unrecognized xml element: bli; unrecognized xml element: bs; model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: L; unrecognized xml element: DFlipFlop; unrecognized xml element: ins; unrecognized xml element: ROM |
-| td4-ctr-dn.txt | fail | no | unrecognized xml element: ctr2; unrecognized xml element: mux; unrecognized xml element: rw; unrecognized xml element: FullAdder; unrecognized xml element: bli; unrecognized xml element: bs; model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: L; unrecognized xml element: DFlipFlop; unrecognized xml element: ins; unrecognized xml element: ROM |
-| td4-ctr-up-dn.txt | fail | no | unrecognized xml element: ctr2; unrecognized xml element: mux; unrecognized xml element: rw; unrecognized xml element: FullAdder; unrecognized xml element: bli; unrecognized xml element: bs; model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: L; unrecognized xml element: DFlipFlop; unrecognized xml element: ins; unrecognized xml element: ROM |
-| td4-ctr.txt | fail | no | unrecognized xml element: ctr2; unrecognized xml element: mux; unrecognized xml element: rw; unrecognized xml element: FullAdder; unrecognized xml element: bli; unrecognized xml element: bs; model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: L; unrecognized xml element: DFlipFlop; unrecognized xml element: ins; unrecognized xml element: ROM |
-| td4.txt | fail | no | unrecognized xml element: ctr2; unrecognized xml element: mux; unrecognized xml element: rw; unrecognized xml element: FullAdder; unrecognized xml element: bli; unrecognized xml element: bs; model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: L; unrecognized xml element: DFlipFlop; unrecognized xml element: ins; unrecognized xml element: ROM |
+| td4-add2.txt | fail | no | unrecognized xml element: ctr2; unrecognized xml element: mux; unrecognized xml element: rw; unrecognized xml element: FullAdder; unrecognized xml element: bs; model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: DFlipFlop; unrecognized xml element: ins; unrecognized xml element: ROM |
+| td4-ctr-dn.txt | fail | no | unrecognized xml element: ctr2; unrecognized xml element: mux; unrecognized xml element: rw; unrecognized xml element: FullAdder; unrecognized xml element: bs; model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: DFlipFlop; unrecognized xml element: ins; unrecognized xml element: ROM |
+| td4-ctr-up-dn.txt | fail | no | unrecognized xml element: ctr2; unrecognized xml element: mux; unrecognized xml element: rw; unrecognized xml element: FullAdder; unrecognized xml element: bs; model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: DFlipFlop; unrecognized xml element: ins; unrecognized xml element: ROM |
+| td4-ctr.txt | fail | no | unrecognized xml element: ctr2; unrecognized xml element: mux; unrecognized xml element: rw; unrecognized xml element: FullAdder; unrecognized xml element: bs; model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: DFlipFlop; unrecognized xml element: ins; unrecognized xml element: ROM |
+| td4.txt | fail | no | unrecognized xml element: ctr2; unrecognized xml element: mux; unrecognized xml element: rw; unrecognized xml element: FullAdder; unrecognized xml element: bs; model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: DFlipFlop; unrecognized xml element: ins; unrecognized xml element: ROM |
 | tdiode.txt | fail | no | unrecognized dump type: 175; a scope shows an element that is not supported yet |
 | tdosc.txt | fail | no | unrecognized dump type: 175; a scope shows an element that is not supported yet |
 | tdrelax.txt | fail | no | unrecognized dump type: 175; a scope shows an element that is not supported yet |
@@ -363,13 +363,13 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | trianglevco.txt | pass | yes |  |
 | triode.txt | fail | no | unrecognized dump type: 173 |
 | triodeamp.txt | fail | no | unrecognized dump type: 173 |
-| ttlinverter.txt | fail | no | unrecognized dump type: L; unrecognized dump type: M |
-| ttlnand.txt | fail | no | unrecognized dump type: L; unrecognized dump type: M |
-| ttlnor.txt | fail | no | unrecognized dump type: L; unrecognized dump type: M |
+| ttlinverter.txt | pass | yes |  |
+| ttlnand.txt | pass | yes |  |
+| ttlnor.txt | pass | yes |  |
 | twint.txt | pass | yes |  |
 | ujtosc.txt | fail | no | unrecognized dump type: 417 |
-| unishiftreg.txt | fail | no | unrecognized dump type: 150; unrecognized dump type: 153; unrecognized dump type: I; unrecognized dump type: 156; unrecognized dump type: L; unrecognized dump type: M; unrecognized dump type: 423 |
-| updownctr.txt | fail | no | unrecognized dump type: 156; unrecognized dump type: 150; unrecognized dump type: 152; unrecognized dump type: L; unrecognized dump type: I; unrecognized dump type: 419 |
+| unishiftreg.txt | fail | no | unrecognized dump type: 150; unrecognized dump type: 153; unrecognized dump type: I; unrecognized dump type: 156; unrecognized dump type: 423 |
+| updownctr.txt | fail | no | unrecognized dump type: 156; unrecognized dump type: 150; unrecognized dump type: 152; unrecognized dump type: I; unrecognized dump type: 419 |
 | varactor.txt | fail | no | unrecognized dump type: 176; a scope shows an element that is not supported yet |
 | varactorvco.txt | fail | no | unrecognized dump type: 176 |
 | vco.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
@@ -377,13 +377,13 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | voltdivide.txt | pass | yes |  |
 | voltdouble.txt | pass | yes |  |
 | voltdouble2.txt | pass | yes |  |
-| voltinvert.txt | fail | no | unrecognized dump type: 159; unrecognized dump type: I |
+| voltinvert.txt | fail | no | unrecognized dump type: I |
 | voltquad.txt | pass | yes |  |
 | volttriple.txt | pass | yes |  |
 | volume.txt | fail | no | unrecognized dump type: j |
 | wheatstone.txt | fail | no | unrecognized dump type: 370 |
 | wienbridge.txt | fail | no | unrecognized dump type: 181; a scope shows an element that is not supported yet |
-| xor.txt | fail | no | unrecognized dump type: 151; unrecognized dump type: M; unrecognized dump type: L |
+| xor.txt | fail | no | unrecognized dump type: 151 |
 | xorphasedet.txt | fail | no | unrecognized dump type: 154 |
 | zeneriv.txt | pass | yes |  |
 | zenerref.txt | pass | yes |  |

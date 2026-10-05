@@ -40,7 +40,7 @@ function names(e: CircuitElm): string[] {
 
 /** Upstream gives these no fields (Antenna) or no type name for the dialog title (AM, FM). */
 const NO_FIELDS = new Set(['AntennaElm']);
-const GENERIC_TITLE = new Set(['AMElm', 'FMElm']);
+const GENERIC_TITLE = new Set(['AMElm', 'FMElm', 'BusLogicInputElm']);
 
 describe('edit fields', () => {
   // an undocked scope is edited in the scope properties dialog, as upstream's

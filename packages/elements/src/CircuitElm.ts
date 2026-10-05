@@ -65,6 +65,48 @@ export abstract class CircuitElm extends SimElement {
     this.volts[n] = v;
   }
 
+  /** Ends of the element body (upstream `lead1`, `lead2`), for elements whose posts use them. */
+  lead1: Point = new Point();
+  lead2: Point = new Point();
+
+  /** Upstream `calcLeads`: a body `len` long centred between the points. */
+  calcLeads(len: number): void {
+    if (this.dn < len || len === 0) {
+      this.lead1 = this.point1;
+      this.lead2 = this.point2;
+      return;
+    }
+    this.lead1 = this.interpPoint(this.point1, this.point2, (this.dn - len) / (2 * this.dn));
+    this.lead2 = this.interpPoint(this.point1, this.point2, (this.dn + len) / (2 * this.dn));
+  }
+
+  /**
+   * Upstream `adjustLeadsToGrid`: move the leads so the body centre is on the grid. Like
+   * upstream it moves the points in place, which moves the posts too when the leads are them.
+   */
+  adjustLeadsToGrid(flipX: boolean, flipY: boolean): void {
+    const cx = Math.trunc((this.point1.x + this.point2.x) / 2);
+    const cy = Math.trunc((this.point1.y + this.point2.y) / 2);
+    // when flipping, it changes the rounding direction.  need to adjust for this
+    const roundx = flipX ? 1 : -1;
+    const roundy = flipY ? 1 : -1;
+    const adjx = this.snapGrid(cx + roundx) - cx;
+    const adjy = this.snapGrid(cy + roundy) - cy;
+    this.lead1.x += adjx;
+    this.lead1.y += adjy;
+    this.lead2.x += adjx;
+    this.lead2.y += adjy;
+  }
+
+  newPointArray(n: number): Point[] {
+    return Array.from({ length: n }, () => new Point());
+  }
+
+  /** Upstream `comparePair`: is (x1, x2) the pair (y1, y2) in either order? */
+  comparePair(x1: number, x2: number, y1: number, y2: number): boolean {
+    return (x1 === y1 && x2 === y2) || (x1 === y2 && x2 === y1);
+  }
+
   /** Upstream `interpPoint2`: points fraction f from a to b, offset +g and -g across the line. */
   interpPoint2(a: Point, b: Point, f: number, g: number): [Point, Point] {
     const gx = b.y - a.y;

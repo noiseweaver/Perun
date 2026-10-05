@@ -690,6 +690,12 @@ export class Simulation {
     this.stampMatrixNV(n2, vs, -1);
   }
 
+  /** Stamp voltage source `vs` between the nodes saved in it by `setNodes`. */
+  stampVoltageSourceVS(vs: VoltageSource | null, v: number): void {
+    if (vs === null || vs.n1 === null || vs.n2 === null) return;
+    this.stampVoltageSource(vs.n1, vs.n2, vs, v);
+  }
+
   updateVoltageSource(
     _n1: CircuitNode,
     _n2: CircuitNode,
