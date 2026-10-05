@@ -17,6 +17,9 @@
 555sequencer.txt
 555square.txt
 7segdecoder.txt
+actbutterband.txt
+actbutterhi.txt
+actbutterlo.txt
 allpass1.txt
 allpass2.txt
 amdetect.txt
@@ -34,11 +37,14 @@ analogrecip.txt
 avr8js-analog.txt
 avr8js-logic.txt
 avr8js-strobe.txt
+bandnoise.txt
 bandpass.txt
 besselbutter.txt
 blank.txt
 butter10hi.txt
+butter10hiaud.txt
 butter10lo.txt
+butter10loaud.txt
 butterbandstop.txt
 cap.txt
 capac.txt
@@ -47,8 +53,16 @@ capmultcaps.txt
 capmultfreq.txt
 cappar.txt
 capseries.txt
+cc2.txt
 cc2imp.txt
 cc2impn.txt
+cc2n.txt
+ccdiff.txt
+cciamp.txt
+ccinductor.txt
+ccint.txt
+ccitov.txt
+ccvccs.txt
 ceamp.txt
 chaos1.txt
 chaos2.txt
@@ -65,6 +79,7 @@ cmosnor.txt
 cmostransgate.txt
 cmosxor.txt
 colpitts.txt
+comb.txt
 conv-boost.txt
 conv-buck.txt
 conv-buckboost.txt
@@ -216,6 +231,7 @@ peak-detect.txt
 phasecomp.txt
 phasecompint.txt
 phaseseq.txt
+phaseshiftosc.txt
 phasesplit.txt
 piso-sr.txt
 pll.txt
@@ -233,6 +249,7 @@ pushpullxover.txt
 qam-256.txt
 r2rladder.txt
 rectify.txt
+relaxosc.txt
 relay.txt
 relayand.txt
 relayctr.txt
@@ -258,9 +275,11 @@ samplenhold.txt
 satcore-comparison.txt
 satcore-inductor.txt
 satcore-transformer.txt
+sawtooth.txt
 schmitt.txt
 scr.txt
 scractrig.txt
+sine.txt
 sinediode.txt
 sipo-sr.txt
 spark-marx.txt
@@ -297,6 +316,7 @@ transformerup.txt
 transrectifier.txt
 transswitch.txt
 triacdimmer.txt
+triangle.txt
 trianglevco.txt
 triode.txt
 triodeamp.txt
@@ -307,6 +327,7 @@ twint.txt
 updownctr.txt
 varactor.txt
 varactorvco.txt
+vco.txt
 vilnius.txt
 voltdivide.txt
 voltdouble.txt

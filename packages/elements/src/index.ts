@@ -162,6 +162,8 @@ export { SparkGapElm } from './elm/SparkGapElm.ts';
 export { LampElm } from './elm/LampElm.ts';
 export { SCRElm } from './elm/SCRElm.ts';
 export { TriacElm } from './elm/TriacElm.ts';
+export { CC2Elm, CC2NegElm } from './elm/CC2Elm.ts';
+export { AudioOutputElm } from './elm/AudioOutputElm.ts';
 export { CCCSElm, CCVSElm, VCCSElm, VCVSElm } from './elm/VCCSElm.ts';
 export { Expr, ExprParser, ExprState } from './Expr.ts';
 export { DiacElm } from './elm/DiacElm.ts';

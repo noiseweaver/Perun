@@ -62,7 +62,8 @@ import {
   transformerView,
   transLineView,
 } from './magnetics.ts';
-import { labeledNodeView, outputView, probeView, textView } from './labels.ts';
+import { audioOutputView, labeledNodeView, outputView, probeView, textView } from './labels.ts';
+import { AudioOutputElm } from '../elm/AudioOutputElm.ts';
 import {
   capacitorView,
   groundView,
@@ -166,6 +167,7 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [LabeledNodeElm, labeledNodeView],
   [ProbeElm, probeView],
   [OutputElm, outputView],
+  [AudioOutputElm, audioOutputView],
   [TextElm, textView],
   [LEDElm, ledView],
   [ZenerElm, zenerView],

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
-// Geometry learned from CircuitJS1 LabeledNodeElm, ProbeElm, OutputElm and TextElm
+// Geometry learned from CircuitJS1 LabeledNodeElm, ProbeElm, OutputElm, AudioOutputElm and TextElm
 // (src/com/lushprojects/circuitjs1/client/, master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032;
 // the drawing code is new.
 
+import type { AudioOutputElm } from '../elm/AudioOutputElm.ts';
 import { LabeledNodeElm } from '../elm/LabeledNodeElm.ts';
 import { OutputElm } from '../elm/OutputElm.ts';
 import { ProbeElm } from '../elm/ProbeElm.ts';
@@ -15,6 +16,7 @@ import {
   drawValues,
   elementBox,
   LABEL,
+  MUTED,
   TEXT,
   UNITS_FONT,
   vInk,
@@ -110,6 +112,27 @@ export const outputView: ElementView<OutputElm> = {
       : 'out';
     const w = Math.trunc(p.measureText(s, font));
     const lead1 = interp(e.point1, e.point2, 1 - (Math.trunc(w / 2) + 8) / e.dn);
+    drawCenteredText(ctx, s, e.x2, e.y2, true, LABEL, font);
+    p.line(e.point1, lead1, vInk(volt(e, 0)));
+  },
+  bbox: (e) => elementBox(e, 8),
+};
+
+export const audioOutputView: ElementView<AudioOutputElm> = {
+  draw(e, ctx) {
+    const p = ctx.painter;
+    const font: TextStyle = { size: 14, bold: ctx.highlighted };
+    const s = e.getLabel();
+    const w = Math.trunc(p.measureText(s, font));
+    // how much of the recording buffer is filled
+    const pct = Math.trunc(w * e.fillFraction());
+    const x0 = e.x2 - Math.trunc(w / 2);
+    if (pct > 0)
+      p.fillPolygon(
+        [pt(x0, e.y2 - 10), pt(x0 + pct, e.y2 - 10), pt(x0 + pct, e.y2 + 10), pt(x0, e.y2 + 10)],
+        MUTED,
+      );
+    const lead1 = interp(e.point1, e.point2, 1 - (w / 2 + 8) / e.dn);
     drawCenteredText(ctx, s, e.x2, e.y2, true, LABEL, font);
     p.line(e.point1, lead1, vInk(volt(e, 0)));
   },

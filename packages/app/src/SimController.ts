@@ -12,6 +12,7 @@ import {
   UNITS_A,
   UNITS_V,
   VAL_CURRENT,
+  AudioOutputElm,
   VAL_VOLTAGE,
   VoltageElm,
   cardHitTest,
@@ -123,7 +124,12 @@ export class SimController {
     const stored = readClipboard();
     if (stored !== null) this.editor.setClipboard(stored);
     // upstream asks before shortening the timestep for a fast source
-    if (typeof window !== 'undefined') VoltageElm.confirmAdjustTimestep = (m) => window.confirm(m);
+    if (typeof window !== 'undefined') {
+      VoltageElm.confirmAdjustTimestep = (m) => window.confirm(m);
+      AudioOutputElm.confirmAdjustTimestep = (m) => window.confirm(m);
+      AudioOutputElm.notify = (m) => window.alert(m);
+      AudioOutputElm.player = playSamples;
+    }
   }
 
   // ---- loading -----------------------------------------------------------------------------
@@ -1840,3 +1846,16 @@ function readClipboard(): string | null {
 }
 
 export const controller = new SimController();
+
+/** Play an audio output element's recording (upstream builds a WAV blob; Web Audio is enough). */
+function playSamples(samples: Int16Array, samplingRate: number): void {
+  const ctx = new AudioContext();
+  const buffer = ctx.createBuffer(1, samples.length, samplingRate);
+  const ch = buffer.getChannelData(0);
+  for (let i = 0; i < samples.length; i++) ch[i] = samples[i] / 32768;
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  src.connect(ctx.destination);
+  src.onended = () => void ctx.close();
+  src.start();
+}

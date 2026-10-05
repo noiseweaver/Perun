@@ -9,7 +9,7 @@ steps 1, 2, 5, 10, 20, 50, 100, 200, 500 and 1000 match within the golden tolera
 (tools/golden/README.md). "Same save" means our XML save after loading is byte for byte
 upstream's.
 
-**Pass: 324 of 373 (86.9%).** Same save: 322 (86.3%).
+**Pass: 345 of 373 (92.5%).** Same save: 343 (92.0%).
 
 Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 
@@ -36,9 +36,9 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | 555sequencer.txt | pass | yes |  |
 | 555square.txt | pass | yes |  |
 | 7segdecoder.txt | pass | yes |  |
-| actbutterband.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
-| actbutterhi.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
-| actbutterlo.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
+| actbutterband.txt | pass | yes |  |
+| actbutterhi.txt | pass | yes |  |
+| actbutterlo.txt | pass | yes |  |
 | adder4-sc.txt | fail | no | model element <ccm> is not supported yet; unrecognized xml element: cc |
 | allpass1.txt | pass | yes |  |
 | allpass2.txt | pass | yes |  |
@@ -58,15 +58,15 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | avr8js-analog.txt | pass | yes |  |
 | avr8js-logic.txt | pass | yes |  |
 | avr8js-strobe.txt | pass | yes |  |
-| bandnoise.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
+| bandnoise.txt | pass | yes |  |
 | bandpass.txt | pass | yes |  |
 | besselbutter.txt | pass | yes |  |
 | blank.txt | pass | yes |  |
 | brentkung.txt | fail | no | model element <ccm> is not supported yet; unrecognized xml element: cc |
 | butter10hi.txt | pass | yes |  |
-| butter10hiaud.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
+| butter10hiaud.txt | pass | yes |  |
 | butter10lo.txt | pass | yes |  |
-| butter10loaud.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
+| butter10loaud.txt | pass | yes |  |
 | butterbandstop.txt | pass | yes |  |
 | cap.txt | pass | yes |  |
 | capac.txt | pass | yes |  |
@@ -75,16 +75,16 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | capmultfreq.txt | pass | yes |  |
 | cappar.txt | pass | yes |  |
 | capseries.txt | pass | yes |  |
-| cc2.txt | fail | no | unrecognized dump type: 179 |
+| cc2.txt | pass | yes |  |
 | cc2imp.txt | pass | yes |  |
 | cc2impn.txt | pass | yes |  |
-| cc2n.txt | fail | no | unrecognized dump type: 179 |
-| ccdiff.txt | fail | no | unrecognized dump type: 179 |
-| cciamp.txt | fail | no | unrecognized dump type: 179 |
-| ccinductor.txt | fail | no | unrecognized dump type: 179 |
-| ccint.txt | fail | no | unrecognized dump type: 179 |
-| ccitov.txt | fail | no | unrecognized dump type: 179 |
-| ccvccs.txt | fail | no | unrecognized dump type: 179 |
+| cc2n.txt | pass | yes |  |
+| ccdiff.txt | pass | yes |  |
+| cciamp.txt | pass | yes |  |
+| ccinductor.txt | pass | yes |  |
+| ccint.txt | pass | yes |  |
+| ccitov.txt | pass | yes |  |
+| ccvccs.txt | pass | yes |  |
 | ceamp.txt | pass | yes |  |
 | chaos1.txt | pass | yes |  |
 | chaos2.txt | pass | yes |  |
@@ -101,7 +101,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | cmostransgate.txt | pass | yes |  |
 | cmosxor.txt | pass | yes |  |
 | colpitts.txt | pass | yes |  |
-| comb.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
+| comb.txt | pass | yes |  |
 | conv-boost.txt | pass | yes |  |
 | conv-buck.txt | pass | yes |  |
 | conv-buckboost.txt | pass | yes |  |
@@ -266,7 +266,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | phasecomp.txt | pass | yes |  |
 | phasecompint.txt | pass | yes |  |
 | phaseseq.txt | pass | yes |  |
-| phaseshiftosc.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
+| phaseshiftosc.txt | pass | yes |  |
 | phasesplit.txt | pass | yes |  |
 | piso-sr.txt | pass | yes |  |
 | pll.txt | pass | yes |  |
@@ -287,7 +287,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | qam-256.txt | pass | no |  |
 | r2rladder.txt | pass | yes |  |
 | rectify.txt | pass | yes |  |
-| relaxosc.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
+| relaxosc.txt | pass | yes |  |
 | relay.txt | pass | yes |  |
 | relayand.txt | pass | yes |  |
 | relayctr.txt | pass | yes |  |
@@ -313,11 +313,11 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | satcore-comparison.txt | pass | yes |  |
 | satcore-inductor.txt | pass | yes |  |
 | satcore-transformer.txt | pass | yes |  |
-| sawtooth.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
+| sawtooth.txt | pass | yes |  |
 | schmitt.txt | pass | yes |  |
 | scr.txt | pass | yes |  |
 | scractrig.txt | pass | yes |  |
-| sine.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
+| sine.txt | pass | yes |  |
 | sinediode.txt | pass | yes |  |
 | sipo-sr.txt | pass | yes |  |
 | spark-marx.txt | pass | yes |  |
@@ -359,7 +359,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | transrectifier.txt | pass | yes |  |
 | transswitch.txt | pass | yes |  |
 | triacdimmer.txt | pass | yes |  |
-| triangle.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
+| triangle.txt | pass | yes |  |
 | trianglevco.txt | pass | yes |  |
 | triode.txt | pass | yes |  |
 | triodeamp.txt | pass | yes |  |
@@ -372,7 +372,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | updownctr.txt | pass | yes |  |
 | varactor.txt | pass | yes |  |
 | varactorvco.txt | pass | yes |  |
-| vco.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |
+| vco.txt | pass | yes |  |
 | vilnius.txt | pass | yes |  |
 | voltdivide.txt | pass | yes |  |
 | voltdouble.txt | pass | yes |  |

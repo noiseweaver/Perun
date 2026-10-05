@@ -43,6 +43,8 @@ import { SparkGapElmType } from './elm/SparkGapElm.ts';
 import { LampElmType } from './elm/LampElm.ts';
 import { SCRElmType } from './elm/SCRElm.ts';
 import { TriacElmType } from './elm/TriacElm.ts';
+import { CC2ElmType, CC2NegElmType } from './elm/CC2Elm.ts';
+import { AudioOutputElmType } from './elm/AudioOutputElm.ts';
 import { CCCSElmType, CCVSElmType, VCCSElmType, VCVSElmType } from './elm/VCCSElm.ts';
 import { DiacElmType } from './elm/DiacElm.ts';
 import { TriodeElmType } from './elm/TriodeElm.ts';
@@ -224,6 +226,9 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   VCCSElmType,
   CCVSElmType,
   CCCSElmType,
+  AudioOutputElmType,
+  CC2ElmType,
+  CC2NegElmType,
 ];
 
 /** Old class names upstream's constructElement still accepts (saved shortcuts, subcircuits). */
