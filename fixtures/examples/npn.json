@@ -1,0 +1,74 @@
+{
+ "file": "npn.txt",
+ "reference": {
+  "upstreamSha": "5a707168778216bb6ed01bfdd62e8bbf7ae0a032",
+  "harnessPatchSha256": "fa84fc858811ddd78a3e4c757e379392906a47e464b400c92c9d16b902886403",
+  "browser": "chromium 141.0.7390.37"
+ },
+ "export": "<cir f=\"1\" ts=\"0.000005\" ic=\"10.634267539816555\" cb=\"43\" pb=\"50\" vr=\"2\" mts=\"5e-11\">\n  <VarRail x=\"240 240 208 240\" f=\"0\" wf=\"7\" fr=\"0.705\" maxv=\"0.75\" bias=\"0.5\" st=\"Base Voltage\"/>\n  <w x=\"352 256 352 304\" f=\"1\"/>\n  <w x=\"352 224 352 176\" f=\"1\"/>\n  <VarRail x=\"352 176 352 144\" f=\"0\" wf=\"7\" fr=\"2\" maxv=\"2\" st=\"Collector Voltage\"/>\n  <g x=\"352 304 352 320\" f=\"0\"/>\n  <t x=\"304 240 352 240\" f=\"0\" pn=\"1\" be=\"100\" mo=\"default\" vbe=\"-4.295\" vbc=\"0.7049999999999998\"/>\n  <w x=\"240 240 304 240\" f=\"1\"/>\n</cir>\n",
+ "topology": {
+  "nodeCount": 3,
+  "elements": [
+   {
+    "type": "VarRailElm",
+    "nodes": [
+     1
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     0,
+     0
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     2,
+     2
+    ]
+   },
+   {
+    "type": "VarRailElm",
+    "nodes": [
+     2
+    ]
+   },
+   {
+    "type": "GroundElm",
+    "nodes": [
+     0
+    ]
+   },
+   {
+    "type": "TransistorElm",
+    "nodes": [
+     1,
+     2,
+     0
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     1,
+     1
+    ]
+   }
+  ]
+ },
+ "stop": null,
+ "samples": [
+  {"step":1,"t":0.000005,"nodes":[0,0.7025,2]},
+  {"step":2,"t":0.00001,"nodes":[0,0.7025,2]},
+  {"step":5,"t":0.000025,"nodes":[0,0.7025,2]},
+  {"step":10,"t":0.00005,"nodes":[0,0.7025,2]},
+  {"step":20,"t":0.0001,"nodes":[0,0.7025,2]},
+  {"step":50,"t":0.00025,"nodes":[0,0.7025,2]},
+  {"step":100,"t":0.0005,"nodes":[0,0.7025,2]},
+  {"step":200,"t":0.001,"nodes":[0,0.7025,2]},
+  {"step":500,"t":0.0025,"nodes":[0,0.7025,2]},
+  {"step":1000,"t":0.005,"nodes":[0,0.7025,2]}
+ ]
+}

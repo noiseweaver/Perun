@@ -9,6 +9,8 @@ pnpm golden:record [name | tag:x ...]   # record fixtures/golden/<name>.json
 pnpm golden:check                       # record again in memory, fail if any fixture differs
 pnpm golden:compare [--engine next|stub] [--json report.json] [name | tag:x ...]
 pnpm golden:scopes [--check]            # record fixtures/scopes/upstream-examples.json (scopes of every example)
+pnpm golden:record-examples [--check]   # record every bundled example into fixtures/examples/
+pnpm golden:examples [--report] [f.txt] # run the examples here, compare, write docs/EXAMPLES.md
 ```
 
 Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to use a local Chromium. The recorder serves `.reference-site/`
@@ -81,3 +83,14 @@ seed and sample settings, return an `EngineTrace` in the fixture's sample shape.
 circuitjs-next engine (`runCircuit` from `@circuitjs-next/format`); `src/next.test.ts` runs it on
 every `linear` circuit in `pnpm check`. The `stub` engine returns zeros in the reference shape and
 fails every circuit. Only stubs may read `referenceTopology`.
+
+## Bulk run of the upstream examples
+
+`pnpm golden:record-examples` loads each of the 373 bundled example circuits in the reference build,
+each in a fresh browser context (upstream keeps models and subcircuits in static maps), and records
+its XML save, topology, stop state and node voltages after 1, 2, 5, 10, 20, 50, 100, 200, 500 and
+1000 steps (seed 1) into `fixtures/examples/<name>.json`, with 12 significant digits.
+`pnpm golden:examples` runs the same files here and compares them (topology, stop state, every node
+voltage within the voltage tolerance; [src/examples.ts](src/examples.ts)). `--report` rewrites
+[docs/EXAMPLES.md](../../docs/EXAMPLES.md) and [examples-passing.txt](examples-passing.txt);
+`src/examples.test.ts` fails if a listed example stops passing or the report is stale.

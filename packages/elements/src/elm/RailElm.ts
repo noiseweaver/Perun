@@ -30,8 +30,18 @@ export class RailElm extends VoltageElm {
     return true;
   }
 
+  /** Upstream `getRailText`: text whose width sets the lead length (file inputs), or null. */
+  getRailText(): string | null {
+    return null;
+  }
+
+  /** Text drawn at the end instead of the voltage or waveform (upstream `drawRail` overrides). */
+  railLabel(): string | null {
+    return null;
+  }
+
   override getVoltageDiff(): number {
-    return this.nodes[0].v;
+    return this.volts[0];
   }
 
   override setVoltageSource(n: number, v: VoltageSource): void {
@@ -67,7 +77,7 @@ export class RailElm extends VoltageElm {
   }
 
   /** A rail tied to ground with no resistance gets a small one and asks for another pass. */
-  validateRailNode(n: number): boolean {
+  override validateRailNode(n: number): boolean {
     const fpi = new FindPathInfo(PathType.VOLTAGE, this, this.getNode(n), this.sim);
     if (fpi.findPath(this.sim.ground)) {
       this.internalResistance = 0.001;

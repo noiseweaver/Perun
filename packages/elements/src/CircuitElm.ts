@@ -7,7 +7,7 @@
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
-import { CircuitNode, Point, SimElement, type Simulation } from '@circuitjs-next/engine';
+import { FindPathInfo, PathType, Point, SimElement, type Simulation } from '@circuitjs-next/engine';
 import type { EditInfo } from './edit/EditInfo.ts';
 import { UNITS_A, UNITS_V, UNITS_W, VAL_CURRENT, VAL_POWER } from './scope/constants.ts';
 import { getCurrentDText, getVoltageDText } from './view/units.ts';
@@ -56,17 +56,76 @@ export abstract class CircuitElm extends SimElement {
    */
   dumpXmlModels(_doc: XmlDocWriter): void {}
 
+  /** Logic high level, pushed down from a subcircuit's setting (upstream no-op default). */
+  setHighVoltage(_hv: number): void {}
+
   /**
-   * Voltages read from a file (transistor junction voltages, op-amp inputs). Upstream keeps a
-   * copy of the node voltages per element and the loader writes into it; here they wait on
-   * placeholder nodes, and `setNode` carries them onto the real nodes during analysis (the
-   * ground node excepted, which master also zeroes).
+   * Voltages read from a file (transistor junction voltages, op-amp inputs) go into the element's
+   * own `volts`, as upstream's loaders write them, and hold until the first solve.
    */
   protected setLoadedVoltage(n: number, v: number): void {
-    const nodes = [...this.nodes];
-    for (let i = nodes.length; i < this.getNodeCount(); i++) nodes.push(placeholderNode(0));
-    nodes[n] = placeholderNode(v);
-    this.nodes = nodes;
+    while (this.volts.length < this.getNodeCount()) this.volts.push(0);
+    this.volts[n] = v;
+  }
+
+  /** Set while the editor is placing this element (upstream `isCreating()`). */
+  creating = false;
+  isCreating(): boolean {
+    return this.creating;
+  }
+
+  /** Upstream `useSmallGrid()`: the circuit uses the 8-unit grid. */
+  useSmallGrid(): boolean {
+    return this.sim.gridSize === 8;
+  }
+
+  /** Upstream `CirSim.getrand(x)`: a non-negative int below x from the shared Random. */
+  getrand(x: number): number {
+    let q = this.sim.random.nextInt();
+    if (q < 0) q = -q | 0;
+    return q % x;
+  }
+
+  /** Ends of the element body (upstream `lead1`, `lead2`), for elements whose posts use them. */
+  lead1: Point = new Point();
+  lead2: Point = new Point();
+
+  /** Upstream `calcLeads`: a body `len` long centred between the points. */
+  calcLeads(len: number): void {
+    if (this.dn < len || len === 0) {
+      this.lead1 = this.point1;
+      this.lead2 = this.point2;
+      return;
+    }
+    this.lead1 = this.interpPoint(this.point1, this.point2, (this.dn - len) / (2 * this.dn));
+    this.lead2 = this.interpPoint(this.point1, this.point2, (this.dn + len) / (2 * this.dn));
+  }
+
+  /**
+   * Upstream `adjustLeadsToGrid`: move the leads so the body centre is on the grid. Like
+   * upstream it moves the points in place, which moves the posts too when the leads are them.
+   */
+  adjustLeadsToGrid(flipX: boolean, flipY: boolean): void {
+    const cx = Math.trunc((this.point1.x + this.point2.x) / 2);
+    const cy = Math.trunc((this.point1.y + this.point2.y) / 2);
+    // when flipping, it changes the rounding direction.  need to adjust for this
+    const roundx = flipX ? 1 : -1;
+    const roundy = flipY ? 1 : -1;
+    const adjx = this.snapGrid(cx + roundx) - cx;
+    const adjy = this.snapGrid(cy + roundy) - cy;
+    this.lead1.x += adjx;
+    this.lead1.y += adjy;
+    this.lead2.x += adjx;
+    this.lead2.y += adjy;
+  }
+
+  newPointArray(n: number): Point[] {
+    return Array.from({ length: n }, () => new Point());
+  }
+
+  /** Upstream `comparePair`: is (x1, x2) the pair (y1, y2) in either order? */
+  comparePair(x1: number, x2: number, y1: number, y2: number): boolean {
+    return (x1 === y1 && x2 === y2) || (x1 === y2 && x2 === y1);
   }
 
   /** Upstream `interpPoint2`: points fraction f from a to b, offset +g and -g across the line. */
@@ -84,6 +143,19 @@ export abstract class CircuitElm extends SimElement {
         Math.floor(a.y * (1 - f) + b.y * f - g * gy + 0.48),
       ),
     ];
+  }
+
+  /**
+   * Upstream `CircuitElm.validateRailNode`: a one-terminal source shorted to ground stops the
+   * simulation (RailElm overrides this to add a small resistance instead).
+   */
+  validateRailNode(n: number): boolean {
+    const fpi = new FindPathInfo(PathType.VOLTAGE, this, this.getNode(n), this.sim);
+    if (fpi.findPath(this.sim.ground)) {
+      this.sim.stop('Path to ground with no resistance!', this);
+      return false;
+    }
+    return true;
   }
 
   setPosition(x: number, y: number, x2: number, y2: number): void {
@@ -298,7 +370,9 @@ export abstract class CircuitElm extends SimElement {
 
   /** Upstream `getInfo(arr)[0]`: the element's kind in lower case ("resistor"), or null. */
   getElmType(): string | null {
-    return null;
+    const info = new Array<string>(10);
+    this.getInfo(info);
+    return info[0] ?? null;
   }
 
   // ---- info box and scopes (upstream getInfo, getScopeValue ...) ---------------------------
@@ -307,6 +381,11 @@ export abstract class CircuitElm extends SimElement {
    * Lines for the info box shown while the mouse is over the element (upstream `getInfo(arr)`;
    * the first line names the element). Lines are left undefined past the last one.
    */
+  /** Drawn in the selection color whatever the mouse does (upstream ORs a flag into `needsHighlight()`). */
+  drawsHighlighted(): boolean {
+    return false;
+  }
+
   getInfo(_arr: string[]): void {}
 
   /** The current and voltage lines most elements show; returns the next free line. */
@@ -376,17 +455,16 @@ export function lineDistanceSq(
   return Math.trunc((dtop * dtop) / dbot);
 }
 
-function placeholderNode(v: number): CircuitNode {
-  const n = new CircuitNode();
-  n.index = -1;
-  n.v = v;
-  return n;
-}
-
 /** How to build one element class, for the loaders. */
 export interface ElementType {
   /** Upstream class name (`getClassName()`). */
   className: string;
+  /**
+   * Upstream `getDumpClass()` when it differs: the class files name this one by, which loads it
+   * (NDarlingtonElm saves as DarlingtonElm). Menu variants registered after their base class
+   * (ACRailElm after RailElm) need not set it: the first class to register a dump type keeps it.
+   */
+  dumpClass?: string;
   /**
    * A new element at (x, y), as the user would place it. `sim` is the simulation it will join;
    * elements with models look them up there (upstream's model maps are global).
@@ -415,12 +493,15 @@ export function elementType(className: string, ctor: ElmConstructor): ElementTyp
       e.sim = sim;
       e.flags = e.getDefaultFlags();
       e.initNew();
+      // upstream's constructors allocate nodes (and volts), so a new element can report state
+      e.allocNodes();
       return e;
     },
     load(x1, y1, x2, y2, f, st, sim) {
       const e = new ctor(x1, y1, x2, y2, f);
       e.sim = sim;
       e.undump(st);
+      e.allocNodes();
       return e;
     },
   };

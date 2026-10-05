@@ -17,6 +17,8 @@ export interface UserSettings {
   /** A built-in theme id, or `user:` and the id of a theme in the library (themes.ts). */
   themeId: string;
   euroResistors: boolean;
+  /** IEC (box) logic gate symbols (upstream "European Gates"). */
+  euroGates: boolean;
   showOhm: boolean;
   conventionalCurrent: boolean;
   /** Mark every connection: a dot where two ends meet, a larger one where three or more do. */
@@ -135,6 +137,7 @@ function loadSettings(): UserSettings {
   const defaults: UserSettings = {
     themeId: DEFAULT_THEME_ID,
     euroResistors: false,
+    euroGates: false,
     showOhm: false,
     conventionalCurrent: true,
     junctionDots: false,
@@ -158,6 +161,7 @@ function loadSettings(): UserSettings {
           : defaults.themeId,
       euroResistors:
         typeof s.euroResistors === 'boolean' ? s.euroResistors : defaults.euroResistors,
+      euroGates: typeof s.euroGates === 'boolean' ? s.euroGates : defaults.euroGates,
       showOhm: typeof s.showOhm === 'boolean' ? s.showOhm : defaults.showOhm,
       conventionalCurrent:
         typeof s.conventionalCurrent === 'boolean'

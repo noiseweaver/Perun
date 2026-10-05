@@ -199,6 +199,18 @@ const cardPart = async (page: Page, i: number, kind: string, index = 0) => {
   return { x: box.x + h.x, y: box.y + h.y };
 };
 
+/** A card part once the card has stopped moving (it flies into place after an undock). */
+const settledCardPart = async (page: Page, i: number, kind: string, index = 0) => {
+  let last = await cardPart(page, i, kind, index);
+  for (let tries = 0; tries < 20; tries++) {
+    await page.waitForTimeout(100);
+    const now = await cardPart(page, i, kind, index);
+    if (now.x === last.x && now.y === last.y) return now;
+    last = now;
+  }
+  throw new Error(`${kind} on scope ${i} never settled`);
+};
+
 test.describe('the card look', () => {
   test('cards have settings and close buttons, and legend chips that hide a trace', async ({
     page,
@@ -316,7 +328,7 @@ test.describe('undocked scopes', () => {
 
     // drag the handle: the card moves by whole grid steps
     const before = (await undocked(page))[0];
-    const handle = await cardPart(page, -1, 'handle');
+    const handle = await settledCardPart(page, -1, 'handle');
     await page.mouse.move(handle.x, handle.y);
     await page.mouse.down();
     await page.mouse.move(handle.x + 60, handle.y + 40, { steps: 6 });
@@ -331,7 +343,7 @@ test.describe('undocked scopes', () => {
 
     // the grip in the corner resizes it
     await page.mouse.move(10, 10);
-    const grip = await cardPart(page, -1, 'resize');
+    const grip = await settledCardPart(page, -1, 'resize');
     await page.mouse.move(grip.x, grip.y);
     await page.mouse.down();
     await page.mouse.move(grip.x + 50, grip.y + 50, { steps: 6 });
@@ -532,7 +544,7 @@ test.describe('last round', () => {
     await page.getByTestId('ctx-view-in-undocked-scope').click();
     await page.waitForTimeout(400);
     // select the card: its leader end (on the resistor's middle) becomes a handle
-    const handle = await cardPart(page, -1, 'handle');
+    const handle = await settledCardPart(page, -1, 'handle');
     await page.mouse.click(handle.x, handle.y);
     expect(
       await page.evaluate(() => window.circuitjsNext?.controller.circuit.scopeElms()[0]?.selected),
@@ -619,7 +631,7 @@ test.describe('moving an undocked card on a phone', () => {
       if (c && r) c.viewInUndockedScope(r);
     });
     await page.waitForTimeout(400);
-    const handle = await cardPart(page, -1, 'handle');
+    const handle = await settledCardPart(page, -1, 'handle');
     const cdp = await page.context().newCDPSession(page);
     const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', d: number) =>
       cdp.send('Input.dispatchTouchEvent', {

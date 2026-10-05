@@ -177,7 +177,7 @@ export class InductorElm extends CircuitElm {
   }
 
   override startIteration(): void {
-    this.ind.startIteration(this.nodes[0].v - this.nodes[1].v);
+    this.ind.startIteration(this.volts[0] - this.volts[1]);
   }
 
   override nonLinear(): boolean {
@@ -185,11 +185,11 @@ export class InductorElm extends CircuitElm {
   }
 
   override calculateCurrent(): void {
-    this.current = this.ind.calculateCurrent(this.nodes[0].v - this.nodes[1].v);
+    this.current = this.ind.calculateCurrent(this.volts[0] - this.volts[1]);
   }
 
   override doStep(): void {
-    this.ind.doStep(this.nodes[0].v - this.nodes[1].v);
+    this.ind.doStep(this.volts[0] - this.volts[1]);
   }
 
   override isInductorElm(): boolean {

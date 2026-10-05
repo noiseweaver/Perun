@@ -102,7 +102,7 @@ export class CurrentElm extends CircuitElm {
     if (this.broken || !this.isVoltageLimited()) return;
     const sim = this.sim;
     const maxVoltage = this.maxVoltage;
-    let vd = this.nodes[1].v - this.nodes[0].v;
+    let vd = this.volts[1] - this.volts[0];
     const vStart = 0.95 * maxVoltage; // transition begins here
     const vWidth = maxVoltage - vStart; // = 0.05 * maxVoltage
     const vMid = (vStart + maxVoltage) / 2.0; // = 0.975 * maxVoltage
@@ -145,7 +145,7 @@ export class CurrentElm extends CircuitElm {
   }
 
   override getVoltageDiff(): number {
-    return this.nodes[1].v - this.nodes[0].v;
+    return this.volts[1] - this.volts[0];
   }
 
   override validate(): boolean {

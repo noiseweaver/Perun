@@ -74,8 +74,9 @@ describe('scopes of upstream examples', () => {
     });
   }
 
-  it('restores most scopes', () => {
-    // scopes that show an element this port can't load yet are dropped (docs/DEVIATIONS.md)
-    expect(restored).toBeGreaterThan(skipped);
+  it('restores every scope', () => {
+    // every upstream element loads, so no scope is dropped (docs/DEVIATIONS.md)
+    expect(skipped).toBe(0);
+    expect(restored).toBeGreaterThan(0);
   });
 });

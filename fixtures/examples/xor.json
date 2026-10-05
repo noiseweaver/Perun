@@ -1,0 +1,133 @@
+{
+ "file": "xor.txt",
+ "reference": {
+  "upstreamSha": "5a707168778216bb6ed01bfdd62e8bbf7ae0a032",
+  "harnessPatchSha256": "fa84fc858811ddd78a3e4c757e379392906a47e464b400c92c9d16b902886403",
+  "browser": "chromium 141.0.7390.37"
+ },
+ "export": "<cir f=\"1\" ts=\"0.000005\" ic=\"1.500424758475255\" cb=\"50\" pb=\"50\" vr=\"5\" mts=\"5e-11\">\n  <Nand x=\"96 240 208 240\" f=\"0\"/>\n  <Nand x=\"208 192 320 192\" f=\"0\"/>\n  <Nand x=\"208 288 320 288\" f=\"0\"/>\n  <w x=\"208 240 208 272\" f=\"0\"/>\n  <w x=\"208 240 208 208\" f=\"0\"/>\n  <Nand x=\"320 240 432 240\" f=\"0\"/>\n  <w x=\"320 192 320 224\" f=\"0\"/>\n  <w x=\"320 256 320 288\" f=\"0\"/>\n  <w x=\"96 176 96 224\" f=\"0\"/>\n  <w x=\"96 176 208 176\" f=\"0\"/>\n  <w x=\"96 256 96 304\" f=\"0\"/>\n  <w x=\"96 304 208 304\" f=\"0\"/>\n  <M x=\"432 240 480 240\" f=\"0\"/>\n  <L x=\"96 176 48 176\" f=\"0\"/>\n  <L x=\"96 304 48 304\" f=\"0\"/>\n</cir>\n",
+ "topology": {
+  "nodeCount": 7,
+  "elements": [
+   {
+    "type": "NandGateElm",
+    "nodes": [
+     1,
+     2,
+     3
+    ]
+   },
+   {
+    "type": "NandGateElm",
+    "nodes": [
+     3,
+     2,
+     4
+    ]
+   },
+   {
+    "type": "NandGateElm",
+    "nodes": [
+     1,
+     3,
+     5
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     3,
+     3
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     3,
+     3
+    ]
+   },
+   {
+    "type": "NandGateElm",
+    "nodes": [
+     5,
+     4,
+     6
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     4,
+     4
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     5,
+     5
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     2,
+     2
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     2,
+     2
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     1,
+     1
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     1,
+     1
+    ]
+   },
+   {
+    "type": "LogicOutputElm",
+    "nodes": [
+     6
+    ]
+   },
+   {
+    "type": "LogicInputElm",
+    "nodes": [
+     2
+    ]
+   },
+   {
+    "type": "LogicInputElm",
+    "nodes": [
+     1
+    ]
+   }
+  ]
+ },
+ "stop": null,
+ "samples": [
+  {"step":1,"t":0.000005,"nodes":[0,0,0,0,0,0,0]},
+  {"step":2,"t":0.00001,"nodes":[0,0,0,5,5,5,5]},
+  {"step":5,"t":0.000025,"nodes":[0,0,0,5,5,5,0]},
+  {"step":10,"t":0.00005,"nodes":[0,0,0,5,5,5,0]},
+  {"step":20,"t":0.0001,"nodes":[0,0,0,5,5,5,0]},
+  {"step":50,"t":0.00025,"nodes":[0,0,0,5,5,5,0]},
+  {"step":100,"t":0.0005,"nodes":[0,0,0,5,5,5,0]},
+  {"step":200,"t":0.001,"nodes":[0,0,0,5,5,5,0]},
+  {"step":500,"t":0.0025,"nodes":[0,0,0,5,5,5,0]},
+  {"step":1000,"t":0.005,"nodes":[0,0,0,5,5,5,0]}
+ ]
+}

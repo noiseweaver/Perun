@@ -10,6 +10,7 @@ import { InductorElm } from '../elm/InductorElm.ts';
 import { LabeledNodeElm } from '../elm/LabeledNodeElm.ts';
 import { LEDElm } from '../elm/LEDElm.ts';
 import { MosfetElm } from '../elm/MosfetElm.ts';
+import { JfetElm } from '../elm/JfetElm.ts';
 import { OpAmpElm } from '../elm/OpAmpElm.ts';
 import { OutputElm } from '../elm/OutputElm.ts';
 import { PotElm } from '../elm/PotElm.ts';
@@ -24,18 +25,172 @@ import { WireElm } from '../elm/WireElm.ts';
 import { ZenerElm } from '../elm/ZenerElm.ts';
 import { ScopeElm } from '../scope/ScopeElm.ts';
 import type { ElementView } from './common.ts';
-import { labeledNodeView, outputView, probeView, textView } from './labels.ts';
+import { PolarCapacitorElm } from '../elm/PolarCapacitorElm.ts';
+import { VaractorElm } from '../elm/VaractorElm.ts';
+import { TunnelDiodeElm } from '../elm/TunnelDiodeElm.ts';
+import { MemristorElm } from '../elm/MemristorElm.ts';
+import { SparkGapElm } from '../elm/SparkGapElm.ts';
+import { LampElm } from '../elm/LampElm.ts';
+import { SCRElm } from '../elm/SCRElm.ts';
+import { TriacElm } from '../elm/TriacElm.ts';
+import { DiacElm } from '../elm/DiacElm.ts';
+import { TriodeElm } from '../elm/TriodeElm.ts';
+import { AmmeterElm } from '../elm/AmmeterElm.ts';
+import {
+  ammeterView,
+  diacView,
+  lampView,
+  memristorView,
+  polarCapacitorView,
+  scrView,
+  sparkGapView,
+  triacView,
+  triodeView,
+  tunnelDiodeView,
+  varactorView,
+} from './tier3.ts';
+import { TransformerElm } from '../elm/TransformerElm.ts';
+import { TappedTransformerElm } from '../elm/TappedTransformerElm.ts';
+import { TransLineElm } from '../elm/TransLineElm.ts';
+import { RelayElm } from '../elm/RelayElm.ts';
+import { RelayCoilElm, RelayContactElm } from '../elm/RelayCoilElm.ts';
+import {
+  customTransformerView,
+  dcMotorView,
+  gyratorView,
+  relayCoilView,
+  relayContactView,
+  relayView,
+  tappedTransformerView,
+  threePhaseMotorView,
+  transLineView,
+  transformerView,
+} from './magnetics.ts';
+import {
+  audioOutputView,
+  boxView,
+  instructionDisplayView,
+  labeledNodeView,
+  lineView,
+  outputView,
+  probeView,
+  textView,
+} from './labels.ts';
+import { InstructionDisplayElm } from '../elm/InstructionDisplayElm.ts';
+import { AudioOutputElm } from '../elm/AudioOutputElm.ts';
+import { BoxElm, LineElm } from '../elm/GraphicElm.ts';
+import {
+  ComparatorElm,
+  CrystalElm,
+  DarlingtonElm,
+  NortonAmpElm,
+  OTAElm,
+  UnijunctionElm,
+} from '../elm/compositeParts.ts';
+import {
+  comparatorView,
+  crystalView,
+  darlingtonView,
+  nortonAmpView,
+  opAmpRealView,
+  optocouplerView,
+  otaView,
+  subcircuitView,
+  unijunctionView,
+} from './composites.ts';
+import { CustomCompositeElm } from '../elm/CustomCompositeElm.ts';
 import {
   capacitorView,
   groundView,
   inductorView,
   potView,
   resistorView,
+  routedWireView,
   wireView,
 } from './passive.ts';
-import { diodeView, ledView, mosfetView, opAmpView, transistorView, zenerView } from './semis.ts';
-import { currentView, railView, voltageView } from './sources.ts';
-import { switchView } from './switches.ts';
+import { RoutedWireElm } from '../elm/RoutedWireElm.ts';
+import {
+  diodeView,
+  jfetView,
+  ledView,
+  mosfetView,
+  opAmpView,
+  transistorView,
+  zenerView,
+} from './semis.ts';
+import {
+  batteryView,
+  currentView,
+  modulatedView,
+  ohmMeterView,
+  railView,
+  sweepView,
+  voltageView,
+} from './sources.ts';
+import { BatteryElm } from '../elm/BatteryElm.ts';
+import { AMElm, FMElm, SweepElm } from '../elm/SweepElm.ts';
+import {
+  analogSwitch2View,
+  analogSwitchView,
+  busLogicInputView,
+  crossSwitchView,
+  dpdtSwitchView,
+  logicInputView,
+  logicOutputView,
+  mbbSwitchView,
+  motorProtectionSwitchView,
+  switch2View,
+  switchView,
+} from './switches.ts';
+import { AnalogSwitch2Elm, AnalogSwitchElm } from '../elm/AnalogSwitchElm.ts';
+import { GateElm } from '../elm/GateElm.ts';
+import {
+  DelayBufferElm,
+  InverterElm,
+  InvertingSchmittElm,
+  TriStateElm,
+} from '../elm/InverterElm.ts';
+import { delayBufferView, gateView, inverterView, schmittView, triStateView } from './logic.ts';
+import { BusLogicInputElm, LogicInputElm, LogicOutputElm } from '../elm/LogicInputElm.ts';
+import { CrossSwitchElm, DPDTSwitchElm, MBBSwitchElm, Switch2Elm } from '../elm/Switch2Elm.ts';
+import { ChipElm } from '../elm/ChipElm.ts';
+import { DecimalDisplayElm, SevenSegElm } from '../elm/SevenSegElm.ts';
+import { VCOElm } from '../elm/TimerElm.ts';
+import {
+  chipView,
+  decimalDisplayView,
+  ledArrayView,
+  sevenSegView,
+  timeDelayRelayView,
+  vcoView,
+} from './chips.ts';
+import { OhmMeterElm } from '../elm/OhmMeterElm.ts';
+import { GyratorElm } from '../elm/GyratorElm.ts';
+import { LEDArrayElm } from '../elm/LEDArrayElm.ts';
+import { ThreePhaseMotorElm } from '../elm/ThreePhaseMotorElm.ts';
+import { MotorProtectionSwitchElm } from '../elm/MotorProtectionSwitchElm.ts';
+import { FuseElm } from '../elm/FuseElm.ts';
+import {
+  dataRecorderView,
+  fuseView,
+  ldrView,
+  stopTriggerView,
+  testPointView,
+  thermistorView,
+  wattmeterView,
+} from './meters.ts';
+import { LDRElm } from '../elm/LDRElm.ts';
+import { ThermistorNTCElm } from '../elm/ThermistorNTCElm.ts';
+import { TestPointElm } from '../elm/TestPointElm.ts';
+import { StopTriggerElm } from '../elm/StopTriggerElm.ts';
+import { DataRecorderElm } from '../elm/DataRecorderElm.ts';
+import { WattmeterElm, WattmeterTrueElm } from '../elm/WattmeterElm.ts';
+import { DCMotorElm } from '../elm/DCMotorElm.ts';
+import { TimeDelayRelayElm } from '../elm/TimeDelayRelayElm.ts';
+import { OpAmpRealElm } from '../elm/OpAmpRealElm.ts';
+import { OptocouplerElm } from '../elm/OptocouplerElm.ts';
+import { AnalogMuxElm } from '../elm/AnalogMuxElm.ts';
+import { CustomTransformerElm } from '../elm/CustomTransformerElm.ts';
 
 /** Undocked scopes are drawn by the scope renderer, over the circuit; this only places them. */
 const scopeElmView: ElementView<ScopeElm> = {
@@ -47,6 +202,19 @@ type AnyCtor = abstract new (...args: never[]) => CircuitElm;
 
 /** Views by element class, subclasses before their base classes. */
 const VIEWS: [AnyCtor, ElementView<never>][] = [
+  [PolarCapacitorElm, polarCapacitorView],
+  [VaractorElm, varactorView],
+  [TunnelDiodeElm, tunnelDiodeView],
+  [MemristorElm, memristorView],
+  [SparkGapElm, sparkGapView],
+  [LampElm, lampView],
+  [SCRElm, scrView],
+  [TriacElm, triacView],
+  [DiacElm, diacView],
+  [TriodeElm, triodeView],
+  [AmmeterElm, ammeterView],
+  [RoutedWireElm, routedWireView],
+  [InstructionDisplayElm, instructionDisplayView],
   [WireElm, wireView],
   [GroundElm, groundView],
   [ResistorElm, resistorView],
@@ -55,19 +223,77 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [PotElm, potView],
   [RailElm, railView],
   [VoltageElm, voltageView],
+  [OhmMeterElm, ohmMeterView],
   [CurrentElm, currentView],
+  [Switch2Elm, switch2View],
+  [DPDTSwitchElm, dpdtSwitchView],
+  [MBBSwitchElm, mbbSwitchView],
+  [CrossSwitchElm, crossSwitchView],
+  [LogicInputElm, logicInputView],
+  [BusLogicInputElm, busLogicInputView],
   [SwitchElm, switchView],
+  [LogicOutputElm, logicOutputView],
+  [AnalogSwitch2Elm, analogSwitch2View],
+  [AnalogSwitchElm, analogSwitchView],
+  [GateElm, gateView],
+  [InverterElm, inverterView],
+  [InvertingSchmittElm, schmittView],
+  [TriStateElm, triStateView],
+  [DelayBufferElm, delayBufferView],
   [LabeledNodeElm, labeledNodeView],
   [ProbeElm, probeView],
   [OutputElm, outputView],
+  [AudioOutputElm, audioOutputView],
+  [BoxElm, boxView],
+  [LineElm, lineView],
+  [ComparatorElm, comparatorView],
+  [UnijunctionElm, unijunctionView],
+  [OTAElm, otaView],
+  [NortonAmpElm, nortonAmpView],
+  [DarlingtonElm, darlingtonView],
+  [CrystalElm, crystalView],
+  [CustomCompositeElm, subcircuitView],
   [TextElm, textView],
   [LEDElm, ledView],
   [ZenerElm, zenerView],
   [DiodeElm, diodeView],
   [TransistorElm, transistorView],
+  [JfetElm, jfetView],
   [MosfetElm, mosfetView],
   [OpAmpElm, opAmpView],
   [ScopeElm, scopeElmView],
+  [SweepElm, sweepView],
+  [AMElm, modulatedView('AM')],
+  [FMElm, modulatedView('FM')],
+  [BatteryElm, batteryView],
+  [SevenSegElm, sevenSegView],
+  [DecimalDisplayElm, decimalDisplayView],
+  [VCOElm, vcoView],
+  [LEDArrayElm, ledArrayView],
+  [ChipElm, chipView],
+  [ThreePhaseMotorElm, threePhaseMotorView],
+  [MotorProtectionSwitchElm, motorProtectionSwitchView],
+  [FuseElm, fuseView],
+  [LDRElm, ldrView],
+  [ThermistorNTCElm, thermistorView],
+  [TestPointElm, testPointView],
+  [StopTriggerElm, stopTriggerView],
+  [DataRecorderElm, dataRecorderView],
+  [WattmeterElm, wattmeterView],
+  [WattmeterTrueElm, wattmeterView],
+  [DCMotorElm, dcMotorView],
+  [TimeDelayRelayElm, timeDelayRelayView],
+  [OpAmpRealElm, opAmpRealView],
+  [OptocouplerElm, optocouplerView],
+  [AnalogMuxElm, chipView],
+  [CustomTransformerElm, customTransformerView],
+  [GyratorElm, gyratorView],
+  [TransformerElm, transformerView],
+  [TappedTransformerElm, tappedTransformerView],
+  [TransLineElm, transLineView],
+  [RelayElm, relayView],
+  [RelayCoilElm, relayCoilView],
+  [RelayContactElm, relayContactView],
 ];
 
 const cache = new Map<unknown, ElementView | null>();

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Ported from CircuitJS1 src/com/lushprojects/circuitjs1/client/OpAmpElm.java (master) at
-// 5a707168778216bb6ed01bfdd62e8bbf7ae0a032, with ts/OpAmpElm.ts (dev-ts) at
+// Ported from CircuitJS1 src/com/lushprojects/circuitjs1/client/OpAmpElm.java and
+// OpAmpSwapElm.java (master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032, with ts/OpAmpElm.ts (dev-ts) at
 // 7ec858d662d8be1d76d54241ba3a5c1d1c524f51 for the node-voltage model. Only the post geometry
 // of setPoints() is ported; drawing comes in Phase 4.
 // Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) circuitjs-next contributors.
@@ -9,7 +9,7 @@
 // License, or (at your option) any later version. See LICENSE.
 
 import { FindPathInfo, PathType, type Point } from '@circuitjs-next/engine';
-import { CircuitElm, elementType } from '../CircuitElm.ts';
+import { CircuitElm, elementType, type ElementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaDouble } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
@@ -136,9 +136,9 @@ export class OpAmpElm extends CircuitElm {
     const sim = this.sim;
     const vs = this.voltSource;
     if (vs === null) return;
-    const volts0 = this.nodes[0].v;
-    const volts2 = this.nodes[2].v;
-    const vd = this.nodes[1].v - volts0;
+    const volts0 = this.volts[0];
+    const volts2 = this.volts[2];
+    const vd = this.volts[1] - volts0;
     const midpoint = (this.maxOut + this.minOut) * 0.5;
     if (Math.abs(this.lastvd - vd) > 0.1) sim.converged = false;
     else if (volts2 > this.maxOut + 0.1 || volts2 < this.minOut - 0.1) sim.converged = false;
@@ -164,13 +164,6 @@ export class OpAmpElm extends CircuitElm {
     sim.stampRightSideVS(vs, x);
 
     this.lastvd = vd;
-  }
-
-  /** Upstream `CirSim.getrand(x)`: a non-negative int below x from the shared Random. */
-  private getrand(x: number): number {
-    let q = this.sim.random.nextInt();
-    if (q < 0) q = -q | 0;
-    return q % x;
   }
 
   /**
@@ -199,7 +192,7 @@ export class OpAmpElm extends CircuitElm {
   }
 
   override getVoltageDiff(): number {
-    return this.nodes[2].v - this.nodes[1].v;
+    return this.volts[2] - this.volts[1];
   }
 
   override getCurrentIntoNode(n: number): number {
@@ -260,4 +253,22 @@ export class OpAmpElm extends CircuitElm {
   }
 }
 
+/** An op-amp with its inputs swapped (+ on top); saved as an OpAmpElm. */
+export class OpAmpSwapElm extends OpAmpElm {
+  override getClassName(): string {
+    return 'OpAmpSwapElm';
+  }
+  override initNew(): void {
+    super.initNew();
+    this.flags |= OpAmpElm.FLAG_SWAP;
+  }
+  override getShortcut(): number {
+    return 'A'.charCodeAt(0);
+  }
+}
+
 export const OpAmpElmType = elementType('OpAmpElm', OpAmpElm);
+export const OpAmpSwapElmType: ElementType = {
+  ...elementType('OpAmpSwapElm', OpAmpSwapElm),
+  dumpClass: 'OpAmpElm',
+};

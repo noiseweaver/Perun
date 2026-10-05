@@ -9,7 +9,7 @@ import {
   type StrokeStyle,
   type TextStyle,
 } from '@circuitjs-next/elements';
-import { toCss } from '@circuitjs-next/theme';
+import { parseColor, toCss, type Rgba } from '@circuitjs-next/theme';
 import type { Palette } from './palette.ts';
 
 /** Drawing settings for one frame. */
@@ -23,6 +23,23 @@ export interface PaintSettings {
 }
 
 const UPSTREAM_THICK = 3;
+
+/**
+ * Upstream FuseElm/MotorProtectionSwitchElm `getTempColor`: `c` blends to red over the first
+ * third of `temp`, then red goes to yellow and yellow to white. Null means past the limit.
+ */
+export function heatColor(c: Rgba, temp: number): Rgba | null {
+  if (temp < 0.3333) {
+    const x = Math.max(0, Math.trunc(255 * temp * 3));
+    const k = (255 - x) / 255;
+    return { r: Math.trunc(x + c.r * k), g: Math.trunc(c.g * k), b: Math.trunc(c.b * k), a: 1 };
+  }
+  if (temp < 0.6667)
+    return { r: 255, g: Math.max(0, Math.trunc((temp - 0.3333) * 3 * 255)), b: 0, a: 1 };
+  if (temp < 1)
+    return { r: 255, g: 255, b: Math.max(0, Math.trunc((temp - 0.6666) * 3 * 255)), a: 1 };
+  return null;
+}
 const DOT_SPACING = 16;
 
 /**
@@ -67,6 +84,16 @@ export class CanvasPainter implements Painter {
       g.addColorStop(0, p.voltage(v1, this.settings.voltageRange));
       g.addColorStop(1, p.voltage(v2, this.settings.voltageRange));
       return g;
+    }
+    if ('heat' in ink) {
+      if (this.highlighted) return this.highlightColor;
+      const { voltage, level } = ink.heat;
+      const base = this.settings.voltageColors
+        ? p.voltage(voltage, this.settings.voltageRange)
+        : p.roles.component;
+      // upstream turns white when blown; the label color stays visible on light themes
+      const c = heatColor(parseColor(base) ?? { r: 0, g: 0, b: 0, a: 1 }, level);
+      return c === null ? p.roles.label : toCss(c);
     }
     const [r, g, b] = ink.rgb;
     return toCss({ r, g, b, a: 1 });

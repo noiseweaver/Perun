@@ -327,7 +327,7 @@ export class MosfetElm extends CircuitElm {
   }
 
   override stepFinished(): void {
-    const nodes = this.nodes;
+    const volts = this.volts;
     const model = this.getModel();
     this.calculate(true);
 
@@ -337,11 +337,11 @@ export class MosfetElm extends CircuitElm {
 
     // save gate capacitor state for the next time step's companion model
     if (model.capGS > 0 && this.geqGS > 0) {
-      this.capVoltGS = nodes[0].v - nodes[1].v;
+      this.capVoltGS = volts[0] - volts[1];
       this.capCurGS = this.geqGS * this.capVoltGS + this.ceqGS;
     }
     if (model.capGD > 0 && this.geqGD > 0) {
-      this.capVoltGD = nodes[0].v - nodes[2].v;
+      this.capVoltGD = volts[0] - volts[2];
       this.capCurGD = this.geqGD * this.capVoltGD + this.ceqGD;
     }
   }
@@ -354,7 +354,7 @@ export class MosfetElm extends CircuitElm {
     const sim = this.sim;
     const nodes = this.nodes;
     const model = this.getModel();
-    const volts = nodes.map((n) => n.v);
+    const volts = this.volts;
     let vs: number[];
     if (finished) vs = volts;
     else {
@@ -473,7 +473,7 @@ export class MosfetElm extends CircuitElm {
   }
 
   override getVoltageDiff(): number {
-    return this.nodes[2].v - this.nodes[1].v;
+    return this.volts[2] - this.volts[1];
   }
 
   override getConnection(n1: number, n2: number): boolean {
@@ -487,25 +487,25 @@ export class MosfetElm extends CircuitElm {
   }
 
   override getCurrentIntoNode(n: number): number {
-    const nodes = this.nodes;
+    const volts = this.volts;
     const model = this.getModel();
     if (n === 0) {
       // gate current: capacitor currents flow out of the gate
       let gateCur = 0;
       if (model.capGS > 0 && this.geqGS > 0)
-        gateCur -= this.geqGS * (nodes[0].v - nodes[1].v) + this.ceqGS;
+        gateCur -= this.geqGS * (volts[0] - volts[1]) + this.ceqGS;
       if (model.capGD > 0 && this.geqGD > 0)
-        gateCur -= this.geqGD * (nodes[0].v - nodes[2].v) + this.ceqGD;
+        gateCur -= this.geqGD * (volts[0] - volts[2]) + this.ceqGD;
       return gateCur;
     }
     if (n === 3) return -this.diodeCurrent1 - this.diodeCurrent2;
     if (n === 1) {
       const capCur =
-        model.capGS > 0 && this.geqGS > 0 ? this.geqGS * (nodes[0].v - nodes[1].v) + this.ceqGS : 0;
+        model.capGS > 0 && this.geqGS > 0 ? this.geqGS * (volts[0] - volts[1]) + this.ceqGS : 0;
       return this.ids + this.diodeCurrent1 + capCur;
     }
     const capCur =
-      model.capGD > 0 && this.geqGD > 0 ? this.geqGD * (nodes[0].v - nodes[2].v) + this.ceqGD : 0;
+      model.capGD > 0 && this.geqGD > 0 ? this.geqGD * (volts[0] - volts[2]) + this.ceqGD : 0;
     return -this.ids + this.diodeCurrent2 + capCur;
   }
 

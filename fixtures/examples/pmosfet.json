@@ -1,0 +1,67 @@
+{
+ "file": "pmosfet.txt",
+ "reference": {
+  "upstreamSha": "5a707168778216bb6ed01bfdd62e8bbf7ae0a032",
+  "harnessPatchSha256": "fa84fc858811ddd78a3e4c757e379392906a47e464b400c92c9d16b902886403",
+  "browser": "chromium 141.0.7390.37"
+ },
+ "export": "<cir f=\"1\" ts=\"0.000005\" ic=\"12.050203812241895\" cb=\"50\" pb=\"50\" vr=\"5\" mts=\"5e-11\">\n  <VarRail x=\"304 240 272 240\" f=\"0\" wf=\"7\" fr=\"2.5\" maxv=\"5\" st=\"Gate Voltage\"/>\n  <w x=\"352 256 352 304\" f=\"0\"/>\n  <w x=\"352 224 352 176\" f=\"1\"/>\n  <f x=\"304 240 352 240\" f=\"1\" mo=\"default\"/>\n  <VarRail x=\"352 304 352 320\" f=\"0\" wf=\"7\" fr=\"3\" maxv=\"5\" st=\"Drain Voltage\"/>\n  <R x=\"352 176 352 160\" f=\"0\" wf=\"0\" maxv=\"5\"/>\n  <o en=\"3\" sp=\"64\" f=\"x3\" p=\"0\">\n    <p v=\"0\" sc=\"2.5\"/>\n    <p v=\"3\" sc=\"0.1\"/>\n  </o>\n</cir>\n",
+ "topology": {
+  "nodeCount": 4,
+  "elements": [
+   {
+    "type": "VarRailElm",
+    "nodes": [
+     1
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     2,
+     2
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     3,
+     3
+    ]
+   },
+   {
+    "type": "MosfetElm",
+    "nodes": [
+     1,
+     2,
+     3
+    ]
+   },
+   {
+    "type": "VarRailElm",
+    "nodes": [
+     2
+    ]
+   },
+   {
+    "type": "RailElm",
+    "nodes": [
+     3
+    ]
+   }
+  ]
+ },
+ "stop": null,
+ "samples": [
+  {"step":1,"t":0.000005,"nodes":[0,2.5,3,5]},
+  {"step":2,"t":0.00001,"nodes":[0,2.5,3,5]},
+  {"step":5,"t":0.000025,"nodes":[0,2.5,3,5]},
+  {"step":10,"t":0.00005,"nodes":[0,2.5,3,5]},
+  {"step":20,"t":0.0001,"nodes":[0,2.5,3,5]},
+  {"step":50,"t":0.00025,"nodes":[0,2.5,3,5]},
+  {"step":100,"t":0.0005,"nodes":[0,2.5,3,5]},
+  {"step":200,"t":0.001,"nodes":[0,2.5,3,5]},
+  {"step":500,"t":0.0025,"nodes":[0,2.5,3,5]},
+  {"step":1000,"t":0.005,"nodes":[0,2.5,3,5]}
+ ]
+}

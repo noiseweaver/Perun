@@ -13,7 +13,7 @@
 import { CircuitMatrix, CircuitNode, VoltageSource } from './CircuitNode.ts';
 import { JavaRandom } from './JavaRandom.ts';
 import { luFactorDense, luSolveDense } from './lu.ts';
-import type { Point } from './Point.ts';
+import { Point } from './Point.ts';
 import type { SimElement } from './SimElement.ts';
 import { DMatrixSparseCSC } from './sparse/DMatrixSparseCSC.ts';
 import { SparseLU } from './sparse/SparseLU.ts';
@@ -46,6 +46,14 @@ class NodeMapEntry {
   constructor(node: CircuitNode | null = null) {
     this.node = node;
   }
+}
+
+/** Bus widths found so far, by post position (`Point.key()` with z = 0) and by label name. */
+export interface BusWidthMaps {
+  readonly width: Map<string, number>;
+  readonly label: Map<string, number>;
+  /** Positions where two different widths meet. */
+  readonly mismatches: Point[];
 }
 
 /** First post seen for each label name during wire closure (upstream `LabeledNodeElm.labelList`). */
@@ -93,6 +101,8 @@ export class Simulation {
   adjustTimeStep = false;
   timeStepAccum = 0;
   timeStepCount = 0;
+  /** An element asked to pause the simulation (see requestPause). */
+  pauseRequested = false;
   solverType: SolverType = SolverType.AUTO;
   usingSparse = false;
 
@@ -151,6 +161,7 @@ export class Simulation {
   resetTime(): void {
     this.t = this.timeStepAccum = 0;
     this.timeStepCount = 0;
+    this.pauseRequested = false;
   }
 
   /** Zero every node voltage (dev-ts `resetNodes`, used by the reset button). */
@@ -384,8 +395,8 @@ export class Simulation {
           const cn = cln.node;
           cn.links.push({ num: j, elm: ce });
           ce.setNode(j, cn);
-          // master: setNodeVoltage(j, 0) on the ground node, since it may not get set later
-          if (cn === this.ground) ce.nodeVoltageChanged(j);
+          // if it's the ground node, make sure the node voltage is 0, cause it may not get set later
+          if (cn === this.ground) ce.setNodeVoltage(j, 0);
         }
       }
       for (let j = 0; j !== inodes; j++) {
@@ -415,6 +426,8 @@ export class Simulation {
         cn.links.push({ num: i, elm: ce });
         // needed so findUnconnectedNodes() works
         cn.internal = false;
+        // if it's the ground node, make sure the node voltage is 0
+        if (cn.index === 0) ce.setNodeVoltage(i, 0);
       }
     }
   }
@@ -537,7 +550,48 @@ export class Simulation {
     this.stopElm = null;
     this.elmList = this.elements;
     if (this.elmList.length === 0) return;
+    this.detectBusWidths(this.elmList);
     this.needsStamp = true;
+  }
+
+  /** Positions where buses of different widths meet, from the last analysis. */
+  busMismatchList: Point[] = [];
+
+  /** Give wires and labels the width of the buses they connect to (upstream `detectBusWidths`). */
+  detectBusWidths(list: readonly SimElement[]): void {
+    const maps: BusWidthMaps = { width: new Map(), label: new Map(), mismatches: [] };
+    this.busMismatchList = maps.mismatches;
+    for (const ce of list) {
+      if (ce.isRemovableWire()) continue;
+      for (let j = 0; j < ce.getPostCount(); j++) {
+        const w = ce.getPostWidth(j);
+        if (w <= 1) continue;
+        const pt = ce.getPost(j);
+        const key = new Point(pt.x, pt.y); // z = 0 for the map key
+        const existing = maps.width.get(key.key());
+        if (existing !== undefined && existing !== w) maps.mismatches.push(key);
+        if (existing === undefined || w > existing) maps.width.set(key.key(), w);
+      }
+    }
+    // propagate through wire chains and matching labels until stable
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const ce of list) if (ce.propagateBusWidth(maps)) changed = true;
+    }
+    // compare each element's bus posts with the propagated widths, to catch mismatches through
+    // wires too
+    for (const ce of list) {
+      if (ce.isRemovableWire()) continue;
+      for (let j = 0; j < ce.getPostCount(); j++) {
+        const w = ce.getPostWidth(j);
+        if (w <= 1) continue;
+        const pt = ce.getPost(j);
+        const key = new Point(pt.x, pt.y);
+        const propagated = maps.width.get(key.key());
+        if (propagated !== undefined && propagated !== w) maps.mismatches.push(key);
+      }
+    }
   }
 
   /** Node numbering, closures, validation and voltage-source rows. False means retry or stop. */
@@ -660,6 +714,14 @@ export class Simulation {
     this.needsStamp = false;
   }
 
+  /**
+   * Pause without an error (upstream `app.setSimRunning(false)`, used by the stop trigger). The
+   * step loop ends after the current step; the host clears the flag and stops running.
+   */
+  requestPause(): void {
+    this.pauseRequested = true;
+  }
+
   stop(message: string, ce: SimElement | null): void {
     this.stopMessage = message;
     this.stopElm = ce;
@@ -686,6 +748,12 @@ export class Simulation {
     if (v !== undefined) this.stampRightSideVS(vs, v);
     this.stampMatrixNV(n1, vs, 1);
     this.stampMatrixNV(n2, vs, -1);
+  }
+
+  /** Stamp voltage source `vs` between the nodes saved in it by `setNodes`. */
+  stampVoltageSourceVS(vs: VoltageSource | null, v: number): void {
+    if (vs === null || vs.n1 === null || vs.n2 === null) return;
+    this.stampVoltageSource(vs.n1, vs.n2, vs, v);
   }
 
   updateVoltageSource(
@@ -925,6 +993,7 @@ export class Simulation {
       // stepFinished can stop the simulation (max current exceeded); upstream then leaves the
       // loop because stop() clears simRunning
       if (this.stopMessage !== null) break;
+      if (this.pauseRequested) break;
     }
     if (delayWireProcessing) this.calcWireCurrents();
     return done;
@@ -948,14 +1017,14 @@ export class Simulation {
   }
 
   /**
-   * Set the voltage of every node in `m` and notify each attached element. Master calls
-   * `setNodeVoltage(post, v)` per link, which recomputes the current except for capacitors;
-   * `nodeVoltageChanged` keeps that (dev-ts calls calculateCurrent() for every element).
+   * Set the voltage of every node in `m` and tell each attached element (master
+   * `setNodeVoltage(post, v)` per link, which also recomputes the current except for capacitors).
    */
   setNodeVoltages(m: CircuitMatrix, nv: number[]): void {
     for (const cn of m.nodeList) {
-      cn.v = nv[cn.row - 1];
-      for (const cnl of cn.links) cnl.elm.nodeVoltageChanged(cnl.num);
+      const res = nv[cn.row - 1];
+      cn.v = res;
+      for (const cnl of cn.links) cnl.elm.setNodeVoltage(cnl.num, res);
     }
   }
 

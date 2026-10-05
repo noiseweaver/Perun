@@ -7,7 +7,12 @@
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
-import { Point, type CircuitNode, type WireSegment } from '@circuitjs-next/engine';
+import {
+  Point,
+  type BusWidthMaps,
+  type CircuitNode,
+  type WireSegment,
+} from '@circuitjs-next/engine';
 import { CircuitElm, elementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { unescapeToken } from '../escape.ts';
@@ -90,6 +95,38 @@ export class LabeledNodeElm extends CircuitElm {
   override getBusWidth(): number {
     return this.busWidth;
   }
+
+  override getPostWidth(_n: number): number {
+    return this.busWidth;
+  }
+
+  override propagateBusWidth(maps: BusWidthMaps): boolean {
+    let changed = false;
+    // the widest of the position and the label name
+    const k = this.point1.key();
+    const w = maps.width.get(k);
+    const lw = maps.label.get(this.text);
+    let bw = 1;
+    if (w !== undefined) bw = w;
+    if (lw !== undefined && lw > bw) bw = lw;
+    if (bw !== this.busWidth) {
+      this.busWidth = bw;
+      this.currents = bw > 1 ? new Array<number>(bw).fill(0) : null;
+      this.allocNodes();
+      changed = true;
+    }
+    if (bw > 1) {
+      if (w === undefined || w < bw) {
+        maps.width.set(k, bw);
+        changed = true;
+      }
+      if (lw === undefined || lw < bw) {
+        maps.label.set(this.text, bw);
+        changed = true;
+      }
+    }
+    return changed;
+  }
   override getPost(n: number): Point {
     if (this.busWidth === 1) return this.point1;
     return new Point(this.point1.x, this.point1.y, n);
@@ -128,7 +165,7 @@ export class LabeledNodeElm extends CircuitElm {
   }
 
   override getVoltageDiff(): number {
-    return this.nodes[0].v;
+    return this.volts[0];
   }
 
   isRotateText(): boolean {

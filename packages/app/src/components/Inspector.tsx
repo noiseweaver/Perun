@@ -186,6 +186,95 @@ function TextField(props: FieldProps) {
   );
 }
 
+/** A button that acts at once (upstream EditInfo.button), undoable like any edit. */
+function ButtonField(props: FieldProps & { onDone: () => void }) {
+  const { ei } = props;
+  const button = ei.button;
+  if (!button) return null;
+  return (
+    <div className="field">
+      {ei.name !== '' && <span className="field-label">{fieldLabel(ei)}</span>}
+      <button
+        type="button"
+        className="button"
+        autoFocus={props.autoFocus}
+        onClick={() => {
+          controller.runEditAction(() => button.onClick());
+          props.onDone();
+        }}
+        data-testid={`field-${props.n}`}
+      >
+        {button.label}
+      </button>
+    </div>
+  );
+}
+
+/** Read a chosen file the way the field asks and hand it to the element. */
+async function loadFile(file: File, ef: NonNullable<EditInfo['file']>): Promise<() => void> {
+  if (ef.kind === 'text') {
+    const text = await file.text();
+    return () => ef.onLoad(file.name, text);
+  }
+  if (ef.kind === 'binary') {
+    if (ef.maxSize !== undefined && file.size >= ef.maxSize)
+      throw new Error('Cannot load: That file is too large!');
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    return () => ef.onLoad(file.name, bytes);
+  }
+  const ctx = new AudioContext();
+  try {
+    const audio = await ctx.decodeAudioData(await file.arrayBuffer());
+    const samples = audio.getChannelData(0);
+    return () => ef.onLoad(file.name, samples, audio.sampleRate);
+  } finally {
+    void ctx.close();
+  }
+}
+
+/** A file picker (upstream's FileUpload widget or "Load ... From File" button). */
+function FileField(props: FieldProps & { onDone: () => void }) {
+  const { ei, onError } = props;
+  const ef = ei.file;
+  const input = useRef<HTMLInputElement>(null);
+  if (!ef) return null;
+  const id = `field-${props.n}`;
+  return (
+    <div className="field">
+      {ei.name !== '' && <span className="field-label">{fieldLabel(ei)}</span>}
+      <input
+        ref={input}
+        id={id}
+        type="file"
+        accept={ef.accept}
+        hidden
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = '';
+          if (!file) return;
+          loadFile(file, ef).then(
+            (apply) => {
+              controller.runEditAction(apply);
+              onError(null);
+              props.onDone();
+            },
+            (err: unknown) => onError(err instanceof Error ? err.message : String(err)),
+          );
+        }}
+      />
+      <button
+        type="button"
+        className="button"
+        autoFocus={props.autoFocus}
+        onClick={() => input.current?.click()}
+        data-testid={`field-${props.n}`}
+      >
+        {ef.label ?? 'Choose File…'}
+      </button>
+    </div>
+  );
+}
+
 function CheckboxField(props: FieldProps) {
   const cb = props.ei.checkbox;
   // EditInfo is mutable and does not re-render the panel; React state shows the tick at once
@@ -479,6 +568,9 @@ export function Inspector() {
               onError,
             };
             const key = `${n}:${revision}:${rebuild}`;
+            const onDone = (): void => setRebuild((r) => r + 1);
+            if (ei.button && !ei.file) return <ButtonField key={key} {...props} onDone={onDone} />;
+            if (ei.file) return <FileField key={key} {...props} onDone={onDone} />;
             if (ei.choice) return <ChoiceField key={key} {...props} />;
             if (ei.checkbox) return <CheckboxField key={key} {...props} />;
             if (ei.text !== null) return <TextField key={key} {...props} />;

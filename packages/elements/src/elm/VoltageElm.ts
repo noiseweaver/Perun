@@ -250,7 +250,7 @@ export class VoltageElm extends CircuitElm {
   }
 
   override getVoltageDiff(): number {
-    return this.nodes[1].v - this.nodes[0].v;
+    return this.volts[1] - this.volts[0];
   }
 
   override getDragVertical(_requestedVertical: boolean): boolean {

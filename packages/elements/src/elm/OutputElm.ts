@@ -57,7 +57,7 @@ export class OutputElm extends CircuitElm {
   }
 
   override getVoltageDiff(): number {
-    return this.nodes[0].v;
+    return this.volts[0];
   }
 
   override getInfo(arr: string[]): void {

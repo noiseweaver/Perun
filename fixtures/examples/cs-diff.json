@@ -1,0 +1,67 @@
+{
+ "file": "cs-diff.txt",
+ "reference": {
+  "upstreamSha": "5a707168778216bb6ed01bfdd62e8bbf7ae0a032",
+  "harnessPatchSha256": "fa84fc858811ddd78a3e4c757e379392906a47e464b400c92c9d16b902886403",
+  "browser": "chromium 141.0.7390.37"
+ },
+ "export": "<cir f=\"1\" ts=\"0.000005\" ic=\"10.20027730826997\" cb=\"57\" pb=\"50\" vr=\"5\" mts=\"5e-11\">\n  <v x=\"112 256 112 96\" f=\"0\" wf=\"3\" fr=\"40\" maxv=\"5\" phaseShift=\"1.5707963267948966\"/>\n  <g x=\"112 256 112 304\" f=\"0\"/>\n  <VCVS x=\"160 96 208 96\" f=\"0\" ic=\"1\" ex=\"clamp(dadt*.01, -15, 15)\"/>\n  <w x=\"112 96 160 96\" f=\"0\"/>\n  <g x=\"256 128 256 160\" f=\"0\"/>\n  <O x=\"256 96 304 96\" f=\"0\" sc=\"0\"/>\n  <o en=\"0\" sp=\"0\" f=\"x2\" p=\"0\">\n    <p v=\"0\" sc=\"10\"/>\n    <p v=\"3\" sc=\"0.0125\"/>\n  </o>\n  <o en=\"5\" sp=\"0\" f=\"x2\" p=\"1\">\n    <p v=\"0\" sc=\"20\"/>\n  </o>\n</cir>\n",
+ "topology": {
+  "nodeCount": 3,
+  "elements": [
+   {
+    "type": "DCVoltageElm",
+    "nodes": [
+     0,
+     1
+    ]
+   },
+   {
+    "type": "GroundElm",
+    "nodes": [
+     0
+    ]
+   },
+   {
+    "type": "VCVSElm",
+    "nodes": [
+     1,
+     2,
+     0
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     1,
+     1
+    ]
+   },
+   {
+    "type": "GroundElm",
+    "nodes": [
+     0
+    ]
+   },
+   {
+    "type": "OutputElm",
+    "nodes": [
+     2
+    ]
+   }
+  ]
+ },
+ "stop": null,
+ "samples": [
+  {"step":1,"t":0.000005,"nodes":[0,0,0]},
+  {"step":2,"t":0.00001,"nodes":[0,0.004,8]},
+  {"step":5,"t":0.000025,"nodes":[0,0.016,8]},
+  {"step":10,"t":0.00005,"nodes":[0,0.036,8]},
+  {"step":20,"t":0.0001,"nodes":[0,0.076,8]},
+  {"step":50,"t":0.00025,"nodes":[0,0.196,8]},
+  {"step":100,"t":0.0005,"nodes":[0,0.396,8]},
+  {"step":200,"t":0.001,"nodes":[0,0.796,8]},
+  {"step":500,"t":0.0025,"nodes":[0,1.996,8]},
+  {"step":1000,"t":0.005,"nodes":[0,3.996,8]}
+ ]
+}

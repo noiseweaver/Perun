@@ -2,8 +2,11 @@
 // Copyright (C) 2026 circuitjs-next contributors
 
 import type { Simulation } from '@circuitjs-next/engine';
+import { CustomCompositeModels } from './CustomCompositeModel.ts';
+import { CustomLogicModels } from './CustomLogicModel.ts';
 import { DiodeModels } from './DiodeModel.ts';
 import { MosfetModels } from './MosfetModel.ts';
+import { RelayModels } from './RelayModel.ts';
 import { TransistorModels } from './TransistorModel.ts';
 
 /**
@@ -15,6 +18,9 @@ export class ModelLibrary {
   readonly diode = new DiodeModels();
   readonly transistor = new TransistorModels();
   readonly mosfet = new MosfetModels();
+  readonly relay = new RelayModels();
+  readonly composite = new CustomCompositeModels();
+  readonly customLogic = new CustomLogicModels();
   /**
    * Upstream `TransistorElm.globalFlags`: display flags (the circle) shared by every transistor,
    * taken from the last one loaded.
@@ -22,11 +28,18 @@ export class ModelLibrary {
   transistorGlobalFlags = 0;
   /** Upstream `MosfetElm.lastModelName`: the model for new MOSFETs, set when one is edited. */
   mosfetLastModelName = 'default';
+  /** Upstream `JfetElm.lastJfetModelName`: the model for new JFETs. */
+  jfetLastModelName = 'default-jfet';
+  /** Upstream `RelayElm.lastModelName`: the model for new relays, set when one is edited. */
+  relayLastModelName = 'default';
 
   clearDumpedFlags(): void {
     this.diode.clearDumpedFlags();
     this.transistor.clearDumpedFlags();
     this.mosfet.clearDumpedFlags();
+    this.relay.clearDumpedFlags();
+    this.composite.clearDumpedFlags();
+    this.customLogic.clearDumpedFlags();
   }
 }
 

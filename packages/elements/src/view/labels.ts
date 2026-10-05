@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
-// Geometry learned from CircuitJS1 LabeledNodeElm, ProbeElm, OutputElm and TextElm
+// Geometry learned from CircuitJS1 LabeledNodeElm, ProbeElm, OutputElm, AudioOutputElm, TextElm,
+// BoxElm and LineElm
 // (src/com/lushprojects/circuitjs1/client/, master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032;
 // the drawing code is new.
 
+import type { AudioOutputElm } from '../elm/AudioOutputElm.ts';
+import type { BoxElm, LineElm } from '../elm/GraphicElm.ts';
+import type { InstructionDisplayElm } from '../elm/InstructionDisplayElm.ts';
 import { LabeledNodeElm } from '../elm/LabeledNodeElm.ts';
 import { OutputElm } from '../elm/OutputElm.ts';
 import { ProbeElm } from '../elm/ProbeElm.ts';
@@ -15,6 +19,7 @@ import {
   drawValues,
   elementBox,
   LABEL,
+  MUTED,
   TEXT,
   UNITS_FONT,
   vInk,
@@ -116,6 +121,27 @@ export const outputView: ElementView<OutputElm> = {
   bbox: (e) => elementBox(e, 8),
 };
 
+export const audioOutputView: ElementView<AudioOutputElm> = {
+  draw(e, ctx) {
+    const p = ctx.painter;
+    const font: TextStyle = { size: 14, bold: ctx.highlighted };
+    const s = e.getLabel();
+    const w = Math.trunc(p.measureText(s, font));
+    // how much of the recording buffer is filled
+    const pct = Math.trunc(w * e.fillFraction());
+    const x0 = e.x2 - Math.trunc(w / 2);
+    if (pct > 0)
+      p.fillPolygon(
+        [pt(x0, e.y2 - 10), pt(x0 + pct, e.y2 - 10), pt(x0 + pct, e.y2 + 10), pt(x0, e.y2 + 10)],
+        MUTED,
+      );
+    const lead1 = interp(e.point1, e.point2, 1 - (w / 2 + 8) / e.dn);
+    drawCenteredText(ctx, s, e.x2, e.y2, true, LABEL, font);
+    p.line(e.point1, lead1, vInk(volt(e, 0)));
+  },
+  bbox: (e) => elementBox(e, 8),
+};
+
 /** A text element's own color, `#rrggbb` (circuit data, not styling). */
 function textColor(c: string | null): Ink | null {
   if (c === null) return null;
@@ -169,4 +195,47 @@ export const textView: ElementView<TextElm> = {
   },
   // without a painter, assume an average glyph is 0.55 em wide
   bbox: (e) => textBox(e, (s) => s.length * e.size * 0.55),
+};
+
+export const boxView: ElementView<BoxElm> = {
+  draw(e, ctx) {
+    const x1 = Math.min(e.x, e.x2);
+    const y1 = Math.min(e.y, e.y2);
+    const x2 = Math.max(e.x, e.x2);
+    const y2 = Math.max(e.y, e.y2);
+    const corners = [pt(x1, y1), pt(x2, y1), pt(x2, y2), pt(x1, y2)];
+    ctx.painter.polyline(corners, MUTED, { closed: true, width: 1, dash: [16, 6] });
+  },
+  bbox: (e) => ({
+    x1: Math.min(e.x, e.x2),
+    y1: Math.min(e.y, e.y2),
+    x2: Math.max(e.x, e.x2),
+    y2: Math.max(e.y, e.y2),
+  }),
+};
+
+export const lineView: ElementView<LineElm> = {
+  draw(e, ctx) {
+    ctx.painter.line(pt(e.x, e.y), pt(e.x2, e.y2), MUTED, { width: 1 });
+  },
+  bbox: (e) => ({
+    x1: Math.min(e.x, e.x2),
+    y1: Math.min(e.y, e.y2),
+    x2: Math.max(e.x, e.x2),
+    y2: Math.max(e.y, e.y2),
+  }),
+};
+
+/** Text at the second point, fed by a thick bus lead (upstream InstructionDisplayElm.draw). */
+export const instructionDisplayView: ElementView<InstructionDisplayElm> = {
+  draw(e, ctx) {
+    const p = ctx.painter;
+    const style: TextStyle = { size: 14, bold: ctx.highlighted };
+    const s = e.getDisplayText();
+    const w = Math.trunc(p.measureText(s, style));
+    const lead = interp(e.point1, e.point2, 1 - (Math.trunc(w / 2) + 8) / e.dn);
+    drawCenteredText(ctx, s, e.x2, e.y2, true, LABEL, style);
+    p.line(e.point1, lead, vInk(volt(e, 0)), { width: 5 });
+  },
+  bbox: (e) => elementBox(e, 10),
 };

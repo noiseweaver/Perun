@@ -17,6 +17,7 @@ export {
   unitString,
   type EditCheckbox,
   type EditChoice,
+  type EditFile,
   type Editable,
 } from './edit/EditInfo.ts';
 export { SCALE_AUTO, SCALE_1, SCALE_M, SCALE_MU } from './constants.ts';
@@ -58,6 +59,18 @@ export { ResistorElm } from './elm/ResistorElm.ts';
 export { SwitchElm } from './elm/SwitchElm.ts';
 export { ACVoltageElm, DCVoltageElm, VoltageElm } from './elm/VoltageElm.ts';
 export { WireElm } from './elm/WireElm.ts';
+export { AudioInputElm, DataInputElm } from './elm/AudioInputElm.ts';
+export { BatteryElm } from './elm/BatteryElm.ts';
+export {
+  ACRailElm,
+  AntennaElm,
+  ClockElm,
+  ExtVoltageElm,
+  NoiseElm,
+  SquareRailElm,
+  VarRailElm,
+} from './elm/RailVariants.ts';
+export { AMElm, FMElm, SweepElm } from './elm/SweepElm.ts';
 
 // The engine types loaders and runners need, so packages above elements need not depend on the
 // engine directly (eslint.config.js dependency direction).
@@ -105,3 +118,89 @@ export {
   TRIGGER_FREERUN,
   TRIGGER_NORMAL,
 } from './scope/ScopeTrigger.ts';
+export { CrossSwitchElm, DPDTSwitchElm, MBBSwitchElm, Switch2Elm } from './elm/Switch2Elm.ts';
+export { BusLogicInputElm, LogicInputElm, LogicOutputElm } from './elm/LogicInputElm.ts';
+export { AnalogSwitch2Elm, AnalogSwitchElm } from './elm/AnalogSwitchElm.ts';
+export {
+  AndGateElm,
+  GateElm,
+  NandGateElm,
+  NorGateElm,
+  OrGateElm,
+  XnorGateElm,
+  XorGateElm,
+  gateDefaults,
+} from './elm/GateElm.ts';
+export {
+  DelayBufferElm,
+  InverterElm,
+  InvertingSchmittElm,
+  SchmittElm,
+  TriStateElm,
+} from './elm/InverterElm.ts';
+export { ChipElm, Pin, SIDE_E, SIDE_N, SIDE_S, SIDE_W } from './elm/ChipElm.ts';
+export { DFlipFlopElm, JKFlipFlopElm, TFlipFlopElm } from './elm/FlipFlopElm.ts';
+export { Counter2Elm, CounterElm, RingCounterElm, SeqGenElm } from './elm/CounterElm.ts';
+export { LatchElm, PisoShiftElm, SipoShiftElm } from './elm/ShiftElm.ts';
+export { DeMultiplexerElm, MultiplexerElm } from './elm/MultiplexerElm.ts';
+export { FullAdderElm, HalfAdderElm } from './elm/AdderElm.ts';
+export { DecimalDisplayElm, SevenSegDecoderElm, SevenSegElm } from './elm/SevenSegElm.ts';
+export { BusSplitterElm, BusTransceiverElm } from './elm/BusElm.ts';
+export { MonostableElm, PhaseCompElm, TimerElm, VCOElm } from './elm/TimerElm.ts';
+export { ADCElm, DACElm } from './elm/ConverterElm.ts';
+export { TransformerElm } from './elm/TransformerElm.ts';
+export { TappedTransformerElm } from './elm/TappedTransformerElm.ts';
+export { TransLineElm } from './elm/TransLineElm.ts';
+export { RelayElm } from './elm/RelayElm.ts';
+export { RelayCoilElm, RelayContactElm } from './elm/RelayCoilElm.ts';
+export { JfetElm, NJfetElm, PJfetElm } from './elm/JfetElm.ts';
+export { PolarCapacitorElm } from './elm/PolarCapacitorElm.ts';
+export { VaractorElm } from './elm/VaractorElm.ts';
+export { TunnelDiodeElm } from './elm/TunnelDiodeElm.ts';
+export { MemristorElm } from './elm/MemristorElm.ts';
+export { SparkGapElm } from './elm/SparkGapElm.ts';
+export { LampElm } from './elm/LampElm.ts';
+export { SCRElm } from './elm/SCRElm.ts';
+export { TriacElm } from './elm/TriacElm.ts';
+export { BoxElm, GraphicElm, LineElm } from './elm/GraphicElm.ts';
+export { CompositeElm } from './elm/CompositeElm.ts';
+export {
+  CrystalElm,
+  DarlingtonElm,
+  NDarlingtonElm,
+  NortonAmpElm,
+  OTAElm,
+  PDarlingtonElm,
+} from './elm/compositeParts.ts';
+export { CC2Elm, CC2NegElm } from './elm/CC2Elm.ts';
+export { AudioOutputElm } from './elm/AudioOutputElm.ts';
+export { CustomLogicElm } from './elm/CustomLogicElm.ts';
+export { DataRecorderElm } from './elm/DataRecorderElm.ts';
+export { RoutedWireElm } from './elm/RoutedWireElm.ts';
+export { ROMElm, SRAMElm } from './elm/SRAMElm.ts';
+export { InstructionDisplayElm } from './elm/InstructionDisplayElm.ts';
+export {
+  CustomCompositeChipElm,
+  CustomCompositeElm,
+  type SubcircuitHooks,
+} from './elm/CustomCompositeElm.ts';
+export {
+  CustomCompositeModel,
+  CustomCompositeModels,
+  ExtListEntry,
+} from './models/CustomCompositeModel.ts';
+export { CCCSElm, CCVSElm, VCCSElm, VCVSElm } from './elm/VCCSElm.ts';
+export { Expr, ExprParser, ExprState } from './Expr.ts';
+export { DiacElm } from './elm/DiacElm.ts';
+export { TriodeElm } from './elm/TriodeElm.ts';
+export { AmmeterElm } from './elm/AmmeterElm.ts';
+export { RelayModel, RelayModels } from './models/RelayModel.ts';
+export {
+  XmlElement,
+  XmlParseError,
+  escapeXml,
+  parseXml,
+  prettyPrint,
+  type XmlText,
+} from './xmldoc.ts';
+export { AttrReader, AttrWriter } from './xmlattrs.ts';

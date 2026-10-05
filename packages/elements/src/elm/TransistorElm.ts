@@ -175,8 +175,8 @@ export class TransistorElm extends CircuitElm {
 
   /** Master saves base-collector voltage as "vbe" and base-emitter as "vbc". */
   override dumpXmlState(w: XmlAttrWriter): void {
-    w.dumpAttr('vbe', this.nodes[0].v - this.nodes[1].v);
-    w.dumpAttr('vbc', this.nodes[0].v - this.nodes[2].v);
+    w.dumpAttr('vbe', this.volts[0] - this.volts[1]);
+    w.dumpAttr('vbc', this.volts[0] - this.volts[2]);
   }
 
   override undumpXml(r: XmlAttrReader): void {
@@ -288,9 +288,10 @@ export class TransistorElm extends CircuitElm {
     const sim = this.sim;
     const model = this.getModel();
     const nodes = this.nodes;
+    const volts = this.volts;
     const pnp = this.pnp;
-    let vbc = pnp * (nodes[0].v - nodes[1].v); // typically negative
-    let vbe = pnp * (nodes[0].v - nodes[2].v); // typically positive
+    let vbc = pnp * (volts[0] - volts[1]); // typically negative
+    let vbe = pnp * (volts[0] - volts[2]); // typically positive
     const notConverged = Math.abs(vbc - this.lastvbc) > 0.01 || Math.abs(vbe - this.lastvbe) > 0.01;
     if (notConverged) sim.converged = false;
 
@@ -448,7 +449,7 @@ export class TransistorElm extends CircuitElm {
   }
 
   override stepFinished(): void {
-    const nodes = this.nodes;
+    const volts = this.volts;
     // stop for huge currents that make simulator act weird
     if (Math.abs(this.ic) > 1e12 || Math.abs(this.ib) > 1e12)
       this.sim.stop('max current exceeded', this);
@@ -461,23 +462,23 @@ export class TransistorElm extends CircuitElm {
     // save junction capacitor state for the next step's companion model (circuit reference,
     // not pnp-adjusted)
     if (this.geqBE > 0) {
-      this.capVoltBE = nodes[0].v - nodes[2].v;
+      this.capVoltBE = volts[0] - volts[2];
       this.capCurBE = this.geqBE * this.capVoltBE + this.ceqBE;
     }
     if (this.geqBC > 0) {
-      this.capVoltBC = nodes[0].v - nodes[1].v;
+      this.capVoltBC = volts[0] - volts[1];
       this.capCurBC = this.geqBC * this.capVoltBC + this.ceqBC;
     }
 
     // add junction capacitor currents to terminal currents for display: BE flows base to
     // emitter, BC base to collector
     if (this.geqBE > 0) {
-      const icapBE = this.geqBE * (nodes[0].v - nodes[2].v) + this.ceqBE;
+      const icapBE = this.geqBE * (volts[0] - volts[2]) + this.ceqBE;
       this.ib += icapBE;
       this.ie -= icapBE;
     }
     if (this.geqBC > 0) {
-      const icapBC = this.geqBC * (nodes[0].v - nodes[1].v) + this.ceqBC;
+      const icapBC = this.geqBC * (volts[0] - volts[1]) + this.ceqBC;
       this.ib += icapBC;
       this.ic -= icapBC;
     }

@@ -18,5 +18,6 @@ export {
   SolverType,
   SPARSE_THRESHOLD,
   WireSegment,
+  type BusWidthMaps,
   type LabelEntry,
 } from './Simulation.ts';

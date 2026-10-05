@@ -6,6 +6,7 @@
 
 import type { DiodeElm } from '../elm/DiodeElm.ts';
 import type { LEDElm } from '../elm/LEDElm.ts';
+import type { JfetElm } from '../elm/JfetElm.ts';
 import { MosfetElm } from '../elm/MosfetElm.ts';
 import { OpAmpElm } from '../elm/OpAmpElm.ts';
 import { TransistorElm } from '../elm/TransistorElm.ts';
@@ -27,7 +28,7 @@ import {
 } from './common.ts';
 import { calcArrow, calcLeads, interp, interp2, pt, rectOf, sign, unionRect } from './geometry.ts';
 import type { DrawContext, Pt } from './Painter.ts';
-import { javaDoubleToString } from './units.ts';
+import { addCurCount } from './passive.ts';
 
 const DIODE_HS = 8;
 
@@ -267,15 +268,7 @@ export const mosfetView: ElementView<MosfetElm> = {
     p.line(gate0, gate2, vg);
     if (g.pcircle) p.circle(g.pcircle, 3 * 0.98, vg);
     if (e.hasFlag(MosfetElm.FLAG_SHOWVT)) {
-      drawCenteredText(
-        ctx,
-        javaDoubleToString(e.vt * e.pnp),
-        e.x2 + 2,
-        e.y2,
-        false,
-        TEXT,
-        VALUE_FONT,
-      );
+      drawCenteredText(ctx, String(e.vt * e.pnp), e.x2 + 2, e.y2, false, TEXT, VALUE_FONT);
     }
     const cs = ctx.dotCount(0, -(e.ids + e.capCurGS));
     const cd = ctx.dotCount(1, -e.ids + e.capCurGD);
@@ -315,6 +308,67 @@ export const mosfetView: ElementView<MosfetElm> = {
       if (e.hasBodyTerminal()) {
         const body0 = g.body[0] as Pt;
         p.text('B', pt(body0.x - 3 + 9 * (dsx - dsyn * pnp), body0.y + 4), COMPONENT, UNITS_FONT);
+      }
+    }
+  },
+  bbox: (e) => elementBox(e, MOSFET_HS),
+};
+
+export const jfetView: ElementView<JfetElm> = {
+  draw(e, ctx) {
+    const p = ctx.painter;
+    const { point1, point2, dn } = e;
+    let hs2 = MOSFET_HS * e.dsign;
+    if (e.hasFlag(MosfetElm.FLAG_FLIP)) hs2 = -hs2;
+    const [src0, drn0] = interp2(point1, point2, 1, -hs2);
+    const [src1, drn1] = interp2(point1, point2, 1, -Math.trunc(hs2 / 2));
+    const [src2, drn2] = interp2(point1, point2, 1 - 10 / dn, -Math.trunc(hs2 / 2));
+    const gatePt = interp(point1, point2, 1 - 14 / dn);
+    const [ra0, ra1] = interp2(point1, point2, 1 - 13 / dn, MOSFET_HS);
+    const [ra2, ra3] = interp2(point1, point2, 1 - 10 / dn, MOSFET_HS);
+    const arrow =
+      e.pnp === -1
+        ? calcArrow(gatePt, interp(gatePt, point1, 18 / dn), 12, 5)
+        : calcArrow(point1, gatePt, 12, 5);
+    const vs = vInk(volt(e, 1));
+    const vd = vInk(volt(e, 2));
+    const vg = vInk(volt(e, 0));
+    p.line(src0, src1, vs);
+    p.line(src1, src2, vs);
+    p.line(drn0, drn1, vd);
+    p.line(drn1, drn2, vd);
+    p.line(point1, gatePt, vg);
+    p.fillPolygon(arrow, vg);
+    p.fillPolygon([ra0, ra1, ra3, ra2], COMPONENT);
+    const cd = ctx.dotCount(0, -e.ids);
+    const cg = ctx.dotCount(1, e.gateCurrent);
+    const cs = ctx.dotCount(2, -e.gateCurrent - e.ids);
+    p.dots(src0, src1, cs);
+    p.dots(src1, src2, addCurCount(cs, 8));
+    p.dots(drn0, drn1, -cd);
+    p.dots(drn1, drn2, -addCurCount(cd, 8));
+    p.dots(point1, gatePt, cg);
+    if (ctx.highlighted) {
+      const dsx = sign(e.dx);
+      const dsyn = e.dy === 0 ? 0 : 1;
+      const pnp = e.pnp;
+      const gate1 = interp(...interp2(point1, point2, 1 - 28 / dn, Math.trunc(hs2 / 2)), 0.5);
+      p.text(
+        'G',
+        pt(gate1.x - (e.dx < 0 ? -2 : 12), gate1.y + (e.dy > 0 ? -5 : 12)),
+        COMPONENT,
+        UNITS_FONT,
+      );
+      const s = pnp === -1 ? 'D' : 'S';
+      const d = pnp === -1 ? 'S' : 'D';
+      if (e.dy === 0) {
+        const lx = (q: Pt): number => q.x - 3 + 9 * (dsx - dsyn * pnp);
+        p.text(s, pt(lx(src0), src0.y + 4), COMPONENT, UNITS_FONT);
+        p.text(d, pt(lx(drn0), drn0.y + 4), COMPONENT, UNITS_FONT);
+      } else if (e.dx === 0) {
+        const ly = (q: Pt): number => q.y - (e.dy < 0 ? 7 : -14);
+        p.text(s, pt(src0.x - 4, ly(src0)), COMPONENT, UNITS_FONT);
+        p.text(d, pt(drn0.x - 4, ly(drn0)), COMPONENT, UNITS_FONT);
       }
     }
   },

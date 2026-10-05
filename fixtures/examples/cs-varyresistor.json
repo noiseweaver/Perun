@@ -1,0 +1,97 @@
+{
+ "file": "cs-varyresistor.txt",
+ "reference": {
+  "upstreamSha": "5a707168778216bb6ed01bfdd62e8bbf7ae0a032",
+  "harnessPatchSha256": "fa84fc858811ddd78a3e4c757e379392906a47e464b400c92c9d16b902886403",
+  "browser": "chromium 141.0.7390.37"
+ },
+ "export": "<cir f=\"1\" ts=\"0.000005\" ic=\"10.20027730826997\" cb=\"58\" pb=\"50\" vr=\"5\" mts=\"5e-11\">\n  <VCCS x=\"464 288 528 288\" f=\"0\" ic=\"3\" ex=\"-(a-c)/(1000*(1+b))\"/>\n  <w x=\"464 288 464 240\" f=\"0\"/>\n  <w x=\"464 240 560 240\" f=\"0\"/>\n  <w x=\"560 240 560 288\" f=\"0\"/>\n  <w x=\"464 384 560 384\" f=\"0\"/>\n  <w x=\"560 384 560 320\" f=\"1\"/>\n  <g x=\"464 384 464 416\" f=\"0\"/>\n  <R x=\"464 240 464 176\" f=\"0\" wf=\"0\" maxv=\"5\"/>\n  <w x=\"464 352 464 384\" f=\"0\"/>\n  <R x=\"464 320 400 320\" f=\"0\" wf=\"2\" fr=\"40\" maxv=\"2\" bias=\"3\"/>\n</cir>\n",
+ "topology": {
+  "nodeCount": 3,
+  "elements": [
+   {
+    "type": "VCCSElm",
+    "nodes": [
+     1,
+     2,
+     0,
+     1,
+     0
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     1,
+     1
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     1,
+     1
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     1,
+     1
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     0,
+     0
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     0,
+     0
+    ]
+   },
+   {
+    "type": "GroundElm",
+    "nodes": [
+     0
+    ]
+   },
+   {
+    "type": "RailElm",
+    "nodes": [
+     1
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     0,
+     0
+    ]
+   },
+   {
+    "type": "RailElm",
+    "nodes": [
+     2
+    ]
+   }
+  ]
+ },
+ "stop": null,
+ "samples": [
+  {"step":1,"t":0.000005,"nodes":[0,5,5]},
+  {"step":2,"t":0.00001,"nodes":[0,5,5]},
+  {"step":5,"t":0.000025,"nodes":[0,5,5]},
+  {"step":10,"t":0.00005,"nodes":[0,5,5]},
+  {"step":20,"t":0.0001,"nodes":[0,5,5]},
+  {"step":50,"t":0.00025,"nodes":[0,5,5]},
+  {"step":100,"t":0.0005,"nodes":[0,5,5]},
+  {"step":200,"t":0.001,"nodes":[0,5,5]},
+  {"step":500,"t":0.0025,"nodes":[0,5,5]},
+  {"step":1000,"t":0.005,"nodes":[0,5,5]}
+ ]
+}

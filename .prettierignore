@@ -3,3 +3,4 @@ fixtures/
 .reference-site/
 pnpm-lock.yaml
 docs/PLAN.md
+docs/EXAMPLES.md

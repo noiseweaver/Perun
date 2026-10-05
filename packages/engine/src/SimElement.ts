@@ -11,7 +11,7 @@
 
 import { UNASSIGNED_NODE, type CircuitNode, type VoltageSource } from './CircuitNode.ts';
 import { Point } from './Point.ts';
-import type { Simulation, WireSegment } from './Simulation.ts';
+import type { BusWidthMaps, Simulation, WireSegment } from './Simulation.ts';
 
 /**
  * Base class of every simulated element. Method names and defaults follow upstream `CircuitElm`
@@ -30,6 +30,13 @@ export abstract class SimElement {
   flags: number;
 
   nodes: CircuitNode[] = [];
+  /**
+   * This element's copy of its node voltages (upstream `volts[]`). Each element keeps its own, as
+   * master does: they are written after every solve (`setNodeVoltage`), so they agree with the
+   * nodes then, but before the first solve each element still sees the voltages it was loaded or
+   * reset with, even where it shares a node with another element.
+   */
+  volts: number[] = [];
   voltSource: VoltageSource | null = null;
   current = 0;
   /** The composite element this one belongs to (subcircuits, Phase 8). */
@@ -69,6 +76,11 @@ export abstract class SimElement {
   allocNodes(): void {
     const n = this.getNodeCount();
     if (this.nodes.length !== n) this.nodes = new Array<CircuitNode>(n).fill(UNASSIGNED_NODE);
+    if (this.volts.length !== n) {
+      const volts = new Array<number>(n).fill(0);
+      for (let i = 0; i < n && i < this.volts.length; i++) volts[i] = this.volts[i];
+      this.volts = volts;
+    }
   }
 
   // ---- geometry ----------------------------------------------------------------------------
@@ -130,6 +142,20 @@ export abstract class SimElement {
     return 1;
   }
 
+  /** Bits carried by post n (upstream `getPostWidth`); more than 1 for a bus post. */
+  getPostWidth(_n: number): number {
+    return 1;
+  }
+
+  /**
+   * One pass of bus-width detection for wires, labels and bus splitters (upstream does this with
+   * instanceof in `detectBusWidths`): take a width from the posts around, record it, and return
+   * whether anything changed.
+   */
+  propagateBusWidth(_maps: BusWidthMaps): boolean {
+    return false;
+  }
+
   /** For wire-like elements: the post that post `n` connects through to (null: none yet). */
   getConnectedPost(_n: number): Point | null {
     return this.point2;
@@ -139,12 +165,9 @@ export abstract class SimElement {
     return this.nodes[n];
   }
 
-  /** Notified that node `p` is `n`; keeps the old voltage if the node is new (dev-ts). */
+  /** Notified that node `p` is `n`. */
   setNode(p: number, n: CircuitNode): void {
-    const old = this.nodes[p];
-    const v = old === undefined ? 0 : old.v;
     this.nodes[p] = n;
-    if (v !== 0 && n.index > 0) n.v = v;
   }
 
   /** Default only suits elements with one voltage source. */
@@ -250,6 +273,12 @@ export abstract class SimElement {
   /** Recompute `current` from node voltages; called after every solve. */
   calculateCurrent(): void {}
 
+  /** Upstream `setNodeVoltage`: node n of this element is now at c volts. */
+  setNodeVoltage(n: number, c: number): void {
+    this.volts[n] = c;
+    this.nodeVoltageChanged(n);
+  }
+
   /**
    * Node voltage of post `post` changed. Master's `setNodeVoltage` recomputes the current here;
    * capacitors override it to do nothing, as master's `CapacitorElm` does.
@@ -282,11 +311,11 @@ export abstract class SimElement {
   }
 
   getPostVoltage(n: number): number {
-    return this.nodes[n].v;
+    return this.volts[n];
   }
 
   getVoltageDiff(): number {
-    return this.nodes[0].v - this.nodes[1].v;
+    return this.volts[0] - this.volts[1];
   }
 
   /** Are we finding the DC operating point (capacitors open, sources at their bias)? */

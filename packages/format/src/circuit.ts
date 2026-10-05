@@ -24,6 +24,7 @@ import {
   type ScopeHost,
   type ScopeManager,
   type XmlDocWriter,
+  unescapeToken,
 } from '@circuitjs-next/elements';
 import { AttrReader, AttrWriter } from './attrs.ts';
 import { XmlElement, parseXml, prettyPrint } from './xml.ts';
@@ -80,8 +81,6 @@ export class Circuit {
    * until sliders are ported (see docs/DEVIATIONS.md).
    */
   xmlExtras: XmlElement[] = [];
-  /** Slider (`38`) lines from a text file. Not written back (DEVIATIONS.md). */
-  textExtras: string[] = [];
   /**
    * While reading: every element record so far, with null for those this port can't load, so
    * scope element numbers count as upstream's do.
@@ -170,8 +169,9 @@ export class Circuit {
     this.options = { flags: 0, speed: 117, currentBar: 50, powerBar: 50, voltageRange: 5 };
     this.setGrid();
     this.xmlExtras = [];
-    this.textExtras = [];
     this.scopes.clearScopes();
+    // upstream keeps them while a subcircuit is open for editing (its context stack)
+    modelsFor(sim).composite.clearLocalModels();
   }
 
   private setGrid(): void {
@@ -190,7 +190,8 @@ export class Circuit {
     sim.resetTime();
     sim.resetNodes();
     for (const ce of this.elements) {
-      for (const n of ce.nodes) if (n.index === -1) n.v = 0;
+      // upstream CircuitElm.reset() zeroes volts[]
+      ce.volts.fill(0);
       ce.reset();
     }
   }
@@ -300,7 +301,7 @@ export class Circuit {
           continue;
         }
         if (type.charAt(0) === '!') {
-          this.warnings.push('custom logic models are not supported yet');
+          modelsFor(this.sim).customLogic.undumpModel(st);
           continue;
         }
         // afilter-specific records
@@ -317,11 +318,11 @@ export class Circuit {
           continue;
         }
         if (tint === 38) {
-          this.textExtras.push(line);
+          if (!retain) this.readTextAdjustable(st);
           continue;
         }
         if (type.charAt(0) === '.') {
-          this.warnings.push('subcircuit models are not supported yet');
+          modelsFor(this.sim).composite.undumpModel(st, this.sim);
           continue;
         }
 
@@ -348,6 +349,56 @@ export class Circuit {
         this.warnings.push(`exception while undumping ${String(e)}`);
       }
     }
+  }
+
+  /**
+   * Upstream `Adjustable(StringTokenizer)`: a text-format slider. Upstream saves every slider as
+   * an `adj` record, so turn it into one here and keep it with the XML sliders.
+   */
+  private readTextAdjustable(st: StringTokenizer): void {
+    const e = parseJavaInt(st.nextToken());
+    if (e === -1) return;
+    let flags = 0;
+    let editItem = 0;
+    let minValue = 0;
+    let maxValue = 0;
+    let shared = -1;
+    let sliderText = '';
+    let sliderStep = 0;
+    try {
+      let ei = st.nextToken();
+      // the initial code forgot a flags field, so it is an optional "F" token
+      if (ei.startsWith('F')) {
+        flags = parseJavaInt(ei.substring(1));
+        ei = st.nextToken();
+      }
+      editItem = parseJavaInt(ei);
+      minValue = parseJavaDouble(st.nextToken());
+      maxValue = parseJavaDouble(st.nextToken());
+      if ((flags & ADJ_FLAG_SHARED) !== 0) shared = parseJavaInt(st.nextToken());
+      sliderText = unescapeToken(st.nextToken());
+    } catch {
+      // upstream keeps whatever it read before the record ran out
+    }
+    try {
+      sliderStep = parseJavaDouble(st.nextToken());
+    } catch {
+      // older records have no step
+    }
+    const ce = this.elements[e];
+    if (ce === undefined) return;
+    this.xmlExtras.push(
+      adjElement(ce, {
+        e,
+        editItem,
+        minValue,
+        maxValue,
+        sliderText,
+        sliderStep,
+        shared,
+        log: (flags & ADJ_FLAG_LOG) !== 0,
+      }),
+    );
   }
 
   private readOptions(st: StringTokenizer): void {
@@ -400,7 +451,9 @@ export class Circuit {
         continue;
       }
       if (tag === 'adj') {
-        if (!retain) this.xmlExtras.push(elem);
+        if (!retain) {
+          this.xmlExtras.push(readXmlAdjustable(elem, r, this.elements[r.parseIntAttr('e', -1)]));
+        }
         continue;
       }
       if (tag === 'h') {
@@ -424,8 +477,16 @@ export class Circuit {
         modelsFor(sim).mosfet.undumpModelXml(r);
         continue;
       }
-      if (['rlm', 'clm', 'ccm'].includes(tag)) {
-        this.warnings.push(`model element <${tag}> is not supported yet`);
+      if (tag === 'rlm') {
+        modelsFor(sim).relay.undumpModelXml(r);
+        continue;
+      }
+      if (tag === 'ccm') {
+        modelsFor(sim).composite.undumpModelXml(r, sim);
+        continue;
+      }
+      if (tag === 'clm') {
+        modelsFor(sim).customLogic.undumpModelXml(r);
         continue;
       }
       // upstream's own regression-test records; only its test runner reads them
@@ -539,4 +600,71 @@ export function readCircuit(text: string): Circuit {
   const c = new Circuit();
   c.read(text);
   return c;
+}
+
+/** Upstream `Adjustable.FLAG_SHARED` and `FLAG_LOG`. */
+const ADJ_FLAG_SHARED = 1;
+const ADJ_FLAG_LOG = 2;
+
+interface AdjFields {
+  e: number;
+  editItem: number;
+  minValue: number;
+  maxValue: number;
+  sliderText: string;
+  sliderStep: number;
+  shared: number;
+  log: boolean;
+}
+
+/** An `adj` record as upstream `Adjustable.dumpXml` writes it. */
+function adjElement(ce: CircuitElm, a: AdjFields): XmlElement {
+  const adj = new XmlElement('adj');
+  const w = new AttrWriter(adj);
+  w.dumpAttr('e', a.e);
+  w.dumpAttr('ei', a.editItem);
+  w.dumpAttr('en', ce.getEditInfo(a.editItem)?.name ?? '');
+  w.dumpAttr('mn', a.minValue);
+  w.dumpAttr('mx', a.maxValue);
+  w.dumpAttr('st', a.sliderText);
+  if (a.sliderStep > 0) w.dumpAttr('stp', a.sliderStep);
+  if (a.shared !== -1) w.dumpAttr('ss', a.shared);
+  if (a.log) w.dumpAttr('log', 1);
+  return adj;
+}
+
+/**
+ * Upstream `Adjustable.undumpXml`, then `dumpXml` again: the slider's edit item is found by its
+ * name (`en`), falling back to the saved index (`ei`), and the record is rewritten in upstream's
+ * attribute order. A record whose element this port can't load is kept verbatim.
+ */
+function readXmlAdjustable(
+  elem: XmlElement,
+  r: AttrReader,
+  ce: CircuitElm | undefined,
+): XmlElement {
+  const e = r.parseIntAttr('e', -1);
+  if (ce === undefined || e === -1) return elem;
+  let editItem = r.parseIntAttr('ei', 0);
+  const en = r.parseStringAttr('en', null);
+  if (en !== null && en.length > 0) {
+    for (let i = 0; ; i++) {
+      const ei = ce.getEditInfo(i);
+      if (ei === null) break;
+      if (ei.name === en) {
+        editItem = i;
+        break;
+      }
+    }
+  }
+  return adjElement(ce, {
+    e,
+    editItem,
+    minValue: r.parseDoubleAttr('mn', 1),
+    maxValue: r.parseDoubleAttr('mx', 1000),
+    sliderText: r.parseStringAttr('st', ''),
+    sliderStep: r.parseDoubleAttr('stp', 0),
+    shared: r.parseIntAttr('ss', -1),
+    log: r.parseIntAttr('log', 0) !== 0,
+  });
 }

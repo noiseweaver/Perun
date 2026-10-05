@@ -7,7 +7,7 @@
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
-import { Point } from '@circuitjs-next/engine';
+import { Point, type BusWidthMaps } from '@circuitjs-next/engine';
 import { CircuitElm, elementType, lineDistanceSq } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { getCurrentDText, getVoltageText } from '../view/units.ts';
@@ -37,6 +37,38 @@ export class WireElm extends CircuitElm {
     return this.busWidth;
   }
 
+  override getPostWidth(_n: number): number {
+    return this.busWidth;
+  }
+
+  override propagateBusWidth(maps: BusWidthMaps): boolean {
+    let changed = false;
+    const k1 = this.point1.key();
+    const k2 = this.point2.key();
+    const w1 = maps.width.get(k1);
+    const w2 = maps.width.get(k2);
+    let w = 1;
+    if (w1 !== undefined) w = w1;
+    if (w2 !== undefined && w2 > w) w = w2;
+    if (w !== this.busWidth) {
+      this.busWidth = w;
+      this.currents = w > 1 ? new Array<number>(w).fill(0) : null;
+      this.allocNodes();
+      changed = true;
+    }
+    if (w > 1) {
+      if (w1 === undefined || w1 < w) {
+        maps.width.set(k1, w);
+        changed = true;
+      }
+      if (w2 === undefined || w2 < w) {
+        maps.width.set(k2, w);
+        changed = true;
+      }
+    }
+    return changed;
+  }
+
   override getPost(n: number): Point {
     if (this.busWidth === 1) return n === 0 ? this.point1 : this.point2;
     if (n < this.busWidth) return new Point(this.point1.x, this.point1.y, n);
@@ -56,7 +88,7 @@ export class WireElm extends CircuitElm {
   }
 
   override getVoltageDiff(): number {
-    return this.nodes[0].v;
+    return this.volts[0];
   }
   override isWireEquivalent(): boolean {
     return true;
@@ -77,6 +109,42 @@ export class WireElm extends CircuitElm {
     }
     if (n === 0) return -this.current;
     return this.current;
+  }
+
+  /** The bus's bits as a number, bit i from post i (2.5 V threshold, as upstream). */
+  getBusValue(): number {
+    let value = 0;
+    for (let i = 0; i < this.busWidth; i++) if (this.volts[i] > 2.5) value |= 1 << i;
+    return value;
+  }
+
+  /** Total current over all bits of a bus (upstream sums `currents` while drawing). */
+  totalCurrent(): number {
+    return this.currents === null ? this.current : this.currents.reduce((a, c) => a + c, 0);
+  }
+
+  /**
+   * The value text shown on the wire, or ''. Live values keep a fixed width (owner's rule): the
+   * bus value is padded to the widest value the bus can carry.
+   */
+  valueText(fixed: (v: number, u: string) => string): string {
+    let s = '';
+    if (this.busWidth > 1 && (this.mustShowBusValue() || this.mustShowBusValueHex())) {
+      const value = this.getBusValue();
+      const max = this.busWidth >= 32 ? 0xffffffff : (1 << this.busWidth) - 1;
+      if (this.mustShowBusValue()) s = String(value).padStart(String(max >>> 0).length);
+      if (this.mustShowBusValueHex()) {
+        const digits = Math.ceil(this.busWidth / 4);
+        s =
+          (s.length > 0 ? s + ' ' : '') +
+          '0x' +
+          (value >>> 0).toString(16).toUpperCase().padStart(digits, '0');
+      }
+    } else if (this.busWidth === 1) {
+      if (this.mustShowCurrent()) s = fixed(Math.abs(this.totalCurrent()), 'A');
+      if (this.mustShowVoltage()) s = (s.length > 0 ? s + ' ' : '') + fixed(this.volts[0], 'V');
+    }
+    return s;
   }
 
   mustShowCurrent(): boolean {

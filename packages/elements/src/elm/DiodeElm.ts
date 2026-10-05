@@ -123,11 +123,11 @@ export class DiodeElm extends CircuitElm {
   }
 
   override doStep(): void {
-    this.diode.doStep(this.nodes[0].v - this.nodes[this.diodeEndNode].v);
+    this.diode.doStep(this.volts[0] - this.volts[this.diodeEndNode]);
   }
 
   override calculateCurrent(): void {
-    this.current = this.diode.calculateCurrent(this.nodes[0].v - this.nodes[this.diodeEndNode].v);
+    this.current = this.diode.calculateCurrent(this.volts[0] - this.volts[this.diodeEndNode]);
   }
 
   override stepFinished(): void {

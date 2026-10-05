@@ -12,6 +12,10 @@ import {
   UNITS_A,
   UNITS_V,
   VAL_CURRENT,
+  AudioOutputElm,
+  CustomCompositeElm,
+  CustomLogicElm,
+  DataRecorderElm,
   VAL_VOLTAGE,
   VoltageElm,
   cardHitTest,
@@ -47,6 +51,7 @@ import {
   type EditorHost,
   type Modifiers,
 } from './editor/Editor.ts';
+import { download } from './download.ts';
 import { showToast, shownTheme, useApp, type AppState, type EditorState } from './store.ts';
 
 /** Simulation time per frame before the frame is cut short (upstream `frameTimeLimit`). */
@@ -123,7 +128,22 @@ export class SimController {
     const stored = readClipboard();
     if (stored !== null) this.editor.setClipboard(stored);
     // upstream asks before shortening the timestep for a fast source
-    if (typeof window !== 'undefined') VoltageElm.confirmAdjustTimestep = (m) => window.confirm(m);
+    if (typeof window !== 'undefined') {
+      VoltageElm.confirmAdjustTimestep = (m) => window.confirm(m);
+      AudioOutputElm.confirmAdjustTimestep = (m) => window.confirm(m);
+      AudioOutputElm.notify = (m) => window.alert(m);
+      AudioOutputElm.player = playSamples;
+      // the subcircuit editors are not built yet (PROGRESS.md open issues)
+      const later = () => window.alert('Editing subcircuits is not available yet.');
+      CustomCompositeElm.hooks = {
+        editPinLayout: later,
+        viewComponents: later,
+        editModel: later,
+        alert: (m) => window.alert(m),
+      };
+      CustomLogicElm.editModel = () => window.alert('Editing logic models is not available yet.');
+      DataRecorderElm.download = (name, text) => download(name, text, 'text/plain');
+    }
   }
 
   // ---- loading -----------------------------------------------------------------------------
@@ -313,6 +333,14 @@ export class SimController {
         this.steps += done;
         this.stepsOwed -= k;
         if (sim.stopMessage !== null) break;
+        if (sim.pauseRequested) {
+          // a stop trigger fired: pause, as upstream's setSimRunning(false)
+          sim.pauseRequested = false;
+          this.stepsOwed = 0;
+          running = false;
+          useApp.setState({ running: false });
+          break;
+        }
         if (performance.now() - start > FRAME_BUDGET_MS) {
           // the circuit is too slow for this speed: drop the backlog rather than spiral
           this.stepsOwed = 0;
@@ -344,6 +372,7 @@ export class SimController {
         showValues: state.display.showValues,
         voltageRange: o.voltageRange,
         euroResistors: state.settings.euroResistors,
+        euroGates: state.settings.euroGates,
         showOhm: state.settings.showOhm,
         textFont: state.settings.textFont,
         junctionDots: state.settings.junctionDots,
@@ -1030,6 +1059,12 @@ export class SimController {
   }
 
   /** Apply a property panel change to an element (upstream EditDialog apply). */
+  /** An edit dialog button or loaded file acting on its element, undoably. */
+  runEditAction(action: () => void): void {
+    this.editor.history.record('Edit', action);
+    this.circuitChanged();
+  }
+
   applyEdit(e: CircuitElm, n: number, ei: EditInfo): void {
     this.editor.history.record('Edit', () => e.setEditValue(n, ei));
     this.circuitChanged();
@@ -1839,3 +1874,16 @@ function readClipboard(): string | null {
 }
 
 export const controller = new SimController();
+
+/** Play an audio output element's recording (upstream builds a WAV blob; Web Audio is enough). */
+function playSamples(samples: Int16Array, samplingRate: number): void {
+  const ctx = new AudioContext();
+  const buffer = ctx.createBuffer(1, samples.length, samplingRate);
+  const ch = buffer.getChannelData(0);
+  for (let i = 0; i < samples.length; i++) ch[i] = samples[i] / 32768;
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  src.connect(ctx.destination);
+  src.onended = () => void ctx.close();
+  src.start();
+}
