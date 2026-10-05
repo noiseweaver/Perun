@@ -39,7 +39,7 @@ import {
   type FrameState,
   type UndockedScopeItem,
 } from '@circuitjs-next/render';
-import { BUILTIN_THEMES, DEFAULT_THEME_ID, type Theme } from '@circuitjs-next/theme';
+import type { Theme } from '@circuitjs-next/theme';
 import {
   Editor,
   MouseMode,
@@ -47,17 +47,13 @@ import {
   type EditorHost,
   type Modifiers,
 } from './editor/Editor.ts';
-import { showToast, useApp, type AppState, type EditorState } from './store.ts';
+import { showToast, shownTheme, useApp, type AppState, type EditorState } from './store.ts';
 
 /** Simulation time per frame before the frame is cut short (upstream `frameTimeLimit`). */
 const FRAME_BUDGET_MS = 50;
 /** Steps per sim.step() call; small enough to check the clock often. */
 const MAX_CHUNK = 500;
 const STATUS_INTERVAL_MS = 100;
-
-export function themeById(id: string): Theme {
-  return BUILTIN_THEMES[id] ?? (BUILTIN_THEMES[DEFAULT_THEME_ID] as Theme);
-}
 
 /**
  * Owns the loaded circuit, the renderer and the animation loop. React components drive it through
@@ -213,10 +209,10 @@ export class SimController {
   attach(canvas: HTMLCanvasElement): void {
     this.detach();
     const state = useApp.getState();
-    const renderer = new CircuitRenderer(canvas, themeById(state.settings.themeId));
+    const renderer = new CircuitRenderer(canvas, shownTheme(state));
     renderer.motion = this.motion;
     this.renderer = renderer;
-    this.scopeRenderer = new ScopeRenderer(canvas, themeById(state.settings.themeId));
+    this.scopeRenderer = new ScopeRenderer(canvas, shownTheme(state));
     renderer.setElements(this.circuit.elements);
     this.needsFit = true;
     this.unsubscribe = useApp.subscribe((s, prev) => this.onStore(s, prev));
@@ -265,9 +261,10 @@ export class SimController {
   }
 
   private onStore(s: AppState, prev: AppState): void {
-    if (s.settings.themeId !== prev.settings.themeId) {
-      this.renderer?.setTheme(themeById(s.settings.themeId));
-      this.scopeRenderer?.setTheme(themeById(s.settings.themeId));
+    const theme = shownTheme(s);
+    if (theme !== shownTheme(prev)) {
+      this.renderer?.setTheme(theme);
+      this.scopeRenderer?.setTheme(theme);
       // X-Y plot images are drawn in theme colors as the simulation runs
       this.circuit.scopes.resetGraphs();
     }
@@ -1724,9 +1721,9 @@ export class SimController {
     return { x: Math.trunc(c.x), y: Math.trunc(c.y) };
   }
 
-  /** Current theme, for palette previews. */
+  /** The theme on screen. */
   get theme(): Theme {
-    return themeById(useApp.getState().settings.themeId);
+    return shownTheme(useApp.getState());
   }
 
   /** Screen position (CSS px, canvas relative) of a circuit point, for tests. */

@@ -1,5 +1,49 @@
 # Progress
 
+## 2026-10-04: Phase 7 (theme system complete)
+
+### Done
+
+- Built-ins: Light (Material 3 light scheme), High Contrast and Colorblind Safe (blue to orange
+  voltages, Okabe-Ito accents) join Dark, Classic, Classic Dots and the four community themes. Every
+  built-in passes the contrast checks; Nord's and Solarized's error color got a lighter tint for it.
+- Theme package: `encodeThemeParam`/`decodeThemeParam` for `?theme=` links (theme minus its base,
+  raw DEFLATE, base64url), `minimizeTheme`, `themeToJson` and `themeFileName` for files,
+  `contrastWarnings` (WCAG 4.5:1 for text, 3:1 for voltage colors and other graphics) and
+  `themeJsonSchema`. The zod schema carries a description for every key.
+- Fixed: a theme with `meta.base` set to `__proto__`, `toString` and the like crashed resolving
+  (it reached `Object.prototype`); bases are now looked up as own keys only. Saved settings had the
+  same lookup.
+- App: Options > Theme is a submenu with the built-ins, your themes, Edit theme…, Themes… and Import
+  theme file… (on phones it opens the Themes dialog). The Themes dialog lists every theme with a
+  swatch and buttons to customize or edit, copy a link, export a file and delete. Your themes live
+  in IndexedDB; the active one is also cached in localStorage for the first frame.
+- Theme editor: a live sample circuit (AC source, RC, LED, labeled output, text, scope) drawn in the
+  draft, with the whole app previewing it too; color pickers plus text fields for every key, trace
+  list, line width, dot size, grid, scope look and fonts; contrast warnings beside each field and in
+  a clickable list under the preview; Start from any built-in; Export and Copy link; Cancel restores.
+- Links: `?theme=` opens a banner preview (Apply adds it to your themes and uses it, Save adds it
+  only, Dismiss goes back); nothing is stored until then. Export link has "Include my theme", which
+  adds `theme=` beside `ctz=` (never on the Falstad link). A damaged link shows an error.
+- `docs/THEMES.md` (rules, built-ins, sharing, editor, safety, generated key reference) and
+  `docs/theme.schema.json`, both written by `pnpm theme:docs`; `tools/theme-docs` tests fail when
+  either is stale.
+- Acceptance: `packages/theme/src/fuzz.test.ts` fuzzes the decoders (random JSON, mutated and
+  corrupted built-ins, hostile JSON text, random and damaged links, compression bombs, bad UTF-8):
+  no throw, and every accepted theme is complete with CSS-safe values. `packages/app/e2e/themes.spec.ts`
+  covers success criterion 3: a theme shared by link, combined link or file applies in a fresh
+  browser profile, plus the editor, library and Cancel.
+
+### Next
+
+- Phase 8: element coverage.
+
+### Open issues
+
+- Sliders (`38` lines, `<adj>`) are still kept verbatim, not live.
+- The text box font submenu has the same problem on phones the theme submenu had (it opens off
+  screen to the left); the theme one now opens the Themes dialog there instead.
+
 ## 2026-10-04: Phase 6 (scopes and measurement)
 
 ### Done

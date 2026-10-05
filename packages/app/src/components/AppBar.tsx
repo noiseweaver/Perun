@@ -2,8 +2,15 @@
 // Copyright (C) 2026 circuitjs-next contributors
 
 import { BUILTIN_THEMES, DEFAULT_THEME_ID } from '@circuitjs-next/theme';
+import {
+  activeLibraryId,
+  editTheme,
+  importThemeFile,
+  selectTheme,
+  userThemeId,
+} from '../themes.ts';
 import * as Menu from '@radix-ui/react-dropdown-menu';
-import { useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { ExampleMenu } from '../examples.ts';
 import { openDialog } from '../commands.ts';
 import { controller } from '../SimController.ts';
@@ -76,6 +83,7 @@ export function AppBar() {
   const settings = useApp((s) => s.settings);
   const examples = useApp((s) => s.examples);
   const fileInput = useRef<HTMLInputElement>(null);
+  const themeInput = useRef<HTMLInputElement>(null);
   const [linkOpen, setLinkOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const narrow = useNarrow();
@@ -329,20 +337,12 @@ export function AppBar() {
           />
           <Item label="Keyboard shortcuts…" hint="?" onSelect={() => openDialog('shortcuts')} />
           <Menu.Separator className="menu-separator" />
-          <Menu.Label className="menu-label">Theme</Menu.Label>
-          <Menu.RadioGroup
-            value={settings.themeId}
-            onValueChange={(v) => updateSettings({ themeId: v })}
-          >
-            {Object.entries(BUILTIN_THEMES).map(([id, t]) => (
-              <Menu.RadioItem key={id} value={id} className="menu-item" data-testid={`theme-${id}`}>
-                <Check on={settings.themeId === id} /> {t.meta.name}
-                {id === DEFAULT_THEME_ID && (
-                  <span className="menu-trailing menu-hint">Default</span>
-                )}
-              </Menu.RadioItem>
-            ))}
-          </Menu.RadioGroup>
+          {narrow ? (
+            // a submenu has no room beside the menu on a phone; the dialog has it all
+            <Item label="Theme…" testId="menu-theme" onSelect={() => openDialog('themes')} />
+          ) : (
+            <ThemeMenu themeInput={themeInput} />
+          )}
         </AppMenu>
       </nav>
 
@@ -383,6 +383,18 @@ export function AppBar() {
           e.target.value = '';
         }}
       />
+      <input
+        ref={themeInput}
+        type="file"
+        accept=".json,application/json"
+        hidden
+        data-testid="theme-file-input"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void importThemeFile(f);
+          e.target.value = '';
+        }}
+      />
       <OpenLinkDialog open={linkOpen} onOpenChange={setLinkOpen} />
     </header>
   );
@@ -407,6 +419,57 @@ function Item(props: {
       {props.label}
       {props.hint && <span className="menu-trailing menu-hint">{props.hint}</span>}
     </Menu.Item>
+  );
+}
+
+/** Options > Theme: the built-ins and the user's themes, then the editor, library and import. */
+function ThemeMenu({ themeInput }: { themeInput: RefObject<HTMLInputElement | null> }) {
+  const themeId = useApp((s) => s.settings.themeId);
+  const library = useApp((s) => s.library);
+  return (
+    <Menu.Sub>
+      <Menu.SubTrigger className="menu-item" data-testid="menu-theme">
+        Theme
+        <Icon name="chevronRight" className="icon menu-trailing" />
+      </Menu.SubTrigger>
+      <Menu.Portal>
+        <Menu.SubContent className="menu-content" sideOffset={4} alignOffset={-8}>
+          <Menu.RadioGroup value={themeId} onValueChange={selectTheme}>
+            {Object.entries(BUILTIN_THEMES).map(([id, t]) => (
+              <Menu.RadioItem key={id} value={id} className="menu-item" data-testid={`theme-${id}`}>
+                <Check on={themeId === id} /> {t.meta.name}
+                {id === DEFAULT_THEME_ID && (
+                  <span className="menu-trailing menu-hint">Default</span>
+                )}
+              </Menu.RadioItem>
+            ))}
+            {library.length > 0 && <Menu.Separator className="menu-separator" />}
+            {library.map((t) => (
+              <Menu.RadioItem
+                key={t.id}
+                value={userThemeId(t.id)}
+                className="menu-item"
+                data-testid={`theme-user-${t.theme.meta.name}`}
+              >
+                <Check on={themeId === userThemeId(t.id)} /> {t.theme.meta.name}
+              </Menu.RadioItem>
+            ))}
+          </Menu.RadioGroup>
+          <Menu.Separator className="menu-separator" />
+          <Item
+            label="Edit theme…"
+            testId="menu-edit-theme"
+            onSelect={() => editTheme(useApp.getState().theme, activeLibraryId())}
+          />
+          <Item label="Themes…" testId="menu-themes" onSelect={() => openDialog('themes')} />
+          <Item
+            label="Import theme file…"
+            testId="menu-import-theme"
+            onSelect={() => themeInput.current?.click()}
+          />
+        </Menu.SubContent>
+      </Menu.Portal>
+    </Menu.Sub>
   );
 }
 

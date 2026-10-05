@@ -102,76 +102,138 @@ export type ThemeInput = {
 export const MAX_THEME_BYTES = 16 * 1024;
 const MAX_TEXT = 200;
 
-const color = z
-  .string()
-  .max(64)
-  .refine((s) => parseColor(s) !== null, { message: 'not a hex, RGB or HSL color' });
-const text = z.string().max(MAX_TEXT);
+const color = (description: string) =>
+  z
+    .string()
+    .max(64)
+    .refine((s) => parseColor(s) !== null, { message: 'not a hex, RGB or HSL color' })
+    .describe(description);
+const text = (description: string) => z.string().max(MAX_TEXT).describe(description);
 /** A font family list: names, quotes, spaces, commas and hyphens only (no url(), no CSS). */
-const fontFamily = z
-  .string()
-  .max(MAX_TEXT)
-  .regex(/^[\w\s,'"-]+$/, { message: 'font must be a family name list' });
+const fontFamily = (description: string) =>
+  z
+    .string()
+    .max(MAX_TEXT)
+    .regex(/^[\w\s,'"-]+$/, { message: 'font must be a family name list' })
+    .describe(description);
 
-/** zod schema for ThemeInput. Unknown keys are dropped. */
-export const themeInputSchema = z.object({
-  schemaVersion: z.literal(1),
-  meta: z
-    .object({ name: text, author: text, description: text, base: z.string().max(40) })
-    .partial()
-    .optional(),
-  canvas: z.object({ background: color, grid: color, gridMajor: color }).partial().optional(),
-  circuit: z
-    .object({
-      voltage: z.object({ negative: color, zero: color, positive: color }).partial(),
-      currentDot: color,
-      component: color,
-      componentMuted: color,
-      selection: color,
-      hover: color,
-      post: color,
-      text: color,
-      label: color,
-      badConnection: color,
-    })
-    .partial()
-    .optional(),
-  scope: z
-    .object({
-      background: color,
-      card: color,
-      grid: color,
-      gridMajor: color,
-      text: color,
-      current: color,
-      trigger: color,
-      fft: color,
-      fftGrid: color,
-      traces: z.array(color).min(1).max(16),
-    })
-    .partial()
-    .optional(),
-  ui: z
-    .object({
-      surface: color,
-      surfaceAlt: color,
-      border: color,
-      text: color,
-      textMuted: color,
-      accent: color,
-      danger: color,
-    })
-    .partial()
-    .optional(),
-  style: z
-    .object({
-      strokeWidth: z.number().min(0.5).max(8),
-      dotRadius: z.number().min(0.5).max(6),
-      grid: z.enum(['none', 'dots', 'lines']),
-      font: fontFamily,
-      monoFont: fontFamily,
-      scopeLook: z.enum(['classic', 'cards']),
-    })
-    .partial()
-    .optional(),
-});
+/**
+ * zod schema for ThemeInput. Unknown keys are dropped. The descriptions feed the generated JSON
+ * Schema and the key reference in docs/THEMES.md.
+ */
+export const themeInputSchema = z
+  .object({
+    schemaVersion: z.literal(1).describe('Always 1.'),
+    meta: z
+      .object({
+        name: text('Name shown in the theme menu.'),
+        author: text('Who made the theme.'),
+        description: text('One line about the theme.'),
+        base: z
+          .string()
+          .max(40)
+          .describe(
+            'Built-in theme the missing keys come from: dark (the default), light, classic, ' +
+              'classic-dots, high-contrast, colorblind-safe, nord, solarized-dark, gruvbox-dark ' +
+              'or adwaita-dark.',
+          ),
+      })
+      .partial()
+      .optional()
+      .describe('About the theme.'),
+    canvas: z
+      .object({
+        background: color('Circuit area background.'),
+        grid: color('Grid dots or lines.'),
+        gridMajor: color('Every eighth grid line or dot.'),
+      })
+      .partial()
+      .optional()
+      .describe('The circuit area.'),
+    circuit: z
+      .object({
+        voltage: z
+          .object({
+            negative: color('Most negative voltage (at minus the voltage range).'),
+            zero: color('Zero volts.'),
+            positive: color('Most positive voltage.'),
+          })
+          .partial()
+          .describe('Voltage coloring: wires blend between these three stops.'),
+        currentDot: color('Moving current dots.'),
+        component: color('Element bodies and wires when voltage colors are off.'),
+        componentMuted: color(
+          'Secondary element parts: source and LED circles, transistor envelope.',
+        ),
+        selection: color('Selected elements and the selection box.'),
+        hover: color('The element under the pointer.'),
+        post: color('Element end posts and junction dots.'),
+        text: color('Values drawn next to elements.'),
+        label: color('Labels: labeled nodes, outputs, text boxes, op-amp symbols.'),
+        badConnection: color('Posts that touch an element without connecting to it.'),
+      })
+      .partial()
+      .optional()
+      .describe('Elements and wires.'),
+    scope: z
+      .object({
+        background: color('Plot area.'),
+        card: color('Card around each scope, with its header and legend (card look only).'),
+        grid: color('Grid lines.'),
+        gridMajor: color('Zero line, every tenth time line, muted plots.'),
+        text: color('Labels, readouts, cursor, power and other plots that are not V or I.'),
+        current: color('Current plots.'),
+        trigger: color('Trigger level and state.'),
+        fft: color('Spectrum (FFT) trace and labels.'),
+        fftGrid: color('Spectrum grid.'),
+        traces: z
+          .array(color('A trace color.'))
+          .min(1)
+          .max(16)
+          .describe(
+            'The first color draws voltage plots; further plots of one kind cycle through the rest.',
+          ),
+      })
+      .partial()
+      .optional()
+      .describe('Oscilloscopes.'),
+    ui: z
+      .object({
+        surface: color('App background: bars, menus, dialogs (Material surface).'),
+        surfaceAlt: color('Raised containers: panels, cards, fields (Material surface container).'),
+        border: color('Dividers and outlines (Material outline variant).'),
+        text: color('Main text (Material on surface).'),
+        textMuted: color('Secondary text and icons (Material on surface variant).'),
+        accent: color('Primary buttons, checked items, focus (Material primary).'),
+        danger: color('Errors and warnings (Material error).'),
+      })
+      .partial()
+      .optional()
+      .describe('The app around the canvas.'),
+    style: z
+      .object({
+        strokeWidth: z
+          .number()
+          .min(0.5)
+          .max(8)
+          .describe('Width of thick lines in circuit units (CircuitJS draws them 3 wide).'),
+        dotRadius: z
+          .number()
+          .min(0.5)
+          .max(6)
+          .describe('Half the side of a current dot (CircuitJS: 2).'),
+        grid: z.enum(['none', 'dots', 'lines']).describe('Grid drawn behind the circuit.'),
+        font: fontFamily('UI text and canvas labels: a CSS font family list.'),
+        monoFont: fontFamily('Component values and numeric readouts: a CSS font family list.'),
+        scopeLook: z
+          .enum(['classic', 'cards'])
+          .describe(
+            'classic draws scopes as CircuitJS does; cards puts each in a card with a header, ' +
+              'legend and labeled axes.',
+          ),
+      })
+      .partial()
+      .optional()
+      .describe('Line widths, grid and fonts.'),
+  })
+  .describe('A circuitjs-next theme. Every key but schemaVersion is optional.');

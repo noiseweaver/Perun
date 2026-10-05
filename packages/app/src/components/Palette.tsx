@@ -5,8 +5,8 @@ import { Simulation, constructElement } from '@circuitjs-next/elements';
 import { drawPreview } from '@circuitjs-next/render';
 import { useEffect, useRef, useState } from 'react';
 import { searchPalette, type PaletteItem } from '../editor/catalog.ts';
-import { themeById, controller } from '../SimController.ts';
-import { setPaletteOpen, useApp } from '../store.ts';
+import { controller } from '../SimController.ts';
+import { setPaletteOpen, shownTheme, useApp } from '../store.ts';
 import { Icon } from './Icon.tsx';
 
 const previewSim = new Simulation();
@@ -16,15 +16,15 @@ const ICON_H = 32;
 /** The element drawn small with the current theme. */
 function Preview({ className }: { className: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
-  const themeId = useApp((s) => s.settings.themeId);
+  const theme = useApp(shownTheme);
   useEffect(() => {
     const c = ref.current;
     if (!c) return;
     const e = constructElement(className, 0, 0, previewSim);
     if (!e) return;
     e.dragPlace(0, 0, false);
-    drawPreview(c, e, themeById(themeId), ICON_W, ICON_H, window.devicePixelRatio || 1);
-  }, [className, themeId]);
+    drawPreview(c, e, theme, ICON_W, ICON_H, window.devicePixelRatio || 1);
+  }, [className, theme]);
   return (
     <canvas
       ref={ref}

@@ -5,6 +5,7 @@ import { parseQuery, queryBoolean, startCircuitFromQuery } from '@circuitjs-next
 import { fetchExample, fetchExampleList, findExample, type ExampleList } from './examples.ts';
 import { controller } from './SimController.ts';
 import { useApp } from './store.ts';
+import { loadLibrary, previewThemeFromQuery } from './themes.ts';
 
 export const BASE = import.meta.env.BASE_URL;
 
@@ -43,6 +44,17 @@ export async function openQuery(
   undoable = false,
 ): Promise<boolean> {
   const q = parseQuery(search);
+  const opened = await openCircuitFromQuery(q, examples, undoable);
+  // after the circuit: loading it clears the error a damaged theme link would show
+  const themed = await previewThemeFromQuery(q);
+  return opened || themed;
+}
+
+async function openCircuitFromQuery(
+  q: Map<string, string>,
+  examples: ExampleList | null,
+  undoable: boolean,
+): Promise<boolean> {
   const running = queryBoolean(q, 'running', true);
   const start = startCircuitFromQuery(q);
   switch (start.kind) {
@@ -79,6 +91,7 @@ function applyQuerySettings(search: string): void {
 export async function startup(): Promise<void> {
   const search = window.location.search;
   applyQuerySettings(search);
+  void loadLibrary();
   const listPromise = fetchExampleList(BASE).then(
     (list) => {
       useApp.setState({ examples: list });
@@ -94,7 +107,9 @@ export async function startup(): Promise<void> {
     return;
   }
   const examples = await listPromise;
-  if (await openQuery(search, examples)) return;
-  const def = examples?.defaultCircuit;
-  if (def) await openExample(def.file, def.title, queryBoolean(q, 'running', true));
+  if (!(await openCircuitFromQuery(q, examples, false))) {
+    const def = examples?.defaultCircuit;
+    if (def) await openExample(def.file, def.title, queryBoolean(q, 'running', true));
+  }
+  await previewThemeFromQuery(q);
 }

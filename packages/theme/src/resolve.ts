@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
 
-import { BUILTIN_THEMES, DEFAULT_THEME_ID } from './builtins/index.ts';
+import { BUILTIN_THEMES, DEFAULT_THEME_ID, builtinTheme } from './builtins/index.ts';
+import { luminance, rgba } from './color.ts';
 import { MAX_THEME_BYTES, themeInputSchema, type Theme, type ThemeInput } from './schema.ts';
 
 /** Fill the keys a theme leaves out from its base built-in (`meta.base`, default Dark). */
 export function resolveTheme(input: ThemeInput): Theme {
-  const baseId = input.meta?.base ?? DEFAULT_THEME_ID;
-  const base = BUILTIN_THEMES[baseId] ?? (BUILTIN_THEMES[DEFAULT_THEME_ID] as Theme);
+  // own keys only: a base of `__proto__` or `toString` must not reach Object.prototype
+  const base =
+    builtinTheme(input.meta?.base ?? DEFAULT_THEME_ID) ??
+    (BUILTIN_THEMES[DEFAULT_THEME_ID] as Theme);
   return {
     schemaVersion: 1,
     meta: { ...base.meta, ...input.meta, base: base.meta.base },
@@ -17,7 +20,11 @@ export function resolveTheme(input: ThemeInput): Theme {
       ...input.circuit,
       voltage: { ...base.circuit.voltage, ...input.circuit?.voltage },
     },
-    scope: { ...base.scope, ...input.scope },
+    scope: {
+      ...base.scope,
+      ...input.scope,
+      traces: [...(input.scope?.traces ?? base.scope.traces)],
+    },
     ui: { ...base.ui, ...input.ui },
     style: { ...base.style, ...input.style },
   };
@@ -58,6 +65,9 @@ export function themeCssVariables(theme: Theme): Record<string, string> {
   const vars: Record<string, string> = {};
   for (const [k, v] of Object.entries(theme.ui)) vars[`--ui-${kebab(k)}`] = v;
   for (const [k, v] of Object.entries(theme.canvas)) vars[`--canvas-${kebab(k)}`] = v;
+  // Material shadows: the darker of the surface and its text, so light themes cast dark shadows
+  const dark = luminance(rgba(theme.ui.surface)) <= luminance(rgba(theme.ui.text));
+  vars['--ui-shadow'] = dark ? theme.ui.surface : theme.ui.text;
   vars['--font'] = theme.style.font;
   vars['--mono-font'] = theme.style.monoFont;
   return vars;

@@ -11,6 +11,9 @@ importers:
       '@circuitjs-next/format':
         specifier: workspace:*
         version: link:packages/format
+      '@circuitjs-next/theme':
+        specifier: workspace:*
+        version: link:packages/theme
     devDependencies:
       '@eslint/js':
         specifier: ^10.0.1

@@ -10,7 +10,7 @@
     "node": ">=22.13"
   },
   "scripts": {
-    "typecheck": "pnpm -r --parallel typecheck && tsc -p tsconfig.json && tsc -p tools/golden",
+    "typecheck": "pnpm -r --parallel typecheck && tsc -p tsconfig.json && tsc -p tools/golden && tsc -p tools/theme-docs",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -22,10 +22,12 @@
     "golden:record": "node tools/golden/src/record.ts",
     "golden:check": "node tools/golden/src/record.ts --check",
     "golden:compare": "node tools/golden/src/compare-cli.ts",
-    "golden:scopes": "node tools/golden/src/record-scopes.ts"
+    "golden:scopes": "node tools/golden/src/record-scopes.ts",
+    "theme:docs": "node tools/theme-docs/src/generate.ts"
   },
   "dependencies": {
-    "@circuitjs-next/format": "workspace:*"
+    "@circuitjs-next/format": "workspace:*",
+    "@circuitjs-next/theme": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
