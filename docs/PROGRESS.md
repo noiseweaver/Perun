@@ -29,6 +29,14 @@
   Done (or Escape). Strokes stay on the circuit as you pan and zoom, work with mouse, pen and
   touch (a second finger pinches instead), and are never saved in the circuit file. Themes gained
   a `teaching` section (`pens`, `laser`), checked for contrast against the canvas.
+- Phone fixes from Gady's iPhone testing (2026-10-05): the menus get their own row under the title
+  instead of being squeezed and clipped; the status bar inset is only added when installed (in a
+  browser or another app's web view it left an empty band above the app bar); the palette list
+  scrolls with a vertical swipe (a sideways drag still carries a component onto the canvas);
+  dialogs open above the property sheet and the palette, menus above the Sliders card, and the
+  drawing toolbar sits along the bottom of the canvas on phones. The laser trail is drawn as
+  quadratic curves through the sample midpoints with butt caps, so it no longer shows a dot at
+  every sample.
 - Theme colors with surrounding whitespace (`"#fff\n"`) are now refused; the theme fuzz test
   found one reaching a CSS custom property.
 - README, About dialog (version, upstream credits, GPL notice, links to the source, LICENSE.txt and

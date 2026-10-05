@@ -166,7 +166,10 @@ export class AnnotationLayer {
       strokePath(ctx, s.points);
     }
 
-    // laser: a trail that thins and fades with age, with a soft glow and a bright head
+    // laser: a trail that thins and fades with age, with a soft glow and a bright head. Each
+    // piece is a quadratic curve from the midpoint before a sample, bent by the sample, to the
+    // midpoint after it, so the trail is smooth for no more drawing than straight segments. Butt
+    // caps: round caps overlapping at every joint left a bright dot at each sample.
     this.laser = this.laser.filter((p) => now - p.t < LASER_FADE_MS);
     const pts = this.laser;
     const color = theme.teaching.laser;
@@ -174,18 +177,22 @@ export class AnnotationLayer {
     ctx.strokeStyle = color;
     ctx.shadowColor = color;
     ctx.shadowBlur = 12 * dpr;
+    ctx.lineCap = 'butt';
     for (let i = 1; i < pts.length; i++) {
       const a = pts[i - 1] as LaserPoint;
       const b = pts[i] as LaserPoint;
-      // a gap in time means the laser was lifted between the two points
-      if (b.t - a.t > 120) continue;
+      if (lifted(a, b)) continue;
       const k = 1 - (now - b.t) / LASER_FADE_MS;
       if (k <= 0) continue;
+      const before = pts[i - 2];
+      const after = pts[i + 1];
       ctx.globalAlpha = k * 0.85;
       ctx.lineWidth = w * (0.35 + 0.65 * k);
       ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
+      if (before === undefined || lifted(before, a)) ctx.moveTo(a.x, a.y);
+      else ctx.moveTo((a.x + b.x) / 2, (a.y + b.y) / 2);
+      if (after === undefined || lifted(b, after)) ctx.quadraticCurveTo(b.x, b.y, b.x, b.y);
+      else ctx.quadraticCurveTo(b.x, b.y, (b.x + after.x) / 2, (b.y + after.y) / 2);
       ctx.stroke();
     }
     const head = this.laserHead;
@@ -222,6 +229,11 @@ function strokePath(ctx: CanvasRenderingContext2D, pts: readonly Pt[]): void {
   const last = pts[pts.length - 1] as Pt;
   ctx.lineTo(last.x, last.y);
   ctx.stroke();
+}
+
+/** A gap in time means the laser was lifted between the two points. */
+function lifted(a: LaserPoint, b: LaserPoint): boolean {
+  return b.t - a.t > 120;
 }
 
 function nearStroke(s: Stroke, p: Pt, r: number): boolean {

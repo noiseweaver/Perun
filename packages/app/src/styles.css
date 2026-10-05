@@ -77,10 +77,18 @@ textarea,
   display: flex;
   flex-direction: column;
   height: 100%;
-  /* installed on iPhone and iPad the page runs under the status bar and home indicator */
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
-    env(safe-area-inset-left);
+  /* clear the notch and the home indicator; the status bar only matters installed (below) */
+  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   box-sizing: border-box;
+}
+
+/* installed on iPhone and iPad the page runs under the status bar. In a browser tab, or embedded
+   in another app's web view, the top inset can be non-zero while nothing covers the page, which
+   left an empty band above the app bar. */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .app {
+    padding-top: env(safe-area-inset-top);
+  }
 }
 
 /* ---- state layers ------------------------------------------------------------------------- */
@@ -217,7 +225,7 @@ textarea,
   font-family: var(--font);
   font-size: 14px;
   color: var(--ui-text);
-  z-index: 10;
+  z-index: 70;
   transform-origin: var(--radix-dropdown-menu-content-transform-origin);
   animation: menu-in 150ms var(--md-motion);
 }
@@ -336,7 +344,7 @@ textarea,
   background: var(--md-surface-container-high);
   border-radius: var(--md-shape-xs);
   box-shadow: var(--md-elevation-2);
-  z-index: 50;
+  z-index: 70;
 }
 
 .status {
@@ -483,7 +491,7 @@ textarea,
   color: var(--ui-surface);
   font-size: 12px;
   line-height: 16px;
-  z-index: 20;
+  z-index: 80;
 }
 
 /* ---- sliders ------------------------------------------------------------------------------ */
@@ -634,6 +642,7 @@ textarea,
 
 .dialog-overlay {
   position: fixed;
+  z-index: 60;
   inset: 0;
   background: color-mix(in srgb, var(--canvas-background) 60%, transparent);
   animation: fade-in 150ms var(--md-motion);
@@ -647,6 +656,7 @@ textarea,
 
 .dialog-content {
   position: fixed;
+  z-index: 61;
   top: 20%;
   left: 50%;
   transform: translateX(-50%);
@@ -874,7 +884,8 @@ textarea,
   border: none;
   border-radius: var(--md-shape-full);
   cursor: grab;
-  touch-action: none;
+  /* a vertical swipe scrolls the list; a sideways drag carries the component onto the canvas */
+  touch-action: pan-y;
   user-select: none;
 }
 
@@ -1087,6 +1098,7 @@ textarea.field-input {
 
 .toast {
   position: absolute;
+  z-index: 8;
   bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
@@ -1177,9 +1189,12 @@ textarea.field-input {
 /* ---- compact width ------------------------------------------------------------------------ */
 
 @media (max-width: 600px) {
+  /* the menus don't fit beside the title on a phone: they get a row of their own */
   .app-bar {
-    padding-left: 12px;
-    gap: 4px;
+    flex-wrap: wrap;
+    min-height: 0;
+    padding: 4px 4px 0;
+    gap: 0 4px;
   }
 
   .app-bar-brand {
@@ -1187,20 +1202,30 @@ textarea.field-input {
   }
 
   .app-bar-title {
-    margin-left: 0;
+    flex: 1;
+    max-width: none;
+    margin: 0 4px 0 0;
     font-size: 18px;
   }
 
-  .menu-trigger {
-    padding: 0 4px 0 10px;
-  }
-
-  /* five menus don't fit a phone: they scroll sideways instead of widening the page */
   .app-bar-menus {
-    flex-shrink: 1;
+    order: 1;
+    flex: 1 0 100%;
     min-width: 0;
+    justify-content: space-between;
+    gap: 0;
+    /* a very narrow phone scrolls the row sideways rather than widening the page */
     overflow-x: auto;
     scrollbar-width: none;
+  }
+
+  .menu-trigger {
+    flex: none;
+    padding: 0 10px;
+  }
+
+  .menu-trigger > .icon {
+    display: none;
   }
 
   .control-bar {
@@ -1226,11 +1251,16 @@ textarea.field-input {
     display: none;
   }
 
+  /* the palette floats over the canvas, just under the app bar whatever its height */
+  .workspace {
+    position: relative;
+  }
+
   .palette {
-    position: fixed;
+    position: absolute;
     z-index: 10;
-    top: 64px;
-    bottom: 8px;
+    top: 0;
+    bottom: 0;
     left: 8px;
     box-shadow: var(--md-elevation-3);
     background: var(--md-surface-container-high);
@@ -2234,6 +2264,7 @@ ul.theme-contrast {
 
 .subcircuit-bar {
   position: absolute;
+  z-index: 7;
   top: 12px;
   left: 12px;
   display: flex;
@@ -2257,6 +2288,7 @@ ul.theme-contrast {
 
 .teach-bar {
   position: absolute;
+  z-index: 7;
   top: 12px;
   left: 50%;
   transform: translateX(-50%);
@@ -2271,6 +2303,14 @@ ul.theme-contrast {
   background: var(--md-surface-container-highest);
   box-shadow: var(--md-elevation-2);
   animation: fade-in 150ms var(--md-motion);
+}
+
+/* on a phone, along the bottom of the canvas, clear of the Sliders card in the top corner */
+@media (max-width: 719px) {
+  .teach-bar {
+    top: auto;
+    bottom: 12px;
+  }
 }
 
 .teach-group {

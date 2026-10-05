@@ -352,4 +352,45 @@ test.describe('Circuits on a phone', () => {
       .poll(() => page.evaluate(() => window.circuitjsNext?.controller.circuit.scopes.scopeCount))
       .toBe(3);
   });
+
+  test('every menu fits on screen, and dialogs open above the property sheet', async ({ page }) => {
+    await page.goto(`/?cct=${cct(RC)}`);
+    await expect(page.getByTestId('circuits-menu')).toBeEnabled();
+    for (const id of ['file-menu', 'edit-menu', 'circuits-menu', 'scopes-menu', 'options-menu']) {
+      const trigger = page.getByTestId(id);
+      const box = await trigger.boundingBox();
+      expect(box?.x ?? -1).toBeGreaterThanOrEqual(0);
+      expect((box?.x ?? 0) + (box?.width ?? 999)).toBeLessThanOrEqual(390);
+      // the label is not squeezed and clipped
+      expect(await trigger.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    }
+    // nothing above the app bar outside an installed app
+    const bar = await page.locator('.app-bar').boundingBox();
+    expect(bar?.y).toBe(0);
+    // the property sheet is up while a dialog opens: the dialog is on top
+    await page.evaluate(() => {
+      const c = window.circuitjsNext?.controller;
+      const e = c?.circuit.elements[1];
+      if (c && e) c.editor.select(e);
+    });
+    const sheet = await page.locator('.inspector').boundingBox();
+    if (sheet === null) throw new Error('no property sheet');
+    await page.getByTestId('file-menu').tap();
+    await page.getByTestId('menu-about').tap();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    // let the sheet and the dialog finish sliding in
+    await page.waitForTimeout(500);
+    const top = await page.evaluate(
+      ([x, y]) => {
+        // the open dialog makes the rest of the page ignore the pointer, which hit testing skips
+        document
+          .querySelector<HTMLElement>('.inspector')
+          ?.style.setProperty('pointer-events', 'auto');
+        return document.elementFromPoint(x, y)?.closest('[role=dialog], .inspector')?.className;
+      },
+      [sheet.x + sheet.width / 2, sheet.y + 20] as const,
+    );
+    expect(top).toContain('dialog-content');
+  });
 });
