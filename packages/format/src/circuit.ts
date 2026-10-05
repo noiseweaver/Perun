@@ -90,6 +90,7 @@ export class Circuit {
   private loadList: (CircuitElm | null)[] = [];
 
   constructor() {
+    this.sim.currentElements = () => this.elements;
     const scopes = this.scopes;
     scopes.host = {
       elements: () => this.elements,

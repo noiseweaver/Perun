@@ -14,8 +14,15 @@ import { parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { getCurrentText } from '../view/units.ts';
+import type { WireRouter } from '../WireRouter.ts';
 
 export class GroundElm extends CircuitElm {
+  override addRoutingObstacle(router: WireRouter): void {
+    router.addWire(this.point1.x, this.point1.y, this.point2.x, this.point2.y);
+    const [pa, pb] = this.interpPoint2(this.point1, this.point2, 1 + 11 / this.dn, 10);
+    router.addObstaclePoints([pa, pb, this.point2]);
+  }
+
   /** Needed for old subcircuits which have GroundElm dumped. */
   static readonly FLAG_OLD_STYLE = 1;
 

@@ -14,9 +14,15 @@ import { parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { getVoltageText } from '../view/units.ts';
+import type { WireRouter } from '../WireRouter.ts';
 
 /** One-post voltage readout. */
 export class OutputElm extends CircuitElm {
+  override addRoutingObstacle(router: WireRouter): void {
+    router.addWire(this.point1.x, this.point1.y, this.x2, this.y2);
+    router.addObstacle(this.x2 - 10, this.y2 - 10, this.x2 + 10, this.y2 + 10);
+  }
+
   static readonly FLAG_VALUE = 1;
   static readonly FLAG_FIXED = 2;
 

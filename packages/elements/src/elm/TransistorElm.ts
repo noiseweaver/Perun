@@ -31,6 +31,7 @@ import {
   VAL_VBE,
   VAL_VCE,
 } from '../scope/constants.ts';
+import type { WireRouter } from '../WireRouter.ts';
 
 /** Electron thermal voltage at SPICE's default temperature of 27 C (300.15 K). */
 const vt = 0.025865;
@@ -51,6 +52,15 @@ function calcJunctionCap(vj: number, cj0: number, vj0: number, mj: number): numb
 
 /** Bipolar transistor, Gummel-Poon. Node 0 is the base, 1 the collector, 2 the emitter. */
 export class TransistorElm extends CircuitElm {
+  override addRoutingObstacle(router: WireRouter): void {
+    // upstream's drawing points: the base plate and the collector and emitter posts
+    const [r0, r1] = this.interpPoint2(this.point1, this.point2, 1 - 16 / this.dn, 16);
+    const [r2, r3] = this.interpPoint2(this.point1, this.point2, 1 - 13 / this.dn, 16);
+    const base = this.interpPoint(this.point1, this.point2, 1 - 16 / this.dn);
+    router.addObstaclePoints([r0, r1, r2, r3, this.coll[0], this.emit[0]]);
+    router.addWire(this.point1.x, this.point1.y, base.x, base.y);
+  }
+
   static readonly FLAG_FLIP = 1;
   static readonly FLAG_CIRCLE = 2;
   static readonly FLAGS_GLOBAL = TransistorElm.FLAG_CIRCLE;

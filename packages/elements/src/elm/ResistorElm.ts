@@ -13,8 +13,19 @@ import { parseJavaDouble } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { OHM, getUnitText } from '../view/units.ts';
+import type { WireRouter } from '../WireRouter.ts';
+import type { Point } from '@circuitjs-next/engine';
 
 export class ResistorElm extends CircuitElm {
+  /** Upstream setPoints: calcLeads(32). */
+  override routingLeads(): [Point, Point] | null {
+    return super.routingLeads() ?? this.leadsFor(32);
+  }
+
+  override addRoutingObstacle(router: WireRouter): void {
+    this.addRoutingObstacleWithLeads(router, 6);
+  }
+
   resistance = 0;
 
   override getClassName(): string {

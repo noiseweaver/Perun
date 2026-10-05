@@ -16,6 +16,7 @@ import { getVoltageText } from '../view/units.ts';
 import type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from '../xml.ts';
 import { ChipElm } from './ChipElm.ts';
 import { CompositeElm } from './CompositeElm.ts';
+import type { WireRouter } from '../WireRouter.ts';
 
 /**
  * A plain chip outline other elements use to draw themselves (a subcircuit can't be both a
@@ -68,6 +69,10 @@ export interface SubcircuitHooks {
 
 /** An instance of a subcircuit model. */
 export class CustomCompositeElm extends CompositeElm {
+  override addRoutingObstacle(router: WireRouter): void {
+    this.chip?.addRoutingObstacle(router);
+  }
+
   static readonly FLAG_SMALL = 2;
   static hooks: SubcircuitHooks | null = null;
 

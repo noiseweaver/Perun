@@ -38,7 +38,6 @@
 
 ### Open issues
 
-- The wire router isn't ported: new routed wires take upstream's L-shaped fallback.
 - The subcircuit editor and the logic model editor aren't built (they say "not available yet").
 - Element sliders (`<adj>`, pots, LDR, thermistor) load and save but aren't live in the UI.
 - Info box values (hover and the info panel) don't have fixed-width text yet; this applies to

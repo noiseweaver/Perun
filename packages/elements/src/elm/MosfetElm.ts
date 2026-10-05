@@ -18,9 +18,28 @@ import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from '../xml.ts';
 import { Diode } from './Diode.ts';
 import { getCurrentText, getUnitText, getVoltageText } from '../view/units.ts';
+import type { WireRouter } from '../WireRouter.ts';
 
 /** MOSFET (square-law model). Node 0 is the gate, 1 the source, 2 the drain, 3 the body. */
 export class MosfetElm extends CircuitElm {
+  override addRoutingObstacle(router: WireRouter): void {
+    // upstream's drawing points: the source and drain leads and the gate plate
+    let hs2 = 16 * this.dsign;
+    if ((this.flags & MosfetElm.FLAG_FLIP) !== 0) hs2 = -hs2;
+    const [s2, d2] = this.interpPoint2(this.point1, this.point2, 1 - 22 / this.dn, (-hs2 * 4) / 3);
+    const [g0, g2] = this.interpPoint2(
+      this.point1,
+      this.point2,
+      1 - 28 / this.dn,
+      Math.trunc(hs2 / 2),
+    );
+    let g1 = this.interpPoint(g0, g2, 0.5);
+    if (this.drawDigital() && this.pnp === -1)
+      g1 = this.interpPoint(this.point1, this.point2, 1 - 36 / this.dn);
+    router.addObstaclePoints([g0, g2, this.src[0], this.drn[0], s2, d2]);
+    router.addWire(this.point1.x, this.point1.y, g1.x, g1.y);
+  }
+
   static readonly FLAG_PNP = 1;
   static readonly FLAG_SHOWVT = 2;
   static readonly FLAG_FLIP = 8;

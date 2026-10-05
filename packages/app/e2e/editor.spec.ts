@@ -440,3 +440,37 @@ test('a text box has its own font, saved with the circuit', async ({ page }) => 
     .poll(() => page.evaluate(() => window.circuitjsNext?.controller.saveText() ?? ''))
     .not.toContain('fs="bold"');
 });
+
+test('a routed wire goes around an element in its way, and its middle drags a new route', async ({
+  page,
+}) => {
+  // a vertical resistor in the middle of an empty circuit
+  await open(page, BLANK + 'r 256 96 256 224 0 1000\n');
+  await page.keyboard.press('Shift+W');
+  await dragCircuit(page, [160, 160], [352, 160]);
+  const route = (): Promise<number[][]> =>
+    page.evaluate(() => {
+      const w = window.circuitjsNext?.controller.circuit.elements.find(
+        (e) => e.getClassName() === 'RoutedWireElm',
+      ) as unknown as { route(): { x: number; y: number }[] } | undefined;
+      return (w?.route() ?? []).map((p) => [p.x, p.y]);
+    });
+  const rp = await route();
+  expect(rp[0]).toEqual([160, 160]);
+  expect(rp[rp.length - 1]).toEqual([352, 160]);
+  // it bends around the resistor's body instead of running through it
+  expect(rp.length).toBeGreaterThan(2);
+  for (let i = 0; i < rp.length - 1; i++) {
+    const [ax, ay] = rp[i];
+    const [bx, by] = rp[i + 1];
+    if (ay === by && Math.min(ax, bx) <= 256 && Math.max(ax, bx) >= 256)
+      expect(ay < 144 || ay > 176).toBe(true);
+  }
+  // dragging the wire's middle routes it through the pointer
+  await page.keyboard.press('Escape');
+  const mid = rp[1];
+  await dragCircuit(page, [mid[0], mid[1]], [mid[0], 320]);
+  const moved = await route();
+  expect(moved.some(([, y]) => y === 320)).toBe(true);
+  expect(moved[0]).toEqual([160, 160]);
+});

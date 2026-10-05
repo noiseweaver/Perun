@@ -218,3 +218,4 @@ export {
 } from './xmldoc.ts';
 export { AttrReader, AttrWriter } from './xmlattrs.ts';
 export { LANGUAGES, LS, catalogLanguage, parseLocale, setLocalization } from './i18n.ts';
+export { WireRouter, setRoutingBoundingBox } from './WireRouter.ts';

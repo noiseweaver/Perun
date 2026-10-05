@@ -13,6 +13,7 @@ import { ExprParser, ExprState } from '../Expr.ts';
 import { javaDoubleToInt, parseJavaInt, parseJavaIntRadix } from '../java.ts';
 
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import type { WireRouter } from '../WireRouter.ts';
 
 /** One row of the lookup table: values lo..hi show the template. */
 class LookupEntry {
@@ -65,6 +66,11 @@ class LookupEntry {
 
 /** Shows text chosen by the value on a bus (for example an instruction's mnemonic). */
 export class InstructionDisplayElm extends CircuitElm {
+  override addRoutingObstacle(router: WireRouter): void {
+    router.addWire(this.point1.x, this.point1.y, this.x2, this.y2);
+    router.addObstacle(this.x2 - 10, this.y2 - 10, this.x2 + 10, this.y2 + 10);
+  }
+
   busWidth = 4;
   threshold = 2.5;
   lookupText = '0=text0\n1=text1\n0x2-0xF=other ({a})\n';

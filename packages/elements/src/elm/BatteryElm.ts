@@ -12,6 +12,8 @@ import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaDouble } from '../java.ts';
 import { getCurrentText, getUnitText, getVoltageText } from '../view/units.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import type { WireRouter } from '../WireRouter.ts';
+import type { Point } from '@circuitjs-next/engine';
 
 const BATTERY_TYPE_NAMES = ['Alkaline 1.5V', 'Lithium-Ion', 'NiMH 1.2V', 'NiCd 1.2V', 'Lead-Acid'];
 const BATTERY_TYPE_TABLES = [
@@ -36,6 +38,15 @@ const BATTERY_TYPE_DEFAULTS = [
  * Nodes: 0 (-), 1 (+), 2 between Vsrc and R0, 3 between R0 and R1/C1.
  */
 export class BatteryElm extends CircuitElm {
+  /** Upstream setPoints: calcLeads(8). */
+  override routingLeads(): [Point, Point] | null {
+    return super.routingLeads() ?? this.leadsFor(8);
+  }
+
+  override addRoutingObstacle(router: WireRouter): void {
+    this.addRoutingObstacleWithLeads(router, 16);
+  }
+
   static readonly FLAG_SHOW_VOLTAGE = 1;
   static readonly FLAG_SHOW_SOC = 2;
   static readonly BT_ALKALINE = 0;

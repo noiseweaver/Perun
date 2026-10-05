@@ -14,9 +14,26 @@ import { parseJavaBoolean, parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { getCurrentDText, getVoltageDText, getVoltageText } from '../view/units.ts';
+import type { WireRouter } from '../WireRouter.ts';
+import type { Point } from '@circuitjs-next/engine';
 
 /** SPST switch. Position 0 is closed, 1 is open. */
 export class SwitchElm extends CircuitElm {
+  /** Upstream setPoints: calcLeads(32). */
+  override routingLeads(): [Point, Point] | null {
+    return super.routingLeads() ?? this.leadsFor(32);
+  }
+
+  override addRoutingObstacle(router: WireRouter): void {
+    if (this.x === this.x2 || this.y === this.y2) {
+      router.addWire(this.x, this.y, this.x2, this.y2);
+      const openhs = 16;
+      const pa = this.interpPointPerp(this.lead1, this.lead2, 0, 0);
+      const pb = this.interpPointPerp(this.lead1, this.lead2, 1, openhs);
+      router.addObstacle(pa.x, pa.y, pb.x, pb.y);
+    }
+  }
+
   static readonly COMPOSITE_CLOSED_R = 0.001;
   static readonly FLAG_IEC = 2;
   static readonly FLAG_LABEL = 4;

@@ -29,6 +29,8 @@ export const MouseMode = {
   DRAG_SELECTED: 4,
   DRAG_POST: 5,
   SELECT: 6,
+  /** Dragging the middle of a routed wire reroutes it through the pointer. */
+  DRAG_REROUTE: 8,
 } as const;
 export type MouseMode = (typeof MouseMode)[keyof typeof MouseMode];
 
@@ -454,12 +456,24 @@ export class Editor {
         if (this.mouseElm === null) this.selectArea(gx, gy, mods.shift);
         else {
           if (!this.mouseElm.selected) this.select(this.mouseElm, mods.shift);
-          this.tempMouseMode = MouseMode.DRAG_SELECTED;
-          changed = success = this.dragSelected(gx, gy);
+          if (this.mouseElm instanceof RoutedWireElm) {
+            this.tempMouseMode = MouseMode.DRAG_REROUTE;
+            this.mouseElm.rerouteVia(this.snapGrid(gx), this.snapGrid(gy));
+            changed = true;
+          } else {
+            this.tempMouseMode = MouseMode.DRAG_SELECTED;
+            changed = success = this.dragSelected(gx, gy);
+          }
         }
         break;
       case MouseMode.DRAG_SELECTED:
         changed = success = this.dragSelected(gx, gy);
+        break;
+      case MouseMode.DRAG_REROUTE:
+        if (this.mouseElm instanceof RoutedWireElm) {
+          this.mouseElm.rerouteVia(this.snapGrid(gx), this.snapGrid(gy));
+          changed = true;
+        }
         break;
     }
     if (this.dragElm !== null) changed = true;

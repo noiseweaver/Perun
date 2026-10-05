@@ -10,14 +10,13 @@ import { Point } from '@circuitjs-next/engine';
 import { elementType, lineDistanceSq } from '../CircuitElm.ts';
 import { parseJavaInt } from '../java.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import { WireRouter } from '../WireRouter.ts';
 import { WireElm } from './WireElm.ts';
 
 /**
- * A wire drawn as a path of horizontal and vertical segments between its two posts. It
- * simulates exactly like a plain wire.
- *
- * Upstream routes a new or moved wire around other elements (WireRouter); that router is not
- * ported yet, so a wire whose ends change takes upstream's fallback L-shaped route.
+ * A wire drawn as a path of horizontal and vertical segments between its two posts, routed
+ * around other elements (WireRouter) whenever its ends move. It simulates exactly like a plain
+ * wire.
  */
 export class RoutedWireElm extends WireElm {
   routePoints: Point[] | null = null;
@@ -88,8 +87,32 @@ export class RoutedWireElm extends WireElm {
       this.routePoints = [this.point1, this.point2];
       return;
     }
-    // upstream's fallback when routing fails (the router is not ported yet)
-    this.routePoints = [this.point1, new Point(this.x2, this.y), this.point2];
+    const router = new WireRouter();
+    router.initGrid(this);
+    const rp2 = router.routeWire(this.x, this.y, this.x2, this.y2);
+    // upstream's fallback when routing fails: an L shape
+    this.routePoints =
+      rp2.length < 2 ? [this.point1, new Point(this.x2, this.y), this.point2] : rp2;
+  }
+
+  /** Route this wire through (vx, vy) (dragging its middle), avoiding its own first half. */
+  rerouteVia(vx: number, vy: number): void {
+    const router = new WireRouter();
+    router.initGrid(this);
+    const rp1 = router.routeWire(this.x, this.y, vx, vy);
+    if (rp1.length < 2) return;
+    for (let i = 0; i < rp1.length - 1; i++)
+      router.addWire(rp1[i].x, rp1[i].y, rp1[i + 1].x, rp1[i + 1].y);
+    const rp2 = router.routeWire(vx, vy, this.x2, this.y2);
+    if (rp2.length < 2) return;
+    this.routePoints = [...rp1, ...rp2.slice(1)];
+  }
+
+  override addRoutingObstacle(router: WireRouter): void {
+    const rp = this.routePoints;
+    if (rp === null) return;
+    for (let i = 0; i < rp.length - 1; i++)
+      router.addWire(rp[i].x, rp[i].y, rp[i + 1].x, rp[i + 1].y);
   }
 
   /** Upstream `setPoints(ArrayList<Point>)`: follow the given path. */

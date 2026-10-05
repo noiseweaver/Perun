@@ -17,8 +17,20 @@ import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from '../xml.ts';
 import { Diode } from './Diode.ts';
 import { getCurrentText, getUnitText, getVoltageText } from '../view/units.ts';
+import type { WireRouter } from '../WireRouter.ts';
+import type { Point } from '@circuitjs-next/engine';
 
 export class DiodeElm extends CircuitElm {
+  /** Upstream setPoints: calcLeads(16). */
+  override routingLeads(): [Point, Point] | null {
+    return super.routingLeads() ?? this.leadsFor(16);
+  }
+
+  /** Half the body width, for routing around it (upstream `hs`). */
+  override addRoutingObstacle(router: WireRouter): void {
+    this.addRoutingObstacleWithLeads(router, 8);
+  }
+
   static readonly FLAG_FWDROP = 1;
   static readonly FLAG_MODEL = 2;
   /** Upstream `DiodeElm.lastModelName`: the model for new diodes (the UI changes it). */

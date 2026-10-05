@@ -13,6 +13,7 @@ import { parseJavaDouble, parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import { getVoltageText } from '../view/units.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import type { WireRouter } from '../WireRouter.ts';
 
 export const SIDE_N = 0;
 export const SIDE_S = 1;
@@ -155,6 +156,11 @@ export class Pin {
 
 /** A rectangular chip with pins on its sides. Outputs are voltage sources to ground. */
 export abstract class ChipElm extends CircuitElm {
+  override addRoutingObstacle(router: WireRouter): void {
+    const r = this.rectPoints;
+    router.addObstacle(r[0].x, r[0].y, r[2].x, r[2].y);
+  }
+
   static readonly FLAG_SMALL = 1;
   static readonly FLAG_FLIP_X = 1 << 10;
   static readonly FLAG_FLIP_Y = 1 << 11;

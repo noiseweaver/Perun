@@ -10,9 +10,21 @@
 import { FindPathInfo, PathType, type VoltageSource } from '@circuitjs-next/engine';
 import { elementType } from '../CircuitElm.ts';
 import { VoltageElm } from './VoltageElm.ts';
+import type { WireRouter } from '../WireRouter.ts';
 
 /** One-terminal voltage source, referenced to ground. */
 export class RailElm extends VoltageElm {
+  override addRoutingObstacle(router: WireRouter): void {
+    router.addWire(this.point1.x, this.point1.y, this.point2.x, this.point2.y);
+    const cs = 17; // upstream VoltageElm.circleSize
+    router.addObstacle(
+      this.point2.x - cs,
+      this.point2.y - cs,
+      this.point2.x + cs,
+      this.point2.y + cs,
+    );
+  }
+
   static readonly FLAG_CLOCK = 1;
 
   override getClassName(): string {

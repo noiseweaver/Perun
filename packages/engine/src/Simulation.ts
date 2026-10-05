@@ -76,6 +76,11 @@ export const SPARSE_THRESHOLD = 150;
 export class Simulation {
   /** Top-level elements in file order (upstream `app.elmList`). */
   elements: SimElement[] = [];
+  /**
+   * The elements as the editor has them now, which `elements` catches up with at the next
+   * analysis. Routed wires route around these (upstream reads `app.elmList` directly).
+   */
+  currentElements: () => readonly SimElement[] = () => this.elements;
   /** Flattened list actually simulated: top-level elements, then composite children. */
   elmList: SimElement[] = [];
   elmArr: SimElement[] = [];

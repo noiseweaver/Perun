@@ -14,10 +14,25 @@ import { parseJavaDouble, parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { getCurrentText, getUnitText, getVoltageText } from '../view/units.ts';
+import type { WireRouter } from '../WireRouter.ts';
+import type { Point } from '@circuitjs-next/engine';
 
 const pi = Math.PI;
 
 export class VoltageElm extends CircuitElm {
+  /** Upstream setPoints: a battery's short body, or the circle of other waveforms. */
+  override routingLeads(): [Point, Point] | null {
+    const circleSize = 17;
+    const wf = this.waveform;
+    if (wf === VoltageElm.WF_DC && (this.flags & VoltageElm.FLAG_CIRCLE_SYMBOL) !== 0)
+      return this.leadsFor(circleSize * 2);
+    return this.leadsFor(wf === VoltageElm.WF_DC || wf === VoltageElm.WF_VAR ? 8 : circleSize * 2);
+  }
+
+  override addRoutingObstacle(router: WireRouter): void {
+    this.addRoutingObstacleWithLeads(router, 16);
+  }
+
   static readonly FLAG_COS = 2;
   static readonly FLAG_PULSE_DUTY = 4;
   static readonly FLAG_CIRCLE_SYMBOL = 8;

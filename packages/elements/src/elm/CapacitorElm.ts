@@ -15,8 +15,23 @@ import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { getUnitText } from '../view/units.ts';
 import { UNITS_C, VAL_CHARGE } from '../scope/constants.ts';
+import type { WireRouter } from '../WireRouter.ts';
+import type { Point } from '@circuitjs-next/engine';
 
 export class CapacitorElm extends CircuitElm {
+  /** Upstream setPoints: the plates 4 either side of the middle. */
+  override routingLeads(): [Point, Point] | null {
+    const f = (this.dn / 2 - 4) / this.dn;
+    return [
+      this.interpPoint(this.point1, this.point2, f),
+      this.interpPoint(this.point1, this.point2, 1 - f),
+    ];
+  }
+
+  override addRoutingObstacle(router: WireRouter): void {
+    this.addRoutingObstacleWithLeads(router, 12);
+  }
+
   static readonly FLAG_BACK_EULER = 2;
   static readonly FLAG_RESISTANCE = 4;
 
