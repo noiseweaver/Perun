@@ -25,6 +25,7 @@ export type DialogKind =
   | 'model'
   | 'subcircuit'
   | 'about'
+  | 'subcircuitManager'
   | 'install'
   | 'themes'
   | 'themeEditor'

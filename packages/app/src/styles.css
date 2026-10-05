@@ -2246,3 +2246,9 @@ ul.theme-contrast {
   background: var(--md-surface-container-highest);
   box-shadow: var(--md-elevation-2);
 }
+
+.subcircuit-manager-list {
+  width: 100%;
+  height: auto;
+  padding: 4px;
+}

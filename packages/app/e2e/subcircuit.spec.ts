@@ -107,3 +107,26 @@ test('File > Create Subcircuit makes a model that can be placed and edited', asy
   await page.getByTestId('subcircuit-back').click();
   await expect(page.getByTestId('subcircuit-bar')).toHaveCount(0);
 });
+
+test('a model saved across sessions comes back, and the manager deletes it', async ({ page }) => {
+  await open(page, DIVIDER);
+  await page.getByTestId('file-menu').click();
+  await page.getByTestId('menu-create-subcircuit').click();
+  await page.getByTestId('subcircuit-name').fill('kept');
+  await page.getByTestId('subcircuit-scope').selectOption('2');
+  await page.getByTestId('subcircuit-ok').click();
+  await expect(page.getByTestId('palette-CustomCompositeElm:kept')).toBeVisible();
+
+  // a fresh page with another circuit still offers it
+  await open(page, '$ 1 0.000005 10.2 50 5 50 5e-11\n');
+  await expect(page.getByTestId('palette-CustomCompositeElm:kept')).toBeVisible();
+
+  await page.getByTestId('file-menu').click();
+  await page.getByTestId('menu-subcircuit-manager').click();
+  await page.getByTestId('subcircuit-manager-list').selectOption({ label: 'kept' });
+  page.once('dialog', (d) => void d.accept());
+  await page.getByTestId('subcircuit-manager-delete').click();
+  await expect(page.getByTestId('subcircuit-manager-list')).toHaveCount(0);
+  await expect(page.getByTestId('palette-CustomCompositeElm:kept')).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('subcircuit:kept'))).toBeNull();
+});

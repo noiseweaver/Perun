@@ -148,6 +148,11 @@ export function AppBar() {
             testId="menu-create-subcircuit"
             onSelect={() => controller.createSubcircuit()}
           />
+          <Item
+            label="Subcircuit Manager…"
+            testId="menu-subcircuit-manager"
+            onSelect={() => openDialog('subcircuitManager')}
+          />
           <Menu.Separator className="menu-separator" />
           {install !== 'none' && (
             <Item

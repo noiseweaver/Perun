@@ -1,5 +1,44 @@
 # Progress
 
+## 2026-10-05: Phase 9 (polish and release)
+
+### Done
+
+- Profiling: `pnpm bench` measures matrix sizes, frame load and allocations per step on every
+  example. The engine stays on the main thread (docs/ENGINE-NOTES.md section 13).
+- Accessibility: axe (WCAG 2.2 A/AA) runs in e2e over the main view, panels, dialogs, menus, a
+  phone layout and every built-in theme. Keyboard: `]` and `[` step through elements with a live
+  region, Shift+F10 opens the element menu. Phones in landscape start with the palette shut.
+- PWA: manifest, icons, iOS home screen tags and a precaching service worker, so the app, the
+  examples and the licenses work offline; a Reload banner offers new versions; File > Install app.
+- i18n: Options > Language with upstream's `locale_*.txt` catalogs (`?lang=` as upstream).
+- Live sliders (upstream `Adjustable`) in a card at the top right, with a Sliders dialog; each drag
+  is one undo step.
+- Fixed-width info box values (hover and corner box) through the fixed-width unit helpers.
+- Routed wires route around elements (upstream `WireRouter`).
+- Model editors: Create New Model and Edit Model for diodes, transistors, MOSFETs/JFETs, relays
+  and custom logic, applied as one undoable edit.
+- Subcircuit editor: File > Create Subcircuit (labeled nodes become pins), the pin layout dialog
+  (drag, shift-click and rubber-band selection on one side, width and height, label, scope: this
+  circuit, this session or saved in the browser), a Subcircuits palette group, Edit Model with a
+  Back / Save / Save Copy bar, View Components (double-click), and File > Subcircuit Manager to
+  delete models.
+- README, About dialog (version, upstream credits, GPL notice, links to the source, LICENSE.txt and
+  third-party-licenses.txt, which the build writes).
+
+### Next
+
+- Teaching tools (pencil and fading laser, PR #8's plan entry): wait for the owner's go; they must
+  ship before release.
+- Release: merge PR #11, then this phase's PR (retargeted to main).
+
+### Open issues
+
+- Upstream's time-delay relay only switches when its contacts share a matrix with the powered
+  side; the port keeps that (docs/DEVIATIONS.md, "Not deviations").
+- A double-click on an element under the property panel's spot opens the panel over it first, so
+  the second click misses (seen while writing the subcircuit e2e test).
+
 ## 2026-10-05: Phase 8 (element coverage)
 
 ### Done

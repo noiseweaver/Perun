@@ -275,8 +275,8 @@ Acceptance: at least 95% of upstream examples pass golden compare (threshold to 
 ### Phase 9: Polish and release
 - [x] Profile performance (matrix size, allocations per step). Move the engine to a worker if decided. (Stays on the main thread: ENGINE-NOTES.md section 13.)
 - [x] Accessibility pass, responsive layout, PWA offline support.
-- [ ] Optional i18n hooks.
-- [ ] README, credits, GPL notices, About dialog.
+- [x] Optional i18n hooks. (Options > Language, using upstream's locale catalogs; `pnpm i18n` reports coverage.)
+- [x] README, credits, GPL notices, About dialog.
 
 ## 8. Java to TypeScript porting pitfalls
 

@@ -104,6 +104,7 @@ export interface AppState {
     | 'model'
     | 'subcircuit'
     | 'about'
+    | 'subcircuitManager'
     | 'install'
     | 'themes'
     | 'themeEditor'

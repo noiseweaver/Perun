@@ -5,6 +5,8 @@
 // drawn with its pins, which drag along the outline (several at once after a shift-click or a
 // rubber band on one side), Width and Height buttons, Show Label, the model's name when it has
 // none, and where the model is kept. The pin logic is in elements' compositeLayout.
+// SubcircuitManagerDialog follows upstream SubcircuitDialog.java (Tools > Subcircuit Manager): the
+// models that aren't built in, with Delete.
 
 import {
   CustomCompositeChipElm,
@@ -431,4 +433,63 @@ function pinsInBand(
     if (model.extList[i].side === side) out.push(i);
   }
   return out;
+}
+
+/** Upstream's Subcircuit Manager: pick a model and delete it (after asking). */
+export function SubcircuitManagerDialog() {
+  const [models, setModels] = useState(() => controller.userSubcircuitModels());
+  const [picked, setPicked] = useState(-1);
+  const del = (): void => {
+    const m = models[picked];
+    if (m === undefined) {
+      window.alert(t('Please select a subcircuit to delete.'));
+      return;
+    }
+    if (!window.confirm(`${t('Are you sure you want to delete')} ${m.name}?`)) return;
+    controller.deleteSubcircuitModel(m);
+    setModels(models.filter((x) => x !== m));
+    setPicked(-1);
+  };
+  return (
+    <Shell title={t('Subcircuit Manager')}>
+      <div className="subcircuit-manager">
+        {models.length === 0 ? (
+          <p className="field-label">
+            {t('No subcircuits yet. File > Create Subcircuit makes one.')}
+          </p>
+        ) : (
+          <select
+            className="select subcircuit-manager-list"
+            size={Math.min(8, Math.max(5, models.length))}
+            aria-label={t('Subcircuits')}
+            value={picked < 0 ? '' : String(picked)}
+            onChange={(e) => setPicked(Number(e.target.value))}
+            data-testid="subcircuit-manager-list"
+          >
+            {models.map((m, i) => (
+              <option key={m.name} value={i}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+        )}
+        <div className="dialog-buttons">
+          <button
+            type="button"
+            className="button"
+            onClick={del}
+            disabled={models.length === 0}
+            data-testid="subcircuit-manager-delete"
+          >
+            {t('Delete')}
+          </button>
+          <Dialog.Close asChild>
+            <button type="button" className="button button-primary">
+              {t('Done')}
+            </button>
+          </Dialog.Close>
+        </div>
+      </div>
+    </Shell>
+  );
 }

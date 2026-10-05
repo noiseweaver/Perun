@@ -1460,6 +1460,19 @@ export class SimController {
     this.publishEditor();
   }
 
+  /** Subcircuit Manager: the models a user can delete (not built-in ones). */
+  userSubcircuitModels(): CustomCompositeModel[] {
+    return modelsFor(this.circuit.sim)
+      .composite.getModelList(this.circuit.sim)
+      .filter((m) => !m.builtin);
+  }
+
+  /** Subcircuit Manager's Delete: forget the model here, in this session and in storage. */
+  deleteSubcircuitModel(model: CustomCompositeModel): void {
+    modelsFor(this.circuit.sim).composite.remove(model);
+    this.publishSubcircuits();
+  }
+
   /** The model the model dialog edits. */
   modelRequest: ModelEditRequest | null = null;
 
