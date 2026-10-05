@@ -56,7 +56,7 @@ Rebuild Paul Falstad's CircuitJS1 as a modern TypeScript web app with a new UI a
 | Rendering | Canvas 2D behind a painter interface (WebGL possible later) | Decided |
 | UI framework | React with headless components (Radix) | Decided (confirmed 2026-10-02 by owner) |
 | UI state | Zustand for UI state. Circuit model owned by engine/elements packages | Decided (confirmed 2026-10-02 by owner) |
-| Engine thread | Main thread first. Engine package stays DOM-free so it can move to a Web Worker | Decided (confirmed 2026-10-02 by owner: main thread; revisit with Phase 9 profiling) |
+| Engine thread | Main thread first. Engine package stays DOM-free so it can move to a Web Worker | Decided (confirmed 2026-10-02 by owner: main thread; Phase 9 profiling found no need for a worker, see ENGINE-NOTES.md section 13) |
 | License | GPL-2.0-or-later, keep upstream credits | Required |
 | Dev environment | Linux, Node LTS, Docker for the reference build | Default |
 
@@ -273,8 +273,8 @@ Acceptance: success criterion 3 holds. Fuzz test of the theme decoder with malfo
 Acceptance: at least 95% of upstream examples pass golden compare (threshold to be tuned with the owner). Failures listed in DEVIATIONS.md.
 
 ### Phase 9: Polish and release
-- [ ] Profile performance (matrix size, allocations per step). Move the engine to a worker if decided.
-- [ ] Accessibility pass, responsive layout, PWA offline support.
+- [x] Profile performance (matrix size, allocations per step). Move the engine to a worker if decided. (Stays on the main thread: ENGINE-NOTES.md section 13.)
+- [x] Accessibility pass, responsive layout, PWA offline support.
 - [ ] Optional i18n hooks.
 - [ ] README, credits, GPL notices, About dialog.
 

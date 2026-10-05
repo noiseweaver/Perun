@@ -11,6 +11,8 @@
     "eslint.config.js",
     "tools/eslint-rules",
     "packages/app/vite.config.ts",
-    "packages/app/vite-plugin-examples.ts"
+    "packages/app/vite-plugin-examples.ts",
+    "packages/app/vite-plugin-licenses.ts",
+    "packages/app/vite-plugin-sw.ts"
   ]
 }

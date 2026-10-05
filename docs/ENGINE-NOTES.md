@@ -826,6 +826,30 @@ There is no step-N or seed API. Useful tricks for driving the reference determin
 - `importCircuit` resets `lastIterTime` (via `clearCircuit`, `CircuitLoader.java:63`), so the first frame
   after import runs no steps.
 
+## 13. Performance (Phase 9 profiling)
+
+`pnpm bench` (tools/bench) loads every bundled example, runs 100 warm-up steps, then times 250 ms of
+steps in batches of 50. It reports matrix sizes and the share of a 60 Hz frame each circuit needs at
+its saved speed (upstream runs about 160 × iterCount steps per second). `pnpm bench --alloc`
+samples heap allocations per step and names the allocating functions. Results on 2026-10-05
+(Node 22, one 2.8 GHz Xeon core, 373 examples):
+
+- Largest matrix per circuit: median 6 rows, 90th percentile 16, maximum 88.
+- Frame load at the saved speed: median 1.2%, 90th percentile 5.2%. Four circuits need over half a
+  frame: `rmsconverter.txt` (153%: it asks for 16 830 steps/s on a 27-row nonlinear matrix) and
+  three `td4-*` CPU examples (about 55%). `blank.txt` has no matrix. Upstream behaves the same way:
+  when a frame runs out of time it simulates fewer steps, so the circuit runs slower than its
+  speed setting rather than freezing the page.
+- Allocation per step: median 3.1 kB, 90th percentile 10 kB, maximum 67 kB (`qam-256.txt`). Most of
+  the remainder is boxed doubles in non-inlined calls, which the young generation collects cheaply.
+  `Expr.eval` created a closure on every call; removing it cut expression-heavy circuits about
+  five times (`ujtosc.txt` 183 kB → 33 kB per step without inlining) with identical results.
+
+**Decision: the engine stays on the main thread.** The typical circuit uses about 1% of a frame, and
+the few heavy ones degrade the same way upstream does. A worker would add message passing for every
+scope sample, hover readout and drag for no visible gain. The engine package stays DOM-free, so the
+move remains possible if a future circuit needs it.
+
 ---
 
 ## Answers for PLAN section 4
