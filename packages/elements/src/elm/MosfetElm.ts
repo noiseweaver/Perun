@@ -13,7 +13,8 @@ import { CircuitElm, elementType, type ElementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaDouble } from '../java.ts';
 import { modelsFor } from '../models/ModelLibrary.ts';
-import type { MosfetModel } from '../models/MosfetModel.ts';
+import { modelEditor } from '../edit/modelEditor.ts';
+import { MosfetModel } from '../models/MosfetModel.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from '../xml.ts';
 import { Diode } from './Diode.ts';
@@ -602,11 +603,16 @@ export class MosfetElm extends CircuitElm {
         selected,
       );
     }
-    const idx = 1;
-    if (this.hasSwapDS() && n === idx)
-      return EditInfo.createCheckbox('Swap D/S', (this.flags & MosfetElm.FLAG_FLIP) !== 0);
-    // model editing: later phase (upstream buttons after Swap D/S: "Create New Model" and
-    // "Edit Model")
+    let idx = 1;
+    if (this.hasSwapDS()) {
+      if (n === idx++)
+        return EditInfo.createCheckbox('Swap D/S', (this.flags & MosfetElm.FLAG_FLIP) !== 0);
+    }
+    if (n === idx) return EditInfo.createButton('Create New Model', () => this.newModel());
+    if (n === idx + 1) {
+      if (this.getModel().readOnly) return null;
+      return EditInfo.createButton('Edit Model', () => this.editModel());
+    }
     return null;
   }
 
@@ -626,12 +632,40 @@ export class MosfetElm extends CircuitElm {
             ? this.flags | MosfetElm.FLAG_FLIP
             : this.flags & ~MosfetElm.FLAG_FLIP;
       }
-      // model editing: later phase (the button fields return here without the code below)
     }
     // lots of different cases where the body terminal might have gotten removed/added so just
     // do this all the time
     this.allocNodes();
     this.setPoints();
+  }
+
+  /** Upstream "Create New Model": edit a copy of the model, which this element then uses. */
+  private newModel(): void {
+    this.openModelDialog(MosfetModel.copyOf(this.getModel()), true);
+  }
+
+  /** Upstream "Edit Model": edit the model itself. */
+  private editModel(): void {
+    this.openModelDialog(this.getModel(), false);
+  }
+
+  /** Upstream EditMosfetModelDialog. */
+  private openModelDialog(mm: MosfetModel, created: boolean): void {
+    mm.modelMap = modelsFor(this.sim).mosfet.modelMap;
+    modelEditor.open?.({
+      target: mm,
+      applyButton: false,
+      onApply: () => {
+        if (mm.name.length === 0) mm.pickName();
+        if (created) this.newModelCreated(mm);
+      },
+    });
+  }
+
+  newModelCreated(mm: MosfetModel): void {
+    this.model = mm;
+    this.modelName = mm.name;
+    this.setup();
   }
 
   override flipX(c2: number, count: number): void {

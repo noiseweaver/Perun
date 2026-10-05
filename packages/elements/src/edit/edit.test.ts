@@ -5,6 +5,7 @@ import { Simulation } from '@circuitjs-next/engine';
 import { describe, expect, it } from 'vitest';
 import type { CircuitElm } from '../CircuitElm.ts';
 import { CapacitorElm } from '../elm/CapacitorElm.ts';
+import type { DiodeElm } from '../elm/DiodeElm.ts';
 import { GroundElm } from '../elm/GroundElm.ts';
 import { LEDElm } from '../elm/LEDElm.ts';
 import { MosfetElm } from '../elm/MosfetElm.ts';
@@ -14,7 +15,8 @@ import { TransistorElm } from '../elm/TransistorElm.ts';
 import { ACVoltageElm, VoltageElm } from '../elm/VoltageElm.ts';
 import { modelsFor } from '../models/ModelLibrary.ts';
 import { ELEMENT_TYPES, constructElement } from '../registry.ts';
-import { EditInfo, parseUnits, stepE12, unitString } from './EditInfo.ts';
+import { EditInfo, parseUnits, stepE12, unitString, type Editable } from './EditInfo.ts';
+import { modelEditor, type ModelEditRequest } from './modelEditor.ts';
 
 function make(className: string, sim = new Simulation()): CircuitElm {
   const e = constructElement(className, 0, 0, sim);
@@ -35,7 +37,7 @@ function fields(e: CircuitElm): EditInfo[] {
 }
 
 function names(e: CircuitElm): string[] {
-  return fields(e).map((ei) => ei.checkbox?.label ?? ei.name);
+  return fields(e).map((ei) => ei.checkbox?.label ?? ei.button?.label ?? ei.name);
 }
 
 /** Upstream gives the antenna no fields. */
@@ -216,7 +218,8 @@ describe('edit fields', () => {
     expect(model.name).toBe('Model');
     expect(model.choice?.items).toContain('1N4148 (switching)');
     expect(model.choice?.items[model.choice.selected]).toBe('default');
-    expect(d.getEditInfo(1)).toBeNull();
+    // upstream's model buttons; the built-in model can't be edited, only copied
+    expect(names(d)).toEqual(['Model', 'Create New Simple Model', 'Create New Advanced Model']);
 
     const z = make('ZenerElm', sim);
     const zm = z.getEditInfo(0) as EditInfo;
@@ -230,6 +233,8 @@ describe('edit fields', () => {
       'Blue Value (0-1)',
       'Max Brightness Current (A)',
       'Model',
+      'Create New Simple Model',
+      'Create New Advanced Model',
     ]);
     const lm = led.getEditInfo(4) as EditInfo;
     const i = lm.choice?.items.indexOf('1N4148 (switching)') ?? -1;
@@ -244,7 +249,7 @@ describe('edit fields', () => {
     const sim = new Simulation();
     const m = make('MosfetElm', sim) as MosfetElm;
     expect(m.noDiagonal).toBe(true);
-    expect(names(m)).toEqual(['Model', 'Swap D/S']);
+    expect(names(m)).toEqual(['Model', 'Swap D/S', 'Create New Model']);
     const ei = m.getEditInfo(0) as EditInfo;
     expect(ei.choice?.items).not.toContain('default-jfet');
     (ei.choice as { selected: number }).selected = ei.choice?.items.indexOf('default-body') ?? 0;
@@ -266,7 +271,7 @@ describe('edit fields', () => {
     (ei.checkbox as { state: boolean }).state = !t1.hasCircle();
     t1.setEditValue(2, ei);
     expect(t2.hasCircle()).toBe(t1.hasCircle());
-    expect(names(t1)).toEqual(['Beta/hFE', 'Swap E/C', 'Draw Circle', 'Model']);
+    expect(names(t1)).toEqual(['Beta/hFE', 'Swap E/C', 'Draw Circle', 'Model', 'Create New Model']);
     expect(t1.getShortcut()).toBe('n'.charCodeAt(0));
     expect(t2.getShortcut()).toBe('p'.charCodeAt(0));
   });
@@ -390,5 +395,123 @@ describe('unit text', () => {
   it('steps through the E12 series', () => {
     expect(stepE12(1000, 1)).toBeCloseTo(1200, 9);
     expect(stepE12(8200, 1)).toBeCloseTo(10000, 9);
+  });
+});
+
+describe('model editing', () => {
+  /** Open the model dialog the way the app does, set fields by name, and press OK. */
+  function editModelVia(
+    button: EditInfo,
+    values: Record<string, number | string | boolean>,
+  ): { target: Editable; titles: string[] } {
+    let req: ModelEditRequest | null = null;
+    modelEditor.open = (r) => (req = r);
+    button.button?.onClick();
+    modelEditor.open = null;
+    if (req === null) throw new Error('no model dialog');
+    const r: ModelEditRequest = req;
+    const titles: string[] = [];
+    for (let n = 0; ; n++) {
+      const ei = r.target.getEditInfo(n);
+      if (ei === null) break;
+      const name = ei.checkbox?.label ?? ei.name.replace(/<[^>]*>/g, '');
+      titles.push(name);
+      const v = values[name];
+      if (v === undefined) continue;
+      if (typeof v === 'string') ei.text = v;
+      else if (typeof v === 'boolean' && ei.checkbox) ei.checkbox.state = v;
+      else if (typeof v === 'number') ei.value = v;
+      r.target.setEditValue(n, ei);
+    }
+    r.onApply?.();
+    return { target: r.target, titles };
+  }
+
+  function button(e: CircuitElm, label: string): EditInfo {
+    for (let n = 0; n < 30; n++) {
+      const ei = e.getEditInfo(n);
+      if (ei === null) break;
+      if (ei.button?.label === label) return ei;
+    }
+    throw new Error(`no button ${label}`);
+  }
+
+  it('creates a simple diode model with a picked name and uses it', () => {
+    const sim = new Simulation();
+    const d = make('DiodeElm', sim) as DiodeElm;
+    const { titles } = editModelVia(button(d, 'Create New Simple Model'), {
+      'Forward Voltage': 0.7,
+    });
+    expect(titles).toEqual([
+      'Model Name',
+      'Saturation Current',
+      'Forward Voltage',
+      'Current At Above Voltage (A)',
+      'Breakdown Voltage',
+    ]);
+    expect(d.modelName).toBe('fwdrop=0.7');
+    const lib = modelsFor(sim).diode;
+    expect(lib.modelMap.get('fwdrop=0.7')).toBe(d.getModel());
+    expect(d.getModel().fwdrop).toBeGreaterThan(0.6);
+    // a model the user made can be edited in place
+    expect(names(d)).toContain('Edit Model');
+    editModelVia(button(d, 'Edit Model'), { 'Breakdown Voltage': -5.1 });
+    expect(d.getModel().breakdownVoltage).toBe(5.1);
+  });
+
+  it('names a copied model and keeps the original', () => {
+    const sim = new Simulation();
+    const t = make('TransistorElm', sim) as TransistorElm;
+    const before = t.getModel();
+    editModelVia(button(t, 'Create New Model'), { 'Reverse Beta (BR)': 3 });
+    expect(t.modelName).toBe('transistormodel');
+    expect(t.getModel()).not.toBe(before);
+    expect(t.getModel().betaR).toBe(3);
+    const t2 = make('TransistorElm', sim) as TransistorElm;
+    editModelVia(button(t2, 'Create New Model'), {});
+    expect(t2.modelName).toBe('transistormodel-2');
+  });
+
+  it('shows the MOSFET body fields only with the bulk shown', () => {
+    const sim = new Simulation();
+    const m = make('MosfetElm', sim) as MosfetElm;
+    const { titles } = editModelVia(button(m, 'Create New Model'), { 'Model Name': 'mine' });
+    expect(m.modelName).toBe('mine');
+    expect(titles).toEqual([
+      'Model Name',
+      'Threshold Voltage (Vt)',
+      'Beta',
+      'Show Bulk',
+      'Simulate Body Diode',
+      'Body Terminal',
+      'Show Body Diode',
+      'Lambda',
+      'Gate-Source Capacitance (Cgs)',
+      'Gate-Drain Capacitance (Cgd)',
+    ]);
+    const mm = m.getModel();
+    const lambda = mm.getEditInfo(7) as EditInfo;
+    lambda.value = 0.02;
+    mm.setEditValue(7, lambda);
+    expect(mm.lambda).toBe(0.02);
+    const bulk = mm.getEditInfo(3) as EditInfo;
+    if (bulk.checkbox) bulk.checkbox.state = false;
+    mm.setEditValue(3, bulk);
+    expect(bulk.newDialog).toBe(true);
+    expect(mm.getEditInfo(4)?.checkbox?.label).toBe('Digital Symbol');
+    expect(mm.getEditInfo(5)?.name).toBe('Lambda');
+  });
+
+  it('edits a custom logic model with an Apply button', () => {
+    const sim = new Simulation();
+    const c = make('CustomLogicElm', sim);
+    let req: ModelEditRequest | null = null;
+    modelEditor.open = (r) => (req = r);
+    button(c, 'Edit Model').button?.onClick();
+    modelEditor.open = null;
+    expect((req as ModelEditRequest | null)?.applyButton).toBe(true);
+    expect((req as ModelEditRequest | null)?.target.getDialogTitle()).toBe(
+      'Edit Custom Logic Model',
+    );
   });
 });

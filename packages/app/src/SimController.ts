@@ -14,7 +14,8 @@ import {
   VAL_CURRENT,
   AudioOutputElm,
   CustomCompositeElm,
-  CustomLogicElm,
+  modelEditor,
+  type ModelEditRequest,
   DataRecorderElm,
   VAL_VOLTAGE,
   VoltageElm,
@@ -151,7 +152,10 @@ export class SimController {
         editModel: later,
         alert: (m) => window.alert(m),
       };
-      CustomLogicElm.editModel = () => window.alert('Editing logic models is not available yet.');
+      modelEditor.open = (req) => {
+        this.modelRequest = req;
+        useApp.setState({ dialog: 'model' });
+      };
       DataRecorderElm.download = (name, text) => download(name, text, 'text/plain');
     }
   }
@@ -1210,6 +1214,29 @@ export class SimController {
       if (ei === null) return false;
       if (ei.canCreateAdjustable()) return true;
     }
+  }
+
+  /** The model the model dialog edits. */
+  modelRequest: ModelEditRequest | null = null;
+
+  /**
+   * Change a model (the model dialog) as one undoable edit, then have every element refetch its
+   * model (upstream `CirSim.updateModels`). `fn` returns false when it changed nothing.
+   */
+  editModel(fn: () => boolean): void {
+    this.editor.history.record('Edit model', () => {
+      if (!fn()) return false;
+      this.updateModels();
+      return true;
+    });
+    this.circuitChanged();
+    // upstream resets the element's dialog when the model dialog closes
+    this.publishEditor(true);
+  }
+
+  /** Upstream `CirSim.updateModels`: every element refetches its model by name. */
+  updateModels(): void {
+    for (const e of this.circuit.elements) (e as { updateModels?: () => void }).updateModels?.();
   }
 
   /** The element the Sliders dialog edits. */

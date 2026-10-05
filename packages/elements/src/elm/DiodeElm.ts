@@ -11,7 +11,8 @@ import { CircuitElm, elementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { unescapeToken } from '../escape.ts';
 import { parseJavaDouble } from '../java.ts';
-import type { DiodeModel } from '../models/DiodeModel.ts';
+import { modelEditor } from '../edit/modelEditor.ts';
+import { DiodeModel } from '../models/DiodeModel.ts';
 import { modelsFor } from '../models/ModelLibrary.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from '../xml.ts';
@@ -178,8 +179,13 @@ export class DiodeElm extends CircuitElm {
         selected,
       );
     }
-    // model editing: later phase (upstream buttons 1-3: "Create New Simple Model", "Create New
-    // Advanced Model", and "Edit Model" unless the model is read-only)
+    if (n === 1) return EditInfo.createButton('Create New Simple Model', () => this.newModel(true));
+    if (n === 2)
+      return EditInfo.createButton('Create New Advanced Model', () => this.newModel(false));
+    if (n === 3) {
+      if (this.getModel().readOnly) return null;
+      return EditInfo.createButton('Edit Model', () => this.editModel());
+    }
     return null;
   }
 
@@ -192,6 +198,41 @@ export class DiodeElm extends CircuitElm {
       ei.newDialog = true;
       return;
     }
+  }
+
+  /** Upstream buttons 1 and 2: edit a copy of the model, which this diode then uses. */
+  private newModel(simple: boolean): void {
+    const dm = DiodeModel.copyOf(this.getModel());
+    dm.modelMap = modelsFor(this.sim).diode.modelMap;
+    dm.setSimple(simple);
+    if (dm.isSimple()) dm.setForwardVoltage();
+    this.openModelDialog(dm, true);
+  }
+
+  /** Upstream button 3: edit the model itself. */
+  private editModel(): void {
+    const dm = this.getModel();
+    dm.modelMap = modelsFor(this.sim).diode.modelMap;
+    if (dm.isSimple()) dm.setForwardVoltage();
+    this.openModelDialog(dm, false);
+  }
+
+  /** Upstream EditDiodeModelDialog. */
+  private openModelDialog(dm: DiodeModel, created: boolean): void {
+    modelEditor.open?.({
+      target: dm,
+      applyButton: false,
+      onApply: () => {
+        if (dm.name.length === 0) dm.pickName();
+        if (created) this.newModelCreated(dm);
+      },
+    });
+  }
+
+  newModelCreated(dm: DiodeModel): void {
+    this.model = dm;
+    this.modelName = dm.name;
+    this.setup();
   }
 
   override getShortcut(): number {

@@ -474,3 +474,35 @@ test('a routed wire goes around an element in its way, and its middle drags a ne
   expect(moved.some(([, y]) => y === 320)).toBe(true);
   expect(moved[0]).toEqual([160, 160]);
 });
+
+test('a diode gets a new model from the model dialog', async ({ page }) => {
+  await open(
+    page,
+    '$ 1 0.000005 10.2 50 5 50 5e-11\n' +
+      'v 96 224 96 96 0 0 40 1 0 0 0.5\n' +
+      'd 96 96 256 96 2 default\n' +
+      'r 256 96 256 224 0 100\n' +
+      'w 96 224 256 224 0\n',
+  );
+  await clickCircuit(page, 176, 96);
+  await expect(page.getByTestId('inspector-title')).toHaveText('Diode');
+  await page.getByRole('button', { name: 'Create New Simple Model' }).click();
+  const dialog = page.getByTestId('model-dialog');
+  await expect(dialog).toBeVisible();
+  await expect(page.getByRole('dialog')).toContainText('Edit Diode Model');
+  await dialog.getByLabel('Forward Voltage').fill('0.65');
+  await page.getByTestId('model-dialog-ok').click();
+  await expect(dialog).toHaveCount(0);
+  const modelName = await page.evaluate(
+    () =>
+      (
+        window.circuitjsNext?.controller.circuit.elements.find(
+          (e) => e.getClassName() === 'DiodeElm',
+        ) as unknown as { modelName: string } | undefined
+      )?.modelName,
+  );
+  expect(modelName).toBe('fwdrop=0.65');
+  // the panel lists the new model, and it can now be edited in place
+  await expect(page.getByTestId('field-0').locator('option:checked')).toHaveText('fwdrop=0.65');
+  await expect(page.getByRole('button', { name: 'Edit Model' })).toBeVisible();
+});

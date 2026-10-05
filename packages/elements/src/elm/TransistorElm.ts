@@ -15,7 +15,8 @@ import { EditInfo } from '../edit/EditInfo.ts';
 import { unescapeToken } from '../escape.ts';
 import { parseJavaDouble, parseJavaInt } from '../java.ts';
 import { modelsFor } from '../models/ModelLibrary.ts';
-import type { TransistorModel } from '../models/TransistorModel.ts';
+import { modelEditor } from '../edit/modelEditor.ts';
+import { TransistorModel } from '../models/TransistorModel.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from '../xml.ts';
 import { getCurrentText, getUnitText, getVoltageText, showFormat } from '../view/units.ts';
@@ -615,7 +616,11 @@ export class TransistorElm extends CircuitElm {
         selected,
       );
     }
-    // model editing: later phase (upstream buttons 4 "Create New Model" and 5 "Edit Model")
+    if (n === 4) return EditInfo.createButton('Create New Model', () => this.newModel());
+    if (n === 5) {
+      if (this.getModel().readOnly) return null;
+      return EditInfo.createButton('Edit Model', () => this.editModel());
+    }
     return null;
   }
 
@@ -645,6 +650,36 @@ export class TransistorElm extends CircuitElm {
       ei.newDialog = true;
       return;
     }
+  }
+
+  /** Upstream button 4: edit a copy of the model, which this transistor then uses. */
+  private newModel(): void {
+    const tm = TransistorModel.copyOf(this.getModel());
+    this.openModelDialog(tm, true);
+  }
+
+  /** Upstream button 5: edit the model itself. */
+  private editModel(): void {
+    this.openModelDialog(this.getModel(), false);
+  }
+
+  /** Upstream EditTransistorModelDialog. */
+  private openModelDialog(tm: TransistorModel, created: boolean): void {
+    tm.modelMap = modelsFor(this.sim).transistor.modelMap;
+    modelEditor.open?.({
+      target: tm,
+      applyButton: false,
+      onApply: () => {
+        if (tm.name.length === 0) tm.pickName();
+        if (created) this.newModelCreated(tm);
+      },
+    });
+  }
+
+  newModelCreated(tm: TransistorModel): void {
+    this.model = tm;
+    this.modelName = tm.name;
+    this.setup();
   }
 
   override flipX(c2: number, count: number): void {

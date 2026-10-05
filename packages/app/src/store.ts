@@ -101,10 +101,9 @@ export interface AppState {
     | 'simSettings'
     | 'scopeProperties'
     | 'sliders'
+    | 'model'
     | 'about'
     | 'install'
-    | 'about'
-    | 'sliders'
     | 'themes'
     | 'themeEditor'
     | null;

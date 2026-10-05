@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Ported from CircuitJS1 src/com/lushprojects/circuitjs1/client/MosfetModel.java (master) at
-// 5a707168778216bb6ed01bfdd62e8bbf7ae0a032. The model edit dialog is left for a later phase.
+// 5a707168778216bb6ed01bfdd62e8bbf7ae0a032.
 // Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) circuitjs-next contributors.
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
+import { EditInfo, type Editable } from '../edit/EditInfo.ts';
+import { pickModelName } from '../edit/modelEditor.ts';
 import { unescapeToken } from '../escape.ts';
 import { parseJavaDouble, parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
@@ -16,7 +18,7 @@ function compareNames(a: { name: string }, b: { name: string }): number {
   return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
 }
 
-export class MosfetModel {
+export class MosfetModel implements Editable {
   static readonly FLAG_JFET = 1;
 
   flags = 0;
@@ -47,6 +49,8 @@ export class MosfetModel {
   builtIn = false;
   internal = false;
   oldStyle = false;
+  /** The library's map, so a renamed model registers itself (upstream's static modelMap). */
+  modelMap: Map<string, MosfetModel> | null = null;
 
   /** Upstream `MosfetModel(String d, double vt, double b)`; no arguments is `MosfetModel()`. */
   constructor(d: string | null = null, vt = 1.5, b = 0.02) {
@@ -128,6 +132,76 @@ export class MosfetModel {
     w.dumpAttr('bd', this.bodyDiode ? 1 : 0);
     w.dumpAttr('bt', this.bodyTerminal ? 1 : 0);
     w.dumpAttr('sbd', this.showBodyDiodeSymbol ? 1 : 0);
+  }
+
+  getDialogTitle(): string {
+    return 'Edit ' + (this.isJfet() ? 'JFET' : 'MOSFET') + ' Model';
+  }
+
+  getEditInfo(n: number): EditInfo | null {
+    if (n === 0) return EditInfo.text('Model Name', this.name);
+    if (n === 1) return new EditInfo('Threshold Voltage (Vt)', this.threshold);
+    if (n === 2) return new EditInfo(EditInfo.makeLink('mosfet-beta.html', 'Beta'), this.beta);
+    let idx = 3;
+    // JFETs never show the bulk/body, so these options don't apply to JFET models
+    if (!this.isJfet()) {
+      if (n === idx++) return EditInfo.createCheckbox('Show Bulk', this.showBulk);
+      if (n === idx++) {
+        if (!this.showBulk) return EditInfo.createCheckbox('Digital Symbol', this.digitalSymbol);
+        return EditInfo.createCheckbox('Simulate Body Diode', this.bodyDiode);
+      }
+      if (this.showBulk && this.bodyDiode) {
+        if (n === idx++) return EditInfo.createCheckbox('Body Terminal', this.bodyTerminal);
+        if (n === idx++)
+          return EditInfo.createCheckbox('Show Body Diode', this.showBodyDiodeSymbol);
+      }
+    }
+    if (n === idx++) return new EditInfo('Lambda', this.lambda).setDimensionless().setNewColumn();
+    if (n === idx++) return new EditInfo('Gate-Source Capacitance (Cgs)', this.capGS);
+    if (n === idx) return new EditInfo('Gate-Drain Capacitance (Cgd)', this.capGD);
+    return null;
+  }
+
+  /** Set a field; the caller then refetches every element's model (upstream updateModels). */
+  setEditValue(n: number, ei: EditInfo): void {
+    if (n === 0) {
+      this.name = ei.text ?? '';
+      if (this.name.length > 0) this.modelMap?.set(this.name, this);
+    }
+    if (n === 1) this.threshold = ei.value;
+    if (n === 2 && ei.value > 0) this.beta = ei.value;
+    const state = ei.checkbox?.state === true;
+    const bodyFields = this.showBulk && this.bodyDiode;
+    if (!this.isJfet()) {
+      if (n === 3) {
+        if (state !== this.showBulk) ei.newDialog = true;
+        this.showBulk = state;
+      } else if (n === 4) {
+        if (!this.showBulk) {
+          if (state !== this.digitalSymbol) ei.newDialog = true;
+          this.digitalSymbol = state;
+        } else {
+          if (state !== this.bodyDiode) ei.newDialog = true;
+          this.bodyDiode = state;
+        }
+      } else if (bodyFields && n === 5) {
+        this.bodyTerminal = state;
+      } else if (bodyFields && n === 6) {
+        this.showBodyDiodeSymbol = state;
+      }
+    }
+    // the numbers follow the checkboxes shown (upstream counts them with idx++)
+    const idx = this.isJfet() ? 3 : bodyFields ? 7 : 5;
+    if (n === idx) this.lambda = ei.value >= 0 ? ei.value : this.lambda;
+    else if (n === idx + 1) this.capGS = ei.value >= 0 ? ei.value : this.capGS;
+    else if (n === idx + 2) this.capGD = ei.value >= 0 ? ei.value : this.capGD;
+  }
+
+  pickName(): void {
+    this.name = pickModelName(
+      this.isJfet() ? 'jfetmodel' : 'mosfetmodel',
+      this.modelMap ?? new Map(),
+    );
   }
 
   undumpXml(r: XmlAttrReader): void {

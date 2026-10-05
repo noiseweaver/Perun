@@ -22,6 +22,7 @@ export type DialogKind =
   | 'simSettings'
   | 'scopeProperties'
   | 'sliders'
+  | 'model'
   | 'about'
   | 'install'
   | 'themes'

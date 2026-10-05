@@ -8,6 +8,7 @@
 
 import { elementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
+import { modelEditor } from '../edit/modelEditor.ts';
 import { unescapeToken } from '../escape.ts';
 import { parseJavaDouble } from '../java.ts';
 import type { CustomLogicModel } from '../models/CustomLogicModel.ts';
@@ -18,9 +19,6 @@ import { ChipElm, SIDE_E, SIDE_W } from './ChipElm.ts';
 
 /** A chip whose outputs follow a truth table of rules (its model). */
 export class CustomLogicElm extends ChipElm {
-  /** Opens the model editor (upstream's second EditDialog); the app fills this in. */
-  static editModel: ((e: CustomLogicElm) => void) | null = null;
-
   modelName: string | null = null;
   postCount = 0;
   inputCount = 0;
@@ -220,7 +218,12 @@ export class CustomLogicElm extends ChipElm {
 
   override getChipEditInfo(n: number): EditInfo | null {
     if (n === 0) return EditInfo.text('Model Name', this.modelName ?? '');
-    if (n === 1) return EditInfo.createButton('Edit Model', () => CustomLogicElm.editModel?.(this));
+    if (n === 1)
+      return EditInfo.createButton('Edit Model', () => {
+        // upstream opens a plain EditDialog on the model
+        const model = this.model;
+        if (model !== null) modelEditor.open?.({ target: model, applyButton: true });
+      });
     return null;
   }
 

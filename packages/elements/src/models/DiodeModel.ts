@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Ported from CircuitJS1 src/com/lushprojects/circuitjs1/client/DiodeModel.java (master) at
-// 5a707168778216bb6ed01bfdd62e8bbf7ae0a032. The model edit dialog is left for a later phase.
+// 5a707168778216bb6ed01bfdd62e8bbf7ae0a032.
 // Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) circuitjs-next contributors.
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
+import { EditInfo, type Editable } from '../edit/EditInfo.ts';
+import { pickModelName } from '../edit/modelEditor.ts';
 import { escapeToken, unescapeToken } from '../escape.ts';
 import { parseJavaDouble, parseJavaInt } from '../java.ts';
 import { StringTokenizer } from '../StringTokenizer.ts';
+import { formatNumber } from '../view/units.ts';
 import type { XmlAttrReader, XmlDocWriter } from '../xml.ts';
 
 /** Java `String.compareTo` order on model names (UTF-16 code units), for the model lists. */
@@ -19,7 +22,7 @@ function compareNames(a: { name: string }, b: { name: string }): number {
 /** Electron thermal voltage at SPICE's default temperature of 27 C (300.15 K). */
 const vt = 0.025865;
 
-export class DiodeModel {
+export class DiodeModel implements Editable {
   static readonly FLAGS_SIMPLE = 1;
 
   flags = 0;
@@ -38,6 +41,8 @@ export class DiodeModel {
   builtIn = false;
   oldStyle = false;
   internal = false;
+  /** The library's map, so a renamed model registers itself (upstream's static modelMap). */
+  modelMap: Map<string, DiodeModel> | null = null;
 
   /** The diode's "scale voltage": the voltage increase that raises current by a factor of e. */
   vscale = 0;
@@ -124,6 +129,77 @@ export class DiodeModel {
   getDescription(): string {
     if (this.description === null) return this.name;
     return this.name + ' (' + this.description + ')';
+  }
+
+  setSimple(s: boolean): void {
+    this.flags = s ? DiodeModel.FLAGS_SIMPLE : 0;
+  }
+
+  getDialogTitle(): string {
+    return 'Edit Diode Model';
+  }
+
+  getEditInfo(n: number): EditInfo | null {
+    if (n === 0) return EditInfo.text('Model Name', this.name);
+    if (n === 1) return new EditInfo('Saturation Current', this.saturationCurrent, -1, -1);
+    if (this.isSimple()) {
+      if (n === 2) return new EditInfo('Forward Voltage', this.forwardVoltage, -1, -1);
+      if (n === 3) return new EditInfo('Current At Above Voltage (A)', this.forwardCurrent, -1, -1);
+    } else {
+      if (n === 2) return new EditInfo('Series Resistance', this.seriesResistance, -1, -1);
+      if (n === 3)
+        return new EditInfo(
+          EditInfo.makeLink('diodecalc.html', 'Emission Coefficient'),
+          this.emissionCoefficient,
+          -1,
+          -1,
+        );
+    }
+    if (n === 4) return new EditInfo('Breakdown Voltage', this.breakdownVoltage, -1, -1);
+    return null;
+  }
+
+  /** Set a field; the caller then refetches every element's model (upstream updateModels). */
+  setEditValue(n: number, ei: EditInfo): void {
+    if (n === 0) {
+      this.name = ei.text ?? '';
+      if (this.name.length > 0) this.modelMap?.set(this.name, this);
+    }
+    if (n === 1) this.saturationCurrent = ei.value;
+    if (this.isSimple()) {
+      if (n === 2) this.forwardVoltage = ei.value;
+      if (n === 3) this.forwardCurrent = ei.value;
+      this.setEmissionCoefficient();
+    } else {
+      if (n === 2) this.seriesResistance = ei.value;
+      if (n === 3) this.emissionCoefficient = ei.value;
+    }
+    if (n === 4) this.breakdownVoltage = Math.abs(ei.value);
+    this.updateModel();
+  }
+
+  /** The emission coefficient for a simple model, if there is enough data. */
+  setEmissionCoefficient(): void {
+    if (this.forwardCurrent > 0 && this.forwardVoltage > 0)
+      this.emissionCoefficient =
+        this.forwardVoltage / Math.log(this.forwardCurrent / this.saturationCurrent + 1) / vt;
+    this.seriesResistance = 0;
+  }
+
+  setForwardVoltage(): void {
+    if (this.forwardCurrent === 0) this.forwardCurrent = 1;
+    this.forwardVoltage =
+      this.emissionCoefficient * vt * Math.log(this.forwardCurrent / this.saturationCurrent + 1);
+  }
+
+  /** A name for a new model from its parameters, not yet used in the library. */
+  pickName(): void {
+    let name: string;
+    if (this.breakdownVoltage > 0 && this.breakdownVoltage < 20)
+      name = 'zener-' + formatNumber(this.breakdownVoltage, 3);
+    else if (this.isSimple()) name = 'fwdrop=' + formatNumber(this.forwardVoltage, 3);
+    else name = 'diodemodel';
+    this.name = pickModelName(name, this.modelMap ?? new Map());
   }
 
   updateModel(): void {

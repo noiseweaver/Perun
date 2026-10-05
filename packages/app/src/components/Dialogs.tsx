@@ -24,6 +24,7 @@ import { AboutDialog } from './AboutDialog.tsx';
 import { Shell } from './DialogShell.tsx';
 import { ScopePropertiesDialog } from './ScopeDialog.tsx';
 import { SliderDialog } from './SliderDialog.tsx';
+import { ModelDialog } from './ModelDialog.tsx';
 import { ThemeEditorDialog, ThemesDialog } from './ThemeDialogs.tsx';
 import { t } from '../i18n.ts';
 
@@ -419,6 +420,8 @@ export function Dialogs() {
       return <ScopePropertiesDialog />;
     case 'sliders':
       return <SliderDialog />;
+    case 'model':
+      return <ModelDialog />;
     case 'about':
       return <AboutDialog />;
     case 'install':

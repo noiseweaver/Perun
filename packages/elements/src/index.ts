@@ -20,6 +20,7 @@ export {
   type EditFile,
   type Editable,
 } from './edit/EditInfo.ts';
+export { modelEditor, pickModelName, type ModelEditRequest } from './edit/modelEditor.ts';
 export {
   ADJ_FLAG_LOG,
   ADJ_FLAG_SHARED,
