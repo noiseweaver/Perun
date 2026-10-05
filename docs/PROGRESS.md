@@ -1,5 +1,51 @@
 # Progress
 
+## 2026-10-05: Phase 8 (element coverage)
+
+### Done
+
+- Every element class in upstream master is ported (154 rows in docs/ELEMENTS.md), each with its
+  sim, view and edit schema, in batches: rail variants, sweep, AM/FM, audio and data input,
+  battery; switches (SPDT, DPDT, make-before-break, cross, analog) and logic I/O; gates,
+  Schmitt triggers, tri-state and delay buffers; digital and mixed-signal chips (flip-flops,
+  counters, 555, ADC/DAC, latches, mux/demux, adders, displays); transformers, transmission
+  line and relays; JFET, SCR, TRIAC, DIAC, triode, lamp, ammeter and the rest of tier 3;
+  expressions and controlled sources (VCVS, VCCS, CCVS, CCCS); audio output and the CCII
+  conveyors; composites (OTA, Norton amp, Darlington, crystal, comparator, real op-amp,
+  optocoupler); box and line graphics; subcircuits (custom composites, with their models
+  saved in the file); routed wires; RAM, ROM, instruction display and bus widths; gyrator, LED
+  array, custom logic; 3-phase motor and motor protection switch; fuse, LDR, thermistor, test
+  point, stop trigger, data export, wattmeters; DC motor, time-delay relay, analog mux and
+  custom transformer.
+- Every bundled upstream example runs: `pnpm golden:examples` compares all 373 against the
+  reference build (`fixtures/examples/`). **373 of 373 pass** (target was 95%), and 371 save
+  byte for byte as upstream does. The other two differ only in an undocked scope's `p`
+  (docs/DEVIATIONS.md). docs/EXAMPLES.md is the generated report.
+- All 550 scopes in the examples restore identically; `tools/golden/src/scopes.test.ts` now
+  requires that no scope is dropped.
+- 44 golden circuits, 9 of them new for Phase 8 elements the examples don't cover well (fuse,
+  LDR and thermistor, wattmeters, DC motor, time-delay relay, analog mux, real op-amp models,
+  optocoupler, custom transformer).
+- The stop trigger pauses the simulation (`Simulation.requestPause`) and stays highlighted, as
+  upstream draws it. The data export element saves `data-yyyyMMdd-HHmm.circuitjs.txt`.
+- Element number text uses `String()` (GWT prints doubles the JavaScript way), see
+  docs/ENGINE-NOTES.md.
+
+### Next
+
+- Phase 9 (PLAN.md).
+- Teaching tools (pencil and laser) wait for the owner's go; they must ship before release.
+
+### Open issues
+
+- The wire router isn't ported: new routed wires take upstream's L-shaped fallback.
+- The subcircuit editor and the logic model editor aren't built (they say "not available yet").
+- Element sliders (`<adj>`, pots, LDR, thermistor) load and save but aren't live in the UI.
+- Info box values (hover and the info panel) don't have fixed-width text yet; this applies to
+  every element.
+- Upstream's time-delay relay only switches when its contacts share a matrix with the powered
+  side; the port keeps that (docs/DEVIATIONS.md, "Not deviations").
+
 ## 2026-10-04: Phase 7 (theme system complete)
 
 ### Done
