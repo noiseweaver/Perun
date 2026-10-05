@@ -301,7 +301,7 @@ export class Circuit {
           continue;
         }
         if (type.charAt(0) === '!') {
-          this.warnings.push('custom logic models are not supported yet');
+          modelsFor(this.sim).customLogic.undumpModel(st);
           continue;
         }
         // afilter-specific records
@@ -486,7 +486,7 @@ export class Circuit {
         continue;
       }
       if (tag === 'clm') {
-        this.warnings.push(`model element <${tag}> is not supported yet`);
+        modelsFor(sim).customLogic.undumpModelXml(r);
         continue;
       }
       // upstream's own regression-test records; only its test runner reads them

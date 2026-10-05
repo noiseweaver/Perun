@@ -9,7 +9,7 @@
 import type { VoltageSource } from '@circuitjs-next/engine';
 import { elementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
-import { parseJavaInt, parseJavaIntRadix } from '../java.ts';
+import { javaSplit, parseJavaInt, parseJavaIntRadix } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { ChipElm, SIDE_E, SIDE_W } from './ChipElm.ts';
@@ -226,10 +226,7 @@ export class SRAMElm extends ChipElm {
 
   parseContentsString(s: string): void {
     this.map.clear();
-    // Java's split drops trailing empty strings
-    const lines = s.split('\n');
-    while (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
-    for (const line of lines) {
+    for (const line of javaSplit(s, '\n')) {
       try {
         const args = line.split(/: */);
         let addr = this.parseNumber(args[0]);
@@ -411,13 +408,6 @@ export class ROMElm extends SRAMElm {
 /** Java `Integer.toHexString`, upper-cased as upstream shows it. */
 function toHexString(v: number): string {
   return (v >>> 0).toString(16).toUpperCase();
-}
-
-/** Java `String.split(regex)`: trailing empty strings are dropped. */
-function javaSplit(s: string, re: RegExp): string[] {
-  const parts = s.split(re);
-  while (parts.length > 1 && parts[parts.length - 1] === '') parts.pop();
-  return parts;
 }
 
 export const SRAMElmType = elementType('SRAMElm', SRAMElm);

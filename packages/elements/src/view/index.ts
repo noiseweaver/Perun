@@ -55,12 +55,13 @@ import { TransLineElm } from '../elm/TransLineElm.ts';
 import { RelayElm } from '../elm/RelayElm.ts';
 import { RelayCoilElm, RelayContactElm } from '../elm/RelayCoilElm.ts';
 import {
+  gyratorView,
   relayCoilView,
   relayContactView,
   relayView,
   tappedTransformerView,
-  transformerView,
   transLineView,
+  transformerView,
 } from './magnetics.ts';
 import {
   audioOutputView,
@@ -149,8 +150,10 @@ import { CrossSwitchElm, DPDTSwitchElm, MBBSwitchElm, Switch2Elm } from '../elm/
 import { ChipElm } from '../elm/ChipElm.ts';
 import { DecimalDisplayElm, SevenSegElm } from '../elm/SevenSegElm.ts';
 import { VCOElm } from '../elm/TimerElm.ts';
-import { chipView, decimalDisplayView, sevenSegView, vcoView } from './chips.ts';
+import { chipView, decimalDisplayView, ledArrayView, sevenSegView, vcoView } from './chips.ts';
 import { OhmMeterElm } from '../elm/OhmMeterElm.ts';
+import { GyratorElm } from '../elm/GyratorElm.ts';
+import { LEDArrayElm } from '../elm/LEDArrayElm.ts';
 
 /** Undocked scopes are drawn by the scope renderer, over the circuit; this only places them. */
 const scopeElmView: ElementView<ScopeElm> = {
@@ -229,7 +232,9 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [SevenSegElm, sevenSegView],
   [DecimalDisplayElm, decimalDisplayView],
   [VCOElm, vcoView],
+  [LEDArrayElm, ledArrayView],
   [ChipElm, chipView],
+  [GyratorElm, gyratorView],
   [TransformerElm, transformerView],
   [TappedTransformerElm, tappedTransformerView],
   [TransLineElm, transLineView],

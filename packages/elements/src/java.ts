@@ -42,6 +42,15 @@ export function parseJavaIntRadix(s: string, radix: number): number {
   return n;
 }
 
+/** Java `String.split(regex)`: like JS split, but trailing empty strings are dropped. */
+export function javaSplit(s: string, re: RegExp | string): string[] {
+  const parts = s.split(re);
+  while (parts.length > 1 && parts[parts.length - 1] === '') parts.pop();
+  // a string of separators only splits to nothing
+  if (parts.length === 1 && parts[0] === '' && s.length > 0) return [];
+  return parts;
+}
+
 /** `Boolean.parseBoolean`: true only for "true", ignoring case. */
 export function parseJavaBoolean(s: string): boolean {
   return s.toLowerCase() === 'true';

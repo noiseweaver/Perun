@@ -210,6 +210,7 @@ export class CustomCompositeModel {
       else if (child.name === 'tm') models.transistor.undumpModelXml(cr);
       else if (child.name === 'mm') models.mosfet.undumpModelXml(cr);
       else if (child.name === 'ccm') models.composite.undumpModelXml(cr, sim);
+      else if (child.name === 'clm') models.customLogic.undumpModelXml(cr);
     }
   }
 

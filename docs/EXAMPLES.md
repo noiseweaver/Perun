@@ -9,7 +9,7 @@ steps 1, 2, 5, 10, 20, 50, 100, 200, 500 and 1000 match within the golden tolera
 (tools/golden/README.md). "Same save" means our XML save after loading is byte for byte
 upstream's.
 
-**Pass: 369 of 373 (98.9%).** Same save: 367 (98.4%).
+**Pass: 371 of 373 (99.5%).** Same save: 369 (98.9%).
 
 Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 
@@ -175,7 +175,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | grid.txt | pass | yes |  |
 | grid2.txt | pass | yes |  |
 | gyrator.txt | pass | yes |  |
-| gyratorelm.txt | fail | no | unrecognized xml element: Gyrator; a scope shows an element that is not supported yet |
+| gyratorelm.txt | pass | yes |  |
 | halfadd.txt | pass | yes |  |
 | hartley.txt | pass | yes |  |
 | hfadc.txt | pass | yes |  |
@@ -207,7 +207,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | lambda-diode.txt | pass | yes |  |
 | latchingrelay.txt | pass | yes |  |
 | leadingedge.txt | pass | yes |  |
-| ledarray.txt | fail | no | custom logic models are not supported yet; unrecognized dump type: 208; unrecognized dump type: 405 |
+| ledarray.txt | pass | yes |  |
 | ledflasher.txt | pass | yes |  |
 | lightbulb.txt | pass | yes |  |
 | lissa.txt | pass | yes |  |

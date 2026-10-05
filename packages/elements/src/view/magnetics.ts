@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
-// Geometry learned from CircuitJS1 TransformerElm, TappedTransformerElm, TransLineElm, RelayElm,
-// RelayCoilElm and RelayContactElm draw() (src/com/lushprojects/circuitjs1/client/, master) at
+// Geometry learned from CircuitJS1 TransformerElm, TappedTransformerElm, TransLineElm, GyratorElm,
+// RelayElm, RelayCoilElm and RelayContactElm draw() (src/com/lushprojects/circuitjs1/client/, master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032; the drawing code is new.
 
+import type { GyratorElm } from '../elm/GyratorElm.ts';
 import { RelayCoilElm, type RelayContactElm } from '../elm/RelayCoilElm.ts';
 import type { RelayElm } from '../elm/RelayElm.ts';
 import type { TappedTransformerElm } from '../elm/TappedTransformerElm.ts';
@@ -17,9 +18,10 @@ import {
   MUTED,
   UNITS_FONT,
   vInk,
+  volt,
   type ElementView,
 } from './common.ts';
-import { interp, pt, rectOf, unionRect, type Rect } from './geometry.ts';
+import { calcArrow, interp, pt, rectOf, unionRect, type Rect } from './geometry.ts';
 import type { DrawContext, Ink, Pt } from './Painter.ts';
 import { addCurCount, coilLoops } from './passive.ts';
 
@@ -277,4 +279,24 @@ export const relayContactView: ElementView<RelayContactElm> = {
     if (e.i_position === 0) p.dots(swpoles[1], swposts[1], c);
   },
   bbox: (e) => elementBox(e, e.openhs),
+};
+
+/** A box with a pi and an arrow between the two ports (the usual gyrator symbol). */
+export const gyratorView: ElementView<GyratorElm> = {
+  draw(e, ctx) {
+    const p = ctx.painter;
+    const { ptEnds, ptStub } = e;
+    for (let i = 0; i !== 4; i++) p.line(ptEnds[i], ptStub[i], vInk(volt(e, i)));
+    p.polyline([ptStub[0], ptStub[1], ptStub[3], ptStub[2]], LABEL, { closed: true });
+    const [cx, cy] = e.boxCenter();
+    p.text('\u03c0', { x: cx - 4, y: cy - 1 }, LABEL, UNITS_FONT);
+    p.line(e.arrowTail, e.arrowHead, LABEL, { width: 1 });
+    p.fillPolygon(calcArrow(e.arrowTail, e.arrowHead, 4, 3), LABEL);
+    for (let i = 0; i !== 2; i++) {
+      const c = ctx.dotCount(i, e.currents[i]);
+      p.dots(ptEnds[i], ptStub[i], c);
+      p.dots(ptEnds[i + 2], ptStub[i + 2], -c);
+    }
+  },
+  bbox: (e) => rectOf(e.ptEnds),
 };

@@ -125,6 +125,9 @@ import { MonostableElmType, PhaseCompElmType, TimerElmType, VCOElmType } from '.
 import { ADCElmType, DACElmType } from './elm/ConverterElm.ts';
 import type { StringTokenizer } from './StringTokenizer.ts';
 import { OhmMeterElmType } from './elm/OhmMeterElm.ts';
+import { GyratorElmType } from './elm/GyratorElm.ts';
+import { LEDArrayElmType } from './elm/LEDArrayElm.ts';
+import { CustomLogicElmType } from './elm/CustomLogicElm.ts';
 
 /** Every ported element class. */
 export const ELEMENT_TYPES: readonly ElementType[] = [
@@ -263,6 +266,9 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   ComparatorElmType,
   OpAmpSwapElmType,
   UnijunctionElmType,
+  GyratorElmType,
+  LEDArrayElmType,
+  CustomLogicElmType,
 ];
 
 /** Old class names upstream's constructElement still accepts (saved shortcuts, subcircuits). */

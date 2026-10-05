@@ -157,6 +157,7 @@ graycode.txt
 grid.txt
 grid2.txt
 gyrator.txt
+gyratorelm.txt
 halfadd.txt
 hartley.txt
 hfadc.txt
@@ -188,6 +189,7 @@ lambda-diode-osc.txt
 lambda-diode.txt
 latchingrelay.txt
 leadingedge.txt
+ledarray.txt
 ledflasher.txt
 lightbulb.txt
 lissa.txt

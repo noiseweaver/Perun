@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
-// Geometry learned from CircuitJS1 ChipElm.drawChip, SevenSegElm.draw, DecimalDisplayElm.draw and
-// VCOElm.draw (src/com/lushprojects/circuitjs1/client/, master) at
+// Geometry learned from CircuitJS1 ChipElm.drawChip, SevenSegElm.draw, DecimalDisplayElm.draw,
+// LEDArrayElm.draw and VCOElm.draw (src/com/lushprojects/circuitjs1/client/, master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032; the drawing code is new.
 
 import { ChipElm, SIDE_E, SIDE_N, SIDE_S, SIDE_W } from '../elm/ChipElm.ts';
+import type { LEDArrayElm } from '../elm/LEDArrayElm.ts';
 import { DecimalDisplayElm, SevenSegElm } from '../elm/SevenSegElm.ts';
 import type { VCOElm } from '../elm/TimerElm.ts';
 import { LABEL, MUTED, TEXT, vInk, type ElementView } from './common.ts';
@@ -80,6 +81,23 @@ function chipBox(e: ChipElm): Rect {
 
 export const chipView: ElementView<ChipElm> = {
   draw: drawChip,
+  bbox: chipBox,
+};
+
+export const ledArrayView: ElementView<LEDArrayElm> = {
+  draw(e, ctx) {
+    e.beginFrame();
+    drawChip(e, ctx);
+    const r = e.cspc / 2;
+    for (let ix = 0; ix !== e.sizeX; ix++)
+      for (let iy = 0; iy !== e.sizeY; iy++) {
+        const ink: Ink = { rgb: [e.ledLevel(ix + iy * e.sizeX), 0, 0] };
+        const col = e.pins[ix].post;
+        const row = e.pins[iy + e.sizeX].post;
+        const c = e.isFlippedXY() ? { x: row.x, y: col.y } : { x: col.x, y: row.y };
+        ctx.painter.fillCircle(c, r, ink);
+      }
+  },
   bbox: chipBox,
 };
 
