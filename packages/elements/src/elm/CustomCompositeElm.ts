@@ -278,7 +278,7 @@ export class CustomCompositeElm extends CompositeElm {
   override getPostCount(): number {
     return this.postCount;
   }
-  getPostWidth(n: number): number {
+  override getPostWidth(n: number): number {
     return this.chip !== null ? this.chip.getPostWidth(n) : 1;
   }
 

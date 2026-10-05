@@ -316,6 +316,9 @@ export class BusLogicInputElm extends SwitchElm {
   override getPostCount(): number {
     return this.busWidth;
   }
+  override getPostWidth(_n: number): number {
+    return this.busWidth;
+  }
   override getNumHandles(): number {
     return 1;
   }

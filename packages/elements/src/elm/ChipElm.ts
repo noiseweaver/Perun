@@ -354,7 +354,7 @@ export abstract class ChipElm extends CircuitElm {
   override getPost(n: number): Point {
     return this.pins[n].post;
   }
-  getPostWidth(n: number): number {
+  override getPostWidth(n: number): number {
     return this.pins[n].busWidth;
   }
 

@@ -13,7 +13,7 @@
 import { CircuitMatrix, CircuitNode, VoltageSource } from './CircuitNode.ts';
 import { JavaRandom } from './JavaRandom.ts';
 import { luFactorDense, luSolveDense } from './lu.ts';
-import type { Point } from './Point.ts';
+import { Point } from './Point.ts';
 import type { SimElement } from './SimElement.ts';
 import { DMatrixSparseCSC } from './sparse/DMatrixSparseCSC.ts';
 import { SparseLU } from './sparse/SparseLU.ts';
@@ -46,6 +46,14 @@ class NodeMapEntry {
   constructor(node: CircuitNode | null = null) {
     this.node = node;
   }
+}
+
+/** Bus widths found so far, by post position (`Point.key()` with z = 0) and by label name. */
+export interface BusWidthMaps {
+  readonly width: Map<string, number>;
+  readonly label: Map<string, number>;
+  /** Positions where two different widths meet. */
+  readonly mismatches: Point[];
 }
 
 /** First post seen for each label name during wire closure (upstream `LabeledNodeElm.labelList`). */
@@ -539,7 +547,48 @@ export class Simulation {
     this.stopElm = null;
     this.elmList = this.elements;
     if (this.elmList.length === 0) return;
+    this.detectBusWidths(this.elmList);
     this.needsStamp = true;
+  }
+
+  /** Positions where buses of different widths meet, from the last analysis. */
+  busMismatchList: Point[] = [];
+
+  /** Give wires and labels the width of the buses they connect to (upstream `detectBusWidths`). */
+  detectBusWidths(list: readonly SimElement[]): void {
+    const maps: BusWidthMaps = { width: new Map(), label: new Map(), mismatches: [] };
+    this.busMismatchList = maps.mismatches;
+    for (const ce of list) {
+      if (ce.isRemovableWire()) continue;
+      for (let j = 0; j < ce.getPostCount(); j++) {
+        const w = ce.getPostWidth(j);
+        if (w <= 1) continue;
+        const pt = ce.getPost(j);
+        const key = new Point(pt.x, pt.y); // z = 0 for the map key
+        const existing = maps.width.get(key.key());
+        if (existing !== undefined && existing !== w) maps.mismatches.push(key);
+        if (existing === undefined || w > existing) maps.width.set(key.key(), w);
+      }
+    }
+    // propagate through wire chains and matching labels until stable
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const ce of list) if (ce.propagateBusWidth(maps)) changed = true;
+    }
+    // compare each element's bus posts with the propagated widths, to catch mismatches through
+    // wires too
+    for (const ce of list) {
+      if (ce.isRemovableWire()) continue;
+      for (let j = 0; j < ce.getPostCount(); j++) {
+        const w = ce.getPostWidth(j);
+        if (w <= 1) continue;
+        const pt = ce.getPost(j);
+        const key = new Point(pt.x, pt.y);
+        const propagated = maps.width.get(key.key());
+        if (propagated !== undefined && propagated !== w) maps.mismatches.push(key);
+      }
+    }
   }
 
   /** Node numbering, closures, validation and voltage-source rows. False means retry or stop. */

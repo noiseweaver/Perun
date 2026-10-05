@@ -11,7 +11,7 @@
 
 import { UNASSIGNED_NODE, type CircuitNode, type VoltageSource } from './CircuitNode.ts';
 import { Point } from './Point.ts';
-import type { Simulation, WireSegment } from './Simulation.ts';
+import type { BusWidthMaps, Simulation, WireSegment } from './Simulation.ts';
 
 /**
  * Base class of every simulated element. Method names and defaults follow upstream `CircuitElm`
@@ -140,6 +140,20 @@ export abstract class SimElement {
 
   getBusWidth(): number {
     return 1;
+  }
+
+  /** Bits carried by post n (upstream `getPostWidth`); more than 1 for a bus post. */
+  getPostWidth(_n: number): number {
+    return 1;
+  }
+
+  /**
+   * One pass of bus-width detection for wires, labels and bus splitters (upstream does this with
+   * instanceof in `detectBusWidths`): take a width from the posts around, record it, and return
+   * whether anything changed.
+   */
+  propagateBusWidth(_maps: BusWidthMaps): boolean {
+    return false;
   }
 
   /** For wire-like elements: the post that post `n` connects through to (null: none yet). */

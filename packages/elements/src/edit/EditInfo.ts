@@ -21,15 +21,26 @@ export interface EditChoice {
 
 /**
  * A file picker field (upstream puts a `FileUpload` widget in `EditInfo.widget`). The UI reads the
- * chosen file and hands it over: decoded audio (first channel) or text.
+ * chosen file and hands it over: decoded audio (first channel), text or bytes.
  */
-export type EditFile =
+export type EditFile = (
   | {
       kind: 'audio';
       accept: string;
       onLoad(name: string, samples: ArrayLike<number>, sampleRate: number): void;
     }
-  | { kind: 'text'; accept: string; onLoad(name: string, text: string): void };
+  | { kind: 'text'; accept: string; onLoad(name: string, text: string): void }
+  | {
+      kind: 'binary';
+      accept: string;
+      /** Files of this many bytes or more are refused. */
+      maxSize?: number;
+      onLoad(name: string, bytes: Uint8Array): void;
+    }
+) & {
+  /** The picker button's text (default "Choose File…"). */
+  label?: string;
+};
 
 /**
  * One editable property of an element, as upstream's edit dialog shows it. Elements describe

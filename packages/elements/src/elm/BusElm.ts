@@ -7,7 +7,7 @@
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
-import { type Point, type VoltageSource } from '@circuitjs-next/engine';
+import { Point, type BusWidthMaps, type VoltageSource } from '@circuitjs-next/engine';
 import { elementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { javaDoubleToInt } from '../java.ts';
@@ -208,6 +208,20 @@ export class BusSplitterElm extends ChipElm {
   }
 
   currents: number[] = [];
+
+  override propagateBusWidth(maps: BusWidthMaps): boolean {
+    // the bus side is at pin 0
+    const post = this.pins[0].post;
+    const p = new Point(post.x, post.y);
+    const bw = this.bits;
+    const w = maps.width.get(p.key());
+    if (w !== undefined && w !== bw) maps.mismatches.push(p);
+    if (w === undefined || w < bw) {
+      maps.width.set(p.key(), bw);
+      return true;
+    }
+    return false;
+  }
 
   override getPostCount(): number {
     return this.bits * 2;

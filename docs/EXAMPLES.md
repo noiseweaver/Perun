@@ -9,7 +9,7 @@ steps 1, 2, 5, 10, 20, 50, 100, 200, 500 and 1000 match within the golden tolera
 (tools/golden/README.md). "Same save" means our XML save after loading is byte for byte
 upstream's.
 
-**Pass: 361 of 373 (96.8%).** Same save: 359 (96.2%).
+**Pass: 368 of 373 (98.7%).** Same save: 366 (98.1%).
 
 Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 
@@ -42,7 +42,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | adder4-sc.txt | pass | yes |  |
 | allpass1.txt | pass | yes |  |
 | allpass2.txt | pass | yes |  |
-| alu74181.txt | fail | no | unrecognized xml element: ins |
+| alu74181.txt | pass | yes |  |
 | amdetect.txt | pass | yes |  |
 | amp-dfdx.txt | pass | yes |  |
 | amp-diff.txt | pass | yes |  |
@@ -274,7 +274,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | pll2a.txt | pass | yes |  |
 | plot2d-checker.txt | pass | yes |  |
 | plot2d-color.txt | pass | yes |  |
-| plot2d-smile.txt | fail | no | unrecognized xml element: ROM |
+| plot2d-smile.txt | pass | yes |  |
 | pmosfet.txt | pass | yes |  |
 | pnp.txt | pass | yes |  |
 | pot.txt | pass | yes |  |
@@ -328,11 +328,11 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | switchfilter.txt | pass | yes |  |
 | swtreedac.txt | pass | yes |  |
 | synccounter.txt | pass | yes |  |
-| td4-add2.txt | fail | no | unrecognized xml element: ins; unrecognized xml element: ROM |
-| td4-ctr-dn.txt | fail | no | unrecognized xml element: ins; unrecognized xml element: ROM |
-| td4-ctr-up-dn.txt | fail | no | unrecognized xml element: ins; unrecognized xml element: ROM |
-| td4-ctr.txt | fail | no | unrecognized xml element: ins; unrecognized xml element: ROM |
-| td4.txt | fail | no | unrecognized xml element: ins; unrecognized xml element: ROM |
+| td4-add2.txt | pass | yes |  |
+| td4-ctr-dn.txt | pass | yes |  |
+| td4-ctr-up-dn.txt | pass | yes |  |
+| td4-ctr.txt | pass | yes |  |
+| td4.txt | pass | yes |  |
 | tdiode.txt | pass | yes |  |
 | tdosc.txt | pass | yes |  |
 | tdrelax.txt | pass | yes |  |

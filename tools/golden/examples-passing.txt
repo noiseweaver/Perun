@@ -24,6 +24,7 @@ actbutterlo.txt
 adder4-sc.txt
 allpass1.txt
 allpass2.txt
+alu74181.txt
 amdetect.txt
 amp-dfdx.txt
 amp-diff.txt
@@ -252,6 +253,7 @@ pll2.txt
 pll2a.txt
 plot2d-checker.txt
 plot2d-color.txt
+plot2d-smile.txt
 pmosfet.txt
 pnp.txt
 pot.txt
@@ -305,6 +307,11 @@ switchedcap.txt
 switchfilter.txt
 swtreedac.txt
 synccounter.txt
+td4-add2.txt
+td4-ctr-dn.txt
+td4-ctr-up-dn.txt
+td4-ctr.txt
+td4.txt
 tdiode.txt
 tdosc.txt
 tdrelax.txt

@@ -1046,6 +1046,12 @@ export class SimController {
   }
 
   /** Apply a property panel change to an element (upstream EditDialog apply). */
+  /** An edit dialog button or loaded file acting on its element, undoably. */
+  runEditAction(action: () => void): void {
+    this.editor.history.record('Edit', action);
+    this.circuitChanged();
+  }
+
   applyEdit(e: CircuitElm, n: number, ei: EditInfo): void {
     this.editor.history.record('Edit', () => e.setEditValue(n, ei));
     this.circuitChanged();

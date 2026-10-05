@@ -31,6 +31,17 @@ export function parseJavaInt(s: string): number {
   return n;
 }
 
+/** `Integer.parseInt(s, radix)`: an optional sign, then digits of that radix. */
+export function parseJavaIntRadix(s: string, radix: number): number {
+  const digits = '0123456789abcdefghijklmnopqrstuvwxyz'.substring(0, radix);
+  const body = s.length > 0 && (s[0] === '-' || s[0] === '+') ? s.substring(1) : s;
+  if (body.length === 0) throw new NumberFormatException(s);
+  for (const c of body.toLowerCase()) if (!digits.includes(c)) throw new NumberFormatException(s);
+  const n = parseInt(s, radix);
+  if (n < -2147483648 || n > 2147483647) throw new NumberFormatException(s);
+  return n;
+}
+
 /** `Boolean.parseBoolean`: true only for "true", ignoring case. */
 export function parseJavaBoolean(s: string): boolean {
   return s.toLowerCase() === 'true';

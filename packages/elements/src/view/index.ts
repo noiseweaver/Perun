@@ -65,12 +65,14 @@ import {
 import {
   audioOutputView,
   boxView,
+  instructionDisplayView,
   labeledNodeView,
   lineView,
   outputView,
   probeView,
   textView,
 } from './labels.ts';
+import { InstructionDisplayElm } from '../elm/InstructionDisplayElm.ts';
 import { AudioOutputElm } from '../elm/AudioOutputElm.ts';
 import { BoxElm, LineElm } from '../elm/GraphicElm.ts';
 import { CrystalElm, DarlingtonElm, NortonAmpElm, OTAElm } from '../elm/compositeParts.ts';
@@ -161,6 +163,7 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [TriodeElm, triodeView],
   [AmmeterElm, ammeterView],
   [RoutedWireElm, routedWireView],
+  [InstructionDisplayElm, instructionDisplayView],
   [WireElm, wireView],
   [GroundElm, groundView],
   [ResistorElm, resistorView],

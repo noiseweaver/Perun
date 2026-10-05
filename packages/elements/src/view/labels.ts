@@ -7,6 +7,7 @@
 
 import type { AudioOutputElm } from '../elm/AudioOutputElm.ts';
 import type { BoxElm, LineElm } from '../elm/GraphicElm.ts';
+import type { InstructionDisplayElm } from '../elm/InstructionDisplayElm.ts';
 import { LabeledNodeElm } from '../elm/LabeledNodeElm.ts';
 import { OutputElm } from '../elm/OutputElm.ts';
 import { ProbeElm } from '../elm/ProbeElm.ts';
@@ -223,4 +224,18 @@ export const lineView: ElementView<LineElm> = {
     x2: Math.max(e.x, e.x2),
     y2: Math.max(e.y, e.y2),
   }),
+};
+
+/** Text at the second point, fed by a thick bus lead (upstream InstructionDisplayElm.draw). */
+export const instructionDisplayView: ElementView<InstructionDisplayElm> = {
+  draw(e, ctx) {
+    const p = ctx.painter;
+    const style: TextStyle = { size: 14, bold: ctx.highlighted };
+    const s = e.getDisplayText();
+    const w = Math.trunc(p.measureText(s, style));
+    const lead = interp(e.point1, e.point2, 1 - (Math.trunc(w / 2) + 8) / e.dn);
+    drawCenteredText(ctx, s, e.x2, e.y2, true, LABEL, style);
+    p.line(e.point1, lead, vInk(volt(e, 0)), { width: 5 });
+  },
+  bbox: (e) => elementBox(e, 10),
 };

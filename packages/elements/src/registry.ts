@@ -55,6 +55,8 @@ import {
 } from './elm/compositeParts.ts';
 import { CustomCompositeElm, CustomCompositeElmType } from './elm/CustomCompositeElm.ts';
 import { RoutedWireElmType } from './elm/RoutedWireElm.ts';
+import { ROMElmType, SRAMElmType } from './elm/SRAMElm.ts';
+import { InstructionDisplayElmType } from './elm/InstructionDisplayElm.ts';
 import { CC2ElmType, CC2NegElmType } from './elm/CC2Elm.ts';
 import { AudioOutputElmType } from './elm/AudioOutputElm.ts';
 import { CCCSElmType, CCVSElmType, VCCSElmType, VCVSElmType } from './elm/VCCSElm.ts';
@@ -251,6 +253,9 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   LineElmType,
   CustomCompositeElmType,
   RoutedWireElmType,
+  SRAMElmType,
+  ROMElmType,
+  InstructionDisplayElmType,
 ];
 
 /** Old class names upstream's constructElement still accepts (saved shortcuts, subcircuits). */

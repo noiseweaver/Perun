@@ -29,13 +29,9 @@ import { getFixedUnitText, getShortUnitText, OHM } from './units.ts';
 
 export const wireView: ElementView<WireElm> = {
   draw(e, ctx) {
-    ctx.painter.line(e.point1, e.point2, vInk(volt(e, 0)));
-    doDots(e, ctx);
-    let s = '';
-    if (e.hasFlag(WireElm.FLAG_SHOWCURRENT)) s = getShortUnitText(Math.abs(e.getCurrent()), 'A');
-    if (e.hasFlag(WireElm.FLAG_SHOWVOLTAGE))
-      s = (s.length > 0 ? s + ' ' : '') + getShortUnitText(volt(e, 0), 'V');
-    drawValues(e, ctx, s, 4);
+    ctx.painter.line(e.point1, e.point2, vInk(volt(e, 0)), { width: e.busWidth > 1 ? 5 : 3 });
+    ctx.painter.dots(e.point1, e.point2, ctx.dotCount(0, e.totalCurrent()));
+    drawValues(e, ctx, e.valueText(getShortUnitText), 4);
   },
   bbox: (e) => elementBox(e, 3),
 };
@@ -47,9 +43,7 @@ export const routedWireView: ElementView<RoutedWireElm> = {
     const width = e.busWidth > 1 ? 5 : 3;
     const ink = vInk(volt(e, 0));
     for (let i = 0; i < rp.length - 1; i++) p.line(rp[i], rp[i + 1], ink, { width });
-    // a bus wire's current is the sum over its bits
-    let current = e.current;
-    if (e.currents !== null) current = e.currents.reduce((a, c) => a + c, 0);
+    const current = e.totalCurrent();
     if (!e.isCreating()) {
       let cc = ctx.dotCount(0, current);
       for (let i = 0; i < rp.length - 1; i++) {
@@ -61,12 +55,7 @@ export const routedWireView: ElementView<RoutedWireElm> = {
       }
     }
     // live values keep a fixed width (owner's rule), so they don't shift as they change
-    let s = '';
-    if (e.busWidth === 1) {
-      if (e.hasFlag(WireElm.FLAG_SHOWCURRENT)) s = getFixedUnitText(Math.abs(current), 'A');
-      if (e.hasFlag(WireElm.FLAG_SHOWVOLTAGE))
-        s = (s.length > 0 ? s + ' ' : '') + getFixedUnitText(volt(e, 0), 'V');
-    }
+    const s = e.valueText(getFixedUnitText);
     if (s.length > 0) {
       // on the longest segment: above a horizontal one, right of a vertical one
       let best = 0;

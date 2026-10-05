@@ -5,6 +5,8 @@
 // master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032.
 
 import {
+  GraphicElm,
+  RoutedWireElm,
   rectContains,
   unionRect,
   viewFor,
@@ -443,25 +445,43 @@ export class CircuitRenderer {
 
   /** Upstream's postDrawList and badConnectionList. */
   private findPosts(): PostInfo {
+    // posts are counted per bus bit (upstream keys by the whole Point, z included)
     const count = new Map<string, { x: number; y: number; n: number }>();
     for (const e of this.elements) {
       for (let j = 0; j !== e.getPostCount(); j++) {
         const p = e.getPost(j);
-        const k = `${p.x},${p.y}`;
+        const k = `${p.x},${p.y},${p.z}`;
         const entry = count.get(k);
         if (entry) entry.n++;
         else count.set(k, { x: p.x, y: p.y, n: 1 });
       }
     }
     const info: PostInfo = { draw: [], bad: [], junctions: [], joins: [] };
+    // a bus has a post per bit in the same place; list each place once
+    const seen = new Set<string>();
+    const add = (list: { x: number; y: number }[], tag: string, x: number, y: number): void => {
+      const k = `${tag}:${x},${y}`;
+      if (seen.has(k)) return;
+      seen.add(k);
+      list.push({ x, y });
+    };
     const boxes = this.elements.map((e) => ({ e, box: viewFor(e)?.bbox(e) ?? null }));
     for (const p of count.values()) {
-      if (p.n !== 2) info.draw.push({ x: p.x, y: p.y });
-      if (p.n >= 3) info.junctions.push({ x: p.x, y: p.y });
-      if (p.n === 2) info.joins.push({ x: p.x, y: p.y });
+      if (p.n !== 2) add(info.draw, 'd', p.x, p.y);
+      if (p.n >= 3) add(info.junctions, 'j', p.x, p.y);
+      if (p.n === 2) add(info.joins, 'o', p.x, p.y);
       if (p.n !== 1) continue;
       let bad = false;
       for (const { e, box } of boxes) {
+        if (e instanceof GraphicElm) continue;
+        // a routed wire's box is too big: test its path
+        if (e instanceof RoutedWireElm) {
+          if (e.pointOnPath(p)) {
+            bad = true;
+            break;
+          }
+          continue;
+        }
         if (box === null || !rectContains(box, p.x, p.y)) continue;
         let own = false;
         for (let k = 0; k !== e.getPostCount() && !own; k++) {
@@ -473,8 +493,11 @@ export class CircuitRenderer {
           break;
         }
       }
-      if (bad) info.bad.push({ x: p.x, y: p.y });
+      if (bad) add(info.bad, 'b', p.x, p.y);
     }
+    // buses of different widths meeting
+    const sim = this.elements[0]?.sim;
+    for (const p of sim?.busMismatchList ?? []) add(info.bad, 'b', p.x, p.y);
     return info;
   }
 }
