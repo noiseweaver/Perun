@@ -252,6 +252,13 @@ export function AppBar() {
           </Menu.CheckboxItem>
           <Menu.CheckboxItem
             className="menu-item"
+            checked={settings.euroGates}
+            onCheckedChange={(v) => updateSettings({ euroGates: v })}
+          >
+            <Check on={settings.euroGates} /> IEC gates
+          </Menu.CheckboxItem>
+          <Menu.CheckboxItem
+            className="menu-item"
             checked={settings.showOhm}
             onCheckedChange={(v) => updateSettings({ showOhm: v })}
           >

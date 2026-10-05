@@ -121,3 +121,20 @@ export {
 export { CrossSwitchElm, DPDTSwitchElm, MBBSwitchElm, Switch2Elm } from './elm/Switch2Elm.ts';
 export { BusLogicInputElm, LogicInputElm, LogicOutputElm } from './elm/LogicInputElm.ts';
 export { AnalogSwitch2Elm, AnalogSwitchElm } from './elm/AnalogSwitchElm.ts';
+export {
+  AndGateElm,
+  GateElm,
+  NandGateElm,
+  NorGateElm,
+  OrGateElm,
+  XnorGateElm,
+  XorGateElm,
+  gateDefaults,
+} from './elm/GateElm.ts';
+export {
+  DelayBufferElm,
+  InverterElm,
+  InvertingSchmittElm,
+  SchmittElm,
+  TriStateElm,
+} from './elm/InverterElm.ts';

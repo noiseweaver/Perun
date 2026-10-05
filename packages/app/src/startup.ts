@@ -80,6 +80,7 @@ function applyQuerySettings(search: string): void {
   const q = parseQuery(search);
   const s = { ...useApp.getState().settings };
   if (q.has('euroResistors')) s.euroResistors = queryBoolean(q, 'euroResistors', false);
+  if (q.has('IECGates')) s.euroGates = queryBoolean(q, 'IECGates', false);
   if (q.has('usResistors') && queryBoolean(q, 'usResistors', false)) s.euroResistors = false;
   if (q.has('conventionalCurrent'))
     s.conventionalCurrent = queryBoolean(q, 'conventionalCurrent', true);

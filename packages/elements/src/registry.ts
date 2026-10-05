@@ -54,6 +54,21 @@ import {
   LogicOutputElmType,
 } from './elm/LogicInputElm.ts';
 import { AnalogSwitch2ElmType, AnalogSwitchElmType } from './elm/AnalogSwitchElm.ts';
+import {
+  AndGateElmType,
+  NandGateElmType,
+  NorGateElmType,
+  OrGateElmType,
+  XnorGateElmType,
+  XorGateElmType,
+} from './elm/GateElm.ts';
+import {
+  DelayBufferElmType,
+  InverterElmType,
+  InvertingSchmittElmType,
+  SchmittElmType,
+  TriStateElmType,
+} from './elm/InverterElm.ts';
 import type { StringTokenizer } from './StringTokenizer.ts';
 
 /** Every ported element class. */
@@ -111,6 +126,18 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   BusLogicInputElmType,
   AnalogSwitchElmType,
   AnalogSwitch2ElmType,
+  // Phase 8: logic gates and buffers
+  InverterElmType,
+  NandGateElmType,
+  NorGateElmType,
+  AndGateElmType,
+  OrGateElmType,
+  XorGateElmType,
+  XnorGateElmType,
+  TriStateElmType,
+  SchmittElmType,
+  InvertingSchmittElmType,
+  DelayBufferElmType,
 ];
 
 const byClassName = new Map<string, ElementType>();

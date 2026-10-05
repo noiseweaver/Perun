@@ -57,6 +57,14 @@ import {
   switchView,
 } from './switches.ts';
 import { AnalogSwitch2Elm, AnalogSwitchElm } from '../elm/AnalogSwitchElm.ts';
+import { GateElm } from '../elm/GateElm.ts';
+import {
+  DelayBufferElm,
+  InverterElm,
+  InvertingSchmittElm,
+  TriStateElm,
+} from '../elm/InverterElm.ts';
+import { delayBufferView, gateView, inverterView, schmittView, triStateView } from './logic.ts';
 import { BusLogicInputElm, LogicInputElm, LogicOutputElm } from '../elm/LogicInputElm.ts';
 import { CrossSwitchElm, DPDTSwitchElm, MBBSwitchElm, Switch2Elm } from '../elm/Switch2Elm.ts';
 
@@ -89,6 +97,11 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [LogicOutputElm, logicOutputView],
   [AnalogSwitch2Elm, analogSwitch2View],
   [AnalogSwitchElm, analogSwitchView],
+  [GateElm, gateView],
+  [InverterElm, inverterView],
+  [InvertingSchmittElm, schmittView],
+  [TriStateElm, triStateView],
+  [DelayBufferElm, delayBufferView],
   [LabeledNodeElm, labeledNodeView],
   [ProbeElm, probeView],
   [OutputElm, outputView],

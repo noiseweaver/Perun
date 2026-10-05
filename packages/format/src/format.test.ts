@@ -62,10 +62,10 @@ describe('reading and saving circuits', () => {
         '207 96 96 96 64 0 two words\n' +
         '207 96 96 96 64 4 a\\sb&c\n' +
         's 256 96 256 176 4 1 true sw\\s1\n' +
-        '150 0 0 16 0 0\n' +
+        '9999 0 0 16 0 0\n' +
         '174 208 320 432 224 1 1000 0.5 Some Text\n',
     );
-    expect(c.warnings).toEqual(['unrecognized dump type: 150']);
+    expect(c.warnings).toEqual(['unrecognized dump type: 9999']);
     expect(c.sim.gridSize).toBe(8);
     const [l1, l2, sw, pot] = c.elements;
     expect((l1 as LabeledNodeElm).text).toBe('two words');

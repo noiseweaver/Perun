@@ -70,7 +70,16 @@ export class Editor {
   mouseElm: CircuitElm | null = null;
   mousePost = -1;
   /** Element being dragged out (not in the circuit yet). */
-  dragElm: CircuitElm | null = null;
+  private dragElmValue: CircuitElm | null = null;
+  /** The element being placed (upstream `dragElm`); it knows, for `isCreating()`. */
+  get dragElm(): CircuitElm | null {
+    return this.dragElmValue;
+  }
+  set dragElm(e: CircuitElm | null) {
+    if (this.dragElmValue !== null) this.dragElmValue.creating = false;
+    this.dragElmValue = e;
+    if (e !== null) e.creating = true;
+  }
   /** Rubber band, in circuit coordinates. */
   selectedArea: Rect | null = null;
   /** Last mouse position in circuit coordinates, or null when outside the canvas. */

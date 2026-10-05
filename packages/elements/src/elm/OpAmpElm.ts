@@ -166,13 +166,6 @@ export class OpAmpElm extends CircuitElm {
     this.lastvd = vd;
   }
 
-  /** Upstream `CirSim.getrand(x)`: a non-negative int below x from the shared Random. */
-  private getrand(x: number): number {
-    let q = this.sim.random.nextInt();
-    if (q < 0) q = -q | 0;
-    return q % x;
-  }
-
   /**
    * There is no current path through the op-amp inputs, but there is an indirect path through
    * the output to ground.

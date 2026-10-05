@@ -38,9 +38,8 @@ function names(e: CircuitElm): string[] {
   return fields(e).map((ei) => ei.checkbox?.label ?? ei.name);
 }
 
-/** Upstream gives these no fields (Antenna) or no type name for the dialog title (AM, FM). */
+/** Upstream gives the antenna no fields. */
 const NO_FIELDS = new Set(['AntennaElm']);
-const GENERIC_TITLE = new Set(['AMElm', 'FMElm', 'BusLogicInputElm']);
 
 describe('edit fields', () => {
   // an undocked scope is edited in the scope properties dialog, as upstream's
@@ -56,7 +55,7 @@ describe('edit fields', () => {
       }
       // the list is the same after setting every field to its own value
       expect(fields(e).length).toBe(list.length);
-      if (!GENERIC_TITLE.has(type.className)) expect(e.getDialogTitle()).not.toBe('Edit Component');
+      expect(e.getDialogTitle()).not.toBe('Edit Component');
     });
   }
 

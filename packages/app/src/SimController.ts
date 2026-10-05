@@ -344,6 +344,7 @@ export class SimController {
         showValues: state.display.showValues,
         voltageRange: o.voltageRange,
         euroResistors: state.settings.euroResistors,
+        euroGates: state.settings.euroGates,
         showOhm: state.settings.showOhm,
         textFont: state.settings.textFont,
         junctionDots: state.settings.junctionDots,

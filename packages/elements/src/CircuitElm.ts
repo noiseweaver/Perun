@@ -65,6 +65,24 @@ export abstract class CircuitElm extends SimElement {
     this.volts[n] = v;
   }
 
+  /** Set while the editor is placing this element (upstream `isCreating()`). */
+  creating = false;
+  isCreating(): boolean {
+    return this.creating;
+  }
+
+  /** Upstream `useSmallGrid()`: the circuit uses the 8-unit grid. */
+  useSmallGrid(): boolean {
+    return this.sim.gridSize === 8;
+  }
+
+  /** Upstream `CirSim.getrand(x)`: a non-negative int below x from the shared Random. */
+  getrand(x: number): number {
+    let q = this.sim.random.nextInt();
+    if (q < 0) q = -q | 0;
+    return q % x;
+  }
+
   /** Ends of the element body (upstream `lead1`, `lead2`), for elements whose posts use them. */
   lead1: Point = new Point();
   lead2: Point = new Point();
@@ -349,7 +367,9 @@ export abstract class CircuitElm extends SimElement {
 
   /** Upstream `getInfo(arr)[0]`: the element's kind in lower case ("resistor"), or null. */
   getElmType(): string | null {
-    return null;
+    const info = new Array<string>(10);
+    this.getInfo(info);
+    return info[0] ?? null;
   }
 
   // ---- info box and scopes (upstream getInfo, getScopeValue ...) ---------------------------
@@ -465,12 +485,15 @@ export function elementType(className: string, ctor: ElmConstructor): ElementTyp
       e.sim = sim;
       e.flags = e.getDefaultFlags();
       e.initNew();
+      // upstream's constructors allocate nodes (and volts), so a new element can report state
+      e.allocNodes();
       return e;
     },
     load(x1, y1, x2, y2, f, st, sim) {
       const e = new ctor(x1, y1, x2, y2, f);
       e.sim = sim;
       e.undump(st);
+      e.allocNodes();
       return e;
     },
   };
