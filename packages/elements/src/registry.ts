@@ -14,7 +14,7 @@ import { DiodeElmType } from './elm/DiodeElm.ts';
 import { LEDElmType } from './elm/LEDElm.ts';
 import { MosfetElmType, NMosfetElmType, PMosfetElmType } from './elm/MosfetElm.ts';
 import { JfetElmType, NJfetElmType, PJfetElmType } from './elm/JfetElm.ts';
-import { OpAmpElmType } from './elm/OpAmpElm.ts';
+import { OpAmpElmType, OpAmpSwapElmType } from './elm/OpAmpElm.ts';
 import { PushSwitchElmType } from './elm/PushSwitchElm.ts';
 import { RailElmType } from './elm/RailElm.ts';
 import { TextElmType } from './elm/TextElm.ts';
@@ -46,12 +46,14 @@ import { SCRElmType } from './elm/SCRElm.ts';
 import { TriacElmType } from './elm/TriacElm.ts';
 import { BoxElmType, LineElmType } from './elm/GraphicElm.ts';
 import {
+  ComparatorElmType,
   CrystalElmType,
   DarlingtonElmType,
   NDarlingtonElmType,
   NortonAmpElmType,
   OTAElmType,
   PDarlingtonElmType,
+  UnijunctionElmType,
 } from './elm/compositeParts.ts';
 import { CustomCompositeElm, CustomCompositeElmType } from './elm/CustomCompositeElm.ts';
 import { RoutedWireElmType } from './elm/RoutedWireElm.ts';
@@ -122,6 +124,7 @@ import { BusSplitterElmType, BusTransceiverElmType } from './elm/BusElm.ts';
 import { MonostableElmType, PhaseCompElmType, TimerElmType, VCOElmType } from './elm/TimerElm.ts';
 import { ADCElmType, DACElmType } from './elm/ConverterElm.ts';
 import type { StringTokenizer } from './StringTokenizer.ts';
+import { OhmMeterElmType } from './elm/OhmMeterElm.ts';
 
 /** Every ported element class. */
 export const ELEMENT_TYPES: readonly ElementType[] = [
@@ -256,6 +259,10 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   SRAMElmType,
   ROMElmType,
   InstructionDisplayElmType,
+  OhmMeterElmType,
+  ComparatorElmType,
+  OpAmpSwapElmType,
+  UnijunctionElmType,
 ];
 
 /** Old class names upstream's constructElement still accepts (saved shortcuts, subcircuits). */

@@ -75,13 +75,22 @@ import {
 import { InstructionDisplayElm } from '../elm/InstructionDisplayElm.ts';
 import { AudioOutputElm } from '../elm/AudioOutputElm.ts';
 import { BoxElm, LineElm } from '../elm/GraphicElm.ts';
-import { CrystalElm, DarlingtonElm, NortonAmpElm, OTAElm } from '../elm/compositeParts.ts';
 import {
+  ComparatorElm,
+  CrystalElm,
+  DarlingtonElm,
+  NortonAmpElm,
+  OTAElm,
+  UnijunctionElm,
+} from '../elm/compositeParts.ts';
+import {
+  comparatorView,
   crystalView,
   darlingtonView,
   nortonAmpView,
   otaView,
   subcircuitView,
+  unijunctionView,
 } from './composites.ts';
 import { CustomCompositeElm } from '../elm/CustomCompositeElm.ts';
 import {
@@ -107,6 +116,7 @@ import {
   batteryView,
   currentView,
   modulatedView,
+  ohmMeterView,
   railView,
   sweepView,
   voltageView,
@@ -140,6 +150,7 @@ import { ChipElm } from '../elm/ChipElm.ts';
 import { DecimalDisplayElm, SevenSegElm } from '../elm/SevenSegElm.ts';
 import { VCOElm } from '../elm/TimerElm.ts';
 import { chipView, decimalDisplayView, sevenSegView, vcoView } from './chips.ts';
+import { OhmMeterElm } from '../elm/OhmMeterElm.ts';
 
 /** Undocked scopes are drawn by the scope renderer, over the circuit; this only places them. */
 const scopeElmView: ElementView<ScopeElm> = {
@@ -172,6 +183,7 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [PotElm, potView],
   [RailElm, railView],
   [VoltageElm, voltageView],
+  [OhmMeterElm, ohmMeterView],
   [CurrentElm, currentView],
   [Switch2Elm, switch2View],
   [DPDTSwitchElm, dpdtSwitchView],
@@ -194,6 +206,8 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [AudioOutputElm, audioOutputView],
   [BoxElm, boxView],
   [LineElm, lineView],
+  [ComparatorElm, comparatorView],
+  [UnijunctionElm, unijunctionView],
   [OTAElm, otaView],
   [NortonAmpElm, nortonAmpView],
   [DarlingtonElm, darlingtonView],

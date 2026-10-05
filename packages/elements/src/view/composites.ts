@@ -5,7 +5,14 @@
 // (src/com/lushprojects/circuitjs1/client/, master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032;
 // the drawing code is new.
 
-import type { CrystalElm, DarlingtonElm, NortonAmpElm, OTAElm } from '../elm/compositeParts.ts';
+import type {
+  ComparatorElm,
+  CrystalElm,
+  DarlingtonElm,
+  NortonAmpElm,
+  OTAElm,
+  UnijunctionElm,
+} from '../elm/compositeParts.ts';
 import type { CustomCompositeElm } from '../elm/CustomCompositeElm.ts';
 import { drawChip } from './chips.ts';
 import {
@@ -18,6 +25,7 @@ import {
   type ElementView,
 } from './common.ts';
 import { calcArrow, rectOf, sign, unionRect } from './geometry.ts';
+import { addCurCount } from './passive.ts';
 import { getShortUnitText } from './units.ts';
 
 export const otaView: ElementView<OTAElm> = {
@@ -59,6 +67,54 @@ export const nortonAmpView: ElementView<NortonAmpElm> = {
     p.dots(e.point2, e.lead2, ctx.dotCount(2, -e.getCurrentIntoNode(2)));
   },
   bbox: (e) => unionRect(elementBox(e, e.opheight * 2), rectOf(e.triangle)),
+};
+
+export const comparatorView: ElementView<ComparatorElm> = {
+  draw(e, ctx) {
+    const p = ctx.painter;
+    p.line(e.in1p[0], e.in1p[1], vInk(volt(e, 0)));
+    p.line(e.in2p[0], e.in2p[1], vInk(volt(e, 1)));
+    p.polyline(e.triangle, LABEL, { closed: true });
+    const font = { size: e.opsize === 2 ? 14 : 10 };
+    drawCenteredText(ctx, '-', e.textp[0].x, e.textp[0].y - 2, true, LABEL, font);
+    drawCenteredText(ctx, '+', e.textp[1].x, e.textp[1].y, true, LABEL, font);
+    drawCenteredText(ctx, '\u2265?', e.textp[2].x, e.textp[2].y, true, LABEL, font);
+    p.line(e.lead2, e.point2, vInk(volt(e, 2)));
+    p.dots(e.point2, e.lead2, ctx.dotCount(2, -e.getCurrentIntoNode(2)));
+  },
+  bbox: (e) => unionRect(elementBox(e, e.opheight * 2), rectOf(e.triangle)),
+};
+
+export const unijunctionView: ElementView<UnijunctionElm> = {
+  draw(e, ctx) {
+    const p = ctx.painter;
+    const { b1, b2, emitter } = e;
+    const vb1 = vInk(volt(e, 1));
+    p.line(b1[0], b1[1], vb1);
+    p.line(b1[1], b1[2], vb1);
+    const vb2 = vInk(volt(e, 2));
+    p.line(b2[0], b2[1], vb2);
+    p.line(b2[1], b2[2], vb2);
+    const ve = vInk(volt(e, 0));
+    p.line(emitter[0], emitter[1], ve);
+    p.line(emitter[1], emitter[2], ve);
+    p.fillPolygon(calcArrow(emitter[1], emitter[2], 8, 3), ve);
+    p.fillPolygon(e.emitterPoly, LABEL);
+    const ib2 = -e.getCurrentIntoNode(2);
+    const ib1 = -e.getCurrentIntoNode(1);
+    const c1 = ctx.dotCount(1, ib1);
+    const c2 = ctx.dotCount(2, ib2);
+    const ce = ctx.dotCount(0, -ib1 - ib2);
+    if (c1 !== 0 || c2 !== 0) {
+      p.dots(b1[0], b1[1], c1);
+      p.dots(b1[1], b1[2], addCurCount(c1, 8));
+      p.dots(b2[0], b2[1], c2);
+      p.dots(b2[1], b2[2], addCurCount(c2, 8));
+      p.dots(emitter[0], emitter[1], ce);
+      p.dots(emitter[1], emitter[2], ce);
+    }
+  },
+  bbox: (e) => unionRect(rectOf([e.point1, ...e.b1, ...e.b2]), rectOf(e.emitter)),
 };
 
 export const darlingtonView: ElementView<DarlingtonElm> = {

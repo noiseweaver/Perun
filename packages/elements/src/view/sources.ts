@@ -7,6 +7,7 @@
 import type { CircuitElm } from '../CircuitElm.ts';
 import { BatteryElm } from '../elm/BatteryElm.ts';
 import type { CurrentElm } from '../elm/CurrentElm.ts';
+import type { OhmMeterElm } from '../elm/OhmMeterElm.ts';
 import type { AMElm, FMElm, SweepElm } from '../elm/SweepElm.ts';
 import { RailElm } from '../elm/RailElm.ts';
 import { VoltageElm } from '../elm/VoltageElm.ts';
@@ -14,6 +15,7 @@ import {
   COMPONENT,
   doDots,
   draw2Leads,
+  drawCenteredText,
   drawLabeledNode,
   drawValues,
   elementBox,
@@ -26,7 +28,7 @@ import {
 } from './common.ts';
 import { calcArrow, calcLeads, interp, interp2, pt } from './geometry.ts';
 import type { DrawContext, Pt } from './Painter.ts';
-import { getShortUnitText, showFormat } from './units.ts';
+import { getFixedUnitText, getShortUnitText, OHM, showFormat } from './units.ts';
 
 const CIRCLE_SIZE = 17;
 
@@ -226,6 +228,22 @@ export const currentView: ElementView<CurrentElm> = {
     doDots(e, ctx);
     if (ctx.showValues && e.current !== 0 && (e.dx === 0 || e.dy === 0))
       drawValues(e, ctx, getShortUnitText(e.current, 'A'), 12);
+  },
+  bbox: (e) => elementBox(e, 12),
+};
+
+export const ohmMeterView: ElementView<OhmMeterElm> = {
+  draw(e, ctx) {
+    const [lead1, lead2] = calcLeads(e.point1, e.point2, e.dn, 26);
+    const center = interp(lead1, lead2, 0.5);
+    draw2Leads(e, ctx, lead1, lead2);
+    const ink = vInk((volt(e, 0) + volt(e, 1)) / 2);
+    ctx.painter.circle(center, 12 * 0.98, ink);
+    drawCenteredText(ctx, OHM, center.x, center.y, true, ink);
+    doDots(e, ctx);
+    // a live value: fixed width, so it doesn't shift as it changes (owner's rule)
+    if (ctx.showValues && e.current !== 0 && (e.dx === 0 || e.dy === 0))
+      drawValues(e, ctx, getFixedUnitText(e.resistance(), OHM), 12);
   },
   bbox: (e) => elementBox(e, 12),
 };

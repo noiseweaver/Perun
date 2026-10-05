@@ -346,6 +346,7 @@ ttlinverter.txt
 ttlnand.txt
 ttlnor.txt
 twint.txt
+ujtosc.txt
 unishiftreg.txt
 updownctr.txt
 varactor.txt

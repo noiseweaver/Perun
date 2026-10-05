@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Ported from CircuitJS1 src/com/lushprojects/circuitjs1/client/OpAmpElm.java (master) at
-// 5a707168778216bb6ed01bfdd62e8bbf7ae0a032, with ts/OpAmpElm.ts (dev-ts) at
+// Ported from CircuitJS1 src/com/lushprojects/circuitjs1/client/OpAmpElm.java and
+// OpAmpSwapElm.java (master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032, with ts/OpAmpElm.ts (dev-ts) at
 // 7ec858d662d8be1d76d54241ba3a5c1d1c524f51 for the node-voltage model. Only the post geometry
 // of setPoints() is ported; drawing comes in Phase 4.
 // Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) circuitjs-next contributors.
@@ -9,7 +9,7 @@
 // License, or (at your option) any later version. See LICENSE.
 
 import { FindPathInfo, PathType, type Point } from '@circuitjs-next/engine';
-import { CircuitElm, elementType } from '../CircuitElm.ts';
+import { CircuitElm, elementType, type ElementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaDouble } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
@@ -253,4 +253,22 @@ export class OpAmpElm extends CircuitElm {
   }
 }
 
+/** An op-amp with its inputs swapped (+ on top); saved as an OpAmpElm. */
+export class OpAmpSwapElm extends OpAmpElm {
+  override getClassName(): string {
+    return 'OpAmpSwapElm';
+  }
+  override initNew(): void {
+    super.initNew();
+    this.flags |= OpAmpElm.FLAG_SWAP;
+  }
+  override getShortcut(): number {
+    return 'A'.charCodeAt(0);
+  }
+}
+
 export const OpAmpElmType = elementType('OpAmpElm', OpAmpElm);
+export const OpAmpSwapElmType: ElementType = {
+  ...elementType('OpAmpSwapElm', OpAmpSwapElm),
+  dumpClass: 'OpAmpElm',
+};

@@ -9,7 +9,7 @@ steps 1, 2, 5, 10, 20, 50, 100, 200, 500 and 1000 match within the golden tolera
 (tools/golden/README.md). "Same save" means our XML save after loading is byte for byte
 upstream's.
 
-**Pass: 368 of 373 (98.7%).** Same save: 366 (98.1%).
+**Pass: 369 of 373 (98.9%).** Same save: 367 (98.4%).
 
 Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 
@@ -367,7 +367,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | ttlnand.txt | pass | yes |  |
 | ttlnor.txt | pass | yes |  |
 | twint.txt | pass | yes |  |
-| ujtosc.txt | fail | no | unrecognized dump type: 417 |
+| ujtosc.txt | pass | yes |  |
 | unishiftreg.txt | pass | yes |  |
 | updownctr.txt | pass | yes |  |
 | varactor.txt | pass | yes |  |

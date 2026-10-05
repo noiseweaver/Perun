@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Ported from CircuitJS1 src/com/lushprojects/circuitjs1/client/OTAElm.java, NortonAmpElm.java,
-// DarlingtonElm.java, NDarlingtonElm.java, PDarlingtonElm.java and CrystalElm.java (master) at
+// DarlingtonElm.java, NDarlingtonElm.java, PDarlingtonElm.java, CrystalElm.java,
+// ComparatorElm.java and UnijunctionElm.java (master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032.
 // Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) circuitjs-next contributors.
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -11,7 +12,7 @@ import { Point } from '@circuitjs-next/engine';
 import { elementType, type ElementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaInt } from '../java.ts';
-import type { StringTokenizer } from '../StringTokenizer.ts';
+import { StringTokenizer } from '../StringTokenizer.ts';
 import { getCurrentText, getUnitText, getVoltageText } from '../view/units.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { parseXml, type XmlElement } from '../xmldoc.ts';
@@ -553,7 +554,185 @@ export class CrystalElm extends CompositeElm {
   }
 }
 
+/** A comparator: an op-amp driving an analog switch to ground (an open-collector output). */
+export class ComparatorElm extends CompositeElm {
+  static readonly modelString = 'OpAmpElm 1 2 3\rAnalogSwitchElm 4 5 3\rGroundElm 5';
+  static readonly modelExternalNodes = [2, 1, 4];
+  static readonly FLAG_SMALL = 2;
+  static readonly FLAG_SWAP = 4;
+
+  opsize = 0;
+  opheight = 0;
+  opwidth = 0;
+  // geometry, from setPoints
+  in1p: Point[] = [];
+  in2p: Point[] = [];
+  textp: Point[] = [];
+  triangle: Point[] = [];
+
+  override getClassName(): string {
+    return 'ComparatorElm';
+  }
+  override getDumpType(): number {
+    return 401;
+  }
+
+  override initNew(): void {
+    this.initComposite(ComparatorElm.modelString, ComparatorElm.modelExternalNodes);
+    this.noDiagonal = true;
+    this.setSize(this.useSmallGrid() ? 1 : 2);
+  }
+
+  override undump(st: StringTokenizer): void {
+    this.undumpComposite(st, ComparatorElm.modelString, ComparatorElm.modelExternalNodes);
+    this.noDiagonal = true;
+    this.setSize((this.flags & ComparatorElm.FLAG_SMALL) !== 0 ? 1 : 2);
+  }
+
+  setSize(s: number): void {
+    this.opsize = s;
+    this.opheight = 8 * s;
+    this.opwidth = 13 * s;
+    this.flags =
+      (this.flags & ~ComparatorElm.FLAG_SMALL) | (s === 1 ? ComparatorElm.FLAG_SMALL : 0);
+  }
+
+  override getConnection(_n1: number, _n2: number): boolean {
+    return false;
+  }
+
+  override setPoints(): void {
+    super.setPoints();
+    if (this.dn > 150 && this.isCreating()) this.setSize(2);
+    let ww = this.opwidth;
+    if (ww > this.dn / 2) ww = Math.trunc(this.dn / 2);
+    this.calcLeads(ww * 2);
+    const hs = this.opheight * this.dsign;
+    const sgn = this.hasFlag(ComparatorElm.FLAG_SWAP) ? -1 : 1;
+    const [i10, i20] = this.interpPoint2(this.point1, this.point2, 0, hs * sgn);
+    const [i11, i21] = this.interpPoint2(this.lead1, this.lead2, 0, hs * sgn);
+    this.in1p = [i10, i11];
+    this.in2p = [i20, i21];
+    const [t0, t1] = this.interpPoint2(this.lead1, this.lead2, 0.2, hs * sgn);
+    this.textp = [t0, t1, this.interpPoint(this.lead1, this.lead2, 0.5)];
+    const tris = this.interpPoint2(this.lead1, this.lead2, 0, hs * 2);
+    this.triangle = [tris[0], tris[1], this.lead2];
+    this.setPost(0, i10);
+    this.setPost(1, i20);
+    this.setPost(2, this.point2);
+  }
+
+  override getInfo(arr: string[]): void {
+    arr[0] = 'Comparator';
+    arr[1] = 'V+ = ' + getVoltageText(this.volts[1]);
+    arr[2] = 'V- = ' + getVoltageText(this.volts[0]);
+  }
+
+  override flipX(c2: number, count: number): void {
+    if (this.dx === 0) this.flags ^= ComparatorElm.FLAG_SWAP;
+    super.flipX(c2, count);
+  }
+  override flipY(c2: number, count: number): void {
+    if (this.dy === 0) this.flags ^= ComparatorElm.FLAG_SWAP;
+    super.flipY(c2, count);
+  }
+}
+
+/** A unijunction transistor (2N2646 model). Posts: emitter, base 1, base 2. */
+export class UnijunctionElm extends CompositeElm {
+  static readonly FLAG_FLIP = 2;
+  static readonly modelString =
+    'DiodeElm 1 4\rVoltageElm 4 5\rCCVSElm 4 5 6 0\rResistorElm 0 6\r' +
+    'VCCSElm 5 7 5 7 6 7 5\rCapacitorElm 5 7\rResistorElm 7 2\rResistorElm 3 5';
+  static readonly externalNodes = [1, 2, 3];
+  static readonly modelDump =
+    '2 x2n2646-emitter/0 0 0 0 0 0 0/2 2 1000*a/0 1000000/0 5 0.00028*(a-b)\\p0.00575*(c-d)*e/' +
+    '2 3.5e-11 0 0/0 38.15/0 2518';
+  static readonly hs = 16;
+
+  // geometry, from setPoints
+  b1: Point[] = [];
+  b2: Point[] = [];
+  emitter: Point[] = [];
+  emitterPoly: Point[] = [];
+
+  override getClassName(): string {
+    return 'UnijunctionElm';
+  }
+  override getDumpType(): number {
+    return 417;
+  }
+
+  override initNew(): void {
+    this.setup();
+  }
+  /** Upstream ignores the rest of the line: the model's details are never saved. */
+  override undump(_st: StringTokenizer): void {
+    this.setup();
+  }
+
+  private setup(): void {
+    this.noDiagonal = true;
+    this.flags |= CompositeElm.FLAG_ESCAPE;
+    const st = new StringTokenizer(UnijunctionElm.modelDump, '/');
+    this.loadComposite(st, UnijunctionElm.modelString, UnijunctionElm.externalNodes);
+    this.buildCompNodeList();
+    this.allocNodes();
+    // the model doesn't work without time step auto-adjust
+    this.sim.adjustTimeStep = true;
+  }
+
+  override setPoints(): void {
+    super.setPoints();
+    const flip = this.hasFlag(UnijunctionElm.FLAG_FLIP) ? -1 : 1;
+    const hs = UnijunctionElm.hs;
+    const hs2 = hs * this.dsign * flip;
+    const p1 = this.interpPointPerp(this.point1, this.point2, 0, -hs2);
+    const p2 = this.interpPointPerp(this.point1, this.point2, 1, -hs2);
+    const [b10, b20] = this.interpPoint2(p1, p2, 1, -hs2);
+    const [b11, b21] = this.interpPoint2(p1, p2, 1, -hs2 / 2);
+    const [b12, b22] = this.interpPoint2(p1, p2, 1 - 10 / this.dn, -hs2 / 2);
+    this.b1 = [b10, b11, b12];
+    this.b2 = [b20, b21, b22];
+    this.emitter = [
+      this.interpPointPerp(p1, p2, 0, hs2),
+      this.interpPointPerp(p1, p2, 1 - 28 / this.dn, hs2),
+      this.interpPoint(p1, p2, 1 - 14 / this.dn),
+    ];
+    const [ra0, ra1] = this.interpPoint2(p1, p2, 1 - 13 / this.dn, hs);
+    const [ra2, ra3] = this.interpPoint2(p1, p2, 1 - 10 / this.dn, hs);
+    this.emitterPoly = [ra0, ra1, ra3, ra2];
+    this.setPost(0, this.emitter[0]);
+    this.setPost(1, this.b1[0]);
+    this.setPost(2, this.b2[0]);
+  }
+
+  override getInfo(arr: string[]): void {
+    arr[0] = 'unijunction transistor';
+    arr[1] = 'Ie = ' + getCurrentText(-this.getCurrentIntoNode(0));
+    arr[2] = 'Ib2 = ' + getCurrentText(-this.getCurrentIntoNode(2));
+    arr[3] = 'Veb1 = ' + getVoltageText(this.volts[0] - this.volts[1]);
+    arr[4] = 'Vb2b1 = ' + getVoltageText(this.volts[2] - this.volts[1]);
+    arr[5] = 'P = ' + getUnitText(this.getPower(), 'W');
+  }
+
+  override flipX(c2: number, count: number): void {
+    if (this.dx === 0) this.flags ^= UnijunctionElm.FLAG_FLIP;
+    super.flipX(c2, count);
+  }
+  override flipY(c2: number, count: number): void {
+    if (this.dy === 0) this.flags ^= UnijunctionElm.FLAG_FLIP;
+    super.flipY(c2, count);
+  }
+  override flipXY(xmy: number, count: number): void {
+    this.flags ^= UnijunctionElm.FLAG_FLIP;
+    super.flipXY(xmy, count);
+  }
+}
+
 export const OTAElmType = elementType('OTAElm', OTAElm);
+export const UnijunctionElmType = elementType('UnijunctionElm', UnijunctionElm);
+export const ComparatorElmType = elementType('ComparatorElm', ComparatorElm);
 export const NortonAmpElmType = elementType('NortonAmpElm', NortonAmpElm);
 export const DarlingtonElmType: ElementType = {
   ...elementType('DarlingtonElm', NDarlingtonElm),

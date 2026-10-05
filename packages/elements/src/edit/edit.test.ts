@@ -44,12 +44,14 @@ const NO_FIELDS = new Set([
   'BoxElm',
   'CC2Elm',
   'CC2NegElm',
+  'ComparatorElm',
   'DarlingtonElm',
   'LineElm',
   'NDarlingtonElm',
   'NortonAmpElm',
   'PDarlingtonElm',
   'TunnelDiodeElm',
+  'UnijunctionElm',
   'VCOElm',
 ]);
 
