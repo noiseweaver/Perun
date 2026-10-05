@@ -138,3 +138,13 @@ export {
   SchmittElm,
   TriStateElm,
 } from './elm/InverterElm.ts';
+export { ChipElm, Pin, SIDE_E, SIDE_N, SIDE_S, SIDE_W } from './elm/ChipElm.ts';
+export { DFlipFlopElm, JKFlipFlopElm, TFlipFlopElm } from './elm/FlipFlopElm.ts';
+export { Counter2Elm, CounterElm, RingCounterElm, SeqGenElm } from './elm/CounterElm.ts';
+export { LatchElm, PisoShiftElm, SipoShiftElm } from './elm/ShiftElm.ts';
+export { DeMultiplexerElm, MultiplexerElm } from './elm/MultiplexerElm.ts';
+export { FullAdderElm, HalfAdderElm } from './elm/AdderElm.ts';
+export { DecimalDisplayElm, SevenSegDecoderElm, SevenSegElm } from './elm/SevenSegElm.ts';
+export { BusSplitterElm, BusTransceiverElm } from './elm/BusElm.ts';
+export { MonostableElm, PhaseCompElm, TimerElm, VCOElm } from './elm/TimerElm.ts';
+export { ADCElm, DACElm } from './elm/ConverterElm.ts';

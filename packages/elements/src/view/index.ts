@@ -67,6 +67,10 @@ import {
 import { delayBufferView, gateView, inverterView, schmittView, triStateView } from './logic.ts';
 import { BusLogicInputElm, LogicInputElm, LogicOutputElm } from '../elm/LogicInputElm.ts';
 import { CrossSwitchElm, DPDTSwitchElm, MBBSwitchElm, Switch2Elm } from '../elm/Switch2Elm.ts';
+import { ChipElm } from '../elm/ChipElm.ts';
+import { DecimalDisplayElm, SevenSegElm } from '../elm/SevenSegElm.ts';
+import { VCOElm } from '../elm/TimerElm.ts';
+import { chipView, decimalDisplayView, sevenSegView, vcoView } from './chips.ts';
 
 /** Undocked scopes are drawn by the scope renderer, over the circuit; this only places them. */
 const scopeElmView: ElementView<ScopeElm> = {
@@ -117,6 +121,10 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [AMElm, modulatedView('AM')],
   [FMElm, modulatedView('FM')],
   [BatteryElm, batteryView],
+  [SevenSegElm, sevenSegView],
+  [DecimalDisplayElm, decimalDisplayView],
+  [VCOElm, vcoView],
+  [ChipElm, chipView],
 ];
 
 const cache = new Map<unknown, ElementView | null>();

@@ -69,6 +69,24 @@ import {
   SchmittElmType,
   TriStateElmType,
 } from './elm/InverterElm.ts';
+import { DFlipFlopElmType, JKFlipFlopElmType, TFlipFlopElmType } from './elm/FlipFlopElm.ts';
+import {
+  Counter2ElmType,
+  CounterElmType,
+  RingCounterElmType,
+  SeqGenElmType,
+} from './elm/CounterElm.ts';
+import { LatchElmType, PisoShiftElmType, SipoShiftElmType } from './elm/ShiftElm.ts';
+import { DeMultiplexerElmType, MultiplexerElmType } from './elm/MultiplexerElm.ts';
+import { FullAdderElmType, HalfAdderElmType } from './elm/AdderElm.ts';
+import {
+  DecimalDisplayElmType,
+  SevenSegDecoderElmType,
+  SevenSegElmType,
+} from './elm/SevenSegElm.ts';
+import { BusSplitterElmType, BusTransceiverElmType } from './elm/BusElm.ts';
+import { MonostableElmType, PhaseCompElmType, TimerElmType, VCOElmType } from './elm/TimerElm.ts';
+import { ADCElmType, DACElmType } from './elm/ConverterElm.ts';
 import type { StringTokenizer } from './StringTokenizer.ts';
 
 /** Every ported element class. */
@@ -138,7 +156,36 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   SchmittElmType,
   InvertingSchmittElmType,
   DelayBufferElmType,
+  // Phase 8: digital and mixed-signal chips
+  DFlipFlopElmType,
+  JKFlipFlopElmType,
+  TFlipFlopElmType,
+  SevenSegElmType,
+  SevenSegDecoderElmType,
+  MultiplexerElmType,
+  DeMultiplexerElmType,
+  SipoShiftElmType,
+  PisoShiftElmType,
+  CounterElmType,
+  Counter2ElmType,
+  RingCounterElmType,
+  LatchElmType,
+  SeqGenElmType,
+  FullAdderElmType,
+  HalfAdderElmType,
+  MonostableElmType,
+  DecimalDisplayElmType,
+  BusTransceiverElmType,
+  BusSplitterElmType,
+  TimerElmType,
+  PhaseCompElmType,
+  DACElmType,
+  ADCElmType,
+  VCOElmType,
 ];
+
+/** Old class names upstream's constructElement still accepts (saved shortcuts, subcircuits). */
+const CLASS_ALIASES: ReadonlyMap<string, string> = new Map([['DecadeElm', 'RingCounterElm']]);
 
 const byClassName = new Map<string, ElementType>();
 /** Text dump type (char code or number) to class name, first registration wins. */
@@ -168,7 +215,8 @@ export function constructElement(
   y: number,
   sim: Simulation = new Simulation(),
 ): CircuitElm | null {
-  return byClassName.get(className)?.create(x, y, sim) ?? null;
+  const name = CLASS_ALIASES.get(className) ?? className;
+  return byClassName.get(name)?.create(x, y, sim) ?? null;
 }
 
 /** Class name for an XML tag, or undefined if no ported class uses it. */

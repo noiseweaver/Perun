@@ -401,7 +401,10 @@ export class Circuit {
         continue;
       }
       if (tag === 'adj') {
-        if (!retain) this.xmlExtras.push(elem);
+        if (!retain) {
+          resolveAdjEditItem(elem, this.elements[r.parseIntAttr('e', -1)]);
+          this.xmlExtras.push(elem);
+        }
         continue;
       }
       if (tag === 'h') {
@@ -540,4 +543,22 @@ export function readCircuit(text: string): Circuit {
   const c = new Circuit();
   c.read(text);
   return c;
+}
+
+/**
+ * Upstream `Adjustable.undumpXml` finds the slider's edit item by its name (`en`), falling back
+ * to the saved index (`ei`), so a save writes the index the element has now. We keep `adj`
+ * records verbatim, so fix the index in place the same way.
+ */
+function resolveAdjEditItem(elem: XmlElement, ce: CircuitElm | undefined): void {
+  const en = elem.getAttribute('en');
+  if (ce === undefined || en === null || en.length === 0) return;
+  for (let i = 0; ; i++) {
+    const ei = ce.getEditInfo(i);
+    if (ei === null) return;
+    if (ei.name === en) {
+      if (elem.getAttribute('ei') !== null) elem.setAttribute('ei', String(i));
+      return;
+    }
+  }
 }
