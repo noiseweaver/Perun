@@ -10,7 +10,7 @@ import { CircuitElm, elementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
-import { getVoltageText, javaDoubleToString } from '../view/units.ts';
+import { getVoltageText } from '../view/units.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 
 const pad2 = (n: number): string => String(n).padStart(2, '0');
@@ -95,11 +95,11 @@ export class DataRecorderElm extends CircuitElm {
 
   /** The recording as upstream's download: a header line, then one voltage per line. */
   dataText(): string {
-    let s = '# time step = ' + javaDoubleToString(this.sim.timeStep) + ' sec\n';
+    let s = '# time step = ' + String(this.sim.timeStep) + ' sec\n';
     if (this.dataFull) {
       for (let i = 0; i !== this.dataCount; i++)
-        s += javaDoubleToString(this.data[(i + this.dataPtr) % this.dataCount]) + '\n';
-    } else for (let i = 0; i !== this.dataPtr; i++) s += javaDoubleToString(this.data[i]) + '\n';
+        s += String(this.data[(i + this.dataPtr) % this.dataCount]) + '\n';
+    } else for (let i = 0; i !== this.dataPtr; i++) s += String(this.data[i]) + '\n';
     return s;
   }
 

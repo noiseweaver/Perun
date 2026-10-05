@@ -42,13 +42,7 @@ import {
 } from './common.ts';
 import { calcLeads, distance, interp, pt, rectOf, unionRect, type Rect } from './geometry.ts';
 import type { DrawContext, Ink, Pt, TextStyle } from './Painter.ts';
-import {
-  formatNumber,
-  getFixedUnitText,
-  getShortUnitText,
-  javaDoubleToString,
-  OHM,
-} from './units.ts';
+import { formatNumber, getFixedUnitText, getShortUnitText, OHM } from './units.ts';
 
 /** A resistor body from lead1 to lead2: zigzag, or a box for IEC resistors. */
 function resistorBody(e: CircuitElm, ctx: DrawContext, lead1: Pt, lead2: Pt, hs: number): void {
@@ -137,7 +131,7 @@ export const thermistorView: ElementView<ThermistorNTCElm> = {
     p.polyline([at(-hs, hs * 2), at(hs, hs * 2), at(len, -hs * 2)], ink);
     if (ctx.showValues) {
       const s = getShortUnitText(e.resistance, '');
-      drawValues(e, ctx, javaDoubleToString(e.temperature) + '°C=' + s + OHM, hs);
+      drawValues(e, ctx, String(e.temperature) + '°C=' + s + OHM, hs);
     }
     doDots(e, ctx);
   },
@@ -165,7 +159,7 @@ function testPointValue(e: TestPointElm): string {
     case TP_P2P:
       return getFixedUnitText(e.lastMaxV - e.lastMinV, 'Vp2p');
     case TP_BIN:
-      return javaDoubleToString(e.binaryLevel);
+      return String(e.binaryLevel);
     case TP_FRQ:
       return getFixedUnitText(e.frequency, 'Hz');
     case TP_PWI:

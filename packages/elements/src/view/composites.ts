@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
-// Geometry learned from CircuitJS1 OTAElm, NortonAmpElm, DarlingtonElm, CrystalElm and
-// CustomCompositeElm draw()
+// Geometry learned from CircuitJS1 OTAElm, NortonAmpElm, DarlingtonElm, CrystalElm,
+// CustomCompositeElm, OpAmpRealElm and OptocouplerElm draw()
 // (src/com/lushprojects/circuitjs1/client/, master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032;
 // the drawing code is new.
 
@@ -14,12 +14,17 @@ import type {
   UnijunctionElm,
 } from '../elm/compositeParts.ts';
 import type { CustomCompositeElm } from '../elm/CustomCompositeElm.ts';
+import type { OpAmpRealElm } from '../elm/OpAmpRealElm.ts';
+import type { OptocouplerElm } from '../elm/OptocouplerElm.ts';
+import type { DrawContext } from './Painter.ts';
+import { diodeView, transistorView } from './semis.ts';
 import { drawChip } from './chips.ts';
 import {
   drawCenteredText,
   drawValues,
   elementBox,
   LABEL,
+  MUTED,
   vInk,
   volt,
   type ElementView,
@@ -180,4 +185,56 @@ export const subcircuitView: ElementView<CustomCompositeElm> = {
     if (r.length < 3) return { x1: e.x, y1: e.y, x2: e.x, y2: e.y };
     return { x1: r[0].x, y1: r[0].y, x2: r[2].x, y2: r[2].y };
   },
+};
+
+export const opAmpRealView: ElementView<OpAmpRealElm> = {
+  draw(e, ctx) {
+    const p = ctx.painter;
+    p.line(e.in1p[0], e.in1p[1], vInk(volt(e, 0)));
+    p.line(e.in2p[0], e.in2p[1], vInk(volt(e, 1)));
+    p.line(e.lead2, e.point2, vInk(volt(e, 2)));
+    p.line(e.rail1p[0], e.rail1p[1], vInk(volt(e, 3)));
+    p.line(e.rail2p[0], e.rail2p[1], vInk(volt(e, 4)));
+    p.polyline(e.triangle, LABEL, { closed: true });
+    const font = { size: 14 };
+    drawCenteredText(ctx, '-', e.textp[0].x, e.textp[0].y - 2, true, LABEL, font);
+    drawCenteredText(ctx, '+', e.textp[1].x, e.textp[1].y, true, LABEL, font);
+    const c: number[] = [];
+    for (let i = 0; i !== 5; i++) c.push(ctx.dotCount(i, e.getCurrentIntoNode(i)));
+    p.dots(e.in1p[1], e.in1p[0], c[0]);
+    p.dots(e.in2p[1], e.in2p[0], c[1]);
+    p.dots(e.lead2, e.point2, c[2]);
+    // the rail leads may not be a multiple of the grid, so dots run the other way to line up
+    p.dots(e.rail1p[0], e.rail1p[1], -c[3]);
+    p.dots(e.rail2p[0], e.rail2p[1], -c[4]);
+  },
+  bbox: (e) => unionRect(elementBox(e, e.opheight * 2), rectOf(e.triangle)),
+};
+
+/** A part's own dot counters, kept apart from the parent's (slots from `base` up). */
+function partContext(ctx: DrawContext, base: number): DrawContext {
+  return { ...ctx, dotCount: (slot, current) => ctx.dotCount(base + slot, current) };
+}
+
+export const optocouplerView: ElementView<OptocouplerElm> = {
+  draw(e, ctx) {
+    const p = ctx.painter;
+    p.polyline(e.rectPoints, MUTED, { closed: true });
+    // stubs
+    for (let i = 0; i !== 4; i++) {
+      const a = e.posts[i];
+      const b = e.stubs[i];
+      p.line(a, b, vInk(volt(e, i)));
+      p.dots(a, b, ctx.dotCount(i, -e.getCurrentIntoNode(i)));
+    }
+    diodeView.draw(e.diode, partContext(ctx, 10));
+    transistorView.draw(e.transistor, partContext(ctx, 20));
+    // little arrows: light from the LED
+    for (const [a, b] of e.arrows) {
+      p.fillPolygon(calcArrow(a, b, 5, 2), MUTED);
+      const dx = Math.sign(b.x - a.x);
+      p.line({ x: a.x + 10 * dx, y: a.y }, { x: a.x + 15 * dx, y: a.y }, MUTED, { width: 1 });
+    }
+  },
+  bbox: (e) => rectOf([...e.rectPoints, ...e.posts]),
 };

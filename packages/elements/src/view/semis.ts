@@ -29,7 +29,6 @@ import {
 import { calcArrow, calcLeads, interp, interp2, pt, rectOf, sign, unionRect } from './geometry.ts';
 import type { DrawContext, Pt } from './Painter.ts';
 import { addCurCount } from './passive.ts';
-import { javaDoubleToString } from './units.ts';
 
 const DIODE_HS = 8;
 
@@ -269,15 +268,7 @@ export const mosfetView: ElementView<MosfetElm> = {
     p.line(gate0, gate2, vg);
     if (g.pcircle) p.circle(g.pcircle, 3 * 0.98, vg);
     if (e.hasFlag(MosfetElm.FLAG_SHOWVT)) {
-      drawCenteredText(
-        ctx,
-        javaDoubleToString(e.vt * e.pnp),
-        e.x2 + 2,
-        e.y2,
-        false,
-        TEXT,
-        VALUE_FONT,
-      );
+      drawCenteredText(ctx, String(e.vt * e.pnp), e.x2 + 2, e.y2, false, TEXT, VALUE_FONT);
     }
     const cs = ctx.dotCount(0, -(e.ids + e.capCurGS));
     const cd = ctx.dotCount(1, -e.ids + e.capCurGD);

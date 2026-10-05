@@ -12,7 +12,7 @@ import { EditInfo } from '../edit/EditInfo.ts';
 import { unescapeToken } from '../escape.ts';
 import { parseJavaBoolean, parseJavaDouble } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
-import { getUnitText, javaDoubleToString, OHM } from '../view/units.ts';
+import { getUnitText, OHM } from '../view/units.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { RelayCoilElm, RelayContactElm } from './RelayCoilElm.ts';
 
@@ -154,7 +154,7 @@ export class MotorProtectionSwitchElm extends CircuitElm {
     arr[0] = 'motor protection switch';
     this.getBasicInfo(arr);
     arr[3] = 'R = ' + getUnitText(this.resistance, OHM);
-    arr[4] = 'I2t = ' + javaDoubleToString(this.i2t);
+    arr[4] = 'I2t = ' + String(this.i2t);
   }
 
   override getEditInfo(n: number): EditInfo | null {

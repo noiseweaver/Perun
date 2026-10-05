@@ -272,6 +272,48 @@
       "source": "circuits/wattmeters.txt",
       "tags": ["phase8", "xml"],
       "stepsPerSample": 100
+    },
+    {
+      "name": "dc-motor",
+      "description": "12 V DC motor spinning up from rest (Phase 8)",
+      "source": "circuits/dc-motor.txt",
+      "tags": ["phase8"],
+      "stepsPerSample": 200
+    },
+    {
+      "name": "time-delay-relay",
+      "description": "Time-delay relay closing 10 ms after a 10 Hz square powers it (Phase 8)",
+      "source": "circuits/time-delay-relay.txt",
+      "tags": ["phase8"],
+      "stepsPerSample": 200
+    },
+    {
+      "name": "analog-mux",
+      "description": "4-to-1 analog mux scanning four DC inputs (Phase 8)",
+      "source": "circuits/analog-mux.txt",
+      "tags": ["phase8"],
+      "stepsPerSample": 40
+    },
+    {
+      "name": "opamp-real",
+      "description": "Inverting amps built from the 741, LM324 and LM324 v2 models (Phase 8)",
+      "source": "circuits/opamp-real.txt",
+      "tags": ["phase8"],
+      "stepsPerSample": 10
+    },
+    {
+      "name": "optocoupler",
+      "description": "Optocoupler with CTR 0.5 driven by 50 Hz AC (Phase 8, XML)",
+      "source": "circuits/optocoupler.txt",
+      "tags": ["phase8", "xml"],
+      "stepsPerSample": 100
+    },
+    {
+      "name": "custom-transformer",
+      "description": "Tapped and reversed-polarity custom transformers on 60 Hz (Phase 8)",
+      "source": "circuits/custom-transformer.txt",
+      "tags": ["phase8"],
+      "stepsPerSample": 50
     }
   ]
 }

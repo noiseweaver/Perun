@@ -11,7 +11,7 @@ import { CircuitElm, elementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { ExprParser, ExprState } from '../Expr.ts';
 import { javaDoubleToInt, parseJavaInt, parseJavaIntRadix } from '../java.ts';
-import { javaDoubleToString } from '../view/units.ts';
+
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 
 /** One row of the lookup table: values lo..hi show the template. */
@@ -52,7 +52,7 @@ class LookupEntry {
           es.values[0] = value; // a = input value
           const result = expr.eval(es);
           const intResult = javaDoubleToInt(result);
-          sb += result === intResult ? String(intResult) : javaDoubleToString(result);
+          sb += result === intResult ? String(intResult) : String(result);
         } else sb += '{' + exprStr + '}';
       } catch {
         sb += '{' + exprStr + '}';

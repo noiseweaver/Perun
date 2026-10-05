@@ -11,7 +11,7 @@ import { EditInfo } from '../edit/EditInfo.ts';
 import { unescapeToken } from '../escape.ts';
 import { parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
-import { getUnitText, javaDoubleToString, showFormat } from '../view/units.ts';
+import { getUnitText, showFormat } from '../view/units.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 
 export const TP_VOL = 0;
@@ -279,7 +279,7 @@ export class TestPointElm extends CircuitElm {
       case TP_P2P:
         return 'Vp2p = ' + getUnitText(this.lastMaxV - this.lastMinV, 'Vp2p');
       case TP_BIN:
-        return 'Binary:' + javaDoubleToString(this.binaryLevel);
+        return 'Binary:' + String(this.binaryLevel);
       case TP_FRQ:
         return 'Freq = ' + getUnitText(this.frequency, 'Hz');
       case TP_PER:

@@ -137,6 +137,12 @@ import { TestPointElmType } from './elm/TestPointElm.ts';
 import { StopTriggerElmType } from './elm/StopTriggerElm.ts';
 import { DataRecorderElmType } from './elm/DataRecorderElm.ts';
 import { WattmeterElmType, WattmeterTrueElmType } from './elm/WattmeterElm.ts';
+import { DCMotorElmType } from './elm/DCMotorElm.ts';
+import { TimeDelayRelayElmType } from './elm/TimeDelayRelayElm.ts';
+import { OpAmpRealElmType } from './elm/OpAmpRealElm.ts';
+import { OptocouplerElmType } from './elm/OptocouplerElm.ts';
+import { AnalogMuxElmType } from './elm/AnalogMuxElm.ts';
+import { CustomTransformerElmType } from './elm/CustomTransformerElm.ts';
 
 /** Every ported element class. */
 export const ELEMENT_TYPES: readonly ElementType[] = [
@@ -288,6 +294,12 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   DataRecorderElmType,
   WattmeterElmType,
   WattmeterTrueElmType,
+  DCMotorElmType,
+  TimeDelayRelayElmType,
+  OpAmpRealElmType,
+  OptocouplerElmType,
+  AnalogMuxElmType,
+  CustomTransformerElmType,
 ];
 
 /** Old class names upstream's constructElement still accepts (saved shortcuts, subcircuits). */

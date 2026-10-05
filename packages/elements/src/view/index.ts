@@ -55,6 +55,8 @@ import { TransLineElm } from '../elm/TransLineElm.ts';
 import { RelayElm } from '../elm/RelayElm.ts';
 import { RelayCoilElm, RelayContactElm } from '../elm/RelayCoilElm.ts';
 import {
+  customTransformerView,
+  dcMotorView,
   gyratorView,
   relayCoilView,
   relayContactView,
@@ -90,6 +92,8 @@ import {
   crystalView,
   darlingtonView,
   nortonAmpView,
+  opAmpRealView,
+  optocouplerView,
   otaView,
   subcircuitView,
   unijunctionView,
@@ -152,7 +156,14 @@ import { CrossSwitchElm, DPDTSwitchElm, MBBSwitchElm, Switch2Elm } from '../elm/
 import { ChipElm } from '../elm/ChipElm.ts';
 import { DecimalDisplayElm, SevenSegElm } from '../elm/SevenSegElm.ts';
 import { VCOElm } from '../elm/TimerElm.ts';
-import { chipView, decimalDisplayView, ledArrayView, sevenSegView, vcoView } from './chips.ts';
+import {
+  chipView,
+  decimalDisplayView,
+  ledArrayView,
+  sevenSegView,
+  timeDelayRelayView,
+  vcoView,
+} from './chips.ts';
 import { OhmMeterElm } from '../elm/OhmMeterElm.ts';
 import { GyratorElm } from '../elm/GyratorElm.ts';
 import { LEDArrayElm } from '../elm/LEDArrayElm.ts';
@@ -174,6 +185,12 @@ import { TestPointElm } from '../elm/TestPointElm.ts';
 import { StopTriggerElm } from '../elm/StopTriggerElm.ts';
 import { DataRecorderElm } from '../elm/DataRecorderElm.ts';
 import { WattmeterElm, WattmeterTrueElm } from '../elm/WattmeterElm.ts';
+import { DCMotorElm } from '../elm/DCMotorElm.ts';
+import { TimeDelayRelayElm } from '../elm/TimeDelayRelayElm.ts';
+import { OpAmpRealElm } from '../elm/OpAmpRealElm.ts';
+import { OptocouplerElm } from '../elm/OptocouplerElm.ts';
+import { AnalogMuxElm } from '../elm/AnalogMuxElm.ts';
+import { CustomTransformerElm } from '../elm/CustomTransformerElm.ts';
 
 /** Undocked scopes are drawn by the scope renderer, over the circuit; this only places them. */
 const scopeElmView: ElementView<ScopeElm> = {
@@ -264,6 +281,12 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [DataRecorderElm, dataRecorderView],
   [WattmeterElm, wattmeterView],
   [WattmeterTrueElm, wattmeterView],
+  [DCMotorElm, dcMotorView],
+  [TimeDelayRelayElm, timeDelayRelayView],
+  [OpAmpRealElm, opAmpRealView],
+  [OptocouplerElm, optocouplerView],
+  [AnalogMuxElm, chipView],
+  [CustomTransformerElm, customTransformerView],
   [GyratorElm, gyratorView],
   [TransformerElm, transformerView],
   [TappedTransformerElm, tappedTransformerView],

@@ -10,7 +10,7 @@ import { CircuitElm, elementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaBoolean, parseJavaDouble } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
-import { getUnitText, javaDoubleToString, OHM } from '../view/units.ts';
+import { getUnitText, OHM } from '../view/units.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 
 const BLOWN_RESISTANCE = 1e9;
@@ -116,7 +116,7 @@ export class FuseElm extends CircuitElm {
     arr[0] = this.blown ? 'fuse (blown)' : 'fuse';
     this.getBasicInfo(arr);
     arr[3] = 'R = ' + getUnitText(this.resistance, OHM);
-    arr[4] = 'I2t = ' + javaDoubleToString(this.i2t);
+    arr[4] = 'I2t = ' + String(this.i2t);
     if (!this.blown) arr[5] = Math.trunc((this.heat * 100) / this.i2t) + '% melted';
   }
 

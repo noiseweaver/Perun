@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
 // Geometry learned from CircuitJS1 TransformerElm, TappedTransformerElm, TransLineElm, GyratorElm,
-// RelayElm, RelayCoilElm, RelayContactElm and ThreePhaseMotorElm draw() (src/com/lushprojects/circuitjs1/client/, master) at
+// RelayElm, RelayCoilElm, RelayContactElm, ThreePhaseMotorElm, DCMotorElm and CustomTransformerElm draw() (src/com/lushprojects/circuitjs1/client/, master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032; the drawing code is new.
 
+import type { CustomTransformerElm } from '../elm/CustomTransformerElm.ts';
+import type { DCMotorElm } from '../elm/DCMotorElm.ts';
 import type { GyratorElm } from '../elm/GyratorElm.ts';
 import { RelayCoilElm, type RelayContactElm } from '../elm/RelayCoilElm.ts';
 import type { RelayElm } from '../elm/RelayElm.ts';
@@ -22,7 +24,7 @@ import {
   volt,
   type ElementView,
 } from './common.ts';
-import { calcArrow, interp, pt, rectOf, unionRect, type Rect } from './geometry.ts';
+import { calcArrow, calcLeads, interp, pt, rectOf, unionRect, type Rect } from './geometry.ts';
 import type { DrawContext, Ink, Pt } from './Painter.ts';
 import { addCurCount, coilLoops } from './passive.ts';
 
@@ -353,4 +355,55 @@ export const threePhaseMotorView: ElementView<ThreePhaseMotorElm> = {
     e.filterSpeed();
   },
   bbox: (e) => elementBox(e, MOTOR_R),
+};
+
+const DC_MOTOR_R = 18;
+
+export const dcMotorView: ElementView<DCMotorElm> = {
+  draw(e, ctx) {
+    const p = ctx.painter;
+    const [lead1, lead2] = calcLeads(e.point1, e.point2, e.dn, 36);
+    p.line(e.point1, lead1, vInk(volt(e, 0)));
+    p.line(lead2, e.point2, vInk(volt(e, 1)));
+    p.dots(e.point1, e.point2, ctx.dotCount(0, e.current));
+    const center = e.motorCenter;
+    p.fillCircle(center, DC_MOTOR_R, MUTED);
+    p.fillCircle(center, DC_MOTOR_R / 2.2, LABEL);
+    const a = (Math.round(e.angle * 300.0) / 300.0) * e.gearRatio;
+    for (let k = 0; k !== 3; k++) {
+      const t = a + (k * Math.PI) / 3;
+      const ps1 = interpFix(lead1, lead2, 0.5 + 0.28 * Math.cos(t), 0.28 * Math.sin(t));
+      const ps2 = interpFix(lead1, lead2, 0.5 - 0.28 * Math.cos(t), -0.28 * Math.sin(t));
+      p.line(ps1, ps2, LABEL, { width: 6 });
+    }
+  },
+  bbox: (e) => elementBox(e, DC_MOTOR_R),
+};
+
+export const customTransformerView: ElementView<CustomTransformerElm> = {
+  draw(e, ctx) {
+    const p = ctx.painter;
+    const { nodePoints, nodeTaps, coilNodes } = e;
+    // taps
+    for (let i = 0; i !== e.getPostCount(); i++)
+      p.line(nodePoints[i], nodeTaps[i], vInk(volt(e, i)));
+    // coils, and polarity dots when a coil is reversed
+    for (let i = 0; i !== e.coilCount; i++) {
+      const n = coilNodes[i];
+      const hs = i >= e.primaryCoils ? -6 * e.flip : 6 * e.flip;
+      drawCoil(ctx, hs, nodeTaps[n], nodeTaps[n + 1], volt(e, n), volt(e, n + 1));
+      if (e.dots !== null) p.fillCircle(e.dots[i], 2.5, MUTED);
+    }
+    // core
+    for (let i = 0; i !== 2; i++) p.line(e.ptCore[i], e.ptCore[i + 2], MUTED);
+    // coil currents, then tap currents
+    for (let i = 0; i !== e.coilCount; i++) {
+      const ni = coilNodes[i];
+      p.dots(nodeTaps[ni], nodeTaps[ni + 1], ctx.dotCount(i, e.coilCurrents[i]));
+    }
+    for (let i = 0; i !== e.nodeCount; i++)
+      p.dots(nodePoints[i], nodeTaps[i], ctx.dotCount(100 + i, e.nodeCurrents[i]));
+  },
+  bbox: (e) =>
+    e.nodePoints.length === 0 ? elementBox(e, 0) : rectOf([...e.nodePoints, ...e.ptCore]),
 };

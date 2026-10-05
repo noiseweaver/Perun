@@ -4,6 +4,7 @@
 // LEDArrayElm.draw and VCOElm.draw (src/com/lushprojects/circuitjs1/client/, master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032; the drawing code is new.
 
+import type { TimeDelayRelayElm } from '../elm/TimeDelayRelayElm.ts';
 import { ChipElm, SIDE_E, SIDE_N, SIDE_S, SIDE_W } from '../elm/ChipElm.ts';
 import type { LEDArrayElm } from '../elm/LEDArrayElm.ts';
 import { DecimalDisplayElm, SevenSegElm } from '../elm/SevenSegElm.ts';
@@ -97,6 +98,15 @@ export const ledArrayView: ElementView<LEDArrayElm> = {
         const c = e.isFlippedXY() ? { x: row.x, y: col.y } : { x: col.x, y: row.y };
         ctx.painter.fillCircle(c, r, ink);
       }
+  },
+  bbox: chipBox,
+};
+
+export const timeDelayRelayView: ElementView<TimeDelayRelayElm> = {
+  draw(e, ctx) {
+    // upstream computes the pin currents while drawing
+    e.computeCurrent();
+    drawChip(e, ctx);
   },
   bbox: chipBox,
 };
