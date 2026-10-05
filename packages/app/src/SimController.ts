@@ -60,6 +60,7 @@ import {
 import { download } from './download.ts';
 import { sliderEntries, type SliderEntry } from './sliders.ts';
 import { showToast, shownTheme, useApp, type AppState, type EditorState } from './store.ts';
+import { t } from './i18n.ts';
 
 /** Simulation time per frame before the frame is cut short (upstream `frameTimeLimit`). */
 const FRAME_BUDGET_MS = 50;
@@ -660,8 +661,10 @@ export class SimController {
     mgr.look = this.theme.style.scopeLook;
     mgr.compact = this.cssWidth < COMPACT_WIDTH;
     // the card look's info card holds fixed-width values in the monospace font ("time step =
-    // 5.000 μs" needs 23 characters), so it gets more room than upstream's 160 px
-    const infoWidth = mgr.compact ? 0 : mgr.look === 'cards' ? CARD_INFO_WIDTH : INFO_WIDTH;
+    // 5.000 μs" needs 23 characters), so it gets more room than upstream's 160 px, and more again
+    // for a language whose "time step = " is longer
+    const extra = Math.max(0, t('time step = ').length - 12) * MONO_CHAR_WIDTH;
+    const infoWidth = mgr.compact ? 0 : mgr.look === 'cards' ? CARD_INFO_WIDTH + extra : INFO_WIDTH;
     const before = mgr.scopeCount;
     mgr.setupScopes(this.scopeArea(), infoWidth);
     // removing the last scope gives its room back to the circuit
@@ -706,12 +709,17 @@ export class SimController {
       if (elm !== null) {
         if (elm === ed.mouseElm && ed.mousePost >= 0)
           arr.push('V = ' + getUnitText(elm.getPostVoltage(ed.mousePost), 'V'));
-        else elm.getInfo(arr);
+        else {
+          elm.getInfo(arr);
+          // upstream translates the first two lines (UIManager)
+          if (typeof arr[0] === 'string') arr[0] = t(arr[0]);
+          if (typeof arr[1] === 'string') arr[1] = t(arr[1]);
+        }
       } else if (mgr.scopeCount > 0 && !mgr.compact) {
         arr[0] = 't = ' + getTimeText(sim.t);
         const timerate = 160 * this.circuit.getIterCount() * sim.timeStep;
         if (timerate >= 0.1) arr[0] += ' (' + showFormat(timerate).trimStart().padStart(8) + 'x)';
-        arr[1] = 'time step = ' + getTimeText(sim.timeStep);
+        arr[1] = t('time step = ') + getTimeText(sim.timeStep);
       }
     });
     // upstream stops at the first empty slot
@@ -722,7 +730,7 @@ export class SimController {
     }
     if (mgr.scopeCount > 0) {
       const bad = this.renderer?.badConnectionCount ?? 0;
-      if (bad > 0) info.push(`${bad} bad connection${bad === 1 ? '' : 's'}`);
+      if (bad > 0) info.push(bad + t(bad === 1 ? ' bad connection' : ' bad connections'));
     }
     return info;
   }
@@ -1952,6 +1960,8 @@ export function describeElement(e: CircuitElm): string {
 
 /** Width of the info card beside docked scopes in the card look. */
 const CARD_INFO_WIDTH = 200;
+/** Advance of one character of the 12 px monospace info font (about 0.6 em). */
+const MONO_CHAR_WIDTH = 7.5;
 
 /** Natural log of the zoom factor for one mouse wheel notch. */
 const WHEEL_ZOOM_PER_NOTCH = 0.08;

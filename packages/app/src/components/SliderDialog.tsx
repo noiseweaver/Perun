@@ -18,6 +18,7 @@ import { useState } from 'react';
 import { openDialog } from '../commands.ts';
 import { controller } from '../SimController.ts';
 import { Shell } from './DialogShell.tsx';
+import { t } from '../i18n.ts';
 
 interface Row {
   item: number;
@@ -133,8 +134,10 @@ export function SliderDialog() {
 
   return (
     <Shell
-      title="Sliders"
-      description="Choose which values get a slider. Sliders show at the top right of the circuit."
+      title={t('Sliders')}
+      description={t(
+        'Choose which values get a slider. Sliders show at the top right of the circuit.',
+      )}
     >
       <form
         className="slider-dialog"
@@ -143,7 +146,7 @@ export function SliderDialog() {
           if (apply()) openDialog(null);
         }}
       >
-        {rows.length === 0 && <p>This element has no values a slider can set.</p>}
+        {rows.length === 0 && <p>{t('This element has no values a slider can set.')}</p>}
         {rows.map((r, i) => {
           // sliders this one can share: those with their own, other than itself
           const choices = list.filter((a) => a.sharedSlider === null && a !== r.adj);
@@ -163,7 +166,7 @@ export function SliderDialog() {
                 <div className="slider-dialog-fields">
                   {!r.shared && choices.length > 0 && (
                     <label className="field">
-                      <span className="field-label">Slider</span>
+                      <span className="field-label">{t('Slider')}</span>
                       <select
                         className="select"
                         value={r.share === null ? -1 : choices.indexOf(r.share)}
@@ -172,7 +175,7 @@ export function SliderDialog() {
                           set(i, { share: k < 0 ? null : (choices[k] ?? null) });
                         }}
                       >
-                        <option value={-1}>New slider</option>
+                        <option value={-1}>{t('New slider')}</option>
                         {choices.map((a, k) => (
                           <option key={k} value={k}>
                             Share slider: {a.sliderText}
@@ -207,7 +210,7 @@ export function SliderDialog() {
                       checked={r.log}
                       onChange={(e) => set(i, { log: e.target.checked })}
                     />
-                    <span>Logarithmic</span>
+                    <span>{t('Logarithmic')}</span>
                   </label>
                   {(r.share === null || r.shared) && (
                     <TextField
@@ -226,11 +229,11 @@ export function SliderDialog() {
         <div className="dialog-buttons">
           <Dialog.Close asChild>
             <button type="button" className="button">
-              Cancel
+              {t('Cancel')}
             </button>
           </Dialog.Close>
           <button type="submit" className="button button-primary" data-testid="slider-dialog-ok">
-            OK
+            {t('OK')}
           </button>
         </div>
       </form>

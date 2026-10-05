@@ -7,13 +7,16 @@ import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
 
 /**
- * Serves upstream's example circuits (`setuplist.txt` and `circuits/*`) from the read-only
- * reference clone, and copies them into the build. GPL-2.0-or-later, like this app.
+ * Serves upstream's example circuits (`setuplist.txt` and `circuits/*`) and its translations
+ * (`locale_*.txt`) from the read-only reference clone, and copies them into the build.
+ * GPL-2.0-or-later, like this app.
  */
 export function upstreamExamples(publicDir: string): Plugin {
   const has = existsSync(join(publicDir, 'setuplist.txt'));
   const files = (): string[] =>
     has ? readdirSync(join(publicDir, 'circuits')).filter((f) => !f.startsWith('.')) : [];
+  const locales = (): string[] =>
+    has ? readdirSync(publicDir).filter((f) => /^locale_[a-z-]+\.txt$/.test(f)) : [];
   return {
     name: 'circuitjs-upstream-examples',
     configResolved(config) {
@@ -25,6 +28,7 @@ export function upstreamExamples(publicDir: string): Plugin {
         const url = decodeURIComponent((req.url ?? '').split('?')[0] ?? '');
         let path: string | null = null;
         if (url === '/setuplist.txt') path = join(publicDir, 'setuplist.txt');
+        else if (/^\/locale_[a-z-]+\.txt$/.test(url)) path = join(publicDir, url);
         else if (url.startsWith('/circuits/')) {
           const p = normalize(join(publicDir, url));
           if (p.startsWith(join(publicDir, 'circuits'))) path = p;
@@ -50,6 +54,8 @@ export function upstreamExamples(publicDir: string): Plugin {
           fileName: `circuits/${f}`,
           source: readFileSync(join(publicDir, 'circuits', f)),
         });
+      for (const f of locales())
+        this.emitFile({ type: 'asset', fileName: f, source: readFileSync(join(publicDir, f)) });
     },
   };
 }

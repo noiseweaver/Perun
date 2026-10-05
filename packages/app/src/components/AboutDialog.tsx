@@ -5,6 +5,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { BASE } from '../startup.ts';
 import { Shell } from './DialogShell.tsx';
+import { t } from '../i18n.ts';
 
 /** Where this app's source code is published (GPL-2.0 section 3). */
 export const SOURCE_URL = 'https://github.com/noiseweaver/circuitsjs-next';
@@ -49,7 +50,7 @@ function Link(props: { href: string; children: string; testId?: string }) {
 
 export function AboutDialog() {
   return (
-    <Shell title="About circuitjs-next" className="about-dialog">
+    <Shell title={t('About circuitjs-next')} className="about-dialog">
       <div className="about">
         <p className="about-version" data-testid="about-version">
           Version {versionText()}
@@ -66,7 +67,7 @@ export function AboutDialog() {
           <Link href={UPSTREAM_URL}>github.com/pfalstad/circuitjs1</Link>.
         </p>
         <details className="about-thanks">
-          <summary>CircuitJS1 thanks</summary>
+          <summary>{t('CircuitJS1 thanks')}</summary>
           <ul>
             {THANKS.map((t) => (
               <li key={t}>{t}</li>
@@ -86,17 +87,17 @@ export function AboutDialog() {
         <ul className="about-links">
           <li>
             <Link href={SOURCE_URL} testId="about-source">
-              Source code
+              {t('Source code')}
             </Link>
           </li>
           <li>
             <Link href={`${BASE}LICENSE.txt`} testId="about-license">
-              GNU General Public License, version 2
+              {t('GNU General Public License, version 2')}
             </Link>
           </li>
           <li>
             <Link href={`${BASE}third-party-licenses.txt`} testId="about-third-party">
-              Third-party licenses (libraries and fonts)
+              {t('Third-party licenses (libraries and fonts)')}
             </Link>
           </li>
         </ul>
@@ -104,7 +105,7 @@ export function AboutDialog() {
       <div className="dialog-buttons">
         <Dialog.Close asChild>
           <button type="button" className="button button-primary">
-            OK
+            {t('OK')}
           </button>
         </Dialog.Close>
       </div>

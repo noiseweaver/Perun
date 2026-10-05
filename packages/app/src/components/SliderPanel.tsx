@@ -8,6 +8,7 @@ import { SLIDER_MAX } from '../sliders.ts';
 import { useApp } from '../store.ts';
 import { Icon } from './Icon.tsx';
 import { useCompact } from './useNarrow.ts';
+import { t } from '../i18n.ts';
 
 /**
  * The circuit's sliders (upstream shows them in its side panel under the buttons): pots, LDRs,
@@ -24,7 +25,7 @@ export function SliderPanel() {
   return (
     <section
       className="slider-panel"
-      aria-label="Sliders"
+      aria-label={t('Sliders')}
       data-testid="slider-panel"
       data-canvas-overlay
       data-folded={isFolded || undefined}
@@ -37,7 +38,7 @@ export function SliderPanel() {
         data-testid="slider-panel-toggle"
       >
         <Icon name="tune" size={18} />
-        <span>Sliders</span>
+        <span>{t('Sliders')}</span>
         <Icon
           name={isFolded ? 'expandMore' : 'expandLess'}
           size={18}

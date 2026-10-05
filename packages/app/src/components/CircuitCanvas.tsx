@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
 import { Icon } from './Icon.tsx';
+import { t } from '../i18n.ts';
 
 const MOD = typeof navigator !== 'undefined' && /Mac|iP/.test(navigator.platform) ? '⌘' : 'Ctrl+';
 
@@ -27,7 +28,7 @@ function Item(props: {
       onSelect={props.onSelect}
       data-testid={props.testId}
     >
-      {props.label}
+      {t(props.label)}
       {props.hint && <span className="menu-trailing menu-hint">{props.hint}</span>}
     </Ctx.Item>
   );
@@ -187,7 +188,7 @@ function AddToScopeItems({ elm }: { elm: CircuitElm }) {
   return (
     <Ctx.Sub>
       <Ctx.SubTrigger className="menu-item" disabled={!can} data-testid="ctx-add-to-scope">
-        Add to Existing Scope
+        {t('Add to Existing Scope')}
         <Icon name="chevronRight" className="icon menu-trailing" />
       </Ctx.SubTrigger>
       <Ctx.Portal>
@@ -228,7 +229,7 @@ function ScopeMenuItems({ index, undocked }: { index: number; undocked: ScopeElm
         <span className="menu-check" aria-hidden>
           {s.maxScale && <Icon name="check" size={18} />}
         </span>
-        Max Scale
+        {t('Max Scale')}
       </Ctx.CheckboxItem>
       {controller.scopes.look === 'cards' && (
         <Ctx.CheckboxItem
@@ -240,7 +241,7 @@ function ScopeMenuItems({ index, undocked }: { index: number; undocked: ScopeElm
           <span className="menu-check" aria-hidden>
             {s.frozen !== null && <Icon name="check" size={18} />}
           </span>
-          Freeze
+          {t('Freeze')}
         </Ctx.CheckboxItem>
       )}
       {undocked === null && (

@@ -18,6 +18,7 @@ import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
 import { useNarrow } from './useNarrow.ts';
 import { Icon, type IconName } from './Icon.tsx';
+import { t } from '../i18n.ts';
 
 /** Upstream unitString(ei), with voltage sources shown in rms when that is shorter. */
 function displayValue(elm: CircuitElm, ei: EditInfo, v = ei.value): string {
@@ -37,8 +38,10 @@ function readValue(elm: CircuitElm, text: string): number {
 }
 
 function labelText(name: string): string {
-  // upstream allows HTML in names starting with "<" (links); show the text only
-  return name.startsWith('<') ? name.replace(/<[^>]*>/g, '') : name;
+  // upstream translates the name (EditDialog), and allows HTML in names starting with "<"
+  // (links); show the text only
+  const s = t(name);
+  return s.startsWith('<') ? s.replace(/<[^>]*>/g, '') : s;
 }
 
 const fieldLabel = (ei: EditInfo): string => labelText(ei.name);
@@ -103,7 +106,7 @@ function NumberField(props: FieldProps) {
         <button
           type="button"
           className="icon-button icon-button-small"
-          aria-label={`Decrease ${fieldLabel(ei)}`}
+          aria-label={`${t('Decrease')} ${fieldLabel(ei)}`}
           onClick={() => step(-1)}
         >
           <Icon name="minus" size={18} />
@@ -131,13 +134,13 @@ function NumberField(props: FieldProps) {
         <button
           type="button"
           className="icon-button icon-button-small"
-          aria-label={`Increase ${fieldLabel(ei)}`}
+          aria-label={`${t('Increase')} ${fieldLabel(ei)}`}
           onClick={() => step(1)}
         >
           <Icon name="add" size={18} />
         </button>
       </div>
-      {bad && <span className="field-error">Not a number. Try 4.7k, 100n or 2k2.</span>}
+      {bad && <span className="field-error">{t('Not a number. Try 4.7k, 100n or 2k2.')}</span>}
     </div>
   );
 }
@@ -204,7 +207,7 @@ function ButtonField(props: FieldProps & { onDone: () => void }) {
         }}
         data-testid={`field-${props.n}`}
       >
-        {button.label}
+        {t(button.label)}
       </button>
     </div>
   );
@@ -269,7 +272,7 @@ function FileField(props: FieldProps & { onDone: () => void }) {
         onClick={() => input.current?.click()}
         data-testid={`field-${props.n}`}
       >
-        {ef.label ?? 'Choose File…'}
+        {t(ef.label ?? 'Choose File…')}
       </button>
     </div>
   );
@@ -294,7 +297,7 @@ function CheckboxField(props: FieldProps) {
         }}
         data-testid={`field-${props.n}`}
       />
-      <span>{cb.label}</span>
+      <span>{t(cb.label)}</span>
     </label>
   );
 }
@@ -324,7 +327,7 @@ function ChoiceField(props: FieldProps) {
       >
         {ch.items.map((it, i) => (
           <option key={i} value={i}>
-            {it}
+            {t(it)}
           </option>
         ))}
       </select>
@@ -343,8 +346,8 @@ function ActionButton(props: {
       type="button"
       className="icon-button"
       data-testid={props.testId}
-      aria-label={props.label}
-      title={props.label}
+      aria-label={t(props.label)}
+      title={t(props.label)}
       onClick={props.onClick}
     >
       <Icon name={props.icon} />
@@ -428,7 +431,7 @@ function SheetHandle(props: {
     <button
       type="button"
       className="sheet-handle"
-      aria-label={snap === 'peek' ? 'Show properties' : 'Hide properties'}
+      aria-label={t(snap === 'peek' ? 'Show properties' : 'Hide properties')}
       aria-expanded={snap !== 'peek'}
       data-testid="sheet-handle"
       onPointerDown={(e) => {
@@ -540,7 +543,7 @@ export function Inspector() {
   return (
     <aside
       className="inspector"
-      aria-label="Properties"
+      aria-label={t('Properties')}
       data-testid="inspector"
       data-sheet={narrow ? snap : undefined}
       data-dragging={dragHeight !== null || undefined}
@@ -557,7 +560,7 @@ export function Inspector() {
         <button
           type="button"
           className="icon-button icon-button-small"
-          aria-label="Close"
+          aria-label={t('Close')}
           onClick={() => controller.editor.clearSelection()}
         >
           <Icon name="close" size={18} />
@@ -566,7 +569,7 @@ export function Inspector() {
       <SelectionActions elm={selected} />
       {selected !== null && (
         <form className="inspector-fields" onSubmit={(e) => e.preventDefault()}>
-          {infos.length === 0 && <p className="inspector-empty">No properties to edit.</p>}
+          {infos.length === 0 && <p className="inspector-empty">{t('No properties to edit.')}</p>}
           {infos.map((ei, n) => {
             const props: FieldProps = {
               elm: selected,

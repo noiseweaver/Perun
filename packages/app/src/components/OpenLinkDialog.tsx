@@ -5,6 +5,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { useState } from 'react';
 import { openQuery } from '../startup.ts';
 import { useApp } from '../store.ts';
+import { t } from '../i18n.ts';
 
 /** Paste an upstream CircuitJS link (`?cct=`, `?ctz=`, `?startCircuit=` ...) and open it. */
 export function OpenLinkDialog(props: { open: boolean; onOpenChange: (open: boolean) => void }) {
@@ -32,9 +33,9 @@ export function OpenLinkDialog(props: { open: boolean; onOpenChange: (open: bool
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay" />
         <Dialog.Content className="dialog-content">
-          <Dialog.Title className="dialog-title">Open link</Dialog.Title>
+          <Dialog.Title className="dialog-title">{t('Open link')}</Dialog.Title>
           <Dialog.Description className="dialog-description">
-            Paste a CircuitJS link. Links from falstad.com and other CircuitJS sites work.
+            {t('Paste a CircuitJS link. Links from falstad.com and other CircuitJS sites work.')}
           </Dialog.Description>
           <form
             onSubmit={(e) => {
@@ -54,11 +55,11 @@ export function OpenLinkDialog(props: { open: boolean; onOpenChange: (open: bool
             <div className="dialog-buttons">
               <Dialog.Close asChild>
                 <button type="button" className="button">
-                  Cancel
+                  {t('Cancel')}
                 </button>
               </Dialog.Close>
               <button type="submit" className="button button-primary" data-testid="link-open">
-                Open
+                {t('Open')}
               </button>
             </div>
           </form>

@@ -25,6 +25,8 @@ export interface UserSettings {
   junctionDots: boolean;
   /** Font for text boxes; a display choice, not saved with circuits. */
   textFont: TextFont;
+  /** Interface language: `auto` (the browser's) or an upstream catalog code (i18n.ts). */
+  language: string;
 }
 
 /** Circuit options shown in the Options menu (saved with the circuit). */
@@ -110,6 +112,8 @@ export interface AppState {
   inspectorFocus: number;
   /** Text for screen readers (a polite live region): what keyboard selection picked. */
   announcement: string;
+  /** The catalog the interface shows (`en`, `de`, ...); the app tree is keyed by it. */
+  language: string;
   /** The user's theme (settings.themeId resolved). */
   theme: Theme;
   /**
@@ -157,6 +161,7 @@ function loadSettings(): UserSettings {
     conventionalCurrent: true,
     junctionDots: false,
     textFont: { family: 'default', bold: false, italic: false },
+    language: 'auto',
   };
   try {
     let raw = localStorage.getItem(SETTINGS_KEY);
@@ -184,6 +189,7 @@ function loadSettings(): UserSettings {
           : defaults.conventionalCurrent,
       junctionDots: typeof s.junctionDots === 'boolean' ? s.junctionDots : defaults.junctionDots,
       textFont: readTextFont(s.textFont) ?? defaults.textFont,
+      language: typeof s.language === 'string' ? s.language : defaults.language,
     };
   } catch {
     return defaults;
@@ -281,6 +287,7 @@ export const useApp = create<AppState>(() => ({
   offlineReady: false,
   inspectorFocus: 0,
   announcement: '',
+  language: 'en',
   dialog: null,
   theme: themeFor(initialSettings.themeId, []),
   preview: null,

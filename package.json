@@ -10,7 +10,7 @@
     "node": ">=22.13"
   },
   "scripts": {
-    "typecheck": "pnpm -r --parallel typecheck && tsc -p tsconfig.json && tsc -p tools/golden && tsc -p tools/theme-docs && tsc -p tools/bench",
+    "typecheck": "pnpm -r --parallel typecheck && tsc -p tsconfig.json && tsc -p tools/golden && tsc -p tools/theme-docs && tsc -p tools/bench && tsc -p tools/i18n",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -26,6 +26,7 @@
     "golden:record-examples": "node tools/golden/src/record-examples.ts",
     "golden:scopes": "node tools/golden/src/record-scopes.ts",
     "bench": "node tools/bench/src/bench.ts",
+    "i18n": "node tools/i18n/src/coverage.ts",
     "theme:docs": "node tools/theme-docs/src/generate.ts"
   },
   "dependencies": {

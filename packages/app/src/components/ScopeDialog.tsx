@@ -40,6 +40,7 @@ import { useEffect, useReducer, useState, type ReactNode } from 'react';
 import { openDialog } from '../commands.ts';
 import { controller } from '../SimController.ts';
 import { Shell } from './DialogShell.tsx';
+import { t } from '../i18n.ts';
 
 const MULTA = [2.0, 2.5, 2.0];
 
@@ -223,7 +224,7 @@ function ScopeForm({ scope }: { scope: Scope }) {
         changed();
       }}
     >
-      {withNone && <option value={-1}>None</option>}
+      {withNone && <option value={-1}>{t('None')}</option>}
       {scope.plots.map((_p, i) => (
         <option key={i} value={i}>
           {plotName(i)}
@@ -234,7 +235,7 @@ function ScopeForm({ scope }: { scope: Scope }) {
 
   return (
     <Shell
-      title="Scope properties"
+      title={t('Scope properties')}
       description={scope.getScopeLabelOrText() || undefined}
       wide
       onClose={() => {
@@ -244,7 +245,7 @@ function ScopeForm({ scope }: { scope: Scope }) {
       }}
     >
       <div className="scope-dialog" data-testid="scope-dialog">
-        <Section title="Plots">
+        <Section title={t('Plots')}>
           <div className="scope-grid">
             {!transistor ? (
               <>
@@ -327,7 +328,7 @@ function ScopeForm({ scope }: { scope: Scope }) {
           </div>
         </Section>
 
-        <Section title="X-Y plots">
+        <Section title={t('X-Y plots')}>
           <div className="scope-grid">
             <Check
               label="Show V vs I"
@@ -350,23 +351,26 @@ function ScopeForm({ scope }: { scope: Scope }) {
           </div>
           {p2.plotXY && (
             <div className="scope-xy-grid">
-              <span>X axis</span>
+              <span>{t('X axis')}</span>
               {plotSelect(p2.plotX, (v) => (p2.plotX = v), false, 'scope-xy-x')}
-              <span>Y axis</span>
+              <span>{t('Y axis')}</span>
               {plotSelect(p2.plotY, (v) => (p2.plotY = v), false, 'scope-xy-y')}
-              <span>Brightness</span>
+              <span>{t('Brightness')}</span>
               {plotSelect(p2.plotBrightness, (v) => (p2.plotBrightness = v), true)}
-              <span>Red</span>
+              {/* eslint-disable-next-line local/no-color-literals -- a label, not a color */}
+              <span>{t('Red')}</span>
               {plotSelect(p2.plotColorR, (v) => (p2.plotColorR = v), true)}
-              <span>Green</span>
+              {/* eslint-disable-next-line local/no-color-literals -- a label, not a color */}
+              <span>{t('Green')}</span>
               {plotSelect(p2.plotColorG, (v) => (p2.plotColorG = v), true)}
-              <span>Blue</span>
+              {/* eslint-disable-next-line local/no-color-literals -- a label, not a color */}
+              <span>{t('Blue')}</span>
               {plotSelect(p2.plotColorB, (v) => (p2.plotColorB = v), true)}
             </div>
           )}
           {p2.enabled && (
             <label className="scope-slider-row">
-              <span>Trail persistence</span>
+              <span>{t('Trail persistence')}</span>
               <input
                 type="range"
                 min={0}
@@ -387,7 +391,7 @@ function ScopeForm({ scope }: { scope: Scope }) {
           )}
         </Section>
 
-        <Section title="Vertical scale">
+        <Section title={t('Vertical scale')}>
           <div className="scope-radios">
             <Radio
               name="vmode"
@@ -422,7 +426,7 @@ function ScopeForm({ scope }: { scope: Scope }) {
             />
           </div>
           {manual && vp.length > 1 && (
-            <div className="scope-channels" role="group" aria-label="Channel">
+            <div className="scope-channels" role="group" aria-label={t('Channel')}>
               {vp.map((p, i) => (
                 <button
                   key={i}
@@ -450,7 +454,7 @@ function ScopeForm({ scope }: { scope: Scope }) {
                 <button
                   type="button"
                   className="button"
-                  aria-label="Smaller scale"
+                  aria-label={t('Smaller scale')}
                   onClick={() => {
                     const d = readNumber(scaleShown);
                     if (d !== null && d > 0) applyManual(unitString(null, nextLowerScale(d)));
@@ -473,7 +477,7 @@ function ScopeForm({ scope }: { scope: Scope }) {
                 <button
                   type="button"
                   className="button"
-                  aria-label="Larger scale"
+                  aria-label={t('Larger scale')}
                   onClick={() => {
                     const d = readNumber(scaleShown);
                     if (d !== null && d > 0) applyManual(unitString(null, nextHighestScale(d)));
@@ -506,7 +510,7 @@ function ScopeForm({ scope }: { scope: Scope }) {
                     changed();
                   }}
                 >
-                  Reset
+                  {t('Reset')}
                 </button>
               </label>
               <div className="scope-radios">
@@ -531,7 +535,7 @@ function ScopeForm({ scope }: { scope: Scope }) {
                 />
               </div>
               <label className="scope-scale-row">
-                <span className="field-label">Number of divisions</span>
+                <span className="field-label">{t('Number of divisions')}</span>
                 <input
                   className="text-input scope-short-input"
                   value={divText}
@@ -545,9 +549,9 @@ function ScopeForm({ scope }: { scope: Scope }) {
           )}
         </Section>
 
-        <Section title="Horizontal scale">
+        <Section title={t('Horizontal scale')}>
           <label className="scope-slider-row">
-            <span>Time scale</span>
+            <span>{t('Time scale')}</span>
             <input
               type="range"
               min={0}
@@ -564,7 +568,7 @@ function ScopeForm({ scope }: { scope: Scope }) {
           </label>
         </Section>
 
-        <Section title="Trigger">
+        <Section title={t('Trigger')}>
           <div className="scope-radios">
             {(
               [
@@ -588,7 +592,7 @@ function ScopeForm({ scope }: { scope: Scope }) {
           {scope.trigger.isActive() && (
             <>
               <div className="scope-radios">
-                <span className="field-label">Edge</span>
+                <span className="field-label">{t('Edge')}</span>
                 <Radio
                   name="trigedge"
                   label="Rising"
@@ -611,7 +615,7 @@ function ScopeForm({ scope }: { scope: Scope }) {
                 />
               </div>
               <label className="scope-scale-row">
-                <span className="field-label">Level</span>
+                <span className="field-label">{t('Level')}</span>
                 <input
                   className="text-input scope-short-input"
                   value={trigText}
@@ -630,7 +634,7 @@ function ScopeForm({ scope }: { scope: Scope }) {
           )}
         </Section>
 
-        <Section title="Show info">
+        <Section title={t('Show info')}>
           <div className="scope-grid">
             <Check label="Show Scale" checked={scope.showScale} onChange={menu('showscale')} />
             <Check label="Show Peak Value" checked={scope.showMax} onChange={menu('showpeak')} />
@@ -670,7 +674,7 @@ function ScopeForm({ scope }: { scope: Scope }) {
           </div>
         </Section>
 
-        <Section title="Custom label">
+        <Section title={t('Custom label')}>
           <input
             className="text-input"
             value={label}
@@ -690,7 +694,7 @@ function ScopeForm({ scope }: { scope: Scope }) {
             scope.serializer.saveAsDefault();
           }}
         >
-          Save as default
+          {t('Save as default')}
         </button>
         <Dialog.Close asChild>
           <button
@@ -704,7 +708,7 @@ function ScopeForm({ scope }: { scope: Scope }) {
               openDialog(null);
             }}
           >
-            OK
+            {t('OK')}
           </button>
         </Dialog.Close>
       </div>

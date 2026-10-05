@@ -19,6 +19,7 @@ import { Icon } from './Icon.tsx';
 import { Palette } from './Palette.tsx';
 import { SliderPanel } from './SliderPanel.tsx';
 import { ThemeLinkBanner } from './ThemeDialogs.tsx';
+import { t, tItem } from '../i18n.ts';
 
 let started = false;
 
@@ -27,6 +28,8 @@ export function App() {
   const theme = useApp(shownTheme);
   const previewing = useApp((s) => s.preview !== null);
   const paletteOpen = useApp((s) => s.paletteOpen);
+  // a new language re-renders every label (none of the components below is memoized)
+  useApp((s) => s.language);
 
   useEffect(() => {
     // theme tokens for the UI chrome; values are validated theme data
@@ -59,8 +62,8 @@ export function App() {
               <button
                 type="button"
                 className="palette-reveal"
-                aria-label="Show components"
-                title="Show components"
+                aria-label={t('Show components')}
+                title={t('Show components')}
                 data-testid="palette-reveal"
                 onClick={() => setPaletteOpen(true)}
               >
@@ -88,14 +91,15 @@ export function App() {
 function ModeChip() {
   const addClass = useApp((s) => s.editor.addClass);
   if (addClass === null) return null;
-  const label = paletteItem(addClass)?.label ?? addClass;
+  const item = paletteItem(addClass);
+  const label = item ? tItem(item.label) : addClass;
   return (
     <div className="mode-chip" data-testid="mode-chip">
       <span>
-        Drag to place: <strong>{label}</strong>
+        {t('Drag to place:')} <strong>{label}</strong>
       </span>
       <button type="button" className="button" onClick={() => controller.editor.setSelectMode()}>
-        Done
+        {t('Done')}
       </button>
     </div>
   );
@@ -107,15 +111,15 @@ function UpdateBanner() {
   if (!ready) return null;
   return (
     <div className="update-banner" role="status" data-testid="update-banner">
-      <span>A new version is ready.</span>
+      <span>{t('A new version is ready.')}</span>
       <button type="button" className="button" onClick={applyUpdate}>
-        Reload
+        {t('Reload')}
       </button>
       <button
         type="button"
         className="icon-button"
-        aria-label="Later"
-        title="Later"
+        aria-label={t('Later')}
+        title={t('Later')}
         onClick={() => useApp.setState({ updateReady: false })}
       >
         <Icon name="close" size={20} />

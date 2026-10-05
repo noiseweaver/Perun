@@ -8,6 +8,7 @@ import { searchPalette, type PaletteItem } from '../editor/catalog.ts';
 import { controller } from '../SimController.ts';
 import { setPaletteOpen, shownTheme, useApp } from '../store.ts';
 import { Icon } from './Icon.tsx';
+import { t, tGroup, tItem } from '../i18n.ts';
 
 const previewSim = new Simulation();
 const ICON_W = 44;
@@ -82,7 +83,7 @@ function PaletteButton({ item, active }: { item: PaletteItem; active: boolean })
       className="palette-item"
       data-active={active || undefined}
       data-testid={`palette-${item.className}`}
-      title={item.shortcut ? `${item.label} (${item.shortcut})` : item.label}
+      title={item.shortcut ? `${tItem(item.label)} (${item.shortcut})` : tItem(item.label)}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -96,7 +97,7 @@ function PaletteButton({ item, active }: { item: PaletteItem; active: boolean })
       }}
     >
       <Preview className={item.className} />
-      <span className="palette-label">{item.label}</span>
+      <span className="palette-label">{tItem(item.label)}</span>
       {item.shortcut && <kbd className="palette-key">{item.shortcut}</kbd>}
     </button>
   );
@@ -141,7 +142,7 @@ export function Palette() {
   return (
     <aside
       className="palette"
-      aria-label="Components"
+      aria-label={t('Components')}
       data-testid="palette"
       data-open={open}
       aria-hidden={!open}
@@ -155,15 +156,15 @@ export function Palette() {
               className="palette-search-input"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search components"
-              aria-label="Search components"
+              placeholder={t('Search components')}
+              aria-label={t('Search components')}
               data-testid="palette-search"
             />
             {query && (
               <button
                 type="button"
                 className="icon-button icon-button-small"
-                aria-label="Clear search"
+                aria-label={t('Clear search')}
                 onClick={() => setQuery('')}
               >
                 <Icon name="close" size={18} />
@@ -173,15 +174,15 @@ export function Palette() {
           <button
             type="button"
             className="icon-button icon-button-small"
-            aria-label="Hide components"
-            title="Hide components"
+            aria-label={t('Hide components')}
+            title={t('Hide components')}
             data-testid="palette-hide"
             onClick={() => setPaletteOpen(false)}
           >
             <Icon name="chevronLeft" size={20} />
           </button>
         </div>
-        <div className="palette-hint">Click, then drag on the canvas. Or drag onto it.</div>
+        <div className="palette-hint">{t('Click, then drag on the canvas. Or drag onto it.')}</div>
         <div className="palette-list">
           {groups.map((g) => (
             <section key={g.title} className="palette-group">
@@ -195,7 +196,7 @@ export function Palette() {
                   disabled={searching}
                 >
                   <Icon name="dropDown" size={18} className="palette-group-chevron" />
-                  {g.title}
+                  {tGroup(g.title)}
                 </button>
               </h2>
               {(searching || !collapsed.has(g.title)) &&

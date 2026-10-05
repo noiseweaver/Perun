@@ -6,19 +6,24 @@ import { createRoot } from 'react-dom/client';
 import { App } from './components/App.tsx';
 import { controller } from './SimController.ts';
 import { setupPwa } from './pwa.ts';
+import { resolveLanguage, setLanguage } from './i18n.ts';
+import { useApp } from './store.ts';
 // bundled fonts (theme fonts are family names only, PLAN.md section 6)
 import '@fontsource-variable/roboto/wght.css';
 import '@fontsource-variable/jetbrains-mono/wght.css';
 import './styles.css';
 
 const root = document.getElementById('root');
-if (root) {
-  createRoot(root).render(
-    <StrictMode>
-      <App />
-    </StrictMode>,
-  );
-}
+// like upstream, the interface starts once its language is loaded
+void setLanguage(resolveLanguage(useApp.getState().settings.language)).then(() => {
+  if (root) {
+    createRoot(root).render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
+  }
+});
 
 // for end-to-end tests and debugging from the console
 declare global {
