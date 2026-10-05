@@ -99,3 +99,12 @@ export class AttrReader implements XmlAttrReader {
       .replace(/&amp;/g, '&');
   }
 }
+
+/** Write a detached element's attributes (already escaped) and children through a writer. */
+export function copyInto(w: XmlAttrWriter, e: XmlElement): void {
+  for (const [k, v] of e.attributes) w.setAttribute(k, v);
+  for (const c of e.children) {
+    if (c instanceof XmlElement) copyInto(w.addChild(c.name), c);
+    else w.appendText(c.text);
+  }
+}

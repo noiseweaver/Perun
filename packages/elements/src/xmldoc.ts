@@ -36,6 +36,11 @@ export class XmlElement {
     this.attributes.push([name, value]);
   }
 
+  removeAttribute(name: string): void {
+    const i = this.attributes.findIndex((a) => a[0] === name);
+    if (i >= 0) this.attributes.splice(i, 1);
+  }
+
   appendChild(child: XmlElement | XmlText): void {
     this.children.push(child);
   }

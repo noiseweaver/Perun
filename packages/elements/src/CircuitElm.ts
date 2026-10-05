@@ -56,6 +56,9 @@ export abstract class CircuitElm extends SimElement {
    */
   dumpXmlModels(_doc: XmlDocWriter): void {}
 
+  /** Logic high level, pushed down from a subcircuit's setting (upstream no-op default). */
+  setHighVoltage(_hv: number): void {}
+
   /**
    * Voltages read from a file (transistor junction voltages, op-amp inputs) go into the element's
    * own `volts`, as upstream's loaders write them, and hold until the first solve.

@@ -53,6 +53,7 @@ import {
   OTAElmType,
   PDarlingtonElmType,
 } from './elm/compositeParts.ts';
+import { CustomCompositeElm, CustomCompositeElmType } from './elm/CustomCompositeElm.ts';
 import { CC2ElmType, CC2NegElmType } from './elm/CC2Elm.ts';
 import { AudioOutputElmType } from './elm/AudioOutputElm.ts';
 import { CCCSElmType, CCVSElmType, VCCSElmType, VCVSElmType } from './elm/VCCSElm.ts';
@@ -247,6 +248,7 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   CrystalElmType,
   BoxElmType,
   LineElmType,
+  CustomCompositeElmType,
 ];
 
 /** Old class names upstream's constructElement still accepts (saved shortcuts, subcircuits). */
@@ -285,6 +287,15 @@ export function constructElement(
   y: number,
   sim: Simulation = new Simulation(),
 ): CircuitElm | null {
+  // "CustomCompositeElm:name" is a subcircuit of that model (menu entries for built-in ones)
+  if (className.startsWith('CustomCompositeElm:')) {
+    const e = new CustomCompositeElm(x, y, x, y, 0);
+    e.sim = sim;
+    e.flags = e.getDefaultFlags();
+    e.initWithModel(className.substring('CustomCompositeElm:'.length));
+    e.allocNodes();
+    return e;
+  }
   const name = CLASS_ALIASES.get(className) ?? className;
   return byClassName.get(name)?.create(x, y, sim) ?? null;
 }

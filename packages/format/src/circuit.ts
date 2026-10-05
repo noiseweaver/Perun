@@ -170,6 +170,8 @@ export class Circuit {
     this.setGrid();
     this.xmlExtras = [];
     this.scopes.clearScopes();
+    // upstream keeps them while a subcircuit is open for editing (its context stack)
+    modelsFor(sim).composite.clearLocalModels();
   }
 
   private setGrid(): void {
@@ -320,7 +322,7 @@ export class Circuit {
           continue;
         }
         if (type.charAt(0) === '.') {
-          this.warnings.push('subcircuit models are not supported yet');
+          modelsFor(this.sim).composite.undumpModel(st, this.sim);
           continue;
         }
 
@@ -479,7 +481,11 @@ export class Circuit {
         modelsFor(sim).relay.undumpModelXml(r);
         continue;
       }
-      if (['clm', 'ccm'].includes(tag)) {
+      if (tag === 'ccm') {
+        modelsFor(sim).composite.undumpModelXml(r, sim);
+        continue;
+      }
+      if (tag === 'clm') {
         this.warnings.push(`model element <${tag}> is not supported yet`);
         continue;
       }

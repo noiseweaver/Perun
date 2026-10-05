@@ -89,7 +89,7 @@ export class InverterElm extends BufferLikeElm {
     this.noDiagonal = true;
   }
 
-  setHighVoltage(hv: number): void {
+  override setHighVoltage(hv: number): void {
     this.highVoltage = hv;
   }
 
@@ -367,7 +367,7 @@ export class TriStateElm extends CircuitElm {
     this.noDiagonal = true;
   }
 
-  setHighVoltage(hv: number): void {
+  override setHighVoltage(hv: number): void {
     this.highVoltage = hv;
   }
 
@@ -593,7 +593,7 @@ export class DelayBufferElm extends BufferLikeElm {
     this.noDiagonal = true;
   }
 
-  setHighVoltage(hv: number): void {
+  override setHighVoltage(hv: number): void {
     this.highVoltage = hv;
   }
 

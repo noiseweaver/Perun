@@ -74,7 +74,14 @@ import {
 import { AudioOutputElm } from '../elm/AudioOutputElm.ts';
 import { BoxElm, LineElm } from '../elm/GraphicElm.ts';
 import { CrystalElm, DarlingtonElm, NortonAmpElm, OTAElm } from '../elm/compositeParts.ts';
-import { crystalView, darlingtonView, nortonAmpView, otaView } from './composites.ts';
+import {
+  crystalView,
+  darlingtonView,
+  nortonAmpView,
+  otaView,
+  subcircuitView,
+} from './composites.ts';
+import { CustomCompositeElm } from '../elm/CustomCompositeElm.ts';
 import {
   capacitorView,
   groundView,
@@ -185,6 +192,7 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [NortonAmpElm, nortonAmpView],
   [DarlingtonElm, darlingtonView],
   [CrystalElm, crystalView],
+  [CustomCompositeElm, subcircuitView],
   [TextElm, textView],
   [LEDElm, ledView],
   [ZenerElm, zenerView],

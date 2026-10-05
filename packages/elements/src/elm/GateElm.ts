@@ -193,7 +193,7 @@ export abstract class GateElm extends CircuitElm {
     if (this.propagationDelay > 0) arr[3] = 'delay = ' + getUnitText(this.propagationDelay, 's');
   }
 
-  setHighVoltage(hv: number): void {
+  override setHighVoltage(hv: number): void {
     this.highVoltage = hv;
   }
 

@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
-// Geometry learned from CircuitJS1 OTAElm, NortonAmpElm, DarlingtonElm and CrystalElm draw()
+// Geometry learned from CircuitJS1 OTAElm, NortonAmpElm, DarlingtonElm, CrystalElm and
+// CustomCompositeElm draw()
 // (src/com/lushprojects/circuitjs1/client/, master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032;
 // the drawing code is new.
 
 import type { CrystalElm, DarlingtonElm, NortonAmpElm, OTAElm } from '../elm/compositeParts.ts';
+import type { CustomCompositeElm } from '../elm/CustomCompositeElm.ts';
+import { drawChip } from './chips.ts';
 import {
   drawCenteredText,
   drawValues,
@@ -102,4 +105,23 @@ export const crystalView: ElementView<CrystalElm> = {
       drawValues(e, ctx, getShortUnitText(e.seriesFrequency(), 'Hz'), 12);
   },
   bbox: (e) => elementBox(e, 12),
+};
+
+export const subcircuitView: ElementView<CustomCompositeElm> = {
+  draw(e, ctx) {
+    const chip = e.syncChip();
+    if (chip === null) return;
+    drawChip(chip, ctx);
+    if (chip.label !== null)
+      ctx.painter.text(chip.label, { x: chip.labelX, y: chip.labelY }, LABEL, {
+        font: 'units',
+        align: 'center',
+        baseline: 'middle',
+      });
+  },
+  bbox(e) {
+    const r = e.chip?.rectPoints ?? [];
+    if (r.length < 3) return { x1: e.x, y1: e.y, x2: e.x, y2: e.y };
+    return { x1: r[0].x, y1: r[0].y, x2: r[2].x, y2: r[2].y };
+  },
 };

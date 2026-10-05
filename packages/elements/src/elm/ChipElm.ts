@@ -372,7 +372,7 @@ export abstract class ChipElm extends CircuitElm {
     }
   }
 
-  setHighVoltage(hv: number): void {
+  override setHighVoltage(hv: number): void {
     this.highVoltage = hv;
   }
 

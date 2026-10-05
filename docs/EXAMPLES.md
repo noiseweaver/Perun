@@ -9,7 +9,7 @@ steps 1, 2, 5, 10, 20, 50, 100, 200, 500 and 1000 match within the golden tolera
 (tools/golden/README.md). "Same save" means our XML save after loading is byte for byte
 upstream's.
 
-**Pass: 356 of 373 (95.4%).** Same save: 354 (94.9%).
+**Pass: 358 of 373 (96.0%).** Same save: 356 (95.4%).
 
 Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 
@@ -39,7 +39,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | actbutterband.txt | pass | yes |  |
 | actbutterhi.txt | pass | yes |  |
 | actbutterlo.txt | pass | yes |  |
-| adder4-sc.txt | fail | no | model element <ccm> is not supported yet; unrecognized xml element: cc |
+| adder4-sc.txt | pass | yes |  |
 | allpass1.txt | pass | yes |  |
 | allpass2.txt | pass | yes |  |
 | alu74181.txt | fail | no | unrecognized xml element: ins |
@@ -62,7 +62,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | bandpass.txt | pass | yes |  |
 | besselbutter.txt | pass | yes |  |
 | blank.txt | pass | yes |  |
-| brentkung.txt | fail | no | model element <ccm> is not supported yet; unrecognized xml element: cc |
+| brentkung.txt | pass | yes |  |
 | butter10hi.txt | pass | yes |  |
 | butter10hiaud.txt | pass | yes |  |
 | butter10lo.txt | pass | yes |  |
@@ -167,7 +167,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | follower.txt | pass | yes |  |
 | freqdouble.txt | pass | yes |  |
 | fulladd.txt | pass | yes |  |
-| fullrect-sc.txt | fail | no | model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: rw |
+| fullrect-sc.txt | fail | no | unrecognized xml element: rw |
 | fullrect.txt | pass | yes |  |
 | fullrectf.txt | pass | yes |  |
 | gilbertcell.txt | pass | yes |  |
@@ -328,11 +328,11 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | switchfilter.txt | pass | yes |  |
 | swtreedac.txt | pass | yes |  |
 | synccounter.txt | pass | yes |  |
-| td4-add2.txt | fail | no | unrecognized xml element: rw; model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: ins; unrecognized xml element: ROM |
-| td4-ctr-dn.txt | fail | no | unrecognized xml element: rw; model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: ins; unrecognized xml element: ROM |
-| td4-ctr-up-dn.txt | fail | no | unrecognized xml element: rw; model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: ins; unrecognized xml element: ROM |
-| td4-ctr.txt | fail | no | unrecognized xml element: rw; model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: ins; unrecognized xml element: ROM |
-| td4.txt | fail | no | unrecognized xml element: rw; model element <ccm> is not supported yet; unrecognized xml element: cc; unrecognized xml element: ins; unrecognized xml element: ROM |
+| td4-add2.txt | fail | no | unrecognized xml element: rw; unrecognized xml element: ins; unrecognized xml element: ROM |
+| td4-ctr-dn.txt | fail | no | unrecognized xml element: rw; unrecognized xml element: ins; unrecognized xml element: ROM |
+| td4-ctr-up-dn.txt | fail | no | unrecognized xml element: rw; unrecognized xml element: ins; unrecognized xml element: ROM |
+| td4-ctr.txt | fail | no | unrecognized xml element: rw; unrecognized xml element: ins; unrecognized xml element: ROM |
+| td4.txt | fail | no | unrecognized xml element: rw; unrecognized xml element: ins; unrecognized xml element: ROM |
 | tdiode.txt | pass | yes |  |
 | tdosc.txt | pass | yes |  |
 | tdrelax.txt | pass | yes |  |

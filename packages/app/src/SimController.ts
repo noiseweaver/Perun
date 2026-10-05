@@ -13,6 +13,7 @@ import {
   UNITS_V,
   VAL_CURRENT,
   AudioOutputElm,
+  CustomCompositeElm,
   VAL_VOLTAGE,
   VoltageElm,
   cardHitTest,
@@ -129,6 +130,14 @@ export class SimController {
       AudioOutputElm.confirmAdjustTimestep = (m) => window.confirm(m);
       AudioOutputElm.notify = (m) => window.alert(m);
       AudioOutputElm.player = playSamples;
+      // the subcircuit editors are not built yet (PROGRESS.md open issues)
+      const later = () => window.alert('Editing subcircuits is not available yet.');
+      CustomCompositeElm.hooks = {
+        editPinLayout: later,
+        viewComponents: later,
+        editModel: later,
+        alert: (m) => window.alert(m),
+      };
     }
   }
 

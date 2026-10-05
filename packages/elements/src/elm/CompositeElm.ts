@@ -13,18 +13,9 @@ import { elementFactory } from '../factory.ts';
 import { parseJavaInt } from '../java.ts';
 import { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
-import { AttrReader, AttrWriter } from '../xmlattrs.ts';
+import { AttrReader, AttrWriter, copyInto } from '../xmlattrs.ts';
 import { XmlElement } from '../xmldoc.ts';
 import { GroundElm } from './GroundElm.ts';
-
-/** Copy a detached element's attributes and children through a writer. */
-function copyInto(w: XmlAttrWriter, e: XmlElement): void {
-  for (const [k, v] of e.attributes) w.setAttribute(k, v);
-  for (const c of e.children) {
-    if (c instanceof XmlElement) copyInto(w.addChild(c.name), c);
-    else w.appendText(c.text);
-  }
-}
 
 /**
  * A circuit element made of other circuit elements, simulated part by part. Subclasses build
@@ -101,7 +92,7 @@ export abstract class CompositeElm extends CircuitElm {
     this.flags |= CompositeElm.FLAG_ESCAPE;
   }
 
-  /** Called for each `ccm` model record among the parts (custom composites only). */
+  /** Called for each `ccm` model record among the parts (subcircuits register it). */
   loadNestedModel(_r: XmlAttrReader): void {}
 
   loadCompositeXml(elmEntries: XmlElement[], externalNodes: number[]): void {

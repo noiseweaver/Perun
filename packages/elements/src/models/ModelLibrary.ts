@@ -2,6 +2,7 @@
 // Copyright (C) 2026 circuitjs-next contributors
 
 import type { Simulation } from '@circuitjs-next/engine';
+import { CustomCompositeModels } from './CustomCompositeModel.ts';
 import { DiodeModels } from './DiodeModel.ts';
 import { MosfetModels } from './MosfetModel.ts';
 import { RelayModels } from './RelayModel.ts';
@@ -17,6 +18,7 @@ export class ModelLibrary {
   readonly transistor = new TransistorModels();
   readonly mosfet = new MosfetModels();
   readonly relay = new RelayModels();
+  readonly composite = new CustomCompositeModels();
   /**
    * Upstream `TransistorElm.globalFlags`: display flags (the circle) shared by every transistor,
    * taken from the last one loaded.
@@ -34,6 +36,7 @@ export class ModelLibrary {
     this.transistor.clearDumpedFlags();
     this.mosfet.clearDumpedFlags();
     this.relay.clearDumpedFlags();
+    this.composite.clearDumpedFlags();
   }
 }
 

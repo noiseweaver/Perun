@@ -21,6 +21,7 @@
 actbutterband.txt
 actbutterhi.txt
 actbutterlo.txt
+adder4-sc.txt
 allpass1.txt
 allpass2.txt
 amdetect.txt
@@ -42,6 +43,7 @@ bandnoise.txt
 bandpass.txt
 besselbutter.txt
 blank.txt
+brentkung.txt
 butter10hi.txt
 butter10hiaud.txt
 butter10lo.txt
