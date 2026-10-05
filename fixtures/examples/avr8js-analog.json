@@ -1,0 +1,99 @@
+{
+ "file": "avr8js-analog.txt",
+ "reference": {
+  "upstreamSha": "5a707168778216bb6ed01bfdd62e8bbf7ae0a032",
+  "harnessPatchSha256": "fa84fc858811ddd78a3e4c757e379392906a47e464b400c92c9d16b902886403",
+  "browser": "chromium 141.0.7390.37"
+ },
+ "export": "<cir f=\"1\" ts=\"0.000049999999999999996\" ic=\"0.18682459574322224\" cb=\"50\" pb=\"50\" vr=\"5\" mts=\"5e-11\">\n  <ExtVoltage x=\"304 160 256 160\" f=\"0\" wf=\"1\" fr=\"40\" maxv=\"5\" nm=\"pin 10\"/>\n  <ExtVoltage x=\"304 192 256 192\" f=\"0\" wf=\"1\" fr=\"40\" maxv=\"5\" nm=\"pin 11\"/>\n  <ExtVoltage x=\"304 224 256 224\" f=\"0\" wf=\"1\" fr=\"40\" maxv=\"5\" nm=\"pin 12\"/>\n  <M x=\"304 160 336 160\" f=\"0\"/>\n  <M x=\"304 192 336 192\" f=\"0\"/>\n  <M x=\"304 224 336 224\" f=\"0\"/>\n  <M x=\"304 128 336 128\" f=\"0\"/>\n  <M x=\"304 96 336 96\" f=\"0\"/>\n  <ExtVoltage x=\"304 128 256 128\" f=\"0\" wf=\"1\" fr=\"40\" maxv=\"5\" nm=\"pin 9\"/>\n  <ExtVoltage x=\"304 96 256 96\" f=\"0\" wf=\"1\" fr=\"40\" maxv=\"5\" nm=\"pin 8\"/>\n  <ln x=\"304 48 256 48\" f=\"4\" te=\"A0\"/>\n  <R x=\"304 48 336 48\" f=\"0\" wf=\"3\" fr=\"40\" maxv=\"2.5\" bias=\"2.5\"/>\n  <o en=\"7\" sp=\"4\" f=\"x6\" p=\"0\">\n    <p v=\"0\" sc=\"5\"/>\n  </o>\n  <o en=\"6\" sp=\"4\" f=\"x6\" p=\"0\">\n    <p v=\"0\" sc=\"5\"/>\n  </o>\n  <o en=\"3\" sp=\"4\" f=\"x6\" p=\"0\">\n    <p v=\"0\" sc=\"5\"/>\n  </o>\n  <o en=\"4\" sp=\"4\" f=\"x6\" p=\"0\">\n    <p v=\"0\" sc=\"5\"/>\n  </o>\n  <o en=\"5\" sp=\"4\" f=\"x6\" p=\"0\">\n    <p v=\"0\" sc=\"5\"/>\n  </o>\n  <o en=\"11\" sp=\"4\" f=\"x2\" p=\"1\">\n    <p v=\"0\" sc=\"5\"/>\n    <p v=\"3\" sc=\"0.00009765625\"/>\n  </o>\n</cir>\n",
+ "topology": {
+  "nodeCount": 7,
+  "elements": [
+   {
+    "type": "ExtVoltageElm",
+    "nodes": [
+     1
+    ]
+   },
+   {
+    "type": "ExtVoltageElm",
+    "nodes": [
+     2
+    ]
+   },
+   {
+    "type": "ExtVoltageElm",
+    "nodes": [
+     3
+    ]
+   },
+   {
+    "type": "LogicOutputElm",
+    "nodes": [
+     1
+    ]
+   },
+   {
+    "type": "LogicOutputElm",
+    "nodes": [
+     2
+    ]
+   },
+   {
+    "type": "LogicOutputElm",
+    "nodes": [
+     3
+    ]
+   },
+   {
+    "type": "LogicOutputElm",
+    "nodes": [
+     4
+    ]
+   },
+   {
+    "type": "LogicOutputElm",
+    "nodes": [
+     5
+    ]
+   },
+   {
+    "type": "ExtVoltageElm",
+    "nodes": [
+     4
+    ]
+   },
+   {
+    "type": "ExtVoltageElm",
+    "nodes": [
+     5
+    ]
+   },
+   {
+    "type": "LabeledNodeElm",
+    "nodes": [
+     6
+    ]
+   },
+   {
+    "type": "RailElm",
+    "nodes": [
+     6
+    ]
+   }
+  ]
+ },
+ "stop": null,
+ "samples": [
+  {"step":1,"t":0.00005,"nodes":[0,0,0,0,0,0,0]},
+  {"step":2,"t":0.0001,"nodes":[0,0,0,0,0,0,0.02]},
+  {"step":5,"t":0.00025,"nodes":[0,0,0,0,0,0,0.08]},
+  {"step":10,"t":0.0005,"nodes":[0,0,0,0,0,0,0.18]},
+  {"step":20,"t":0.001,"nodes":[0,0,0,0,0,0,0.38]},
+  {"step":50,"t":0.0025,"nodes":[0,0,0,0,0,0,0.98]},
+  {"step":100,"t":0.005,"nodes":[0,0,0,0,0,0,1.98]},
+  {"step":200,"t":0.01,"nodes":[0,0,0,0,0,0,3.98]},
+  {"step":500,"t":0.025,"nodes":[0,0,0,0,0,0,0.0199999999999]},
+  {"step":1000,"t":0.05,"nodes":[0,0,0,0,0,0,0.0199999999996]}
+ ]
+}

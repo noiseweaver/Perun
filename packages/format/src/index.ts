@@ -2,6 +2,7 @@
 // Copyright (C) 2026 circuitjs-next contributors
 
 export { AttrReader, AttrWriter } from './attrs.ts';
+export { JavaRandom } from '@circuitjs-next/elements';
 export {
   Circuit,
   OptionFlag,

@@ -138,8 +138,8 @@ export class PotElm extends CircuitElm {
 
   override calculateCurrent(): void {
     if (this.resistance1 === 0) return; // avoid NaN
-    this.current1 = (this.nodes[0].v - this.nodes[2].v) / this.resistance1;
-    this.current2 = (this.nodes[1].v - this.nodes[2].v) / this.resistance2;
+    this.current1 = (this.volts[0] - this.volts[2]) / this.resistance1;
+    this.current2 = (this.volts[1] - this.volts[2]) / this.resistance2;
     this.current3 = -this.current1 - this.current2;
   }
 

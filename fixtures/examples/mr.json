@@ -1,0 +1,53 @@
+{
+ "file": "mr.txt",
+ "reference": {
+  "upstreamSha": "5a707168778216bb6ed01bfdd62e8bbf7ae0a032",
+  "harnessPatchSha256": "fa84fc858811ddd78a3e4c757e379392906a47e464b400c92c9d16b902886403",
+  "browser": "chromium 141.0.7390.37"
+ },
+ "export": "<cir f=\"1\" ts=\"2e-8\" ic=\"1.3804574186067096\" cb=\"52\" pb=\"50\" vr=\"5\" mts=\"5e-11\">\n  <m x=\"256 144 256 288\" f=\"0\" ron=\"100\" rof=\"16000\" do=\"0\" to=\"1e-8\" mo=\"1e-10\"/>\n  <g x=\"256 320 256 336\" f=\"0\"/>\n  <w x=\"256 288 256 320\" f=\"1\"/>\n  <VarRail x=\"256 144 256 112\" f=\"0\" wf=\"7\" fr=\"5\" maxv=\"5\" bias=\"-5\" st=\"Voltage\"/>\n  <o en=\"0\" sp=\"8\" f=\"x3\" p=\"0\">\n    <p v=\"0\" sc=\"5\"/>\n    <p v=\"3\" sc=\"0.05\"/>\n  </o>\n  <o en=\"0\" sp=\"8\" f=\"x3\" p=\"1\" x=\"resistance\">\n    <p v=\"2\" sc=\"640\"/>\n  </o>\n</cir>\n",
+ "topology": {
+  "nodeCount": 2,
+  "elements": [
+   {
+    "type": "MemristorElm",
+    "nodes": [
+     1,
+     0
+    ]
+   },
+   {
+    "type": "GroundElm",
+    "nodes": [
+     0
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     0,
+     0
+    ]
+   },
+   {
+    "type": "VarRailElm",
+    "nodes": [
+     1
+    ]
+   }
+  ]
+ },
+ "stop": null,
+ "samples": [
+  {"step":1,"t":2e-8,"nodes":[0,5]},
+  {"step":2,"t":4e-8,"nodes":[0,5]},
+  {"step":5,"t":1e-7,"nodes":[0,5]},
+  {"step":10,"t":2e-7,"nodes":[0,5]},
+  {"step":20,"t":4e-7,"nodes":[0,5]},
+  {"step":50,"t":0.000001,"nodes":[0,5]},
+  {"step":100,"t":0.000002,"nodes":[0,5]},
+  {"step":200,"t":0.000004,"nodes":[0,5]},
+  {"step":500,"t":0.00001,"nodes":[0,5]},
+  {"step":1000,"t":0.00002,"nodes":[0,5]}
+ ]
+}

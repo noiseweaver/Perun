@@ -7,7 +7,7 @@
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
-import { CircuitNode, Point, SimElement, type Simulation } from '@circuitjs-next/engine';
+import { Point, SimElement, type Simulation } from '@circuitjs-next/engine';
 import type { EditInfo } from './edit/EditInfo.ts';
 import { UNITS_A, UNITS_V, UNITS_W, VAL_CURRENT, VAL_POWER } from './scope/constants.ts';
 import { getCurrentDText, getVoltageDText } from './view/units.ts';
@@ -57,16 +57,12 @@ export abstract class CircuitElm extends SimElement {
   dumpXmlModels(_doc: XmlDocWriter): void {}
 
   /**
-   * Voltages read from a file (transistor junction voltages, op-amp inputs). Upstream keeps a
-   * copy of the node voltages per element and the loader writes into it; here they wait on
-   * placeholder nodes, and `setNode` carries them onto the real nodes during analysis (the
-   * ground node excepted, which master also zeroes).
+   * Voltages read from a file (transistor junction voltages, op-amp inputs) go into the element's
+   * own `volts`, as upstream's loaders write them, and hold until the first solve.
    */
   protected setLoadedVoltage(n: number, v: number): void {
-    const nodes = [...this.nodes];
-    for (let i = nodes.length; i < this.getNodeCount(); i++) nodes.push(placeholderNode(0));
-    nodes[n] = placeholderNode(v);
-    this.nodes = nodes;
+    while (this.volts.length < this.getNodeCount()) this.volts.push(0);
+    this.volts[n] = v;
   }
 
   /** Upstream `interpPoint2`: points fraction f from a to b, offset +g and -g across the line. */
@@ -374,13 +370,6 @@ export function lineDistanceSq(
   const dbot = (yb - ya) * (yb - ya) + (xb - xa) * (xb - xa);
   if (dbot === 0) return distanceSq(xa, ya, gx, gy);
   return Math.trunc((dtop * dtop) / dbot);
-}
-
-function placeholderNode(v: number): CircuitNode {
-  const n = new CircuitNode();
-  n.index = -1;
-  n.v = v;
-  return n;
 }
 
 /** How to build one element class, for the loaders. */

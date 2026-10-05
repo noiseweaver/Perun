@@ -14,6 +14,7 @@ on:
       - tools/golden/**
       - fixtures/golden/**
       - fixtures/scopes/**
+      - fixtures/examples/**
   pull_request:
     paths:
       - reference/**
@@ -22,6 +23,7 @@ on:
       - tools/golden/**
       - fixtures/golden/**
       - fixtures/scopes/**
+      - fixtures/examples/**
 
 jobs:
   build:
@@ -53,6 +55,8 @@ jobs:
         run: pnpm golden:check
       - name: Scope fixture reproduces
         run: pnpm golden:scopes --check
+      - name: Example recordings reproduce
+        run: pnpm golden:record-examples --check
       - uses: actions/upload-artifact@v4
         if: always()
         with:

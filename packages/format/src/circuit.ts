@@ -190,7 +190,8 @@ export class Circuit {
     sim.resetTime();
     sim.resetNodes();
     for (const ce of this.elements) {
-      for (const n of ce.nodes) if (n.index === -1) n.v = 0;
+      // upstream CircuitElm.reset() zeroes volts[]
+      ce.volts.fill(0);
       ce.reset();
     }
   }

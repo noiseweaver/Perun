@@ -166,13 +166,14 @@ describe('device models and nonlinear elements', () => {
     expect(c.dumpXml()).toBe(xml);
   });
 
-  it('carries loaded transistor junction voltages onto the nodes', () => {
+  it('keeps loaded transistor junction voltages until the first solve', () => {
     const c = readCircuit('t 0 0 32 0 0 1 -5 0.6 100 default\nr 0 0 0 64 0 1000\ng 0 64 0 80 0\n');
     const t = c.elements[0] as TransistorElm;
     // before analysis the file values are what gets saved
     expect(c.dumpXml()).toContain('vbe="-5" vbc="0.6"');
+    // each element keeps its own copy, as master's volts[] does
     c.sim.step(0);
-    expect(t.nodes.map((n) => n.v)).toEqual([0, 5, -0.6]);
+    expect(t.volts).toEqual([0, 5, -0.6]);
   });
 
   it('builds the N-type variant from a base class name, like upstream', () => {

@@ -95,10 +95,9 @@ export class SwitchElm extends CircuitElm {
 
   override calculateCurrent(): void {
     if (this.position === 1) this.current = 0;
-    else if (this.resistance > 0)
-      this.current = (this.nodes[0].v - this.nodes[1].v) / this.resistance;
+    else if (this.resistance > 0) this.current = (this.volts[0] - this.volts[1]) / this.resistance;
     else if (this.parent !== null)
-      this.current = (this.nodes[0].v - this.nodes[1].v) / SwitchElm.COMPOSITE_CLOSED_R;
+      this.current = (this.volts[0] - this.volts[1]) / SwitchElm.COMPOSITE_CLOSED_R;
   }
 
   override getConnection(_n1: number, _n2: number): boolean {

@@ -22,6 +22,8 @@
     "golden:record": "node tools/golden/src/record.ts",
     "golden:check": "node tools/golden/src/record.ts --check",
     "golden:compare": "node tools/golden/src/compare-cli.ts",
+    "golden:examples": "node tools/golden/src/examples-cli.ts",
+    "golden:record-examples": "node tools/golden/src/record-examples.ts",
     "golden:scopes": "node tools/golden/src/record-scopes.ts",
     "theme:docs": "node tools/theme-docs/src/generate.ts"
   },

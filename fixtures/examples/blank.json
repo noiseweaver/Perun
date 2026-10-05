@@ -1,0 +1,21 @@
+{
+ "file": "blank.txt",
+ "reference": {
+  "upstreamSha": "5a707168778216bb6ed01bfdd62e8bbf7ae0a032",
+  "harnessPatchSha256": "fa84fc858811ddd78a3e4c757e379392906a47e464b400c92c9d16b902886403",
+  "browser": "chromium 141.0.7390.37"
+ },
+ "export": "<cir f=\"1\" ts=\"0.000005\" ic=\"10.20027730826997\" cb=\"50\" pb=\"50\" vr=\"5\" mts=\"5e-11\"/>\n",
+ "topology": {
+  "nodeCount": 0,
+  "elements": []
+ },
+ "stop": {
+  "message": "stopped",
+  "step": 0,
+  "t": 0
+ },
+ "samples": [
+  
+ ]
+}

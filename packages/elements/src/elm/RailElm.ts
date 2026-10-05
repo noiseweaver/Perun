@@ -31,7 +31,7 @@ export class RailElm extends VoltageElm {
   }
 
   override getVoltageDiff(): number {
-    return this.nodes[0].v;
+    return this.volts[0];
   }
 
   override setVoltageSource(n: number, v: VoltageSource): void {

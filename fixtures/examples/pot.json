@@ -1,0 +1,70 @@
+{
+ "file": "pot.txt",
+ "reference": {
+  "upstreamSha": "5a707168778216bb6ed01bfdd62e8bbf7ae0a032",
+  "harnessPatchSha256": "fa84fc858811ddd78a3e4c757e379392906a47e464b400c92c9d16b902886403",
+  "browser": "chromium 141.0.7390.37"
+ },
+ "export": "<cir f=\"1\" ts=\"0.000005\" ic=\"10.20027730826997\" cb=\"50\" pb=\"50\" vr=\"5\" mts=\"5e-11\">\n  <v x=\"208 320 208 160\" f=\"0\" wf=\"0\" maxv=\"5\"/>\n  <v x=\"432 320 432 160\" f=\"0\" wf=\"0\" maxv=\"5\"/>\n  <w x=\"320 224 320 160\" f=\"0\"/>\n  <w x=\"320 160 208 160\" f=\"0\"/>\n  <w x=\"320 160 432 160\" f=\"0\"/>\n  <pt x=\"208 320 432 224\" f=\"1\" ma=\"1000\" po=\"0.5\" sl=\"Resistance\"/>\n</cir>\n",
+ "topology": {
+  "nodeCount": 3,
+  "elements": [
+   {
+    "type": "VoltageElm",
+    "nodes": [
+     0,
+     1
+    ]
+   },
+   {
+    "type": "VoltageElm",
+    "nodes": [
+     2,
+     1
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     1,
+     1
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     1,
+     1
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     1,
+     1
+    ]
+   },
+   {
+    "type": "PotElm",
+    "nodes": [
+     0,
+     2,
+     1
+    ]
+   }
+  ]
+ },
+ "stop": null,
+ "samples": [
+  {"step":1,"t":0.000005,"nodes":[0,5,0]},
+  {"step":2,"t":0.00001,"nodes":[0,5,0]},
+  {"step":5,"t":0.000025,"nodes":[0,5,0]},
+  {"step":10,"t":0.00005,"nodes":[0,5,0]},
+  {"step":20,"t":0.0001,"nodes":[0,5,0]},
+  {"step":50,"t":0.00025,"nodes":[0,5,0]},
+  {"step":100,"t":0.0005,"nodes":[0,5,0]},
+  {"step":200,"t":0.001,"nodes":[0,5,0]},
+  {"step":500,"t":0.0025,"nodes":[0,5,0]},
+  {"step":1000,"t":0.005,"nodes":[0,5,0]}
+ ]
+}

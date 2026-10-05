@@ -43,7 +43,7 @@ export class ResistorElm extends CircuitElm {
   }
 
   override calculateCurrent(): void {
-    this.current = (this.nodes[0].v - this.nodes[1].v) / this.resistance;
+    this.current = (this.volts[0] - this.volts[1]) / this.resistance;
   }
 
   override stamp(): void {

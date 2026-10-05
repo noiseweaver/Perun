@@ -136,9 +136,9 @@ export class OpAmpElm extends CircuitElm {
     const sim = this.sim;
     const vs = this.voltSource;
     if (vs === null) return;
-    const volts0 = this.nodes[0].v;
-    const volts2 = this.nodes[2].v;
-    const vd = this.nodes[1].v - volts0;
+    const volts0 = this.volts[0];
+    const volts2 = this.volts[2];
+    const vd = this.volts[1] - volts0;
     const midpoint = (this.maxOut + this.minOut) * 0.5;
     if (Math.abs(this.lastvd - vd) > 0.1) sim.converged = false;
     else if (volts2 > this.maxOut + 0.1 || volts2 < this.minOut - 0.1) sim.converged = false;
@@ -199,7 +199,7 @@ export class OpAmpElm extends CircuitElm {
   }
 
   override getVoltageDiff(): number {
-    return this.nodes[2].v - this.nodes[1].v;
+    return this.volts[2] - this.volts[1];
   }
 
   override getCurrentIntoNode(n: number): number {

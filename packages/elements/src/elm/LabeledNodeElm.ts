@@ -128,7 +128,7 @@ export class LabeledNodeElm extends CircuitElm {
   }
 
   override getVoltageDiff(): number {
-    return this.nodes[0].v;
+    return this.volts[0];
   }
 
   isRotateText(): boolean {

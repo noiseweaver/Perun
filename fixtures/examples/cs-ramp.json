@@ -1,0 +1,53 @@
+{
+ "file": "cs-ramp.txt",
+ "reference": {
+  "upstreamSha": "5a707168778216bb6ed01bfdd62e8bbf7ae0a032",
+  "harnessPatchSha256": "fa84fc858811ddd78a3e4c757e379392906a47e464b400c92c9d16b902886403",
+  "browser": "chromium 141.0.7390.37"
+ },
+ "export": "<cir f=\"1\" ts=\"0.000005\" ic=\"10.20027730826997\" cb=\"50\" pb=\"50\" vr=\"5\" mts=\"5e-11\">\n  <VCVS x=\"448 224 480 224\" f=\"0\" ic=\"0\" ex=\"pwl(t,0,0,.1,5)\"/>\n  <g x=\"544 256 544 288\" f=\"0\"/>\n  <r x=\"544 224 624 224\" f=\"0\" r=\"1000\"/>\n  <g x=\"624 224 624 256\" f=\"0\"/>\n  <o en=\"2\" sp=\"0\" f=\"x2\" p=\"0\">\n    <p v=\"0\" sc=\"5\"/>\n    <p v=\"3\" sc=\"0.003125\"/>\n  </o>\n</cir>\n",
+ "topology": {
+  "nodeCount": 2,
+  "elements": [
+   {
+    "type": "VCVSElm",
+    "nodes": [
+     1,
+     0
+    ]
+   },
+   {
+    "type": "GroundElm",
+    "nodes": [
+     0
+    ]
+   },
+   {
+    "type": "ResistorElm",
+    "nodes": [
+     1,
+     0
+    ]
+   },
+   {
+    "type": "GroundElm",
+    "nodes": [
+     0
+    ]
+   }
+  ]
+ },
+ "stop": null,
+ "samples": [
+  {"step":1,"t":0.000005,"nodes":[0,0]},
+  {"step":2,"t":0.00001,"nodes":[0,0.00025]},
+  {"step":5,"t":0.000025,"nodes":[0,0.001]},
+  {"step":10,"t":0.00005,"nodes":[0,0.00225]},
+  {"step":20,"t":0.0001,"nodes":[0,0.00475]},
+  {"step":50,"t":0.00025,"nodes":[0,0.01225]},
+  {"step":100,"t":0.0005,"nodes":[0,0.02475]},
+  {"step":200,"t":0.001,"nodes":[0,0.04975]},
+  {"step":500,"t":0.0025,"nodes":[0,0.12475]},
+  {"step":1000,"t":0.005,"nodes":[0,0.24975]}
+ ]
+}

@@ -384,8 +384,8 @@ export class Simulation {
           const cn = cln.node;
           cn.links.push({ num: j, elm: ce });
           ce.setNode(j, cn);
-          // master: setNodeVoltage(j, 0) on the ground node, since it may not get set later
-          if (cn === this.ground) ce.nodeVoltageChanged(j);
+          // if it's the ground node, make sure the node voltage is 0, cause it may not get set later
+          if (cn === this.ground) ce.setNodeVoltage(j, 0);
         }
       }
       for (let j = 0; j !== inodes; j++) {
@@ -415,6 +415,8 @@ export class Simulation {
         cn.links.push({ num: i, elm: ce });
         // needed so findUnconnectedNodes() works
         cn.internal = false;
+        // if it's the ground node, make sure the node voltage is 0
+        if (cn.index === 0) ce.setNodeVoltage(i, 0);
       }
     }
   }
@@ -948,14 +950,14 @@ export class Simulation {
   }
 
   /**
-   * Set the voltage of every node in `m` and notify each attached element. Master calls
-   * `setNodeVoltage(post, v)` per link, which recomputes the current except for capacitors;
-   * `nodeVoltageChanged` keeps that (dev-ts calls calculateCurrent() for every element).
+   * Set the voltage of every node in `m` and tell each attached element (master
+   * `setNodeVoltage(post, v)` per link, which also recomputes the current except for capacitors).
    */
   setNodeVoltages(m: CircuitMatrix, nv: number[]): void {
     for (const cn of m.nodeList) {
-      cn.v = nv[cn.row - 1];
-      for (const cnl of cn.links) cnl.elm.nodeVoltageChanged(cnl.num);
+      const res = nv[cn.row - 1];
+      cn.v = res;
+      for (const cnl of cn.links) cnl.elm.setNodeVoltage(cnl.num, res);
     }
   }
 

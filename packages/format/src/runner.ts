@@ -95,7 +95,7 @@ export function runCircuit(text: string, settings: RunSettings): RunResult {
         const currents: number[] = [];
         for (let j = 0; j !== e.getPostCount(); j++) currents.push(e.getCurrentIntoNode(j));
         return {
-          volts: e.nodes.map((n) => n.v),
+          volts: e.nodes.map((_, i) => e.volts[i] ?? 0),
           currents,
           current: e.getCurrent(),
         };

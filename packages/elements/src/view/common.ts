@@ -25,7 +25,7 @@ export const TEXT: Ink = { role: 'text' };
 
 /** Voltage of node n of an element (0 before the first analysis). */
 export function volt(e: CircuitElm, n: number): number {
-  const v = e.nodes[n]?.v;
+  const v = e.volts[n];
   return v === undefined || Number.isNaN(v) ? 0 : v;
 }
 

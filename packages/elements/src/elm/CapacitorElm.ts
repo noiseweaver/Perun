@@ -121,7 +121,7 @@ export class CapacitorElm extends CircuitElm {
   }
 
   override stepFinished(): void {
-    this.voltdiff = this.nodes[0].v - this.nodes[this.capNode2].v;
+    this.voltdiff = this.volts[0] - this.volts[this.capNode2];
     this.calculateCurrent();
   }
 
@@ -133,7 +133,7 @@ export class CapacitorElm extends CircuitElm {
   override nodeVoltageChanged(_post: number): void {}
 
   override calculateCurrent(): void {
-    const voltdiff = this.nodes[0].v - this.nodes[this.capNode2].v;
+    const voltdiff = this.volts[0] - this.volts[this.capNode2];
     if (this.doDcAnalysis()) {
       this.current = voltdiff / 1e8;
       return;

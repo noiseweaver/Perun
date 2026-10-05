@@ -1,0 +1,95 @@
+{
+ "file": "cs-integrator.txt",
+ "reference": {
+  "upstreamSha": "5a707168778216bb6ed01bfdd62e8bbf7ae0a032",
+  "harnessPatchSha256": "fa84fc858811ddd78a3e4c757e379392906a47e464b400c92c9d16b902886403",
+  "browser": "chromium 141.0.7390.37"
+ },
+ "export": "<cir f=\"1\" ts=\"0.000005\" ic=\"10.20027730826997\" cb=\"57\" pb=\"50\" vr=\"5\" mts=\"5e-11\">\n  <g x=\"96 224 96 272\" f=\"0\"/>\n  <v x=\"96 224 96 144\" f=\"0\" wf=\"2\" fr=\"40\" maxv=\"5\" phaseShift=\"3.141592653589793\"/>\n  <v x=\"96 144 96 80\" f=\"0\" wf=\"2\" fr=\"80\" maxv=\"2\"/>\n  <p x=\"128 80 128 224\" f=\"0\" me=\"0\" sc=\"0\" re=\"0\"/>\n  <w x=\"96 224 128 224\" f=\"0\"/>\n  <w x=\"96 80 128 80\" f=\"0\"/>\n  <w x=\"128 80 176 80\" f=\"0\"/>\n  <VCVS x=\"176 80 192 80\" f=\"0\" ic=\"1\" ex=\"lastoutput+timestep*100*a\"/>\n  <g x=\"272 112 272 144\" f=\"0\"/>\n  <O x=\"272 80 320 80\" f=\"0\" sc=\"0\"/>\n  <o en=\"3\" sp=\"0\" f=\"x2\" p=\"0\" x=\"input\">\n    <p v=\"0\" sc=\"10\"/>\n  </o>\n  <o en=\"9\" sp=\"0\" f=\"x2\" p=\"1\">\n    <p v=\"0\" sc=\"8.538880000000058\"/>\n  </o>\n</cir>\n",
+ "topology": {
+  "nodeCount": 4,
+  "elements": [
+   {
+    "type": "GroundElm",
+    "nodes": [
+     0
+    ]
+   },
+   {
+    "type": "DCVoltageElm",
+    "nodes": [
+     0,
+     1
+    ]
+   },
+   {
+    "type": "DCVoltageElm",
+    "nodes": [
+     1,
+     2
+    ]
+   },
+   {
+    "type": "ProbeElm",
+    "nodes": [
+     2,
+     0
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     0,
+     0
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     2,
+     2
+    ]
+   },
+   {
+    "type": "WireElm",
+    "nodes": [
+     2,
+     2
+    ]
+   },
+   {
+    "type": "VCVSElm",
+    "nodes": [
+     2,
+     3,
+     0
+    ]
+   },
+   {
+    "type": "GroundElm",
+    "nodes": [
+     0
+    ]
+   },
+   {
+    "type": "OutputElm",
+    "nodes": [
+     3
+    ]
+   }
+  ]
+ },
+ "stop": null,
+ "samples": [
+  {"step":1,"t":0.000005,"nodes":[0,5,7,0.0035]},
+  {"step":2,"t":0.00001,"nodes":[0,-5,-3,0.002]},
+  {"step":5,"t":0.000025,"nodes":[0,-5,-3,-0.0025]},
+  {"step":10,"t":0.00005,"nodes":[0,-5,-3,-0.01]},
+  {"step":20,"t":0.0001,"nodes":[0,-5,-3,-0.025]},
+  {"step":50,"t":0.00025,"nodes":[0,-5,-3,-0.07]},
+  {"step":100,"t":0.0005,"nodes":[0,-5,-3,-0.145]},
+  {"step":200,"t":0.001,"nodes":[0,-5,-3,-0.295]},
+  {"step":500,"t":0.0025,"nodes":[0,-5,-3,-0.745]},
+  {"step":1000,"t":0.005,"nodes":[0,-5,-3,-1.495]}
+ ]
+}
