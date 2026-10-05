@@ -365,6 +365,32 @@ function ShortcutsDialog() {
 }
 
 /** Whichever dialog the store names. */
+/** Installing on iPhone and iPad, where Safari has no install prompt. */
+function InstallDialog() {
+  return (
+    <Shell
+      title="Install app"
+      description="Add the simulator to your home screen. It then opens full screen and works offline."
+    >
+      <ol className="install-steps">
+        <li>
+          Tap the <strong>Share</strong> button in Safari&apos;s toolbar.
+        </li>
+        <li>
+          Choose <strong>Add to Home Screen</strong>, then <strong>Add</strong>.
+        </li>
+      </ol>
+      <div className="dialog-buttons">
+        <Dialog.Close asChild>
+          <button type="button" className="button button-primary">
+            OK
+          </button>
+        </Dialog.Close>
+      </div>
+    </Shell>
+  );
+}
+
 export function Dialogs() {
   const dialog = useApp((s) => s.dialog);
   switch (dialog) {
@@ -386,6 +412,8 @@ export function Dialogs() {
       return <SliderDialog />;
     case 'about':
       return <AboutDialog />;
+    case 'install':
+      return <InstallDialog />;
     case 'themes':
       return <ThemesDialog />;
     case 'themeEditor':

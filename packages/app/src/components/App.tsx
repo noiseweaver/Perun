@@ -5,6 +5,7 @@ import { luminance, rgba, themeCssVariables } from '@circuitjs-next/theme';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { useEffect } from 'react';
 import { startup } from '../startup.ts';
+import { applyUpdate } from '../pwa.ts';
 import { setPaletteOpen, shownTheme, useApp } from '../store.ts';
 import { installShortcuts } from '../commands.ts';
 import { paletteItem } from '../editor/catalog.ts';
@@ -35,6 +36,8 @@ export function App() {
     root.dataset['theme'] = previewing ? 'preview' : themeId;
     // the browser's own controls (scrollbars, pickers) follow the theme's lightness
     root.style.colorScheme = luminance(rgba(theme.ui.surface)) > 0.4 ? 'light' : 'dark';
+    // the browser and installed app's title bar match the app bar
+    document.querySelector('meta[name=theme-color]')?.setAttribute('content', theme.ui.surface);
   }, [theme, themeId, previewing]);
 
   useEffect(() => installShortcuts(), []);
@@ -69,6 +72,7 @@ export function App() {
             <ModeChip />
             <ThemeLinkBanner />
             <Toast />
+            <UpdateBanner />
           </main>
           <Inspector />
         </div>
@@ -91,6 +95,29 @@ function ModeChip() {
       </span>
       <button type="button" className="button" onClick={() => controller.editor.setSelectMode()}>
         Done
+      </button>
+    </div>
+  );
+}
+
+/** A new version is ready (the service worker downloaded it): reload into it. */
+function UpdateBanner() {
+  const ready = useApp((s) => s.updateReady);
+  if (!ready) return null;
+  return (
+    <div className="update-banner" role="status" data-testid="update-banner">
+      <span>A new version is ready.</span>
+      <button type="button" className="button" onClick={applyUpdate}>
+        Reload
+      </button>
+      <button
+        type="button"
+        className="icon-button"
+        aria-label="Later"
+        title="Later"
+        onClick={() => useApp.setState({ updateReady: false })}
+      >
+        <Icon name="close" size={20} />
       </button>
     </div>
   );

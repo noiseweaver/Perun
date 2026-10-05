@@ -83,6 +83,12 @@ export interface AppState {
   toast: string | null;
   /** Bumped when the sliders or their values change (the slider panel reads them again). */
   sliderRevision: number;
+  /** How the app can be installed: the browser's prompt, iOS's Add to Home Screen, or not. */
+  install: 'none' | 'prompt' | 'ios';
+  /** A new version has been downloaded and waits for a reload. */
+  updateReady: boolean;
+  /** Every file is cached: the app works offline. */
+  offlineReady: boolean;
   /** Open dialog (commands.ts DialogKind). */
   dialog:
     | 'save'
@@ -94,6 +100,7 @@ export interface AppState {
     | 'scopeProperties'
     | 'sliders'
     | 'about'
+    | 'install'
     | 'about'
     | 'sliders'
     | 'themes'
@@ -266,6 +273,9 @@ export const useApp = create<AppState>(() => ({
   paletteOpen: initialPaletteOpen(),
   toast: null,
   sliderRevision: 0,
+  install: 'none',
+  updateReady: false,
+  offlineReady: false,
   inspectorFocus: 0,
   dialog: null,
   theme: themeFor(initialSettings.themeId, []),

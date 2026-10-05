@@ -23,6 +23,7 @@ export type DialogKind =
   | 'scopeProperties'
   | 'sliders'
   | 'about'
+  | 'install'
   | 'themes'
   | 'themeEditor'
   | null;

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import { UPSTREAM_PUBLIC, upstreamExamples } from './vite-plugin-examples';
 import { bundledLicenses } from './vite-plugin-licenses';
+import { serviceWorker } from './vite-plugin-sw';
 
 const root = (p: string): string => fileURLToPath(new URL(`../../${p}`, import.meta.url));
 const version = (JSON.parse(readFileSync(root('package.json'), 'utf8')) as { version: string })
@@ -20,7 +21,12 @@ function commit(): string {
 }
 
 export default defineConfig({
-  plugins: [react(), upstreamExamples(UPSTREAM_PUBLIC), bundledLicenses(root('LICENSE'))],
+  plugins: [
+    react(),
+    upstreamExamples(UPSTREAM_PUBLIC),
+    bundledLicenses(root('LICENSE')),
+    serviceWorker(),
+  ],
   server: { port: 5173, strictPort: true },
   define: {
     'import.meta.env.APP_VERSION': JSON.stringify(version),

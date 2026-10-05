@@ -20,6 +20,7 @@ import { CircuitsSheet } from './CircuitsSheet.tsx';
 import { Icon } from './Icon.tsx';
 import { useNarrow } from './useNarrow.ts';
 import { OpenLinkDialog } from './OpenLinkDialog.tsx';
+import { promptInstall } from '../pwa.ts';
 
 function ExampleItems({ menu }: { menu: ExampleMenu }) {
   return (
@@ -87,6 +88,7 @@ export function AppBar() {
   const [linkOpen, setLinkOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const narrow = useNarrow();
+  const install = useApp((s) => s.install);
 
   const setDisplay = (patch: Partial<CircuitDisplay>): void =>
     useApp.setState({ display: { ...useApp.getState().display, ...patch } });
@@ -140,6 +142,13 @@ export function AppBar() {
           />
           <Item label="Export as text…" onSelect={() => openDialog('exportText')} />
           <Menu.Separator className="menu-separator" />
+          {install !== 'none' && (
+            <Item
+              label="Install app…"
+              testId="menu-install"
+              onSelect={() => (install === 'prompt' ? void promptInstall() : openDialog('install'))}
+            />
+          )}
           <Item label="About…" testId="menu-about" onSelect={() => openDialog('about')} />
         </AppMenu>
 

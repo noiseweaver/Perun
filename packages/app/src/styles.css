@@ -77,6 +77,10 @@ textarea,
   display: flex;
   flex-direction: column;
   height: 100%;
+  /* installed on iPhone and iPad the page runs under the status bar and home indicator */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+  box-sizing: border-box;
 }
 
 /* ---- state layers ------------------------------------------------------------------------- */
@@ -2114,4 +2118,33 @@ ul.theme-contrast {
 .about-links {
   margin: 6px 0 0;
   padding-left: 20px;
+}
+
+/* ---- installable app ----------------------------------------------------------------------- */
+
+.update-banner {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 16px;
+  border-radius: var(--md-shape-xs);
+  background: var(--ui-text);
+  color: var(--ui-surface);
+  box-shadow: var(--md-elevation-3);
+  white-space: nowrap;
+}
+
+.update-banner .icon-button {
+  color: inherit;
+}
+
+.install-steps {
+  margin: 0 0 8px;
+  padding-left: 22px;
+  line-height: 24px;
 }

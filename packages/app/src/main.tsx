@@ -5,6 +5,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './components/App.tsx';
 import { controller } from './SimController.ts';
+import { setupPwa } from './pwa.ts';
 // bundled fonts (theme fonts are family names only, PLAN.md section 6)
 import '@fontsource-variable/roboto/wght.css';
 import '@fontsource-variable/jetbrains-mono/wght.css';
@@ -26,3 +27,5 @@ declare global {
   }
 }
 window.circuitjsNext = { controller };
+
+setupPwa();
