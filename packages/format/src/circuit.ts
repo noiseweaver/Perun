@@ -385,18 +385,18 @@ export class Circuit {
     }
     const ce = this.elements[e];
     if (ce === undefined) return;
-    const adj = new XmlElement('adj');
-    const w = new AttrWriter(adj);
-    w.dumpAttr('e', e);
-    w.dumpAttr('ei', editItem);
-    w.dumpAttr('en', ce.getEditInfo(editItem)?.name ?? '');
-    w.dumpAttr('mn', minValue);
-    w.dumpAttr('mx', maxValue);
-    w.dumpAttr('st', sliderText);
-    if (sliderStep > 0) w.dumpAttr('stp', sliderStep);
-    if (shared !== -1) w.dumpAttr('ss', shared);
-    if ((flags & ADJ_FLAG_LOG) !== 0) w.dumpAttr('log', 1);
-    this.xmlExtras.push(adj);
+    this.xmlExtras.push(
+      adjElement(ce, {
+        e,
+        editItem,
+        minValue,
+        maxValue,
+        sliderText,
+        sliderStep,
+        shared,
+        log: (flags & ADJ_FLAG_LOG) !== 0,
+      }),
+    );
   }
 
   private readOptions(st: StringTokenizer): void {
@@ -450,8 +450,7 @@ export class Circuit {
       }
       if (tag === 'adj') {
         if (!retain) {
-          resolveAdjEditItem(elem, this.elements[r.parseIntAttr('e', -1)]);
-          this.xmlExtras.push(elem);
+          this.xmlExtras.push(readXmlAdjustable(elem, r, this.elements[r.parseIntAttr('e', -1)]));
         }
         continue;
       }
@@ -597,24 +596,69 @@ export function readCircuit(text: string): Circuit {
   return c;
 }
 
-/**
- * Upstream `Adjustable.undumpXml` finds the slider's edit item by its name (`en`), falling back
- * to the saved index (`ei`), so a save writes the index the element has now. We keep `adj`
- * records verbatim, so fix the index in place the same way.
- */
 /** Upstream `Adjustable.FLAG_SHARED` and `FLAG_LOG`. */
 const ADJ_FLAG_SHARED = 1;
 const ADJ_FLAG_LOG = 2;
 
-function resolveAdjEditItem(elem: XmlElement, ce: CircuitElm | undefined): void {
-  const en = elem.getAttribute('en');
-  if (ce === undefined || en === null || en.length === 0) return;
-  for (let i = 0; ; i++) {
-    const ei = ce.getEditInfo(i);
-    if (ei === null) return;
-    if (ei.name === en) {
-      if (elem.getAttribute('ei') !== null) elem.setAttribute('ei', String(i));
-      return;
+interface AdjFields {
+  e: number;
+  editItem: number;
+  minValue: number;
+  maxValue: number;
+  sliderText: string;
+  sliderStep: number;
+  shared: number;
+  log: boolean;
+}
+
+/** An `adj` record as upstream `Adjustable.dumpXml` writes it. */
+function adjElement(ce: CircuitElm, a: AdjFields): XmlElement {
+  const adj = new XmlElement('adj');
+  const w = new AttrWriter(adj);
+  w.dumpAttr('e', a.e);
+  w.dumpAttr('ei', a.editItem);
+  w.dumpAttr('en', ce.getEditInfo(a.editItem)?.name ?? '');
+  w.dumpAttr('mn', a.minValue);
+  w.dumpAttr('mx', a.maxValue);
+  w.dumpAttr('st', a.sliderText);
+  if (a.sliderStep > 0) w.dumpAttr('stp', a.sliderStep);
+  if (a.shared !== -1) w.dumpAttr('ss', a.shared);
+  if (a.log) w.dumpAttr('log', 1);
+  return adj;
+}
+
+/**
+ * Upstream `Adjustable.undumpXml`, then `dumpXml` again: the slider's edit item is found by its
+ * name (`en`), falling back to the saved index (`ei`), and the record is rewritten in upstream's
+ * attribute order. A record whose element this port can't load is kept verbatim.
+ */
+function readXmlAdjustable(
+  elem: XmlElement,
+  r: AttrReader,
+  ce: CircuitElm | undefined,
+): XmlElement {
+  const e = r.parseIntAttr('e', -1);
+  if (ce === undefined || e === -1) return elem;
+  let editItem = r.parseIntAttr('ei', 0);
+  const en = r.parseStringAttr('en', null);
+  if (en !== null && en.length > 0) {
+    for (let i = 0; ; i++) {
+      const ei = ce.getEditInfo(i);
+      if (ei === null) break;
+      if (ei.name === en) {
+        editItem = i;
+        break;
+      }
     }
   }
+  return adjElement(ce, {
+    e,
+    editItem,
+    minValue: r.parseDoubleAttr('mn', 1),
+    maxValue: r.parseDoubleAttr('mx', 1000),
+    sliderText: r.parseStringAttr('st', ''),
+    sliderStep: r.parseDoubleAttr('stp', 0),
+    shared: r.parseIntAttr('ss', -1),
+    log: r.parseIntAttr('log', 0) !== 0,
+  });
 }

@@ -9,7 +9,7 @@ steps 1, 2, 5, 10, 20, 50, 100, 200, 500 and 1000 match within the golden tolera
 (tools/golden/README.md). "Same save" means our XML save after loading is byte for byte
 upstream's.
 
-**Pass: 311 of 373 (83.4%).** Same save: 310 (83.1%).
+**Pass: 324 of 373 (86.9%).** Same save: 322 (86.3%).
 
 Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 
@@ -115,18 +115,18 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | crossover.txt | pass | yes |  |
 | crystalosc.txt | fail | no | unrecognized xml element: cr |
 | crystalosc2.txt | fail | no | unrecognized xml element: cr |
-| cs-currentadder.txt | fail | no | unrecognized xml element: CCVS; unrecognized xml element: VCCS |
-| cs-diff.txt | fail | no | unrecognized xml element: VCVS |
-| cs-fullrectifier.txt | fail | no | unrecognized xml element: VCVS |
-| cs-integrator.txt | fail | no | unrecognized xml element: VCVS |
-| cs-multiplier.txt | fail | no | unrecognized xml element: VCVS |
-| cs-opamp.txt | fail | no | unrecognized xml element: VCVS |
-| cs-opamprail.txt | fail | no | unrecognized xml element: VCVS |
-| cs-ramp.txt | fail | no | unrecognized xml element: VCVS |
-| cs-resistor.txt | fail | no | unrecognized xml element: VCCS |
-| cs-varicap.txt | fail | no | unrecognized xml element: VCCS |
-| cs-varinduct.txt | fail | no | unrecognized xml element: CCVS |
-| cs-varyresistor.txt | fail | no | unrecognized xml element: VCCS |
+| cs-currentadder.txt | pass | yes |  |
+| cs-diff.txt | pass | yes |  |
+| cs-fullrectifier.txt | pass | yes |  |
+| cs-integrator.txt | pass | yes |  |
+| cs-multiplier.txt | pass | yes |  |
+| cs-opamp.txt | pass | yes |  |
+| cs-opamprail.txt | pass | yes |  |
+| cs-ramp.txt | pass | yes |  |
+| cs-resistor.txt | pass | yes |  |
+| cs-varicap.txt | pass | yes |  |
+| cs-varinduct.txt | pass | yes |  |
+| cs-varyresistor.txt | pass | yes |  |
 | cube.txt | pass | yes |  |
 | currentsrc.txt | pass | yes |  |
 | currentsrcelm.txt | pass | yes |  |
@@ -284,7 +284,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | priencoder.txt | pass | yes |  |
 | pushpull.txt | pass | yes |  |
 | pushpullxover.txt | pass | yes |  |
-| qam-256.txt | fail | no | unrecognized dump type: 213; unrecognized dump type: 212 |
+| qam-256.txt | pass | no |  |
 | r2rladder.txt | pass | yes |  |
 | rectify.txt | pass | yes |  |
 | relaxosc.txt | fail | no | unrecognized dump type: 211; a scope shows an element that is not supported yet |

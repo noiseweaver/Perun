@@ -76,6 +76,18 @@ coupled1.txt
 coupled2.txt
 coupled3.txt
 crossover.txt
+cs-currentadder.txt
+cs-diff.txt
+cs-fullrectifier.txt
+cs-integrator.txt
+cs-multiplier.txt
+cs-opamp.txt
+cs-opamprail.txt
+cs-ramp.txt
+cs-resistor.txt
+cs-varicap.txt
+cs-varinduct.txt
+cs-varyresistor.txt
 cube.txt
 currentsrc.txt
 currentsrcelm.txt
@@ -218,6 +230,7 @@ powerfactor2.txt
 priencoder.txt
 pushpull.txt
 pushpullxover.txt
+qam-256.txt
 r2rladder.txt
 rectify.txt
 relay.txt
