@@ -148,6 +148,7 @@ flashadc.txt
 follower.txt
 freqdouble.txt
 fulladd.txt
+fullrect-sc.txt
 fullrect.txt
 fullrectf.txt
 gilbertcell.txt
@@ -249,6 +250,8 @@ piso-sr.txt
 pll.txt
 pll2.txt
 pll2a.txt
+plot2d-checker.txt
+plot2d-color.txt
 pmosfet.txt
 pnp.txt
 pot.txt

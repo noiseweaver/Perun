@@ -11,6 +11,7 @@ import {
   CircuitElm,
   SwitchElm,
   TextElm,
+  RoutedWireElm,
   WireElm,
   constructElement,
   distanceSq,
@@ -532,7 +533,8 @@ export class Editor {
         this.splitWireAt(de.x, de.y);
         this.splitWireAt(de.x2, de.y2);
         this.elements.push(de);
-        if (de instanceof WireElm) this.wireDraggingDone(de);
+        // a routed wire goes round posts instead of connecting to them
+        if (de instanceof WireElm && !(de instanceof RoutedWireElm)) this.wireDraggingDone(de);
         circuitChanged = true;
       }
     }
@@ -644,6 +646,16 @@ export class Editor {
     for (let i = els.length - 1; i >= 0; i--) {
       const we = els[i];
       if (!(we instanceof WireElm)) continue;
+      if (we instanceof RoutedWireElm) {
+        // a routed wire splits along its path
+        if (!we.pointOnPath({ x: px, y: py })) continue;
+        const nw = we.split(px, py);
+        if (nw === null) continue;
+        nw.flags = we.flags;
+        els.push(nw);
+        split = true;
+        continue;
+      }
       if (!pointOnSegmentInterior(we.x, we.y, we.x2, we.y2, px, py)) continue;
       const nw = constructElement('WireElm', px, py, this.circuit.sim);
       if (nw === null) continue;

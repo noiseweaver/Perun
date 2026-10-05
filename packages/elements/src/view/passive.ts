@@ -9,6 +9,7 @@ import type { GroundElm } from '../elm/GroundElm.ts';
 import type { InductorElm } from '../elm/InductorElm.ts';
 import { PotElm } from '../elm/PotElm.ts';
 import type { ResistorElm } from '../elm/ResistorElm.ts';
+import type { RoutedWireElm } from '../elm/RoutedWireElm.ts';
 import { WireElm } from '../elm/WireElm.ts';
 import {
   doDots,
@@ -24,7 +25,7 @@ import {
 } from './common.ts';
 import { calcLeads, distance, interp, interp2, pt, rectOf, unionRect } from './geometry.ts';
 import type { Ink, Pt } from './Painter.ts';
-import { getShortUnitText, OHM } from './units.ts';
+import { getFixedUnitText, getShortUnitText, OHM } from './units.ts';
 
 export const wireView: ElementView<WireElm> = {
   draw(e, ctx) {
@@ -37,6 +38,70 @@ export const wireView: ElementView<WireElm> = {
     drawValues(e, ctx, s, 4);
   },
   bbox: (e) => elementBox(e, 3),
+};
+
+export const routedWireView: ElementView<RoutedWireElm> = {
+  draw(e, ctx) {
+    const p = ctx.painter;
+    const rp = e.route();
+    const width = e.busWidth > 1 ? 5 : 3;
+    const ink = vInk(volt(e, 0));
+    for (let i = 0; i < rp.length - 1; i++) p.line(rp[i], rp[i + 1], ink, { width });
+    // a bus wire's current is the sum over its bits
+    let current = e.current;
+    if (e.currents !== null) current = e.currents.reduce((a, c) => a + c, 0);
+    if (!e.isCreating()) {
+      let cc = ctx.dotCount(0, current);
+      for (let i = 0; i < rp.length - 1; i++) {
+        const a = rp[i];
+        const b = rp[i + 1];
+        p.dots(a, b, cc);
+        // carry the dot position on, so the dots run on round the bends
+        cc = addCurCount(cc, Math.hypot(b.x - a.x, b.y - a.y));
+      }
+    }
+    // live values keep a fixed width (owner's rule), so they don't shift as they change
+    let s = '';
+    if (e.busWidth === 1) {
+      if (e.hasFlag(WireElm.FLAG_SHOWCURRENT)) s = getFixedUnitText(Math.abs(current), 'A');
+      if (e.hasFlag(WireElm.FLAG_SHOWVOLTAGE))
+        s = (s.length > 0 ? s + ' ' : '') + getFixedUnitText(volt(e, 0), 'V');
+    }
+    if (s.length > 0) {
+      // on the longest segment: above a horizontal one, right of a vertical one
+      let best = 0;
+      let bestSeg = 0;
+      for (let i = 0; i < rp.length - 1; i++) {
+        const len = (rp[i + 1].x - rp[i].x) ** 2 + (rp[i + 1].y - rp[i].y) ** 2;
+        if (len > best) {
+          best = len;
+          bestSeg = i;
+        }
+      }
+      const a = rp[bestSeg];
+      const b = rp[bestSeg + 1];
+      const mx = Math.trunc((a.x + b.x) / 2);
+      const my = Math.trunc((a.y + b.y) / 2);
+      const w = Math.trunc(p.measureText(s, VALUE_FONT));
+      const ya = Math.trunc(p.fontSize(VALUE_FONT) / 2);
+      if (a.y === b.y) p.text(s, { x: mx - Math.trunc(w / 2), y: my - 6 }, TEXT, VALUE_FONT);
+      else p.text(s, { x: mx + 4, y: my + ya }, TEXT, VALUE_FONT);
+    }
+  },
+  bbox(e) {
+    const rp = e.route();
+    let x1 = e.x;
+    let y1 = e.y;
+    let x2 = e.x;
+    let y2 = e.y;
+    for (const q of rp) {
+      x1 = Math.min(x1, q.x);
+      y1 = Math.min(y1, q.y);
+      x2 = Math.max(x2, q.x);
+      y2 = Math.max(y2, q.y);
+    }
+    return { x1: x1 - 5, y1: y1 - 5, x2: x2 + 5, y2: y2 + 5 };
+  },
 };
 
 export const groundView: ElementView<GroundElm> = {

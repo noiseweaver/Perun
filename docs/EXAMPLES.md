@@ -9,7 +9,7 @@ steps 1, 2, 5, 10, 20, 50, 100, 200, 500 and 1000 match within the golden tolera
 (tools/golden/README.md). "Same save" means our XML save after loading is byte for byte
 upstream's.
 
-**Pass: 358 of 373 (96.0%).** Same save: 356 (95.4%).
+**Pass: 361 of 373 (96.8%).** Same save: 359 (96.2%).
 
 Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 
@@ -167,7 +167,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | follower.txt | pass | yes |  |
 | freqdouble.txt | pass | yes |  |
 | fulladd.txt | pass | yes |  |
-| fullrect-sc.txt | fail | no | unrecognized xml element: rw |
+| fullrect-sc.txt | pass | yes |  |
 | fullrect.txt | pass | yes |  |
 | fullrectf.txt | pass | yes |  |
 | gilbertcell.txt | pass | yes |  |
@@ -175,7 +175,7 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | grid.txt | pass | yes |  |
 | grid2.txt | pass | yes |  |
 | gyrator.txt | pass | yes |  |
-| gyratorelm.txt | fail | no | unrecognized xml element: Gyrator; unrecognized xml element: rw; a scope shows an element that is not supported yet |
+| gyratorelm.txt | fail | no | unrecognized xml element: Gyrator; a scope shows an element that is not supported yet |
 | halfadd.txt | pass | yes |  |
 | hartley.txt | pass | yes |  |
 | hfadc.txt | pass | yes |  |
@@ -272,9 +272,9 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | pll.txt | pass | yes |  |
 | pll2.txt | pass | yes |  |
 | pll2a.txt | pass | yes |  |
-| plot2d-checker.txt | fail | no | unrecognized xml element: rw |
-| plot2d-color.txt | fail | no | unrecognized xml element: rw |
-| plot2d-smile.txt | fail | no | unrecognized xml element: rw; unrecognized xml element: ROM |
+| plot2d-checker.txt | pass | yes |  |
+| plot2d-color.txt | pass | yes |  |
+| plot2d-smile.txt | fail | no | unrecognized xml element: ROM |
 | pmosfet.txt | pass | yes |  |
 | pnp.txt | pass | yes |  |
 | pot.txt | pass | yes |  |
@@ -328,11 +328,11 @@ Failures are listed in [DEVIATIONS.md](DEVIATIONS.md) with their causes.
 | switchfilter.txt | pass | yes |  |
 | swtreedac.txt | pass | yes |  |
 | synccounter.txt | pass | yes |  |
-| td4-add2.txt | fail | no | unrecognized xml element: rw; unrecognized xml element: ins; unrecognized xml element: ROM |
-| td4-ctr-dn.txt | fail | no | unrecognized xml element: rw; unrecognized xml element: ins; unrecognized xml element: ROM |
-| td4-ctr-up-dn.txt | fail | no | unrecognized xml element: rw; unrecognized xml element: ins; unrecognized xml element: ROM |
-| td4-ctr.txt | fail | no | unrecognized xml element: rw; unrecognized xml element: ins; unrecognized xml element: ROM |
-| td4.txt | fail | no | unrecognized xml element: rw; unrecognized xml element: ins; unrecognized xml element: ROM |
+| td4-add2.txt | fail | no | unrecognized xml element: ins; unrecognized xml element: ROM |
+| td4-ctr-dn.txt | fail | no | unrecognized xml element: ins; unrecognized xml element: ROM |
+| td4-ctr-up-dn.txt | fail | no | unrecognized xml element: ins; unrecognized xml element: ROM |
+| td4-ctr.txt | fail | no | unrecognized xml element: ins; unrecognized xml element: ROM |
+| td4.txt | fail | no | unrecognized xml element: ins; unrecognized xml element: ROM |
 | tdiode.txt | pass | yes |  |
 | tdosc.txt | pass | yes |  |
 | tdrelax.txt | pass | yes |  |

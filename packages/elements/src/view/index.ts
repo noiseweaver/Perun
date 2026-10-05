@@ -88,8 +88,10 @@ import {
   inductorView,
   potView,
   resistorView,
+  routedWireView,
   wireView,
 } from './passive.ts';
+import { RoutedWireElm } from '../elm/RoutedWireElm.ts';
 import {
   diodeView,
   jfetView,
@@ -158,6 +160,7 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [DiacElm, diacView],
   [TriodeElm, triodeView],
   [AmmeterElm, ammeterView],
+  [RoutedWireElm, routedWireView],
   [WireElm, wireView],
   [GroundElm, groundView],
   [ResistorElm, resistorView],
