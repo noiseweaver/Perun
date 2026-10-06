@@ -87,6 +87,25 @@ test('scope lines of an upstream example restore its scopes and draw them', asyn
   expect(saved[0]).toContain('en="4"');
 });
 
+test('reset clears the scope traces, as upstream resetAction does', async ({ page }) => {
+  await page.goto('/?startCircuit=moscurrentramp.txt');
+  await ready(page);
+  // largest |value| the first scope's first plot holds
+  const peak = () =>
+    page.evaluate(() => {
+      const p = window.circuitjsNext?.controller.scopes.scopes[0]?.plots[0];
+      return p ? Math.max(0, ...Array.from(p.maxValues, Math.abs)) : -1;
+    });
+  await expect.poll(peak).toBeGreaterThan(0.5);
+  const after = await page.evaluate(() => {
+    const c = window.circuitjsNext?.controller;
+    c?.reset();
+    const p = c?.scopes.scopes[0]?.plots[0];
+    return p ? Math.max(0, ...Array.from(p.maxValues, Math.abs)) : -1;
+  });
+  expect(after).toBe(0);
+});
+
 test('View in New Scope adds a scope, Remove Scope and undo take it away and back', async ({
   page,
 }) => {

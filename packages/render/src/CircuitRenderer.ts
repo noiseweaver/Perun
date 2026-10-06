@@ -161,6 +161,11 @@ export class CircuitRenderer {
     this.posts = this.findPosts();
   }
 
+  /** The simulation restarted: the field overlay forgets the peaks it scales against. */
+  resetFields(): void {
+    this.fields.clear();
+  }
+
   /** The circuit was edited (elements added, removed or moved); dot positions are kept. */
   elementsChanged(elements: CircuitElm[]): void {
     if (this.motion) this.diffEffects(this.elements, elements);
