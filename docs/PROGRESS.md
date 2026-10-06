@@ -13,7 +13,7 @@
 - Twelve palette themes (PR #15): Solarized Light, Dracula, Monokai, Tokyo Night, Catppuccin Mocha
   and Latte, Rosé Pine, Everforest Dark, GitHub Dark and Light, Obsidian Dark and Light.
 - Current dots hide where |I| < 1 pA while running (PR #17, DEVIATIONS.md), and the iPhone top gap
-  is 28 px.
+  is 28 px (18 px since: 28 cleared the frost but left too tall a gap).
 - Options submenus (Language, Theme, Default text box font) unfold inside the menu on phones
   instead of running off the screen.
 - Catalan: the app's own catalog in `packages/app/locales/locale_ca.txt` (upstream ships none),
@@ -33,7 +33,7 @@
 ### Open issues
 
 - The iOS height fix still needs checking on a real iPhone after the deploy.
-- The 28 px top gap needs checking on an iPhone.
+- The 18 px top gap needs checking on an iPhone (12 px showed the frost).
 - Docked scopes in the classic look have no header, so they rearrange only through the menu.
 
 ## 2026-10-05: Phase 9 (polish and release)
