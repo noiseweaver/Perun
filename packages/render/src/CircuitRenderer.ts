@@ -226,9 +226,9 @@ export class CircuitRenderer {
   }
 
   /** Bounds of the circuit in circuit units (upstream `getCircuitBounds`), null when empty. */
-  circuitBounds(): Rect | null {
+  circuitBounds(elements: readonly CircuitElm[] = this.elements): Rect | null {
     let r: Rect | null = null;
-    for (const e of this.elements) {
+    for (const e of elements) {
       const pts: Rect = {
         x1: Math.min(e.x, e.x2),
         y1: Math.min(e.y, e.y2),

@@ -618,7 +618,7 @@ function Check({ on }: { on: boolean }) {
   );
 }
 
-/** Upstream's Scopes menu: arrange all docked scopes at once. */
+/** Upstream's Scopes menu: arrange all docked scopes at once, plus Undock All (ours). */
 function ScopesMenuItems() {
   const mgr = controller.scopes;
   const n = mgr.scopeCount;
@@ -645,6 +645,12 @@ function ScopesMenuItems() {
         disabled={n === 0}
         testId="scopes-separate-all"
         onSelect={() => controller.allScopes('separateAll')}
+      />
+      <Item
+        label="Undock All"
+        disabled={!controller.canUndockAll()}
+        testId="scopes-undock-all"
+        onSelect={() => controller.undockAll()}
       />
     </>
   );

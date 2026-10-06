@@ -26,6 +26,13 @@
   migrating the first prototype's `showFields`. A foldable legend in the canvas's top left lists
   the overlays that are on, with swatches in theme colors. The energy glow is fainter.
 
+- Scopes > Undock All (Gady's ask): every docked scope becomes a card on the circuit and all the
+  cards are spread around it (packages/app/src/scopeLayout.ts). Each card goes on the side
+  nearest what it shows, level with it so its leader runs straight in; crowded cards pack an
+  even gap apart in target order so leaders don't cross, and the sides share cards out when one
+  fills. Cards get the default size, the view fits, and one undo docks them all again. Running it
+  with everything undocked just tidies the cards.
+
 ### Next
 
 - Catalan strings for the new menu and legend entries (`pnpm i18n`).

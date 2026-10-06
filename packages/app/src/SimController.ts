@@ -65,6 +65,7 @@ import {
   type Modifiers,
 } from './editor/Editor.ts';
 import { download } from './download.ts';
+import { arrangeCards } from './scopeLayout.ts';
 import { sliderEntries, type SliderEntry } from './sliders.ts';
 import {
   showToast,
@@ -1197,6 +1198,67 @@ export class SimController {
     });
     this.animateCard(s, from);
     this.circuitChanged();
+  }
+
+  /** Scopes menu: Undock All is worth offering (a docked scope to move, or cards to tidy). */
+  canUndockAll(): boolean {
+    return (
+      this.circuit.scopes.scopes.some((s) => s.getElm() !== null) ||
+      this.circuit.scopeElms().some((e) => e.elmScope.getElm() !== null)
+    );
+  }
+
+  /**
+   * Scopes menu: Undock All. Every docked scope moves onto the circuit, and all the cards are
+   * spread around it, each on the side nearest what it shows with a straight leader where the
+   * room allows (scopeLayout.ts). Then the view fits the circuit and its cards.
+   */
+  undockAll(): void {
+    const r = this.renderer;
+    const mgr = this.circuit.scopes;
+    const parts = this.circuit.elements.filter((e) => !(e instanceof ScopeElm));
+    const bounds = r?.circuitBounds(parts) ?? null;
+    if (!r || bounds === null || !this.canUndockAll()) return;
+    const from = new Map(this.everyScope().map((s) => [s, { ...s.slot }]));
+    this.scopeCommand('Undock all scopes', () => {
+      const cards = this.circuit.scopeElms().filter((e) => e.elmScope.getElm() !== null);
+      for (let i = mgr.scopes.length - 1; i >= 0; i--) {
+        const s = mgr.scopes[i];
+        const elm = s?.getElm() ?? null;
+        if (s === undefined || elm === null) continue;
+        const se = this.newScopeElm(elm);
+        if (se === null) continue;
+        se.setElmScope(s);
+        // setupScopes() closes the gaps
+        mgr.scopes.splice(i, 1);
+        this.circuit.elements.push(se);
+        cards.push(se);
+      }
+      const targets = cards.map((e) => {
+        const elm = e.elmScope.getElm();
+        return elm !== null ? scopeAnchor(elm, e.leaderPost) : { x: 0, y: 0 };
+      });
+      const boxes = arrangeCards(bounds, targets, {
+        width: UNDOCKED_WIDTH,
+        height: UNDOCKED_HEIGHT,
+        margin: 48,
+        gap: 32,
+        grid: this.circuit.sim.gridSize,
+      });
+      cards.forEach((e, i) => {
+        const b = boxes[i];
+        if (b === undefined) return;
+        e.x = b.x1;
+        e.y = b.y1;
+        e.x2 = b.x2;
+        e.y2 = b.y2;
+        e.setPoints();
+      });
+    });
+    this.circuitChanged();
+    r.fit();
+    for (const [s, slot] of from) this.animateCard(s, slot);
+    this.publishEditor();
   }
 
   /** Scope menu on an undocked scope: Dock Scope, into a new column. */
