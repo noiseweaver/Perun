@@ -59,6 +59,9 @@ export const defaultScopeElementKinds: ScopeElementKinds = {
 };
 
 /** The docked scopes of one circuit, plus the cursor state all scopes share. */
+/** Where a docked scope dragged onto another goes (ScopeManager.moveScope). */
+export type ScopeDrop = 'above' | 'below' | 'left' | 'right' | 'combine';
+
 export class ScopeManager {
   readonly sim: Simulation;
   host: ScopeHost = headlessHost;
@@ -321,6 +324,46 @@ export class ScopeManager {
     if (s === 0) s = 1;
     this.scopes[s - 1].combine(this.scopes[s]);
     this.scopes[s].setElm(null);
+  }
+
+  /**
+   * Drop docked scope `from` on scope `to` (this port's drag to rearrange; upstream only has the
+   * Stack, Unstack and Combine commands): stack it above or below, give it a new column to the
+   * left or right, or combine its plots into `to`.
+   */
+  moveScope(from: number, to: number, where: ScopeDrop): void {
+    const scopes = this.scopes;
+    const s = scopes[from];
+    const target = scopes[to];
+    if (s === undefined || target === undefined || s === target) return;
+    if (where === 'combine') {
+      target.combine(s);
+      s.setElm(null);
+      return;
+    }
+    scopes.splice(from, 1);
+    let at = scopes.indexOf(target);
+    if (where === 'above' || where === 'below') {
+      s.position = target.position;
+      if (where === 'below') at++;
+    } else {
+      // a column of its own between the target's and the next: renumbered below
+      const col = target.position;
+      s.position = col + (where === 'left' ? -0.5 : 0.5);
+      at = scopes.findIndex((x) => x.position === col);
+      if (where === 'right') while (at < scopes.length && scopes[at].position === col) at++;
+    }
+    scopes.splice(at, 0, s);
+    // columns are numbered 0, 1, 2... in order
+    let prev = NaN;
+    let n = -1;
+    for (const x of scopes) {
+      if (x.position !== prev) {
+        prev = x.position;
+        n++;
+      }
+      x.position = n;
+    }
   }
 
   stackAll(): void {

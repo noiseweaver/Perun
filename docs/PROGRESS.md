@@ -12,10 +12,27 @@
   buttons no longer stay shaded, and the brand icon shows on phones.
 - Twelve palette themes (PR #15): Solarized Light, Dracula, Monokai, Tokyo Night, Catppuccin Mocha
   and Latte, Rosé Pine, Everforest Dark, GitHub Dark and Light, Obsidian Dark and Light.
+- Current dots hide where |I| < 1 pA while running (PR #17, DEVIATIONS.md), and the iPhone top gap
+  is 28 px.
+- Options submenus (Language, Theme, Default text box font) unfold inside the menu on phones
+  instead of running off the screen.
+- Catalan: the app's own catalog in `packages/app/locales/locale_ca.txt` (upstream ships none),
+  served next to upstream's catalogs; `pnpm i18n` counts it.
+- The property panel's actions have captions under their icons; the undocked-scope action uses the
+  same arrow-out-of-a-square icon as Undock Scope. Scope card header buttons show their names on
+  hover.
+- Docked scope cards drag by their title (with two or more scopes): drop on a card's top or bottom
+  edge to stack, its left or right edge for a new column, its middle to combine. Undoable.
+  `ScopeManager.moveScope`; the Stack, Unstack and Combine commands stay.
+- `style.roundness` (0 to 2) in themes, with a slider in the theme editor: scales the Material
+  shape tokens and the scope cards' corners, large radii faster than small ones; below 1 round
+  buttons become rounded squares.
 
 ### Open issues
 
 - The iOS height fix still needs checking on a real iPhone after the deploy.
+- The 28 px top gap needs checking on an iPhone.
+- Docked scopes in the classic look have no header, so they rearrange only through the menu.
 
 ## 2026-10-05: Phase 9 (polish and release)
 

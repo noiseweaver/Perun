@@ -663,3 +663,27 @@ test.describe('moving an undocked card on a phone', () => {
     await expect(page.getByTestId('inspector')).toHaveCount(0);
   });
 });
+
+test('dragging a docked card by its title stacks it, and undo puts it back', async ({ page }) => {
+  await page.goto('/');
+  await ready(page);
+  const box = await page.getByTestId('circuit-canvas').boundingBox();
+  if (!box) throw new Error('no canvas');
+  const slot = (i: number) =>
+    page.evaluate((i) => window.circuitjsNext?.controller.scopes.scopes[i]?.slot ?? null, i);
+  const positions = () =>
+    page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes.map((s) => s.position));
+  const s0 = await slot(0);
+  const s2 = await slot(2);
+  if (!s0 || !s2) throw new Error('no scopes');
+  expect(await positions()).toEqual([0, 1, 2]);
+  await page.mouse.move(box.x + s0.x + 12, box.y + s0.y + 12);
+  await page.mouse.down();
+  await page.mouse.move(box.x + s2.x + s2.width / 2, box.y + s2.y + s2.height * 0.85, {
+    steps: 5,
+  });
+  await page.mouse.up();
+  expect(await positions()).toEqual([0, 1, 1]);
+  await page.keyboard.press('Control+z');
+  expect(await positions()).toEqual([0, 1, 2]);
+});

@@ -118,6 +118,7 @@ export {
   INFO_WIDTH,
   MAX_SCOPES,
   ScopeManager,
+  type ScopeDrop,
   defaultScopeElementKinds,
   scopesFor,
   type ScopeHost,

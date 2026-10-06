@@ -43,6 +43,7 @@ import {
   type Rect,
   type Scope,
   type ScopeDefaultsStore,
+  type ScopeDrop,
   type ScopeManager,
   type ScopeRect,
 } from '@circuitjs-next/elements';
@@ -74,6 +75,15 @@ import {
   type TeachTool,
 } from './store.ts';
 import { t } from './i18n.ts';
+
+/** What dropping a dragged docked scope does, as its drop label and undo name say. */
+const SCOPE_DROP_LABELS: Record<ScopeDrop, string> = {
+  above: 'Stack above',
+  below: 'Stack below',
+  left: 'New column',
+  right: 'New column',
+  combine: 'Combine',
+};
 
 /** Simulation time per frame before the frame is cut short (upstream `frameTimeLimit`). */
 const FRAME_BUDGET_MS = 50;
@@ -117,6 +127,8 @@ export class SimController {
   private dpr = 1;
   /** Mouse position over the canvas in CSS pixels, or null when it is elsewhere. */
   private mouse: { x: number; y: number } | null = null;
+  /** The kind of pointer that last moved (hover labels are for a mouse). */
+  private mouseType = 'mouse';
   /** The mouse is on the splitter between the circuit and the scopes. */
   private splitterHot = false;
   /** Element of the scope under the mouse (highlighted on the circuit, shown in the info). */
@@ -130,6 +142,15 @@ export class SimController {
     typeof matchMedia !== 'function' || !matchMedia('(prefers-reduced-motion: reduce)').matches;
   /** An undocked scope's leader end being dragged onto a post, at a screen point. */
   private leaderDrag: { elm: ScopeElm; x: number; y: number; id: number } | null = null;
+  /** A docked card dragged by its handle, and where it would land if dropped now. */
+  private scopeMove: {
+    id: number;
+    from: Scope;
+    x: number;
+    y: number;
+    to: Scope | null;
+    where: ScopeDrop | null;
+  } | null = null;
   /** Where each undocked scope's leader ends on screen, as last laid out. */
   private readonly leaderTargets = new WeakMap<ScopeElm, { x: number; y: number } | null>();
   /** Docked scope the context menu was opened on, or -1; and its selected plot. */
@@ -722,9 +743,19 @@ export class SimController {
       if (u !== null) u.elmScope.selectScope(m.x, m.y);
     }
     sr.renderUndocked(mgr, undocked, this.cssWidth, this.circuitHeight(), this.dpr);
+    const sm = this.scopeMove;
     sr.render(
       mgr,
-      { area: this.scopeArea(), info: this.infoLines(), splitterHot: this.splitterHot },
+      {
+        area: this.scopeArea(),
+        info: this.infoLines(),
+        splitterHot: this.splitterHot,
+        drag:
+          sm === null
+            ? null
+            : { ...sm, label: sm.where === null ? '' : t(SCOPE_DROP_LABELS[sm.where]) },
+        tip: this.cardTip(),
+      },
       this.dpr,
     );
   }
@@ -769,6 +800,89 @@ export class SimController {
       if (bad > 0) info.push(bad + t(bad === 1 ? ' bad connection' : ' bad connections'));
     }
     return info;
+  }
+
+  /**
+   * Where a dragged docked card would land at a point: on a card's top or bottom edge it stacks
+   * above or below it, on its left or right edge it gets a new column there, in the middle it
+   * combines with it.
+   */
+  private scopeDropAt(
+    from: Scope,
+    x: number,
+    y: number,
+  ): { to: Scope | null; where: ScopeDrop | null } {
+    const mgr = this.circuit.scopes;
+    if (y < this.circuitHeight()) return { to: null, where: null };
+    const to = mgr.scopes.find(
+      (s) =>
+        mgr.isShown(s) &&
+        x >= s.slot.x &&
+        x < s.slot.x + s.slot.width &&
+        y >= s.slot.y &&
+        y < s.slot.y + s.slot.height,
+    );
+    if (to === undefined) return { to: null, where: null };
+    const fx = (x - to.slot.x) / to.slot.width;
+    const fy = (y - to.slot.y) / to.slot.height;
+    const alone = mgr.scopes.filter((s) => s.position === from.position).length === 1;
+    let where: ScopeDrop | null;
+    if (fx < 0.2) where = 'left';
+    else if (fx > 0.8) where = 'right';
+    else if (fy < 0.3) where = 'above';
+    else if (fy > 0.7) where = 'below';
+    else where = 'combine';
+    // on itself only splitting it off its stack into a column of its own does something
+    if (to === from && !(alone === false && (where === 'left' || where === 'right'))) where = null;
+    return { to, where };
+  }
+
+  /** Drop a dragged docked card where scopeDropAt says, letting every card fly to its place. */
+  private dropScope(from: Scope, to: Scope, where: ScopeDrop): void {
+    const mgr = this.circuit.scopes;
+    const i = mgr.scopes.indexOf(from);
+    const j = mgr.scopes.indexOf(to);
+    if (i < 0 || j < 0) return;
+    const slots = new Map(mgr.scopes.map((s) => [s, { ...s.slot }]));
+    this.scopeCommand(SCOPE_DROP_LABELS[where], () => mgr.moveScope(i, j, where));
+    for (const [s, r] of slots) if (s !== from || where !== 'combine') this.animateCard(s, r);
+    this.circuitChanged();
+  }
+
+  /** A label for the card header button under the mouse (mouse only: touch has no hover). */
+  private cardTip(): { text: string; x: number; y: number } | null {
+    const m = this.mouse;
+    if (m === null || this.mouseType !== 'mouse' || this.scopeMove !== null) return null;
+    const mgr = this.circuit.scopes;
+    if (mgr.look !== 'cards') return null;
+    const u = m.y < this.circuitHeight() ? this.undockedAt(m.x, m.y) : null;
+    const s =
+      u?.elmScope ?? (m.y >= this.circuitHeight() ? mgr.scopes[this.scopeAt(m.x, m.y)] : undefined);
+    if (s === undefined) return null;
+    const hit = cardHitTest(s, m.x, m.y);
+    if (hit === null) return null;
+    const docked = s.position >= 0;
+    let text: string;
+    switch (hit.kind) {
+      case 'settings':
+        text = 'Properties…';
+        break;
+      case 'close':
+        text = 'Remove Scope';
+        break;
+      case 'dock':
+        text = docked ? 'Undock Scope' : 'Dock Scope';
+        break;
+      case 'freeze':
+        text = s.frozen !== null ? 'Resume' : 'Freeze';
+        break;
+      case 'handle':
+        text = docked ? 'Drag to stack or move' : 'Drag to move';
+        break;
+      default:
+        return null;
+    }
+    return { text: t(text), x: hit.x + hit.width / 2, y: hit.y + hit.height };
   }
 
   /** Index of the docked scope at a canvas point, or -1. */
@@ -1694,6 +1808,27 @@ export class SimController {
         m.mouseCursorY = p.y;
         this.hoverScopes(p.x, p.y);
         const s = m.scopes[m.scopeSelected];
+        if (
+          s !== undefined &&
+          !m.dialogShowing &&
+          e.button === 0 &&
+          m.look === 'cards' &&
+          cardHitTest(s, p.x, p.y)?.kind === 'handle'
+        ) {
+          // drag a docked card by its handle to stack, move or combine it
+          this.scopeMove = { id: e.pointerId, from: s, x: p.x, y: p.y, to: null, where: null };
+          scopeGesture = e.pointerId;
+          // compact: a sideways swipe on the title still switches columns (see move)
+          if (m.compact && e.pointerType === 'touch') swipe = { x: p.x, y: p.y, id: e.pointerId };
+          canvas.style.cursor = 'grabbing';
+          try {
+            canvas.setPointerCapture(e.pointerId);
+          } catch {
+            // the pointer is already gone
+          }
+          e.preventDefault();
+          return true;
+        }
         if (s !== undefined && !m.dialogShowing && e.button === 0 && this.cardClick(s, p.x, p.y))
           return true;
         if (s !== undefined && !m.dialogShowing && s.cursorInSettingsWheel()) {
@@ -2025,6 +2160,7 @@ export class SimController {
       if (!r) return;
       const p = local(e);
       this.mouse = p;
+      this.mouseType = e.pointerType;
       if (teachMove(e, p)) return;
       if (split === e.pointerId) {
         const f = 1 - p.y / Math.max(1, this.cssHeight);
@@ -2036,6 +2172,23 @@ export class SimController {
       if (drag !== null && drag.id === e.pointerId) {
         drag.x = p.x;
         drag.y = p.y;
+        return;
+      }
+      const sm = this.scopeMove;
+      if (sm !== null && sm.id === e.pointerId) {
+        if (swipe !== null && swipe.id === e.pointerId) {
+          const dx = Math.abs(p.x - swipe.x);
+          const dy = Math.abs(p.y - swipe.y);
+          // sideways first: a swipe between columns, not a drag
+          if (dx > 10 && dx > dy * 2) {
+            this.scopeMove = null;
+            return;
+          }
+          if (dy > 10) swipe = null;
+        }
+        sm.x = p.x;
+        sm.y = p.y;
+        Object.assign(sm, this.scopeDropAt(sm.from, p.x, p.y));
         return;
       }
       if (scopeGesture === e.pointerId) {
@@ -2161,6 +2314,13 @@ export class SimController {
       }
       if (split === e.pointerId || scopeGesture === e.pointerId) {
         if (press !== null && press.id === e.pointerId) cancelPress();
+        const sm = this.scopeMove;
+        if (sm !== null && sm.id === e.pointerId) {
+          this.scopeMove = null;
+          if (e.type === 'pointerup' && sm.to !== null && sm.where !== null)
+            this.dropScope(sm.from, sm.to, sm.where);
+          canvas.style.cursor = 'default';
+        }
         if (swipe !== null && swipe.id === e.pointerId) {
           const p = local(e);
           const dx = p.x - swipe.x;
