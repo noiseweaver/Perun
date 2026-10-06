@@ -40,6 +40,8 @@ export interface Theme {
     electricField: string;
     /** Field loops around inductors (field overlay). */
     magneticField: string;
+    /** Stored energy glow and energy flow arrows (field overlay). */
+    energy: string;
   };
   scope: {
     /** Plot area. */
@@ -191,6 +193,7 @@ export const themeInputSchema = z
         badConnection: color('Posts that touch an element without connecting to it.'),
         electricField: color('Field lines between capacitor plates (Show fields).'),
         magneticField: color('Field loops around inductors (Show fields).'),
+        energy: color('Stored energy glow and energy flow arrows (Show fields).'),
       })
       .partial()
       .optional()

@@ -30,6 +30,7 @@ export const dark: Theme = {
     badConnection: '#e06c75',
     electricField: '#61afef',
     magneticField: '#c678dd',
+    energy: '#d19a66',
   },
   scope: {
     background: '#14171c',

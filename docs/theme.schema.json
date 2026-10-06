@@ -133,6 +133,11 @@
           "type": "string",
           "maxLength": 64,
           "description": "Field loops around inductors (Show fields)."
+        },
+        "energy": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Stored energy glow and energy flow arrows (Show fields)."
         }
       }
     },

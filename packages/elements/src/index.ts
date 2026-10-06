@@ -167,6 +167,7 @@ export { TransformerElm } from './elm/TransformerElm.ts';
 export { TappedTransformerElm } from './elm/TappedTransformerElm.ts';
 export { TransLineElm } from './elm/TransLineElm.ts';
 export { RelayElm } from './elm/RelayElm.ts';
+export { DCMotorElm } from './elm/DCMotorElm.ts';
 export { RelayCoilElm, RelayContactElm } from './elm/RelayCoilElm.ts';
 export { JfetElm, NJfetElm, PJfetElm } from './elm/JfetElm.ts';
 export { PolarCapacitorElm } from './elm/PolarCapacitorElm.ts';

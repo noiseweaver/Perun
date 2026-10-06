@@ -40,6 +40,8 @@ interface Palette {
   purple: string;
   accent: string;
   danger?: string;
+  /** Energy overlay color when orange is too light on the canvas. */
+  energy?: string;
 }
 
 function hex(n: number): string {
@@ -70,6 +72,7 @@ function paletteTheme(p: Palette): Theme {
       badConnection: p.red,
       electricField: p.blue,
       magneticField: p.purple,
+      energy: p.energy ?? p.orange,
     },
     scope: {
       background: p.scopeBg,
@@ -214,6 +217,7 @@ export const catppuccinLatte = paletteTheme({
   zero: '#7c7f93',
   red: '#d20f39',
   orange: '#fe640b',
+  energy: '#c84f00',
   // Latte's yellow and green, darkened for 3:1 on the light canvas
   yellow: '#b86e00',
   green: '#2f8a1e',

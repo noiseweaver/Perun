@@ -31,6 +31,7 @@ export const light: Theme = {
     badConnection: '#c62828',
     electricField: '#1565c0',
     magneticField: '#7b1fa2',
+    energy: '#e65100',
   },
   scope: {
     background: '#ffffff',

@@ -12,10 +12,20 @@
 - Theme keys `circuit.electricField` and `circuit.magneticField` in every built-in theme. Charge
   marks use the voltage positive and negative colors.
 
+- Second round (Gady: "all of them are good"): a glow on capacitors, coils and transformers
+  that follows stored energy on one scale for the whole circuit; chevrons into parts that absorb
+  power and out of parts that deliver it (two-terminal parts); transformer core flux loops and
+  leakage loops (coupling below 1); a Lenz's law EMF arrow beside each coil; relay coil fields
+  with a pull arrow on each blade (scaled to the pull-in current); field lines across DC motors;
+  MOSFET channel filling in past threshold; diode depletion region widening under reverse
+  voltage. New theme key `circuit.energy`. `diodeGeometry`/`mosfetGeometry` are now exported for
+  the overlay; `DCMotorElm` is exported from the elements package.
+
 ### Next
 
 - Gady to try the preview artifact and decide whether to keep, change or drop it.
-- Not covered yet: transformers, polarized capacitor plate shape, other parts with capacitance.
+- Not covered yet: tapped and custom transformers, LEDs and varactors, polarized capacitor plate
+  shape. Everything sits behind the one Show fields switch; separate switches may be wanted.
 
 ## 2026-10-06: deploy, iPhone fixes, more themes
 
