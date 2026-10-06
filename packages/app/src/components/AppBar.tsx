@@ -282,6 +282,14 @@ export function AppBar() {
           <Menu.Separator className="menu-separator" />
           <Menu.CheckboxItem
             className="menu-item"
+            checked={settings.wheelEdit}
+            onCheckedChange={(v) => updateSettings({ wheelEdit: v })}
+            data-testid="menu-wheel-edit"
+          >
+            <Check on={settings.wheelEdit} /> {t('Edit Values With Mouse Wheel')}
+          </Menu.CheckboxItem>
+          <Menu.CheckboxItem
+            className="menu-item"
             checked={settings.euroResistors}
             onCheckedChange={(v) => updateSettings({ euroResistors: v })}
           >

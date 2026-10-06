@@ -338,6 +338,7 @@ export {
   formatNumber,
   getCurrentDText,
   getCurrentText,
+  getFixedUnitText,
   getShortUnitText,
   getTimeText,
   getUnitText,

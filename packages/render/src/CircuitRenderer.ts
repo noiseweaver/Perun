@@ -126,6 +126,8 @@ export class CircuitRenderer {
   scopeHighlights: ReadonlyMap<CircuitElm, string> = new Map();
   /** Height of the circuit area in CSS pixels; scopes take the rest. Null: the whole canvas. */
   circuitHeight: number | null = null;
+  /** Draw without hover or selection highlights and without the grid (a preview of a part). */
+  plain = false;
   /** Play edit feedback animations (off when the user prefers reduced motion). */
   motion = true;
   private effects: Effect[] = [];
@@ -300,7 +302,7 @@ export class CircuitRenderer {
     c.lineCap = 'round';
     c.lineJoin = 'miter';
 
-    this.drawGrid(frame.gridSize);
+    if (!this.plain) this.drawGrid(frame.gridSize);
 
     const painter = this.painter;
     painter.settings = {
@@ -388,6 +390,7 @@ export class CircuitRenderer {
     const painter = this.painter;
     const highlighted =
       !ghost &&
+      !this.plain &&
       (e === this.hovered ||
         e === this.stopElm ||
         e.selected ||

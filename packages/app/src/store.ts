@@ -26,6 +26,8 @@ export interface UserSettings {
   junctionDots: boolean;
   /** Options > Visualizations: field, charge and energy overlays. */
   fields: FieldOptions;
+  /** The mouse wheel over a resistor, capacitor or inductor steps its value (upstream option). */
+  wheelEdit: boolean;
   /** Font for text boxes; a display choice, not saved with circuits. */
   textFont: TextFont;
   /** Interface language: `auto` (the browser's) or an upstream catalog code (i18n.ts). */
@@ -131,6 +133,11 @@ export interface AppState {
   boxSelect: boolean;
   /** Text for screen readers (a polite live region): what keyboard selection picked. */
   announcement: string;
+  /**
+   * The value list shown while the mouse wheel steps a part's value on the canvas: where (canvas
+   * px), the field's name, and the values around the current one (the middle one is current).
+   */
+  wheelValue: { x: number; y: number; name: string; values: (string | null)[]; seq: number } | null;
   /** The catalog the interface shows (`en`, `de`, ...); the app tree is keyed by it. */
   language: string;
   /** The user's theme (settings.themeId resolved). */
@@ -180,6 +187,7 @@ function loadSettings(): UserSettings {
     conventionalCurrent: true,
     junctionDots: false,
     fields: NO_FIELDS,
+    wheelEdit: true,
     textFont: { family: 'default', bold: false, italic: false },
     language: 'auto',
   };
@@ -209,6 +217,7 @@ function loadSettings(): UserSettings {
           : defaults.conventionalCurrent,
       junctionDots: typeof s.junctionDots === 'boolean' ? s.junctionDots : defaults.junctionDots,
       fields: readFields(s) ?? defaults.fields,
+      wheelEdit: typeof s.wheelEdit === 'boolean' ? s.wheelEdit : defaults.wheelEdit,
       textFont: readTextFont(s.textFont) ?? defaults.textFont,
       language: typeof s.language === 'string' ? s.language : defaults.language,
     };
@@ -324,6 +333,7 @@ export const useApp = create<AppState>(() => ({
   teach: { tool: null, pen: 0, strokes: 0, canUndo: false },
   boxSelect: false,
   announcement: '',
+  wheelValue: null,
   language: 'en',
   dialog: null,
   theme: themeFor(initialSettings.themeId, []),

@@ -35,6 +35,16 @@
   back in its own column (one undo). Catalan strings for these and the Visualizations menu and
   legend are in (ca at 100%).
 
+- Livelier property panels (Gady picked the scope preview, the live header and wheel stepping):
+  the scope dialog opens with the scope copied live from the canvas (title row left off) and its
+  plot switches are chips with a dot in each trace color. The component panel shows the part
+  drawn live by its own small `CircuitRenderer` (`plain` mode: no grid or highlights; tall parts
+  turned on their side), and for two-terminal parts fixed-width V, I and P with a four-second
+  sparkline. Both redraw from `controller.frameListeners`. The mouse wheel steps a number field
+  in the panel, and on the canvas steps a resistor, capacitor or inductor through E12 with the
+  values shown by the mouse (upstream's Edit Values With Mouse Wheel, now on by default; see
+  DEVIATIONS.md). Tests in packages/app/e2e/panels.spec.ts.
+
 ### Next
 
 - Gady to try the preview artifact and decide whether to keep, change or drop it.
