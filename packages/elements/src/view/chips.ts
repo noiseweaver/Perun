@@ -9,7 +9,7 @@ import { ChipElm, SIDE_E, SIDE_N, SIDE_S, SIDE_W } from '../elm/ChipElm.ts';
 import type { LEDArrayElm } from '../elm/LEDArrayElm.ts';
 import { DecimalDisplayElm, SevenSegElm } from '../elm/SevenSegElm.ts';
 import type { VCOElm } from '../elm/TimerElm.ts';
-import { LABEL, MUTED, TEXT, vInk, type ElementView } from './common.ts';
+import { LABEL, MUTED, SELECTION, TEXT, vInk, type ElementView } from './common.ts';
 import { distance, interp, interp2, type Rect } from './geometry.ts';
 import type { DrawContext, Ink, Pt, TextStyle } from './Painter.ts';
 
@@ -66,10 +66,12 @@ function drawPinName(e: ChipElm, ctx: DrawContext, i: number, hasVertical: boole
   else if (pin.side === e.flippedXSide(SIDE_E)) tx = pin.textloc.x + (e.cspc - 5) - sw;
   else tx = pin.textloc.x - Math.trunc(sw / 2);
   const ty = pin.textloc.y + Math.trunc(asc / 3);
-  p.text(text, { x: tx, y: ty }, LABEL, style);
+  // a selected pin (the pin layout dialog) takes the selection color, as upstream
+  const ink = pin.selected ? SELECTION : LABEL;
+  p.text(text, { x: tx, y: ty }, ink, style);
   if (pin.lineOver) {
     const ya = pin.textloc.y - asc + Math.trunc(asc / 3);
-    p.line({ x: tx, y: ya }, { x: tx + sw, y: ya }, LABEL, { width: 1 });
+    p.line({ x: tx, y: ya }, { x: tx + sw, y: ya }, ink, { width: 1 });
   }
 }
 

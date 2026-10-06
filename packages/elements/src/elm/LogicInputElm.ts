@@ -15,9 +15,15 @@ import type { StringTokenizer } from '../StringTokenizer.ts';
 import { getCurrentText, getVoltageText } from '../view/units.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { SwitchElm } from './SwitchElm.ts';
+import type { WireRouter } from '../WireRouter.ts';
 
 /** A logic level source toggled by clicking: L/H, or 0/1/2 when ternary. */
 export class LogicInputElm extends SwitchElm {
+  override addRoutingObstacle(router: WireRouter): void {
+    router.addWire(this.point1.x, this.point1.y, this.lead1.x, this.lead1.y);
+    router.addObstacle(this.x2 - 10, this.y2 - 10, this.x2 + 10, this.y2 + 10);
+  }
+
   static readonly FLAG_TERNARY = 1;
   static readonly FLAG_NUMERIC = 2;
 
@@ -171,6 +177,11 @@ export class LogicInputElm extends SwitchElm {
 
 /** Shows the logic level at its post: L/H, 0/1, or 0/1/2 when ternary. */
 export class LogicOutputElm extends CircuitElm {
+  override addRoutingObstacle(router: WireRouter): void {
+    router.addWire(this.point1.x, this.point1.y, this.lead1.x, this.lead1.y);
+    router.addObstacle(this.x2 - 10, this.y2 - 10, this.x2 + 10, this.y2 + 10);
+  }
+
   static readonly FLAG_TERNARY = 1;
   static readonly FLAG_NUMERIC = 2;
   static readonly FLAG_PULLDOWN = 4;

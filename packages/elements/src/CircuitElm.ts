@@ -12,7 +12,11 @@ import type { EditInfo } from './edit/EditInfo.ts';
 import { UNITS_A, UNITS_V, UNITS_W, VAL_CURRENT, VAL_POWER } from './scope/constants.ts';
 import { getCurrentDText, getVoltageDText } from './view/units.ts';
 import type { StringTokenizer } from './StringTokenizer.ts';
+import type { WireRouter } from './WireRouter.ts';
 import type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from './xml.ts';
+
+/** Placeholder for leads an element never sets (upstream leaves them null). */
+export const NO_LEAD: Point = Object.freeze(new Point()) as Point;
 
 /**
  * Base of every element class. Upstream has two constructors per element: one for a new element
@@ -86,9 +90,12 @@ export abstract class CircuitElm extends SimElement {
     return q % x;
   }
 
-  /** Ends of the element body (upstream `lead1`, `lead2`), for elements whose posts use them. */
-  lead1: Point = new Point();
-  lead2: Point = new Point();
+  /**
+   * Ends of the element body (upstream `lead1`, `lead2`), for elements whose posts use them.
+   * `NO_LEAD` until set, where upstream's are null.
+   */
+  lead1: Point = NO_LEAD;
+  lead2: Point = NO_LEAD;
 
   /** Upstream `calcLeads`: a body `len` long centred between the points. */
   calcLeads(len: number): void {
@@ -353,6 +360,46 @@ export abstract class CircuitElm extends SimElement {
 
   /** Called when the user finishes dragging out a new element. */
   draggingDone(): void {}
+
+  /**
+   * Mark this element on a routed wire's grid (upstream `addRoutingObstacle`): a straight
+   * element's line is a wire and its body, between the leads, an obstacle.
+   */
+  addRoutingObstacle(router: WireRouter): void {
+    if (this.x === this.x2 || this.y === this.y2) {
+      router.addWire(this.x, this.y, this.x2, this.y2);
+      const leads = this.routingLeads();
+      if (leads !== null) router.addObstacle(leads[0].x, leads[0].y, leads[1].x, leads[1].y);
+    }
+  }
+
+  /** Upstream `addRoutingObstacleWithLeads`: the body is `width` either side of the leads. */
+  addRoutingObstacleWithLeads(router: WireRouter, width: number): void {
+    if (this.x === this.x2 || this.y === this.y2) {
+      router.addWire(this.x, this.y, this.x2, this.y2);
+      const [l1, l2] = this.routingLeads() ?? [this.point1, this.point2];
+      const pa = this.interpPointPerp(l1, l2, 0, width);
+      const pb = this.interpPointPerp(l1, l2, 1, -width);
+      router.addObstacle(pa.x, pa.y, pb.x, pb.y);
+    }
+  }
+
+  /**
+   * The body ends as upstream has them when routing (`lead1`, `lead2`), or null where upstream's
+   * are null. Elements whose leads only their views compute say what upstream's setPoints sets.
+   */
+  routingLeads(): [Point, Point] | null {
+    return this.lead1 !== NO_LEAD && this.lead2 !== NO_LEAD ? [this.lead1, this.lead2] : null;
+  }
+
+  /** What `calcLeads(len)` would set, without setting it. */
+  leadsFor(len: number): [Point, Point] {
+    if (this.dn < len || len === 0) return [this.point1, this.point2];
+    return [
+      this.interpPoint(this.point1, this.point2, (this.dn - len) / (2 * this.dn)),
+      this.interpPoint(this.point1, this.point2, (this.dn + len) / (2 * this.dn)),
+    ];
+  }
 
   /** Keyboard shortcut that selects this element for placing (a char code), or 0. */
   getShortcut(): number {

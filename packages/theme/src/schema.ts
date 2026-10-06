@@ -58,6 +58,12 @@ export interface Theme {
     /** The first entry draws voltage plots; later plots of one kind cycle through the rest. */
     traces: string[];
   };
+  teaching: {
+    /** Pencil colors; the first is the default pen. */
+    pens: string[];
+    /** The laser pointer's trail. */
+    laser: string;
+  };
   ui: {
     surface: string;
     surfaceAlt: string;
@@ -95,6 +101,7 @@ export type ThemeInput = {
     voltage?: Partial<Theme['circuit']['voltage']>;
   };
   scope?: Partial<Theme['scope']>;
+  teaching?: Partial<Theme['teaching']>;
   ui?: Partial<Theme['ui']>;
   style?: Partial<Theme['style']>;
 };
@@ -106,7 +113,10 @@ const color = (description: string) =>
   z
     .string()
     .max(64)
-    .refine((s) => parseColor(s) !== null, { message: 'not a hex, RGB or HSL color' })
+    // no surrounding whitespace: a newline must not reach a CSS custom property
+    .refine((s) => s === s.trim() && parseColor(s) !== null, {
+      message: 'not a hex, RGB or HSL color',
+    })
     .describe(description);
 const text = (description: string) => z.string().max(MAX_TEXT).describe(description);
 /** A font family list: names, quotes, spaces, commas and hyphens only (no url(), no CSS). */
@@ -197,6 +207,18 @@ export const themeInputSchema = z
       .partial()
       .optional()
       .describe('Oscilloscopes.'),
+    teaching: z
+      .object({
+        pens: z
+          .array(color('A pencil color.'))
+          .min(1)
+          .max(8)
+          .describe('Pencil colors for drawing on the circuit; the first is the default.'),
+        laser: color("The laser pointer's fading trail."),
+      })
+      .partial()
+      .optional()
+      .describe('Teaching tools: the pencil and the laser pointer.'),
     ui: z
       .object({
         surface: color('App background: bars, menus, dialogs (Material surface).'),

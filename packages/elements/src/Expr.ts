@@ -120,34 +120,33 @@ export class Expr {
     // a leaf never reads `left`
     const left = (ch !== null && ch.length > 0 ? ch[0] : null) as Expr;
     const right = ch !== null && ch.length === 2 ? ch[1] : null;
-    const r = (): number => (right as Expr).eval(es);
     switch (this.type) {
       case Expr.E_ADD:
-        return left.eval(es) + r();
+        return left.eval(es) + (right as Expr).eval(es);
       case Expr.E_SUB:
-        return left.eval(es) - r();
+        return left.eval(es) - (right as Expr).eval(es);
       case Expr.E_MUL:
-        return left.eval(es) * r();
+        return left.eval(es) * (right as Expr).eval(es);
       case Expr.E_DIV:
-        return left.eval(es) / r();
+        return left.eval(es) / (right as Expr).eval(es);
       case Expr.E_POW:
-        return Math.pow(left.eval(es), r());
+        return Math.pow(left.eval(es), (right as Expr).eval(es));
       case Expr.E_OR:
-        return left.eval(es) !== 0 || r() !== 0 ? 1 : 0;
+        return left.eval(es) !== 0 || (right as Expr).eval(es) !== 0 ? 1 : 0;
       case Expr.E_AND:
-        return left.eval(es) !== 0 && r() !== 0 ? 1 : 0;
+        return left.eval(es) !== 0 && (right as Expr).eval(es) !== 0 ? 1 : 0;
       case Expr.E_EQUALS:
-        return left.eval(es) === r() ? 1 : 0;
+        return left.eval(es) === (right as Expr).eval(es) ? 1 : 0;
       case Expr.E_NEQ:
-        return left.eval(es) !== r() ? 1 : 0;
+        return left.eval(es) !== (right as Expr).eval(es) ? 1 : 0;
       case Expr.E_LEQ:
-        return left.eval(es) <= r() ? 1 : 0;
+        return left.eval(es) <= (right as Expr).eval(es) ? 1 : 0;
       case Expr.E_GEQ:
-        return left.eval(es) >= r() ? 1 : 0;
+        return left.eval(es) >= (right as Expr).eval(es) ? 1 : 0;
       case Expr.E_LESS:
-        return left.eval(es) < r() ? 1 : 0;
+        return left.eval(es) < (right as Expr).eval(es) ? 1 : 0;
       case Expr.E_GREATER:
-        return left.eval(es) > r() ? 1 : 0;
+        return left.eval(es) > (right as Expr).eval(es) ? 1 : 0;
       case Expr.E_TERNARY:
         return this.child(left.eval(es) !== 0 ? 1 : 2).eval(es);
       case Expr.E_UMINUS:
@@ -185,11 +184,11 @@ export class Expr {
       case Expr.E_TANH:
         return Math.tanh(left.eval(es));
       case Expr.E_BITAND:
-        return javaDoubleToInt(left.eval(es)) & javaDoubleToInt(r());
+        return javaDoubleToInt(left.eval(es)) & javaDoubleToInt((right as Expr).eval(es));
       case Expr.E_BITOR:
-        return javaDoubleToInt(left.eval(es)) | javaDoubleToInt(r());
+        return javaDoubleToInt(left.eval(es)) | javaDoubleToInt((right as Expr).eval(es));
       case Expr.E_RSHIFT:
-        return javaDoubleToInt(left.eval(es)) >> javaDoubleToInt(r());
+        return javaDoubleToInt(left.eval(es)) >> javaDoubleToInt((right as Expr).eval(es));
       case Expr.E_FLOOR:
         return Math.floor(left.eval(es));
       case Expr.E_CEIL:
@@ -224,15 +223,15 @@ export class Expr {
         return x - 1;
       }
       case Expr.E_MOD:
-        return left.eval(es) % r();
+        return left.eval(es) % (right as Expr).eval(es);
       case Expr.E_PWL:
         return this.pwl(es, ch as Expr[]);
       case Expr.E_PWR:
-        return Math.pow(Math.abs(left.eval(es)), r());
+        return Math.pow(Math.abs(left.eval(es)), (right as Expr).eval(es));
       case Expr.E_PWRS: {
         const x = left.eval(es);
-        if (x < 0) return -Math.pow(-x, r());
-        return Math.pow(x, r());
+        if (x < 0) return -Math.pow(-x, (right as Expr).eval(es));
+        return Math.pow(x, (right as Expr).eval(es));
       }
       case Expr.E_LASTOUTPUT:
         return es.lastOutput;

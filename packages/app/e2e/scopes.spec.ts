@@ -167,7 +167,7 @@ test('hovering an element shows its info', async ({ page }) => {
     .toEqual(
       expect.arrayContaining([
         expect.stringMatching(/^resistor/),
-        expect.stringMatching(/^I = 10 mA/),
+        expect.stringMatching(/^I = +10\.000 mA/),
       ]),
     );
 });
@@ -617,6 +617,22 @@ test('the property panel adds the element to a new docked or undocked scope', as
   await expect
     .poll(() => page.evaluate(() => window.circuitjsNext?.controller.circuit.scopeElms().length))
     .toBe(1);
+});
+
+test.describe('viewing in a scope on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('closes the property sheet so the scope shows', async ({ page }) => {
+    await page.goto(`/?ctz=${compressCircuit(LOOP)}`);
+    await ready(page);
+    const p = await at(page, 176, 96);
+    await page.mouse.click(p.x, p.y);
+    const sheet = page.getByTestId('inspector');
+    await expect(sheet).toBeVisible();
+    await page.getByTestId('action-view-in-scope').tap();
+    await expect.poll(() => scopeCount(page)).toBe(1);
+    await expect(sheet).toBeHidden();
+  });
 });
 
 test.describe('moving an undocked card on a phone', () => {

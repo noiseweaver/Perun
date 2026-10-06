@@ -10,6 +10,7 @@ import { openDialog } from '../commands.ts';
 import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
 import { Icon } from './Icon.tsx';
+import { t, tf } from '../i18n.ts';
 
 function LabeledSlider(props: {
   label: string;
@@ -21,7 +22,7 @@ function LabeledSlider(props: {
 }) {
   return (
     <label className="slider-field">
-      <span className="slider-label">{props.label}</span>
+      <span className="slider-label">{t(props.label)}</span>
       <Slider.Root
         className="slider"
         min={props.min}
@@ -34,9 +35,63 @@ function LabeledSlider(props: {
         <Slider.Track className="slider-track">
           <Slider.Range className="slider-range" />
         </Slider.Track>
-        <Slider.Thumb className="slider-thumb" aria-label={props.label} />
+        <Slider.Thumb className="slider-thumb" aria-label={t(props.label)} />
       </Slider.Root>
     </label>
+  );
+}
+
+/** Turns the teaching tools (pencil, laser, eraser) on and off. */
+function DrawButton() {
+  const on = useApp((s) => s.teach.tool !== null);
+  const label = on ? 'Stop drawing' : 'Draw on the circuit';
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>
+        <button
+          type="button"
+          className="icon-button"
+          onClick={() => controller.setTeachTool(on ? null : 'pencil')}
+          aria-label={t(label)}
+          aria-pressed={on}
+          data-testid="draw-toggle"
+        >
+          <Icon name="edit" />
+        </button>
+      </Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content className="tooltip" sideOffset={6}>
+          {t(label)}
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  );
+}
+
+/** Touch screens pan with one finger; this turns a one-finger drag into a selection box. */
+function BoxSelectButton() {
+  const on = useApp((s) => s.boxSelect);
+  const label = on ? 'Drag to pan' : 'Drag to select';
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>
+        <button
+          type="button"
+          className="icon-button touch-only"
+          onClick={() => useApp.setState({ boxSelect: !on })}
+          aria-label={t(label)}
+          aria-pressed={on}
+          data-testid="box-select-toggle"
+        >
+          <Icon name="selectAll" />
+        </button>
+      </Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content className="tooltip" sideOffset={6}>
+          {t(label)}
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
   );
 }
 
@@ -54,7 +109,7 @@ function IconButton(props: {
           type="button"
           className="icon-button"
           onClick={props.onClick}
-          aria-label={props.label}
+          aria-label={t(props.label)}
           data-testid={props.testId}
         >
           {props.children}
@@ -62,7 +117,7 @@ function IconButton(props: {
       </Tooltip.Trigger>
       <Tooltip.Portal>
         <Tooltip.Content className="tooltip" sideOffset={6}>
-          {props.label}
+          {t(props.label)}
         </Tooltip.Content>
       </Tooltip.Portal>
     </Tooltip.Root>
@@ -84,7 +139,7 @@ function SpeedButton() {
             <button
               type="button"
               className="icon-button"
-              aria-label="Speed"
+              aria-label={t('Speed')}
               data-testid="speed-button"
             >
               <Icon name="speed" />
@@ -93,7 +148,7 @@ function SpeedButton() {
         </Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Content className="tooltip" sideOffset={6}>
-            Speed
+            {t('Speed')}
           </Tooltip.Content>
         </Tooltip.Portal>
       </Tooltip.Root>
@@ -150,7 +205,7 @@ export function timeText(t: number): string {
  */
 export function ControlBar() {
   const running = useApp((s) => s.running);
-  const { t, timeStep, stopMessage, badConnections } = useApp((s) => s.status);
+  const { t: simTime, timeStep, stopMessage, badConnections } = useApp((s) => s.status);
   const warnings = useApp((s) => s.warnings);
   const error = useApp((s) => s.error);
   const stopped = stopMessage !== null;
@@ -171,7 +226,7 @@ export function ControlBar() {
             name={running ? 'pause' : 'play'}
             className="icon icon-swap"
           />
-          {running ? 'Stop' : 'Run'}
+          {t(running ? 'Stop' : 'Run')}
         </button>
         <IconButton label="Reset" onClick={() => controller.reset()} testId="reset">
           <Icon name="replay" />
@@ -180,6 +235,8 @@ export function ControlBar() {
           <Icon name="fit" />
         </IconButton>
         <SpeedButton />
+        <BoxSelectButton />
+        <DrawButton />
       </div>
 
       <div className="status">
@@ -198,26 +255,33 @@ export function ControlBar() {
         {badConnections > 0 && (
           <span className="chip">
             <Icon name="warning" size={16} />
-            {badConnections} bad connection{badConnections === 1 ? '' : 's'}
+            {badConnections}
+            {t(badConnections === 1 ? ' bad connection' : ' bad connections')}
           </span>
         )}
         {warnings.length > 0 && (
           <span className="chip" title={warnings.join('\n')} data-testid="load-warnings">
             <Icon name="warning" size={16} />
-            {warnings.length} unsupported item{warnings.length === 1 ? '' : 's'} skipped
+            {tf(
+              warnings.length === 1
+                ? '{n} unsupported item skipped'
+                : '{n} unsupported items skipped',
+              { n: warnings.length },
+            )}
           </span>
         )}
         <span className="readout readout-time" data-testid="sim-time">
-          t = {timeText(t)}
+          t = {timeText(simTime)}
         </span>
         <button
           type="button"
           className="readout readout-step readout-button"
-          title="Change the time step"
+          title={t('Change the time step')}
           data-testid="time-step"
           onClick={() => openDialog('simSettings')}
         >
-          time step = {getUnitText(timeStep, 's')}
+          {t('time step = ')}
+          {getUnitText(timeStep, 's')}
         </button>
       </div>
     </footer>

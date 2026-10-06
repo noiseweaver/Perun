@@ -4,23 +4,26 @@
 import { Simulation, constructElement } from '@circuitjs-next/elements';
 import { drawPreview } from '@circuitjs-next/render';
 import { useEffect, useRef, useState } from 'react';
-import { searchPalette, type PaletteItem } from '../editor/catalog.ts';
+import { searchPalette, type PaletteGroup, type PaletteItem } from '../editor/catalog.ts';
 import { controller } from '../SimController.ts';
 import { setPaletteOpen, shownTheme, useApp } from '../store.ts';
 import { Icon } from './Icon.tsx';
+import { t, tGroup, tItem } from '../i18n.ts';
 
 const previewSim = new Simulation();
 const ICON_W = 44;
 const ICON_H = 32;
 
 /** The element drawn small with the current theme. */
-function Preview({ className }: { className: string }) {
+export function Preview({ className }: { className: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const theme = useApp(shownTheme);
   useEffect(() => {
     const c = ref.current;
     if (!c) return;
-    const e = constructElement(className, 0, 0, previewSim);
+    // a user's subcircuit is found through the circuit's own model list
+    const sim = className.startsWith('CustomCompositeElm:') ? controller.circuit.sim : previewSim;
+    const e = constructElement(className, 0, 0, sim);
     if (!e) return;
     e.dragPlace(0, 0, false);
     drawPreview(c, e, theme, ICON_W, ICON_H, window.devicePixelRatio || 1);
@@ -82,7 +85,7 @@ function PaletteButton({ item, active }: { item: PaletteItem; active: boolean })
       className="palette-item"
       data-active={active || undefined}
       data-testid={`palette-${item.className}`}
-      title={item.shortcut ? `${item.label} (${item.shortcut})` : item.label}
+      title={item.shortcut ? `${tItem(item.label)} (${item.shortcut})` : tItem(item.label)}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -96,7 +99,7 @@ function PaletteButton({ item, active }: { item: PaletteItem; active: boolean })
       }}
     >
       <Preview className={item.className} />
-      <span className="palette-label">{item.label}</span>
+      <span className="palette-label">{tItem(item.label)}</span>
       {item.shortcut && <kbd className="palette-key">{item.shortcut}</kbd>}
     </button>
   );
@@ -122,12 +125,33 @@ function saveCollapsed(c: Set<string>): void {
   }
 }
 
+/**
+ * The circuit's and the session's subcircuit models as a last group, as upstream's Subcircuits
+ * menu (UIManager's subcircuit menu update), matched by name when searching.
+ */
+function withSubcircuits(groups: PaletteGroup[], models: string[], query: string): PaletteGroup[] {
+  const words = query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 0);
+  const items: PaletteItem[] = models
+    .filter((name) => words.every((w) => `${name} subcircuit`.toLowerCase().includes(w)))
+    .map((name) => ({
+      className: `CustomCompositeElm:${name}`,
+      label: name,
+      keywords: 'subcircuit',
+      shortcut: null,
+    }));
+  return items.length === 0 ? groups : [...groups, { title: 'Subcircuits', items }];
+}
+
 /** Searchable list of the elements that can be placed. */
 export function Palette() {
   const [query, setQuery] = useState('');
   const addClass = useApp((s) => s.editor.addClass);
   const open = useApp((s) => s.paletteOpen);
-  const groups = searchPalette(query);
+  const models = useApp((s) => s.subcircuitModels);
+  const groups = withSubcircuits(searchPalette(query), models, query);
   const [collapsed, setCollapsed] = useState(loadCollapsed);
   const toggleGroup = (title: string): void => {
     const next = new Set(collapsed);
@@ -141,7 +165,7 @@ export function Palette() {
   return (
     <aside
       className="palette"
-      aria-label="Components"
+      aria-label={t('Components')}
       data-testid="palette"
       data-open={open}
       aria-hidden={!open}
@@ -155,15 +179,15 @@ export function Palette() {
               className="palette-search-input"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search components"
-              aria-label="Search components"
+              placeholder={t('Search components')}
+              aria-label={t('Search components')}
               data-testid="palette-search"
             />
             {query && (
               <button
                 type="button"
                 className="icon-button icon-button-small"
-                aria-label="Clear search"
+                aria-label={t('Clear search')}
                 onClick={() => setQuery('')}
               >
                 <Icon name="close" size={18} />
@@ -173,15 +197,15 @@ export function Palette() {
           <button
             type="button"
             className="icon-button icon-button-small"
-            aria-label="Hide components"
-            title="Hide components"
+            aria-label={t('Hide components')}
+            title={t('Hide components')}
             data-testid="palette-hide"
             onClick={() => setPaletteOpen(false)}
           >
             <Icon name="chevronLeft" size={20} />
           </button>
         </div>
-        <div className="palette-hint">Click, then drag on the canvas. Or drag onto it.</div>
+        <div className="palette-hint">{t('Click, then drag on the canvas. Or drag onto it.')}</div>
         <div className="palette-list">
           {groups.map((g) => (
             <section key={g.title} className="palette-group">
@@ -195,7 +219,7 @@ export function Palette() {
                   disabled={searching}
                 >
                   <Icon name="dropDown" size={18} className="palette-group-chevron" />
-                  {g.title}
+                  {tGroup(g.title)}
                 </button>
               </h2>
               {(searching || !collapsed.has(g.title)) &&

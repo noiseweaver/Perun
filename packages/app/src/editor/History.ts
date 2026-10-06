@@ -122,6 +122,22 @@ export class History {
     this.onChange();
   }
 
+  /** Set the stacks aside (upstream `pushContext` keeps the outer circuit's) and start empty. */
+  stash(): { undo: Command[]; redo: Command[] } {
+    this.commit();
+    const saved = { undo: this.undoStack, redo: this.redoStack };
+    this.clear();
+    return saved;
+  }
+
+  /** Bring stashed stacks back. */
+  unstash(saved: { undo: Command[]; redo: Command[] }): void {
+    this.pending = null;
+    this.undoStack = saved.undo;
+    this.redoStack = saved.redo;
+    this.onChange();
+  }
+
   clear(): void {
     this.undoStack = [];
     this.redoStack = [];

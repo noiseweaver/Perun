@@ -15,7 +15,8 @@ import { EditInfo } from '../edit/EditInfo.ts';
 import { unescapeToken } from '../escape.ts';
 import { parseJavaDouble, parseJavaInt } from '../java.ts';
 import { modelsFor } from '../models/ModelLibrary.ts';
-import type { TransistorModel } from '../models/TransistorModel.ts';
+import { modelEditor } from '../edit/modelEditor.ts';
+import { TransistorModel } from '../models/TransistorModel.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from '../xml.ts';
 import { getCurrentText, getUnitText, getVoltageText, showFormat } from '../view/units.ts';
@@ -31,6 +32,7 @@ import {
   VAL_VBE,
   VAL_VCE,
 } from '../scope/constants.ts';
+import type { WireRouter } from '../WireRouter.ts';
 
 /** Electron thermal voltage at SPICE's default temperature of 27 C (300.15 K). */
 const vt = 0.025865;
@@ -51,6 +53,15 @@ function calcJunctionCap(vj: number, cj0: number, vj0: number, mj: number): numb
 
 /** Bipolar transistor, Gummel-Poon. Node 0 is the base, 1 the collector, 2 the emitter. */
 export class TransistorElm extends CircuitElm {
+  override addRoutingObstacle(router: WireRouter): void {
+    // upstream's drawing points: the base plate and the collector and emitter posts
+    const [r0, r1] = this.interpPoint2(this.point1, this.point2, 1 - 16 / this.dn, 16);
+    const [r2, r3] = this.interpPoint2(this.point1, this.point2, 1 - 13 / this.dn, 16);
+    const base = this.interpPoint(this.point1, this.point2, 1 - 16 / this.dn);
+    router.addObstaclePoints([r0, r1, r2, r3, this.coll[0], this.emit[0]]);
+    router.addWire(this.point1.x, this.point1.y, base.x, base.y);
+  }
+
   static readonly FLAG_FLIP = 1;
   static readonly FLAG_CIRCLE = 2;
   static readonly FLAGS_GLOBAL = TransistorElm.FLAG_CIRCLE;
@@ -605,7 +616,11 @@ export class TransistorElm extends CircuitElm {
         selected,
       );
     }
-    // model editing: later phase (upstream buttons 4 "Create New Model" and 5 "Edit Model")
+    if (n === 4) return EditInfo.createButton('Create New Model', () => this.newModel());
+    if (n === 5) {
+      if (this.getModel().readOnly) return null;
+      return EditInfo.createButton('Edit Model', () => this.editModel());
+    }
     return null;
   }
 
@@ -635,6 +650,36 @@ export class TransistorElm extends CircuitElm {
       ei.newDialog = true;
       return;
     }
+  }
+
+  /** Upstream button 4: edit a copy of the model, which this transistor then uses. */
+  private newModel(): void {
+    const tm = TransistorModel.copyOf(this.getModel());
+    this.openModelDialog(tm, true);
+  }
+
+  /** Upstream button 5: edit the model itself. */
+  private editModel(): void {
+    this.openModelDialog(this.getModel(), false);
+  }
+
+  /** Upstream EditTransistorModelDialog. */
+  private openModelDialog(tm: TransistorModel, created: boolean): void {
+    tm.modelMap = modelsFor(this.sim).transistor.modelMap;
+    modelEditor.open?.({
+      target: tm,
+      applyButton: false,
+      onApply: () => {
+        if (tm.name.length === 0) tm.pickName();
+        if (created) this.newModelCreated(tm);
+      },
+    });
+  }
+
+  newModelCreated(tm: TransistorModel): void {
+    this.model = tm;
+    this.modelName = tm.name;
+    this.setup();
   }
 
   override flipX(c2: number, count: number): void {

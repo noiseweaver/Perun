@@ -5,6 +5,7 @@
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032.
 
 import { Simulation, constructElement } from '@circuitjs-next/elements';
+import { tItem } from '../i18n.ts';
 
 export interface PaletteItem {
   /** Upstream class name, as `constructElement` takes it. */
@@ -270,7 +271,8 @@ export function searchPalette(query: string): PaletteGroup[] {
     .map((g) => ({
       title: g.title,
       items: g.items.filter((it) => {
-        const hay = `${it.label} ${it.keywords} ${it.className}`.toLowerCase();
+        // English and the shown language both match
+        const hay = `${it.label} ${tItem(it.label)} ${it.keywords} ${it.className}`.toLowerCase();
         return words.every((w) => hay.includes(w));
       }),
     }))

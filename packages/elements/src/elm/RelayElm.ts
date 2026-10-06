@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Ported from CircuitJS1 src/com/lushprojects/circuitjs1/client/RelayElm.java (master) at
-// 5a707168778216bb6ed01bfdd62e8bbf7ae0a032. The model edit dialog is left for a later phase.
+// 5a707168778216bb6ed01bfdd62e8bbf7ae0a032.
 // Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) circuitjs-next contributors.
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
@@ -11,6 +11,7 @@ import { CircuitElm, elementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaDouble, parseJavaInt } from '../java.ts';
 import { modelsFor } from '../models/ModelLibrary.ts';
+import { modelEditor } from '../edit/modelEditor.ts';
 import { RelayModel } from '../models/RelayModel.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import { getCurrentDText, getVoltageDText } from '../view/units.ts';
@@ -445,7 +446,11 @@ export class RelayElm extends CircuitElm {
         selected,
       );
     }
-    // model editing: later phase (upstream "Create New Model" and "Edit Model" buttons)
+    if (n === 1) return EditInfo.createButton('Create New Model', () => this.newModel());
+    if (n === 2) {
+      if (this.getModel().readOnly) return null;
+      return EditInfo.createButton('Edit Model', () => this.editModel());
+    }
     return null;
   }
 
@@ -459,6 +464,37 @@ export class RelayElm extends CircuitElm {
       this.setPoints();
       ei.newDialog = true;
     }
+  }
+
+  /** Upstream button 1: edit a copy of the model, which this relay then uses. */
+  private newModel(): void {
+    this.openModelDialog(RelayModel.copyOf(this.getModel()), true);
+  }
+
+  /** Upstream button 2: edit the model itself. */
+  private editModel(): void {
+    this.openModelDialog(this.getModel(), false);
+  }
+
+  /** Upstream EditRelayModelDialog. */
+  private openModelDialog(rm: RelayModel, created: boolean): void {
+    rm.modelMap = modelsFor(this.sim).relay.modelMap;
+    modelEditor.open?.({
+      target: rm,
+      applyButton: false,
+      onApply: () => {
+        if (rm.name.length === 0) rm.pickName();
+        if (created) this.newModelCreated(rm);
+      },
+    });
+  }
+
+  newModelCreated(rm: RelayModel): void {
+    this.model = rm;
+    this.modelName = rm.name;
+    modelsFor(this.sim).relayLastModelName = this.modelName;
+    this.ind.setup(this.inductance(), this.coilCurrent, Inductor.FLAG_BACK_EULER);
+    this.setPoints();
   }
 
   override getConnection(n1: number, n2: number): boolean {

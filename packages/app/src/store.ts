@@ -25,6 +25,8 @@ export interface UserSettings {
   junctionDots: boolean;
   /** Font for text boxes; a display choice, not saved with circuits. */
   textFont: TextFont;
+  /** Interface language: `auto` (the browser's) or an upstream catalog code (i18n.ts). */
+  language: string;
 }
 
 /** Circuit options shown in the Options menu (saved with the circuit). */
@@ -60,7 +62,11 @@ export interface EditorState {
   canPaste: boolean;
   /** Bumped when the selected element's properties may have changed. */
   revision: number;
+  /** A drag on the canvas is moving something: the phone property sheet steps aside. */
+  moving: boolean;
 }
+
+export type TeachTool = 'pencil' | 'laser' | 'eraser';
 
 export interface AppState {
   title: string;
@@ -81,6 +87,14 @@ export interface AppState {
   paletteOpen: boolean;
   /** Text of a short notice ("Link copied"), or null. */
   toast: string | null;
+  /** Bumped when the sliders or their values change (the slider panel reads them again). */
+  sliderRevision: number;
+  /** How the app can be installed: the browser's prompt, iOS's Add to Home Screen, or not. */
+  install: 'none' | 'prompt' | 'ios';
+  /** A new version has been downloaded and waits for a reload. */
+  updateReady: boolean;
+  /** Every file is cached: the app works offline. */
+  offlineReady: boolean;
   /** Open dialog (commands.ts DialogKind). */
   dialog:
     | 'save'
@@ -90,11 +104,32 @@ export interface AppState {
     | 'shortcuts'
     | 'simSettings'
     | 'scopeProperties'
+    | 'sliders'
+    | 'model'
+    | 'subcircuit'
+    | 'about'
+    | 'subcircuitManager'
+    | 'install'
     | 'themes'
     | 'themeEditor'
     | null;
   /** Bumped to move keyboard focus to the property panel (double-click, Enter). */
   inspectorFocus: number;
+  /** Subcircuits whose parts are shown, and the model whose circuit is being edited. */
+  subcircuitBar: { viewing: string[]; editing: string | null };
+  /** Subcircuit models that can be placed, by name. */
+  subcircuitModels: string[];
+  /** Teaching tools: the tool in use (null: editing as usual), the pen and the strokes' state. */
+  teach: { tool: TeachTool | null; pen: number; strokes: number; canUndo: boolean };
+  /**
+   * Touch box select: one finger dragging on empty canvas draws a selection box instead of
+   * panning (two fingers still pan and zoom). A mouse drag always selects.
+   */
+  boxSelect: boolean;
+  /** Text for screen readers (a polite live region): what keyboard selection picked. */
+  announcement: string;
+  /** The catalog the interface shows (`en`, `de`, ...); the app tree is keyed by it. */
+  language: string;
   /** The user's theme (settings.themeId resolved). */
   theme: Theme;
   /**
@@ -142,6 +177,7 @@ function loadSettings(): UserSettings {
     conventionalCurrent: true,
     junctionDots: false,
     textFont: { family: 'default', bold: false, italic: false },
+    language: 'auto',
   };
   try {
     let raw = localStorage.getItem(SETTINGS_KEY);
@@ -169,6 +205,7 @@ function loadSettings(): UserSettings {
           : defaults.conventionalCurrent,
       junctionDots: typeof s.junctionDots === 'boolean' ? s.junctionDots : defaults.junctionDots,
       textFont: readTextFont(s.textFont) ?? defaults.textFont,
+      language: typeof s.language === 'string' ? s.language : defaults.language,
     };
   } catch {
     return defaults;
@@ -222,10 +259,11 @@ export function themeFor(themeId: string, library: readonly SavedTheme[]): Theme
 
 const PALETTE_KEY = 'circuitjs-next.paletteOpen';
 
-/** Open on wide screens unless the user slid it away last time; shut on narrow ones. */
+/** Open on large screens unless the user slid it away last time; shut on phones. */
 function initialPaletteOpen(): boolean {
   if (typeof window === 'undefined') return true;
-  if (window.innerWidth < 720) return false;
+  // phones, and phones on their side
+  if (window.innerWidth < 720 || window.innerHeight < 560) return false;
   try {
     return localStorage.getItem(PALETTE_KEY) !== 'false';
   } catch {
@@ -256,10 +294,21 @@ export const useApp = create<AppState>(() => ({
     canRedo: false,
     canPaste: false,
     revision: 0,
+    moving: false,
   },
   paletteOpen: initialPaletteOpen(),
   toast: null,
+  sliderRevision: 0,
+  install: 'none',
+  updateReady: false,
+  offlineReady: false,
   inspectorFocus: 0,
+  subcircuitBar: { viewing: [], editing: null },
+  subcircuitModels: [],
+  teach: { tool: null, pen: 0, strokes: 0, canUndo: false },
+  boxSelect: false,
+  announcement: '',
+  language: 'en',
   dialog: null,
   theme: themeFor(initialSettings.themeId, []),
   preview: null,

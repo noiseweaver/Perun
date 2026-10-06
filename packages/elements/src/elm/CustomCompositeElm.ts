@@ -6,7 +6,10 @@
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
-import { elementType, type ElementType } from '../CircuitElm.ts';
+import { elementType, type CircuitElm, type ElementType } from '../CircuitElm.ts';
+import { elementFactory } from '../factory.ts';
+import { parseJavaInt } from '../java.ts';
+import { AttrReader } from '../xmlattrs.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { unescapeToken } from '../escape.ts';
 import type { CustomCompositeModel } from '../models/CustomCompositeModel.ts';
@@ -16,6 +19,7 @@ import { getVoltageText } from '../view/units.ts';
 import type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from '../xml.ts';
 import { ChipElm } from './ChipElm.ts';
 import { CompositeElm } from './CompositeElm.ts';
+import type { WireRouter } from '../WireRouter.ts';
 
 /**
  * A plain chip outline other elements use to draw themselves (a subcircuit can't be both a
@@ -68,6 +72,10 @@ export interface SubcircuitHooks {
 
 /** An instance of a subcircuit model. */
 export class CustomCompositeElm extends CompositeElm {
+  override addRoutingObstacle(router: WireRouter): void {
+    this.chip?.addRoutingObstacle(router);
+  }
+
   static readonly FLAG_SMALL = 2;
   static hooks: SubcircuitHooks | null = null;
 
@@ -280,6 +288,42 @@ export class CustomCompositeElm extends CompositeElm {
   }
   override getPostWidth(n: number): number {
     return this.chip !== null ? this.chip.getPostWidth(n) : 1;
+  }
+
+  /**
+   * The parts to show for View Components: the simulated ones, plus the wires, labels and other
+   * display-only parts the simulation leaves out, all at their places in the model's circuit.
+   */
+  buildDisplayElmList(): CircuitElm[] {
+    const all: CircuitElm[] = [...this.compElmList];
+    const model = this.model;
+    if (model === null) return all;
+    let compIdx = 0;
+    for (const childElem of model.getElmEntries()) {
+      const className = elementFactory.classNameForXmlTag(childElem.name);
+      if (className === undefined) continue;
+      let ce: CircuitElm | null | undefined;
+      if (
+        className === 'WireElm' ||
+        className === 'RoutedWireElm' ||
+        className === 'LabeledNodeElm' ||
+        className === 'ScopeElm' ||
+        className === 'GraphicElm' ||
+        (className === 'GroundElm' && childElem.getAttribute('x') !== null)
+      ) {
+        ce = elementFactory.construct(className, 0, 0, this.sim);
+        if (ce === null) continue;
+        ce.undumpXml(new AttrReader(childElem));
+        all.push(ce);
+      } else ce = this.compElmList[compIdx++];
+      if (ce === undefined) continue;
+      const x = childElem.getAttribute('x');
+      if (x === null) continue;
+      const xs = x.split(' ').map((v) => parseJavaInt(v));
+      ce.setPosition(xs[0], xs[1], xs[2], xs[3]);
+      if (ce.nodes.length === 0) ce.allocNodes();
+    }
+    return all;
   }
 
   /** Whether the model keeps part positions, so its parts can be shown. */

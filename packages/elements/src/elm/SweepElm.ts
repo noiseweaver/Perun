@@ -12,6 +12,7 @@ import { parseJavaDouble } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import { getCurrentDText, getCurrentText, getUnitText, getVoltageText } from '../view/units.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import type { WireRouter } from '../WireRouter.ts';
 
 const pi = Math.PI;
 
@@ -42,6 +43,18 @@ abstract class GroundedSourceElm extends CircuitElm {
 
 /** A sine wave whose frequency sweeps between two limits, linearly or logarithmically. */
 export class SweepElm extends GroundedSourceElm {
+  override addRoutingObstacle(router: WireRouter): void {
+    const cs = 17; // upstream SweepElm.circleSize
+    const lead1 = this.interpPoint(this.point1, this.point2, 1 - cs / this.dn);
+    router.addWire(this.point1.x, this.point1.y, lead1.x, lead1.y);
+    router.addObstacle(
+      this.point2.x - cs,
+      this.point2.y - cs,
+      this.point2.x + cs,
+      this.point2.y + cs,
+    );
+  }
+
   static readonly FLAG_LOG = 1;
   static readonly FLAG_BIDIR = 2;
 

@@ -14,9 +14,15 @@ import { parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import { getUnitText } from '../view/units.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import type { Point } from '@circuitjs-next/engine';
 
 /** An ammeter: a zero-volt source that shows the current through it, or its RMS value. */
 export class AmmeterElm extends CircuitElm {
+  /** Upstream setPoints: calcLeads(24). circleSize is 12. */
+  override routingLeads(): [Point, Point] | null {
+    return super.routingLeads() ?? this.leadsFor(24);
+  }
+
   static readonly AM_VOL = 0;
   static readonly AM_RMS = 1;
   static readonly FLAG_SHOWCURRENT = 1;

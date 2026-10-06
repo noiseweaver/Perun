@@ -27,7 +27,7 @@ const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.str
 export function minimizeTheme(theme: Theme): ThemeInput {
   const base = builtinTheme(theme.meta.base) ?? (builtinTheme(DEFAULT_THEME_ID) as Theme);
   const out: Record<string, unknown> = { schemaVersion: 1 };
-  for (const group of ['meta', 'canvas', 'circuit', 'scope', 'ui', 'style'] as const) {
+  for (const group of ['meta', 'canvas', 'circuit', 'scope', 'teaching', 'ui', 'style'] as const) {
     const t = theme[group] as unknown as Record<string, unknown>;
     const b = base[group] as unknown as Record<string, unknown>;
     const diff: Record<string, unknown> = {};

@@ -14,6 +14,7 @@ import { parseJavaDouble } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { getUnitText } from '../view/units.ts';
+import type { Point } from '@circuitjs-next/engine';
 
 /** Inductor companion model, shared with transformers and relays (upstream `Inductor`). */
 export class Inductor {
@@ -116,6 +117,11 @@ export class Inductor {
 }
 
 export class InductorElm extends CircuitElm {
+  /** Upstream setPoints: calcLeads(32). */
+  override routingLeads(): [Point, Point] | null {
+    return super.routingLeads() ?? this.leadsFor(32);
+  }
+
   ind = new Inductor(this);
   inductance = 0;
   initialCurrent = 0;

@@ -5,7 +5,9 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { useMemo, useState } from 'react';
 import type { ExampleItem, ExampleMenu } from '../examples.ts';
 import { openExample } from '../startup.ts';
+import { CategoryIcon } from './CategoryIcon.tsx';
 import { Icon } from './Icon.tsx';
+import { t } from '../i18n.ts';
 
 /** Every circuit under a menu, with the groups it sits in. */
 function flatten(menu: ExampleMenu, path: string[] = []): { item: ExampleItem; path: string[] }[] {
@@ -22,7 +24,7 @@ function Group(props: { menu: ExampleMenu; depth: number; pick: (it: ExampleItem
   const [open, setOpen] = useState(false);
   const { menu, depth } = props;
   return (
-    <li>
+    <li className="sheet-category">
       <button
         type="button"
         className="sheet-row sheet-group"
@@ -30,6 +32,7 @@ function Group(props: { menu: ExampleMenu; depth: number; pick: (it: ExampleItem
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
+        <CategoryIcon title={menu.title} />
         <span className="sheet-row-title">{menu.title}</span>
         <Icon name="chevronRight" className="icon sheet-chevron" />
       </button>
@@ -79,11 +82,11 @@ export function CircuitsSheet(props: { root: ExampleMenu; onClose: () => void })
       <Dialog.Portal>
         <Dialog.Content className="circuits-sheet" data-testid="circuits-sheet">
           <header className="circuits-sheet-header">
-            <Dialog.Title className="circuits-sheet-title">Circuits</Dialog.Title>
+            <Dialog.Title className="circuits-sheet-title">{t('Circuits')}</Dialog.Title>
             <Dialog.Description className="visually-hidden">
-              Open an example circuit
+              {t('Open an example circuit')}
             </Dialog.Description>
-            <Dialog.Close className="icon-button" aria-label="Close">
+            <Dialog.Close className="icon-button" aria-label={t('Close')}>
               <Icon name="close" />
             </Dialog.Close>
           </header>
@@ -91,7 +94,7 @@ export function CircuitsSheet(props: { root: ExampleMenu; onClose: () => void })
             <Icon name="search" />
             <input
               className="palette-search-input"
-              placeholder="Search circuits"
+              placeholder={t('Search circuits')}
               value={query}
               data-testid="circuits-search"
               onChange={(e) => setQuery(e.target.value)}
@@ -101,7 +104,7 @@ export function CircuitsSheet(props: { root: ExampleMenu; onClose: () => void })
             {q === '' ? (
               <Items menu={props.root} depth={0} pick={pick} />
             ) : found.length === 0 ? (
-              <p className="inspector-empty circuits-sheet-empty">No circuits match.</p>
+              <p className="inspector-empty circuits-sheet-empty">{t('No circuits match.')}</p>
             ) : (
               <ul className="sheet-list">
                 {found.map(({ item, path }) => (

@@ -44,6 +44,7 @@ export const nord: Theme = {
     fftGrid: '#5e3a40',
     traces: ['#a3be8c', '#88c0d0', '#b48ead', '#d08770', '#8fbcbb'],
   },
+  teaching: { pens: ['#ebcb8b', '#bf616a', '#88c0d0', '#a3be8c', '#eceff4'], laser: '#d08770' },
   ui: {
     surface: '#242933',
     surfaceAlt: '#2e3440',
@@ -89,6 +90,7 @@ export const solarizedDark: Theme = {
     fftGrid: '#5c1f1e',
     traces: ['#859900', '#268bd2', '#d33682', '#2aa198', '#6c71c4'],
   },
+  teaching: { pens: ['#b58900', '#dc322f', '#268bd2', '#859900', '#eee8d5'], laser: '#dc322f' },
   ui: {
     surface: '#00212b',
     surfaceAlt: '#073642',
@@ -134,6 +136,7 @@ export const gruvboxDark: Theme = {
     fftGrid: '#5a2420',
     traces: ['#b8bb26', '#83a598', '#d3869b', '#fe8019', '#8ec07c'],
   },
+  teaching: { pens: ['#fabd2f', '#fb4934', '#83a598', '#b8bb26', '#ebdbb2'], laser: '#fb4934' },
   ui: {
     surface: '#1d2021',
     surfaceAlt: '#282828',
@@ -179,6 +182,7 @@ export const adwaitaDark: Theme = {
     fftGrid: '#5c2622',
     traces: ['#8ff0a4', '#78aeed', '#dc8add', '#ffa348', '#99c1f1'],
   },
+  teaching: { pens: ['#f6d32d', '#ed333b', '#62a0ea', '#57e389', '#ffffff'], laser: '#ed333b' },
   ui: {
     surface: '#242424',
     surfaceAlt: '#303030',

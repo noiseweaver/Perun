@@ -77,6 +77,18 @@ textarea,
   display: flex;
   flex-direction: column;
   height: 100%;
+  /* clear the notch and the home indicator; the status bar only matters installed (below) */
+  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  box-sizing: border-box;
+}
+
+/* installed on iPhone and iPad the page runs under the status bar. In a browser tab, or embedded
+   in another app's web view, the top inset can be non-zero while nothing covers the page, which
+   left an empty band above the app bar. */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .app {
+    padding-top: env(safe-area-inset-top);
+  }
 }
 
 /* ---- state layers ------------------------------------------------------------------------- */
@@ -213,7 +225,7 @@ textarea,
   font-family: var(--font);
   font-size: 14px;
   color: var(--ui-text);
-  z-index: 10;
+  z-index: 70;
   transform-origin: var(--radix-dropdown-menu-content-transform-origin);
   animation: menu-in 150ms var(--md-motion);
 }
@@ -261,6 +273,42 @@ textarea,
   color: var(--ui-accent);
 }
 
+/* leading icon column of the context menu (also holds the check of a checkbox item) */
+.menu-icon {
+  display: inline-flex;
+  flex: none;
+  justify-content: center;
+  width: 20px;
+  color: var(--ui-text-muted);
+}
+
+.menu-icon.menu-check {
+  color: var(--ui-accent);
+}
+
+/* a disabled item was drawn like an enabled one; dim it as the app bar's disabled menus are */
+.menu-item[data-disabled],
+.menu-item[data-disabled] .menu-icon,
+.menu-item[data-disabled] .menu-trailing {
+  color: color-mix(in srgb, var(--ui-text) 38%, transparent);
+}
+
+.icon-turned {
+  transform: rotate(90deg);
+}
+
+/* an example circuit category: a small drawing of a component from that category */
+.category-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 32px;
+  margin: -4px 0;
+  color: var(--ui-text-muted);
+}
+
 .menu-label {
   padding: 12px 12px 4px;
   color: var(--ui-text-muted);
@@ -274,6 +322,11 @@ textarea,
   height: 1px;
   background: var(--ui-border);
   margin: 8px 0;
+}
+
+/* the Circuits menu has a divider between every category: keep them tight */
+.category-separator {
+  margin: 2px 0;
 }
 
 /* ---- canvas ------------------------------------------------------------------------------- */
@@ -332,7 +385,7 @@ textarea,
   background: var(--md-surface-container-high);
   border-radius: var(--md-shape-xs);
   box-shadow: var(--md-elevation-2);
-  z-index: 50;
+  z-index: 70;
 }
 
 .status {
@@ -479,7 +532,7 @@ textarea,
   color: var(--ui-surface);
   font-size: 12px;
   line-height: 16px;
-  z-index: 20;
+  z-index: 80;
 }
 
 /* ---- sliders ------------------------------------------------------------------------------ */
@@ -544,10 +597,93 @@ textarea,
   box-shadow: 0 0 0 10px color-mix(in srgb, var(--ui-accent) 12%, transparent);
 }
 
+/* ---- the circuit's sliders (upstream's side panel) ---------------------------------------- */
+
+.slider-panel {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  width: 248px;
+  max-height: calc(100% - 24px);
+  border-radius: var(--md-shape-m);
+  background: color-mix(in srgb, var(--md-surface-container-high) 92%, transparent);
+  box-shadow: var(--md-elevation-2);
+  animation: fade-in 150ms var(--md-motion);
+}
+
+.slider-panel[data-folded] {
+  width: auto;
+}
+
+.slider-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--md-shape-m);
+  background: none;
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.slider-panel-header:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: -2px;
+}
+
+.slider-panel-header .menu-trailing {
+  margin-left: auto;
+}
+
+.slider-panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 14px 10px;
+  overflow-y: auto;
+}
+
+.slider-row-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.slider-row-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ui-text-muted);
+  font-weight: 500;
+}
+
+.slider-row-value {
+  font-family: var(--mono-font);
+  white-space: pre;
+  color: var(--ui-text);
+}
+
+.slider-wide {
+  width: 100%;
+}
+
 /* ---- dialog ------------------------------------------------------------------------------- */
 
 .dialog-overlay {
   position: fixed;
+  z-index: 60;
   inset: 0;
   background: color-mix(in srgb, var(--canvas-background) 60%, transparent);
   animation: fade-in 150ms var(--md-motion);
@@ -561,6 +697,7 @@ textarea,
 
 .dialog-content {
   position: fixed;
+  z-index: 61;
   top: 20%;
   left: 50%;
   transform: translateX(-50%);
@@ -788,7 +925,8 @@ textarea,
   border: none;
   border-radius: var(--md-shape-full);
   cursor: grab;
-  touch-action: none;
+  /* a vertical swipe scrolls the list; a sideways drag carries the component onto the canvas */
+  touch-action: pan-y;
   user-select: none;
 }
 
@@ -1001,6 +1139,7 @@ textarea.field-input {
 
 .toast {
   position: absolute;
+  z-index: 8;
   bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
@@ -1091,9 +1230,12 @@ textarea.field-input {
 /* ---- compact width ------------------------------------------------------------------------ */
 
 @media (max-width: 600px) {
+  /* the menus don't fit beside the title on a phone: they get a row of their own */
   .app-bar {
-    padding-left: 12px;
-    gap: 4px;
+    flex-wrap: wrap;
+    min-height: 0;
+    padding: 4px 4px 0;
+    gap: 0 4px;
   }
 
   .app-bar-brand {
@@ -1101,20 +1243,30 @@ textarea.field-input {
   }
 
   .app-bar-title {
-    margin-left: 0;
+    flex: 1;
+    max-width: none;
+    margin: 0 4px 0 0;
     font-size: 18px;
   }
 
-  .menu-trigger {
-    padding: 0 4px 0 10px;
-  }
-
-  /* five menus don't fit a phone: they scroll sideways instead of widening the page */
   .app-bar-menus {
-    flex-shrink: 1;
+    order: 1;
+    flex: 1 0 100%;
     min-width: 0;
+    justify-content: space-between;
+    gap: 0;
+    /* a very narrow phone scrolls the row sideways rather than widening the page */
     overflow-x: auto;
     scrollbar-width: none;
+  }
+
+  .menu-trigger {
+    flex: none;
+    padding: 0 10px;
+  }
+
+  .menu-trigger > .icon {
+    display: none;
   }
 
   .control-bar {
@@ -1140,11 +1292,16 @@ textarea.field-input {
     display: none;
   }
 
+  /* the palette floats over the canvas, just under the app bar whatever its height */
+  .workspace {
+    position: relative;
+  }
+
   .palette {
-    position: fixed;
+    position: absolute;
     z-index: 10;
-    top: 64px;
-    bottom: 8px;
+    top: 0;
+    bottom: 0;
     left: 8px;
     box-shadow: var(--md-elevation-3);
     background: var(--md-surface-container-high);
@@ -1163,11 +1320,19 @@ textarea.field-input {
     border-radius: var(--md-shape-l) var(--md-shape-l) 0 0;
     box-shadow: var(--md-elevation-3);
     background: var(--md-surface-container-high);
-    transition: height 200ms ease;
+    transition:
+      height 200ms ease,
+      transform 200ms var(--md-motion);
   }
 
   .inspector[data-dragging] {
     transition: none;
+  }
+
+  /* while a component is dragged on the canvas the sheet slides out of the way, and back after */
+  .inspector[data-canvas-drag] {
+    transform: translateY(calc(100% - 28px));
+    pointer-events: none;
   }
 
   .sheet-handle {
@@ -1492,6 +1657,12 @@ textarea.field-input {
   list-style: none;
 }
 
+/* a divider between categories, and between the last category and the circuits after it */
+.sheet-category + li,
+li + .sheet-category {
+  border-top: 1px solid var(--ui-border);
+}
+
 .sheet-row {
   display: flex;
   flex-direction: column;
@@ -1516,6 +1687,7 @@ textarea.field-input {
 .sheet-group {
   flex-direction: row;
   align-items: center;
+  gap: 12px;
   font-weight: 500;
 }
 
@@ -1687,6 +1859,11 @@ textarea.field-input {
   color: var(--ui-text-muted);
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.theme-row-active .theme-row-desc {
+  /* muted text on the tinted row falls short of 4.5:1 in some themes */
+  color: var(--ui-text);
 }
 
 .theme-row-actions {
@@ -1972,4 +2149,263 @@ ul.theme-contrast {
 
 .theme-contrast-item:hover {
   background: color-mix(in srgb, var(--ui-danger) 10%, transparent);
+}
+
+/* ---- Sliders dialog ------------------------------------------------------------------------ */
+
+.slider-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slider-dialog-row {
+  margin: 0;
+  padding: 4px 0;
+  border: none;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.slider-dialog-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0 8px 32px;
+}
+
+.slider-dialog-range {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+/* ---- About dialog -------------------------------------------------------------------------- */
+
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.about p {
+  margin: 0;
+}
+
+.about a {
+  color: var(--ui-accent);
+}
+
+.about-version {
+  font-family: var(--mono-font);
+  color: var(--ui-text-muted);
+}
+
+.about-thanks summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.about-thanks ul,
+.about-links {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+/* ---- installable app ----------------------------------------------------------------------- */
+
+.update-banner {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 16px;
+  border-radius: var(--md-shape-xs);
+  background: var(--ui-text);
+  color: var(--ui-surface);
+  box-shadow: var(--md-elevation-3);
+  white-space: nowrap;
+}
+
+.update-banner .icon-button {
+  color: inherit;
+}
+
+.install-steps {
+  margin: 0 0 8px;
+  padding-left: 22px;
+  line-height: 24px;
+}
+
+.about-links a {
+  display: inline-block;
+  padding: 4px 0;
+}
+
+/* ---- Model dialog -------------------------------------------------------------------------- */
+
+.model-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.model-dialog-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.model-dialog-wide {
+  grid-column: 1 / -1;
+}
+
+.model-dialog-textarea {
+  font-family: var(--mono-font);
+  resize: vertical;
+}
+
+/* ---- subcircuits: pin layout dialog, viewing/editing bar ---------------------------------- */
+
+.dialog-content.subcircuit-dialog {
+  top: 5%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.subcircuit-dialog form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.subcircuit-canvas {
+  width: min(400px, 100%, 40vh);
+  aspect-ratio: 1;
+  align-self: center;
+  border-radius: var(--md-shape-s);
+  border: 1px solid var(--ui-border);
+  touch-action: none;
+  cursor: pointer;
+}
+
+.subcircuit-size {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.subcircuit-size .button {
+  min-width: 40px;
+}
+
+.subcircuit-size .field-label + .button {
+  margin-left: 4px;
+}
+
+.subcircuit-size .button + .field-label {
+  margin-left: 12px;
+}
+
+.subcircuit-bar {
+  position: absolute;
+  z-index: 7;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  max-width: calc(100% - 24px);
+  padding: 4px 4px 4px 16px;
+  border-radius: var(--md-shape-l);
+  background: var(--md-surface-container-highest);
+  box-shadow: var(--md-elevation-2);
+}
+
+.subcircuit-manager-list {
+  width: 100%;
+  height: auto;
+  padding: 4px;
+}
+
+/* ---- teaching tools: the drawing toolbar ------------------------------------------------- */
+
+.teach-bar {
+  position: absolute;
+  z-index: 7;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 12px;
+  max-width: calc(100% - 24px);
+  padding: 4px 8px;
+  border-radius: var(--md-shape-l);
+  background: var(--md-surface-container-highest);
+  box-shadow: var(--md-elevation-2);
+  animation: fade-in 150ms var(--md-motion);
+}
+
+/* on a phone, along the bottom of the canvas, clear of the Sliders card in the top corner */
+@media (max-width: 719px) {
+  .teach-bar {
+    top: auto;
+    bottom: 12px;
+  }
+}
+
+.teach-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.teach-bar .icon-button[aria-pressed='true'] {
+  color: var(--ui-surface);
+  background: var(--ui-accent);
+}
+
+.teach-swatch {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--ui-border);
+  cursor: pointer;
+}
+
+.teach-swatch[aria-checked='true'] {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+.teach-bar .button {
+  height: 36px;
+}
+
+.icon-button[aria-pressed='true'][data-testid='box-select-toggle'],
+.icon-button[aria-pressed='true'][data-testid='draw-toggle'] {
+  color: var(--ui-accent);
+}
+
+/* controls only a touch screen needs (a mouse drag already selects) */
+@media not (any-pointer: coarse) {
+  .touch-only {
+    display: none;
+  }
 }

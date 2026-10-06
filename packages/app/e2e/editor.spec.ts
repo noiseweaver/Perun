@@ -360,6 +360,28 @@ test.describe('on a touch screen', () => {
     await page.getByTestId('ctx-delete').tap();
     expect((await elements(page)).some((e) => e.cls === 'ResistorElm')).toBe(false);
   });
+  test('the property sheet steps aside while a component is dragged', async ({ page }) => {
+    await open(page, LOOP);
+    await clickCircuit(page, 176, 96);
+    const sheet = page.getByTestId('inspector');
+    await expect(sheet).toBeVisible();
+    const r = await at(page, 176, 96);
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', dx: number) =>
+      cdp.send('Input.dispatchTouchEvent', {
+        type,
+        touchPoints: type === 'touchEnd' ? [] : [{ x: r.x + dx, y: r.y }],
+      });
+    await touch('touchStart', 0);
+    for (let i = 1; i <= 4; i++) await touch('touchMove', 12 * i);
+    await expect(sheet).toHaveAttribute('data-canvas-drag', 'true');
+    await touch('touchEnd', 0);
+    await expect(sheet).not.toHaveAttribute('data-canvas-drag');
+    // it was a drag: the resistor moved
+    expect((await elements(page)).find((e) => e.cls === 'ResistorElm')?.pos).not.toEqual([
+      96, 96, 256, 96,
+    ]);
+  });
   test('the property panel is a sheet that drags down to a tab and back up', async ({ page }) => {
     await open(page, LOOP);
     await clickCircuit(page, 176, 96);
@@ -439,4 +461,111 @@ test('a text box has its own font, saved with the circuit', async ({ page }) => 
   await expect
     .poll(() => page.evaluate(() => window.circuitjsNext?.controller.saveText() ?? ''))
     .not.toContain('fs="bold"');
+});
+
+test('a routed wire goes around an element in its way, and its middle drags a new route', async ({
+  page,
+}) => {
+  // a vertical resistor in the middle of an empty circuit
+  await open(page, BLANK + 'r 256 96 256 224 0 1000\n');
+  await page.keyboard.press('Shift+W');
+  await dragCircuit(page, [160, 160], [352, 160]);
+  const route = (): Promise<number[][]> =>
+    page.evaluate(() => {
+      const w = window.circuitjsNext?.controller.circuit.elements.find(
+        (e) => e.getClassName() === 'RoutedWireElm',
+      ) as unknown as { route(): { x: number; y: number }[] } | undefined;
+      return (w?.route() ?? []).map((p) => [p.x, p.y]);
+    });
+  const rp = await route();
+  expect(rp[0]).toEqual([160, 160]);
+  expect(rp[rp.length - 1]).toEqual([352, 160]);
+  // it bends around the resistor's body instead of running through it
+  expect(rp.length).toBeGreaterThan(2);
+  for (let i = 0; i < rp.length - 1; i++) {
+    const [ax, ay] = rp[i];
+    const [bx, by] = rp[i + 1];
+    if (ay === by && Math.min(ax, bx) <= 256 && Math.max(ax, bx) >= 256)
+      expect(ay < 144 || ay > 176).toBe(true);
+  }
+  // dragging the wire's middle routes it through the pointer
+  await page.keyboard.press('Escape');
+  const mid = rp[1];
+  await dragCircuit(page, [mid[0], mid[1]], [mid[0], 320]);
+  const moved = await route();
+  expect(moved.some(([, y]) => y === 320)).toBe(true);
+  expect(moved[0]).toEqual([160, 160]);
+});
+
+test('a diode gets a new model from the model dialog', async ({ page }) => {
+  await open(
+    page,
+    '$ 1 0.000005 10.2 50 5 50 5e-11\n' +
+      'v 96 224 96 96 0 0 40 1 0 0 0.5\n' +
+      'd 96 96 256 96 2 default\n' +
+      'r 256 96 256 224 0 100\n' +
+      'w 96 224 256 224 0\n',
+  );
+  await clickCircuit(page, 176, 96);
+  await expect(page.getByTestId('inspector-title')).toHaveText('Diode');
+  await page.getByRole('button', { name: 'Create New Simple Model' }).click();
+  const dialog = page.getByTestId('model-dialog');
+  await expect(dialog).toBeVisible();
+  await expect(page.getByRole('dialog')).toContainText('Edit Diode Model');
+  await dialog.getByLabel('Forward Voltage').fill('0.65');
+  await page.getByTestId('model-dialog-ok').click();
+  await expect(dialog).toHaveCount(0);
+  const modelName = await page.evaluate(
+    () =>
+      (
+        window.circuitjsNext?.controller.circuit.elements.find(
+          (e) => e.getClassName() === 'DiodeElm',
+        ) as unknown as { modelName: string } | undefined
+      )?.modelName,
+  );
+  expect(modelName).toBe('fwdrop=0.65');
+  // the panel lists the new model, and it can now be edited in place
+  await expect(page.getByTestId('field-0').locator('option:checked')).toHaveText('fwdrop=0.65');
+  await expect(page.getByRole('button', { name: 'Edit Model' })).toBeVisible();
+});
+
+test.describe('drag to select on a touch screen', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('one finger draws a selection box once the toggle is on', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+    const selected = () =>
+      page.evaluate(
+        () => window.circuitjsNext?.controller.circuit.elements.filter((e) => e.selected).length,
+      );
+    const box = await page.getByTestId('circuit-canvas').boundingBox();
+    if (box === null) throw new Error('no canvas');
+    const cdp = await page.context().newCDPSession(page);
+    const drag = async (): Promise<void> => {
+      const at = (i: number) => [{ x: box.x + 5 + i * 35, y: box.y + 5 + i * 45, id: 1 }];
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: at(0) });
+      for (let i = 1; i <= 10; i++)
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: at(i) });
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    };
+    // by default a drag on empty canvas pans
+    await drag();
+    expect(await selected()).toBe(0);
+    const toggle = page.getByTestId('box-select-toggle');
+    // a click, not a tap: right after a synthetic touch drag Chromium sometimes sends no click
+    // for the next tap (the gesture detector is still settling), which is not what's tested here
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    // the first drag panned the circuit away: bring it back under the box
+    await page.evaluate(() => window.circuitjsNext?.controller.fit());
+    await drag();
+    await expect.poll(selected).toBeGreaterThan(0);
+  });
+});
+
+test('the drag-to-select toggle is only shown on touch screens', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByTestId('draw-toggle')).toBeVisible();
+  await expect(page.getByTestId('box-select-toggle')).toBeHidden();
 });

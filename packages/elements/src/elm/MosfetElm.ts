@@ -13,14 +13,34 @@ import { CircuitElm, elementType, type ElementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaDouble } from '../java.ts';
 import { modelsFor } from '../models/ModelLibrary.ts';
-import type { MosfetModel } from '../models/MosfetModel.ts';
+import { modelEditor } from '../edit/modelEditor.ts';
+import { MosfetModel } from '../models/MosfetModel.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from '../xml.ts';
 import { Diode } from './Diode.ts';
 import { getCurrentText, getUnitText, getVoltageText } from '../view/units.ts';
+import type { WireRouter } from '../WireRouter.ts';
 
 /** MOSFET (square-law model). Node 0 is the gate, 1 the source, 2 the drain, 3 the body. */
 export class MosfetElm extends CircuitElm {
+  override addRoutingObstacle(router: WireRouter): void {
+    // upstream's drawing points: the source and drain leads and the gate plate
+    let hs2 = 16 * this.dsign;
+    if ((this.flags & MosfetElm.FLAG_FLIP) !== 0) hs2 = -hs2;
+    const [s2, d2] = this.interpPoint2(this.point1, this.point2, 1 - 22 / this.dn, (-hs2 * 4) / 3);
+    const [g0, g2] = this.interpPoint2(
+      this.point1,
+      this.point2,
+      1 - 28 / this.dn,
+      Math.trunc(hs2 / 2),
+    );
+    let g1 = this.interpPoint(g0, g2, 0.5);
+    if (this.drawDigital() && this.pnp === -1)
+      g1 = this.interpPoint(this.point1, this.point2, 1 - 36 / this.dn);
+    router.addObstaclePoints([g0, g2, this.src[0], this.drn[0], s2, d2]);
+    router.addWire(this.point1.x, this.point1.y, g1.x, g1.y);
+  }
+
   static readonly FLAG_PNP = 1;
   static readonly FLAG_SHOWVT = 2;
   static readonly FLAG_FLIP = 8;
@@ -583,11 +603,16 @@ export class MosfetElm extends CircuitElm {
         selected,
       );
     }
-    const idx = 1;
-    if (this.hasSwapDS() && n === idx)
-      return EditInfo.createCheckbox('Swap D/S', (this.flags & MosfetElm.FLAG_FLIP) !== 0);
-    // model editing: later phase (upstream buttons after Swap D/S: "Create New Model" and
-    // "Edit Model")
+    let idx = 1;
+    if (this.hasSwapDS()) {
+      if (n === idx++)
+        return EditInfo.createCheckbox('Swap D/S', (this.flags & MosfetElm.FLAG_FLIP) !== 0);
+    }
+    if (n === idx) return EditInfo.createButton('Create New Model', () => this.newModel());
+    if (n === idx + 1) {
+      if (this.getModel().readOnly) return null;
+      return EditInfo.createButton('Edit Model', () => this.editModel());
+    }
     return null;
   }
 
@@ -607,12 +632,40 @@ export class MosfetElm extends CircuitElm {
             ? this.flags | MosfetElm.FLAG_FLIP
             : this.flags & ~MosfetElm.FLAG_FLIP;
       }
-      // model editing: later phase (the button fields return here without the code below)
     }
     // lots of different cases where the body terminal might have gotten removed/added so just
     // do this all the time
     this.allocNodes();
     this.setPoints();
+  }
+
+  /** Upstream "Create New Model": edit a copy of the model, which this element then uses. */
+  private newModel(): void {
+    this.openModelDialog(MosfetModel.copyOf(this.getModel()), true);
+  }
+
+  /** Upstream "Edit Model": edit the model itself. */
+  private editModel(): void {
+    this.openModelDialog(this.getModel(), false);
+  }
+
+  /** Upstream EditMosfetModelDialog. */
+  private openModelDialog(mm: MosfetModel, created: boolean): void {
+    mm.modelMap = modelsFor(this.sim).mosfet.modelMap;
+    modelEditor.open?.({
+      target: mm,
+      applyButton: false,
+      onApply: () => {
+        if (mm.name.length === 0) mm.pickName();
+        if (created) this.newModelCreated(mm);
+      },
+    });
+  }
+
+  newModelCreated(mm: MosfetModel): void {
+    this.model = mm;
+    this.modelName = mm.name;
+    this.setup();
   }
 
   override flipX(c2: number, count: number): void {

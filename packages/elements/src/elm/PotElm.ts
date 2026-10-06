@@ -20,6 +20,11 @@ import { OHM, getCurrentDText, getUnitText, getVoltageDText } from '../view/unit
  * position is quantized to that slider in setPoints(); `sliderValue` models the slider here.
  */
 export class PotElm extends CircuitElm {
+  /** Upstream setPoints: calcLeads(32). */
+  override routingLeads(): [Point, Point] | null {
+    return super.routingLeads() ?? this.leadsFor(32);
+  }
+
   static readonly FLAG_SHOW_VALUES = 1;
   static readonly FLAG_FLIP = 2;
   static readonly FLAG_FLIP_OFFSET = 4;

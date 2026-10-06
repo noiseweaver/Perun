@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Ported from CircuitJS1 src/com/lushprojects/circuitjs1/client/RelayModel.java (master) at
-// 5a707168778216bb6ed01bfdd62e8bbf7ae0a032. The model edit dialog is left for a later phase.
+// 5a707168778216bb6ed01bfdd62e8bbf7ae0a032.
 // Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) circuitjs-next contributors.
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
+import { EditInfo, type Editable } from '../edit/EditInfo.ts';
+import { pickModelName } from '../edit/modelEditor.ts';
 import type { XmlAttrReader, XmlDocWriter } from '../xml.ts';
 
 /** Java `String.compareTo` order on model names (UTF-16 code units), for the model lists. */
@@ -13,7 +15,7 @@ function compareNames(a: { name: string }, b: { name: string }): number {
   return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
 }
 
-export class RelayModel {
+export class RelayModel implements Editable {
   flags = 0;
   name = '';
   description: string | null = null;
@@ -34,6 +36,8 @@ export class RelayModel {
   readOnly = false;
   builtIn = false;
   oldStyle = false;
+  /** The library's map, so a renamed model registers itself (upstream's static modelMap). */
+  modelMap: Map<string, RelayModel> | null = null;
 
   static copyOf(copy: RelayModel): RelayModel {
     const m = new RelayModel();
@@ -50,6 +54,54 @@ export class RelayModel {
     m.showBox = copy.showBox;
     m.pulldown = copy.pulldown;
     return m;
+  }
+
+  getDialogTitle(): string {
+    return 'Edit Relay Model';
+  }
+
+  getEditInfo(n: number): EditInfo | null {
+    if (n === 0) return EditInfo.text('Model Name', this.name);
+    if (n === 1) return new EditInfo('Inductance (H)', this.inductance, 0, 0).setPositive();
+    if (n === 2) return new EditInfo('On Resistance (ohms)', this.r_on, 0, 0).setPositive();
+    if (n === 3) return new EditInfo('Off Resistance (ohms)', this.r_off, 0, 0).setPositive();
+    if (n === 4) return new EditInfo('On Current (A)', this.onCurrent, 0, 0).setPositive();
+    if (n === 5) return new EditInfo('Off Current (A)', this.offCurrent, 0, 0).setPositive();
+    if (n === 6) return new EditInfo('Number of Poles', this.poleCount, 1, 4).setDimensionless();
+    if (n === 7) return new EditInfo('Coil Resistance (ohms)', this.coilR, 0, 0).setPositive();
+    if (n === 8) return new EditInfo('Switching Time (s)', this.switchingTime, 0, 0).setPositive();
+    if (n === 9)
+      return EditInfo.createChoice(
+        'Coil Style',
+        ['Both Sides', 'Side 1', 'Side 2'],
+        this.coilStyle,
+      );
+    if (n === 10) return EditInfo.createCheckbox('Show Box', this.showBox);
+    if (n === 11) return EditInfo.createCheckbox('Pulldown Resistor', this.pulldown);
+    return null;
+  }
+
+  /** Set a field; the caller then refetches every element's model (upstream updateModels). */
+  setEditValue(n: number, ei: EditInfo): void {
+    if (n === 0) {
+      this.name = ei.text ?? '';
+      if (this.name.length > 0) this.modelMap?.set(this.name, this);
+    }
+    if (n === 1 && ei.value > 0) this.inductance = ei.value;
+    if (n === 2 && ei.value > 0) this.r_on = ei.value;
+    if (n === 3 && ei.value > 0) this.r_off = ei.value;
+    if (n === 4 && ei.value > 0) this.onCurrent = ei.value;
+    if (n === 5 && ei.value > 0) this.offCurrent = ei.value;
+    if (n === 6 && ei.value >= 1) this.poleCount = Math.trunc(ei.value);
+    if (n === 7 && ei.value > 0) this.coilR = ei.value;
+    if (n === 8 && ei.value > 0) this.switchingTime = ei.value;
+    if (n === 9) this.coilStyle = ei.choice?.selected ?? 0;
+    if (n === 10) this.showBox = ei.checkbox?.state === true;
+    if (n === 11) this.pulldown = ei.checkbox?.state === true;
+  }
+
+  pickName(): void {
+    this.name = pickModelName('relaymodel', this.modelMap ?? new Map());
   }
 
   getDescription(): string {

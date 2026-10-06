@@ -15,9 +15,21 @@ import { parseJavaDouble } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { getCurrentText, getVoltageText } from '../view/units.ts';
+import type { WireRouter } from '../WireRouter.ts';
 
 /** Ideal op-amp. Post 0 is the inverting input, 1 the non-inverting input, 2 the output. */
 export class OpAmpElm extends CircuitElm {
+  /** Upstream setPoints: calcLeads(ww * 2), ww the body half-width. */
+  override routingLeads(): [Point, Point] | null {
+    let ww = this.opwidth;
+    if (ww > this.dn / 2) ww = Math.trunc(this.dn / 2);
+    return this.leadsFor(ww * 2);
+  }
+
+  override addRoutingObstacle(router: WireRouter): void {
+    this.addRoutingObstacleWithLeads(router, this.opwidth);
+  }
+
   static readonly FLAG_SWAP = 1;
   static readonly FLAG_SMALL = 2;
   static readonly FLAG_LOWGAIN = 4;

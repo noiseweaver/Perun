@@ -14,12 +14,18 @@ import { parseJavaDouble, parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { getUnitText, getUnitTextWithScale, getVoltageText, showFormat } from '../view/units.ts';
+import type { Point } from '@circuitjs-next/engine';
 
 /**
  * Voltmeter between two posts, optionally with a finite input resistance. The measurement
  * statistics (RMS, min/max, period ...) are display only.
  */
 export class ProbeElm extends CircuitElm {
+  /** Upstream draw: calcLeads(dn - 32) when not highlighted. */
+  override routingLeads(): [Point, Point] | null {
+    return super.routingLeads() ?? this.leadsFor(Math.trunc(this.dn - 32));
+  }
+
   static readonly FLAG_SHOWVOLTAGE = 1;
   static readonly FLAG_CIRCLE = 2;
   static readonly TP_VOL = 0;

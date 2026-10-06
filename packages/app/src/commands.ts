@@ -21,6 +21,12 @@ export type DialogKind =
   | 'shortcuts'
   | 'simSettings'
   | 'scopeProperties'
+  | 'sliders'
+  | 'model'
+  | 'subcircuit'
+  | 'about'
+  | 'subcircuitManager'
+  | 'install'
   | 'themes'
   | 'themeEditor'
   | null;
@@ -104,6 +110,20 @@ export function installShortcuts(): () => void {
       e.stopPropagation();
     };
 
+    // while drawing, Escape puts the tools away and undo takes back strokes, not edits
+    if (useApp.getState().teach.tool !== null) {
+      if (e.key === 'Escape') {
+        controller.setTeachTool(null);
+        return done();
+      }
+      if (mod && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'z') {
+        controller.teachUndo();
+        return done();
+      }
+      // element shortcuts would start placing an element
+      if (!mod && keys.has(e.key)) return;
+    }
+
     if (mod && !e.altKey) {
       switch (e.key.toLowerCase()) {
         case 'z':
@@ -135,6 +155,12 @@ export function installShortcuts(): () => void {
           document.querySelector<HTMLInputElement>('[data-testid="file-input"]')?.click();
           return done();
       }
+      return;
+    }
+
+    // the element menu from the keyboard, at the selected element
+    if (e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey)) {
+      if (controller.openMenuAtSelection()) done();
       return;
     }
 
@@ -184,6 +210,11 @@ export function installShortcuts(): () => void {
     }
     if (e.key === ' ') {
       ed.setSelectMode();
+      return done();
+    }
+    // keyboard selection: step through the elements
+    if (e.key === ']' || e.key === '[') {
+      controller.selectNext(e.key === ']' ? 1 : -1);
       return done();
     }
     if (e.key === '?') {

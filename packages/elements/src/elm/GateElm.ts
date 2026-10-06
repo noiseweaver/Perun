@@ -14,6 +14,7 @@ import { javaDoubleToInt, parseJavaDouble, parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import { getCurrentText, getUnitText, getVoltageText } from '../view/units.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import type { WireRouter } from '../WireRouter.ts';
 
 /**
  * Defaults copied from the last gate edited (upstream's statics `GateElm.lastHighVoltage` and
@@ -23,6 +24,29 @@ export const gateDefaults = { lastHighVoltage: 5, lastSchmitt: false };
 
 /** A logic gate with `inputCount` inputs and one output driven by a voltage source. */
 export abstract class GateElm extends CircuitElm {
+  override addRoutingObstacle(router: WireRouter): void {
+    // the wire from each input post to the gate body, and the output wire
+    for (let i = 0; i < this.inputCount; i++) {
+      const inGate = this.interpPointPerp(
+        this.lead1,
+        this.bodyLead2,
+        (this.hasFlag(GateElm.FLAG_INVERT_INPUTS) || this.hasFlag(GateElm.FLAG_DEMORGAN)
+          ? -8 / (this.ww * 2)
+          : 0) + this.getLeadAdjustment(i, false),
+        this.gheight * this.inputRow(i),
+      );
+      router.addWire(this.inPosts[i].x, this.inPosts[i].y, inGate.x, inGate.y);
+    }
+    router.addWire(this.lead2.x, this.lead2.y, this.point2.x, this.point2.y);
+    const dx = this.lead2.x - this.lead1.x;
+    const dy = this.lead2.y - this.lead1.y;
+    const leadDist = Math.sqrt(dx * dx + dy * dy);
+    const hs2 = this.gwidth * (Math.trunc(this.inputCount / 2) + 1);
+    const pa = this.interpPointPerp(this.lead1, this.lead2, -8 / leadDist, hs2);
+    const pb = this.interpPointPerp(this.lead1, this.lead2, 1, -hs2);
+    router.addObstacle(pa.x, pa.y, pb.x, pb.y);
+  }
+
   static readonly FLAG_SMALL = 1 << 0;
   static readonly FLAG_SCHMITT = 1 << 1;
   static readonly FLAG_INVERT_INPUTS = 1 << 2;

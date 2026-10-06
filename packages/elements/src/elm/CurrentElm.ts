@@ -14,8 +14,14 @@ import { parseJavaDouble } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { getUnitText, getVoltageText } from '../view/units.ts';
+import type { Point } from '@circuitjs-next/engine';
 
 export class CurrentElm extends CircuitElm {
+  /** Upstream setPoints: calcLeads(26). */
+  override routingLeads(): [Point, Point] | null {
+    return super.routingLeads() ?? this.leadsFor(26);
+  }
+
   currentValue = 0;
   /** Compliance voltage. 0 = unlimited (ideal current source). */
   maxVoltage = 0;

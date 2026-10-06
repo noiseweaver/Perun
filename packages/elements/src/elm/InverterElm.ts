@@ -15,6 +15,7 @@ import type { StringTokenizer } from '../StringTokenizer.ts';
 import { getCurrentDText, getUnitText, getVoltageDText, getVoltageText } from '../view/units.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { gateDefaults } from './GateElm.ts';
+import type { WireRouter } from '../WireRouter.ts';
 
 /**
  * Shared by one-input, one-output logic symbols: no path from input to output, but the output
@@ -44,6 +45,20 @@ abstract class BufferLikeElm extends CircuitElm {
 
 /** Inverter with a slew-rate limited output. */
 export class InverterElm extends BufferLikeElm {
+  /** Upstream setPoints: the body around the middle. */
+  override routingLeads(): [Point, Point] | null {
+    let ww = 16;
+    if (ww > this.dn / 2) ww = Math.trunc(this.dn / 2);
+    return [
+      this.interpPoint(this.point1, this.point2, 0.5 - ww / this.dn),
+      this.interpPoint(this.point1, this.point2, 0.5 + (ww + 2) / this.dn),
+    ];
+  }
+
+  override addRoutingObstacle(router: WireRouter): void {
+    this.addRoutingObstacleWithLeads(router, 16);
+  }
+
   static readonly FLAG_DEMORGAN = 1 << 3;
 
   /** V/ns. */
@@ -141,6 +156,16 @@ export class InverterElm extends BufferLikeElm {
 
 /** Schmitt trigger with an inverting output. Contributed upstream by Edward Calver. */
 export class InvertingSchmittElm extends BufferLikeElm {
+  /** Upstream setPoints: the body around the middle. */
+  override routingLeads(): [Point, Point] | null {
+    let ww = 16;
+    if (ww > this.dn / 2) ww = Math.trunc(this.dn / 2);
+    return [
+      this.interpPoint(this.point1, this.point2, 0.5 - ww / this.dn),
+      this.interpPoint(this.point1, this.point2, 0.5 + (ww + 2) / this.dn),
+    ];
+  }
+
   /** V/ns. */
   slewRate = 0.5;
   lowerTrigger = 1.66;
@@ -254,6 +279,16 @@ export class InvertingSchmittElm extends BufferLikeElm {
 
 /** Non-inverting Schmitt trigger. */
 export class SchmittElm extends InvertingSchmittElm {
+  /** Upstream setPoints: the body around the middle. */
+  override routingLeads(): [Point, Point] | null {
+    let ww = 16;
+    if (ww > this.dn / 2) ww = Math.trunc(this.dn / 2);
+    return [
+      this.interpPoint(this.point1, this.point2, 0.5 - ww / this.dn),
+      this.interpPoint(this.point1, this.point2, 0.5 + (ww - 3) / this.dn),
+    ];
+  }
+
   lastOutputVoltage = 0;
 
   override getClassName(): string {
@@ -552,6 +587,16 @@ export class TriStateElm extends CircuitElm {
 
 /** Buffer whose output follows the input after a fixed delay. */
 export class DelayBufferElm extends BufferLikeElm {
+  /** Upstream setPoints: the body around the middle. */
+  override routingLeads(): [Point, Point] | null {
+    let ww = 16 - 2;
+    if (ww > this.dn / 2) ww = Math.trunc(this.dn / 2);
+    return [
+      this.interpPoint(this.point1, this.point2, 0.5 - ww / this.dn),
+      this.interpPoint(this.point1, this.point2, 0.5 + ww / this.dn),
+    ];
+  }
+
   delay = 0;
   threshold = 2.5;
   highVoltage = 5;

@@ -70,6 +70,9 @@ const KEYS = [
   'voltage',
   'scope',
   'traces',
+  'teaching',
+  'pens',
+  'laser',
   'ui',
   'style',
   'name',
@@ -171,7 +174,7 @@ function expectSafe(r: ThemeParseResult): void {
   expect(t.schemaVersion).toBe(1);
   // complete: every key of the base is present, with a value of the same kind
   const dark = BUILTIN_THEMES['dark'] as Theme;
-  for (const group of ['canvas', 'circuit', 'scope', 'ui', 'style'] as const)
+  for (const group of ['canvas', 'circuit', 'scope', 'teaching', 'ui', 'style'] as const)
     expect(Object.keys(t[group]).sort()).toEqual(Object.keys(dark[group]).sort());
   expect(Object.getPrototypeOf(t.meta)).toBe(Object.prototype);
   const colors = [
@@ -182,6 +185,8 @@ function expectSafe(r: ThemeParseResult): void {
       .filter(([k]) => k !== 'voltage')
       .map(([, v]) => v as string),
     ...Object.entries(t.scope).flatMap(([, v]) => (Array.isArray(v) ? v : [v])),
+    ...t.teaching.pens,
+    t.teaching.laser,
   ];
   for (const c of colors) {
     expect(typeof c).toBe('string');

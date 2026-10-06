@@ -22,6 +22,7 @@ import { InductorElm } from './InductorElm.ts';
 import { RailElm } from './RailElm.ts';
 import { ResistorElm } from './ResistorElm.ts';
 import { TransistorElm } from './TransistorElm.ts';
+import type { WireRouter } from '../WireRouter.ts';
 
 /** An LM13700-style operational transconductance amplifier, built from 16 transistors. */
 export class OTAElm extends CompositeElm {
@@ -183,6 +184,10 @@ function modelElements(xml: string): XmlElement[] {
 
 /** A Norton (current-differencing) amplifier such as the LM3900. */
 export class NortonAmpElm extends CompositeElm {
+  override addRoutingObstacle(router: WireRouter): void {
+    this.addRoutingObstacleWithLeads(router, this.opwidth);
+  }
+
   static readonly FLAG_SWAP = 1;
   static readonly FLAG_SMALL = 2;
   static readonly modelExternalNodes = [3, 1, 4];

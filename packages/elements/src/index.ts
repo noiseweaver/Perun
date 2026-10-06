@@ -20,6 +20,18 @@ export {
   type EditFile,
   type Editable,
 } from './edit/EditInfo.ts';
+export { modelEditor, pickModelName, type ModelEditRequest } from './edit/modelEditor.ts';
+export {
+  ADJ_FLAG_LOG,
+  ADJ_FLAG_SHARED,
+  Adjustable,
+  SLIDER_MAX,
+  clampPosition,
+  findAdjustable,
+  findEditItemByName,
+  reorderAdjustables,
+  sliderBeingShared,
+} from './edit/Adjustable.ts';
 export { SCALE_AUTO, SCALE_1, SCALE_M, SCALE_MU } from './constants.ts';
 export { escapeToken, unescapeToken } from './escape.ts';
 export {
@@ -54,6 +66,8 @@ export { Inductor, InductorElm } from './elm/InductorElm.ts';
 export { LabeledNodeElm } from './elm/LabeledNodeElm.ts';
 export { OutputElm } from './elm/OutputElm.ts';
 export { PotElm } from './elm/PotElm.ts';
+export { LDRElm } from './elm/LDRElm.ts';
+export { ThermistorNTCElm } from './elm/ThermistorNTCElm.ts';
 export { ProbeElm } from './elm/ProbeElm.ts';
 export { ResistorElm } from './elm/ResistorElm.ts';
 export { SwitchElm } from './elm/SwitchElm.ts';
@@ -188,7 +202,16 @@ export {
   CustomCompositeModel,
   CustomCompositeModels,
   ExtListEntry,
+  type ModelStorage,
 } from './models/CustomCompositeModel.ts';
+export {
+  PinDrag,
+  adjustChipSize,
+  createPinsFromModel,
+  findNearestPin,
+  layoutNewModel,
+  preservePinLayout,
+} from './models/compositeLayout.ts';
 export { CCCSElm, CCVSElm, VCCSElm, VCVSElm } from './elm/VCCSElm.ts';
 export { Expr, ExprParser, ExprState } from './Expr.ts';
 export { DiacElm } from './elm/DiacElm.ts';
@@ -204,3 +227,5 @@ export {
   type XmlText,
 } from './xmldoc.ts';
 export { AttrReader, AttrWriter } from './xmlattrs.ts';
+export { LANGUAGES, LS, catalogLanguage, parseLocale, setLocalization } from './i18n.ts';
+export { WireRouter, setRoutingBoundingBox } from './WireRouter.ts';

@@ -13,7 +13,15 @@ export interface Pt {
  * the element is highlighted; `text` (values) and `currentDot` never do.
  */
 export type ColorRole =
-  'component' | 'componentMuted' | 'label' | 'text' | 'post' | 'currentDot' | 'badConnection';
+  | 'component'
+  | 'componentMuted'
+  | 'label'
+  | 'text'
+  | 'post'
+  | 'currentDot'
+  | 'badConnection'
+  /** The selection color (a selected pin in the pin layout dialog). */
+  | 'selection';
 
 /** What to draw with. */
 export type Ink =

@@ -191,6 +191,7 @@ import { OpAmpRealElm } from '../elm/OpAmpRealElm.ts';
 import { OptocouplerElm } from '../elm/OptocouplerElm.ts';
 import { AnalogMuxElm } from '../elm/AnalogMuxElm.ts';
 import { CustomTransformerElm } from '../elm/CustomTransformerElm.ts';
+import { setRoutingBoundingBox } from '../WireRouter.ts';
 
 /** Undocked scopes are drawn by the scope renderer, over the circuit; this only places them. */
 const scopeElmView: ElementView<ScopeElm> = {
@@ -342,4 +343,8 @@ export {
   getVoltageDText,
   getVoltageText,
   showFormat,
+  withFixedWidthValues,
 } from './units.ts';
+
+// routed wires size their grid to the circuit as drawn (upstream getCircuitBounds)
+setRoutingBoundingBox((e) => viewFor(e)?.bbox(e) ?? null);

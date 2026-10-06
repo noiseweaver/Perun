@@ -32,6 +32,7 @@ import {
 } from '../themes.ts';
 import { Shell } from './DialogShell.tsx';
 import { Icon } from './Icon.tsx';
+import { t } from '../i18n.ts';
 
 // ---- link preview ------------------------------------------------------------------------------
 
@@ -51,25 +52,25 @@ export function ThemeLinkBanner() {
           onClick={dismissPreview}
           data-testid="theme-banner-dismiss"
         >
-          Dismiss
+          {t('Dismiss')}
         </button>
         <button
           type="button"
           className="button"
-          title="Add it to your themes and keep your current one"
+          title={t('Add it to your themes and keep your current one')}
           onClick={() => void keepPreview(false)}
           data-testid="theme-banner-save"
         >
-          Save
+          {t('Save')}
         </button>
         <button
           type="button"
           className="button button-primary"
-          title="Add it to your themes and use it"
+          title={t('Add it to your themes and use it')}
           onClick={() => void keepPreview(true)}
           data-testid="theme-banner-apply"
         >
-          Apply
+          {t('Apply')}
         </button>
       </div>
     </div>
@@ -141,7 +142,7 @@ function ThemeRow(props: { id: string; theme: Theme; saved: SavedTheme | null; a
           type="button"
           className="icon-button"
           aria-label={`Copy a link to ${theme.meta.name}`}
-          title="Copy link"
+          title={t('Copy link')}
           onClick={() => void copyThemeLink(theme, pageBase())}
           data-testid="theme-row-link"
         >
@@ -151,7 +152,7 @@ function ThemeRow(props: { id: string; theme: Theme; saved: SavedTheme | null; a
           type="button"
           className="icon-button"
           aria-label={`Export ${theme.meta.name} as a file`}
-          title="Export file"
+          title={t('Export file')}
           onClick={() => exportThemeFile(theme)}
           data-testid="theme-row-export"
         >
@@ -167,14 +168,14 @@ function ThemeRow(props: { id: string; theme: Theme; saved: SavedTheme | null; a
               autoFocus
               data-testid="theme-row-delete-confirm"
             >
-              Delete
+              {t('Delete')}
             </button>
           ) : (
             <button
               type="button"
               className="icon-button"
               aria-label={`Delete ${theme.meta.name}`}
-              title="Delete"
+              title={t('Delete')}
               onClick={() => setConfirm(true)}
               data-testid="theme-row-delete"
             >
@@ -191,8 +192,8 @@ export function ThemesDialog() {
   const library = useApp((s) => s.library);
   return (
     <Shell
-      title="Themes"
-      description="Pick a theme, customize one, or share it as a file or link."
+      title={t('Themes')}
+      description={t('Pick a theme, customize one, or share it as a file or link.')}
       wide
     >
       <ul className="theme-list" data-testid="theme-list">
@@ -200,10 +201,10 @@ export function ThemesDialog() {
           <ThemeRow key={id} id={id} theme={t} saved={null} active={themeId === id} />
         ))}
       </ul>
-      <h3 className="theme-list-heading">Your themes</h3>
+      <h3 className="theme-list-heading">{t('Your themes')}</h3>
       {library.length === 0 ? (
         <p className="theme-list-empty">
-          Themes you make, import or save from a link appear here. They stay in this browser.
+          {t('Themes you make, import or save from a link appear here. They stay in this browser.')}
         </p>
       ) : (
         <ul className="theme-list">
@@ -239,7 +240,7 @@ export function ThemesDialog() {
         </button>
         <Dialog.Close asChild>
           <button type="button" className="button button-primary">
-            Done
+            {t('Done')}
           </button>
         </Dialog.Close>
       </div>
@@ -411,7 +412,12 @@ function ColorField(props: {
         }}
         data-testid={`color-${props.testId}`}
       />
-      {!valid && <span className="field-error theme-field-note">Use hex, rgb() or hsl()</span>}
+      {!valid && (
+        <span className="field-error theme-field-note">
+          {/* eslint-disable-next-line local/no-color-literals -- a hint, not a color */}
+          {t('Use hex, rgb() or hsl()')}
+        </span>
+      )}
       {props.warnings.map((w) => (
         <span
           key={w.against}
@@ -466,7 +472,7 @@ function PreviewCanvas({ theme }: { theme: Theme }) {
     <canvas
       ref={canvas}
       className="theme-preview-canvas"
-      aria-label="Sample circuit in this theme"
+      aria-label={t('Sample circuit in this theme')}
       data-testid="theme-preview"
     />
   );
@@ -608,7 +614,7 @@ export function ThemeEditorDialog() {
   return (
     <Shell
       title={id ? `Edit ${editing?.theme.meta.name ?? 'theme'}` : 'New theme'}
-      description="Changes show on the sample circuit and across the app as you make them."
+      description={t('Changes show on the sample circuit and across the app as you make them.')}
       className="dialog-theme"
     >
       <div className="theme-editor">
@@ -642,7 +648,7 @@ export function ThemeEditorDialog() {
           )}
         </div>
         <div className="theme-editor-form" data-testid="theme-form">
-          <Section title="About">
+          <Section title={t('About')}>
             <TextField
               label="Name"
               value={draft.meta.name}
@@ -695,7 +701,7 @@ export function ThemeEditorDialog() {
               ))}
               {g.title === 'Scopes' && (
                 <div className="theme-traces">
-                  <span className="field-label">Traces (the first draws voltage)</span>
+                  <span className="field-label">{t('Traces (the first draws voltage)')}</span>
                   {traces.map((c, i) => (
                     <div className="theme-trace" key={i}>
                       <ColorField
@@ -738,7 +744,7 @@ export function ThemeEditorDialog() {
               )}
             </Section>
           ))}
-          <Section title="Style">
+          <Section title={t('Style')}>
             <NumberField
               label="Line width"
               value={draft.style.strokeWidth}
@@ -830,7 +836,7 @@ export function ThemeEditorDialog() {
         <span className="dialog-buttons-gap" />
         <Dialog.Close asChild>
           <button type="button" className="button">
-            Cancel
+            {t('Cancel')}
           </button>
         </Dialog.Close>
         <button
@@ -839,7 +845,7 @@ export function ThemeEditorDialog() {
           onClick={() => void save()}
           data-testid="theme-editor-save"
         >
-          Save
+          {t('Save')}
         </button>
       </div>
     </Shell>

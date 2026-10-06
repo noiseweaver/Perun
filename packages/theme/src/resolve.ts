@@ -25,6 +25,11 @@ export function resolveTheme(input: ThemeInput): Theme {
       ...input.scope,
       traces: [...(input.scope?.traces ?? base.scope.traces)],
     },
+    teaching: {
+      ...base.teaching,
+      ...input.teaching,
+      pens: [...(input.teaching?.pens ?? base.teaching.pens)],
+    },
     ui: { ...base.ui, ...input.ui },
     style: { ...base.style, ...input.style },
   };

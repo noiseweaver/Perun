@@ -23,10 +23,35 @@ export function formatNumber(v: number, digits: number, fixed = false): string {
   return (v < 0 && /[1-9]/.test(s) ? '-' : '') + s;
 }
 
+/**
+ * While set, the value helpers below return fixed-width text (see getFixedUnitText). The info box
+ * turns it on around an element's getInfo, so every value in it keeps its width as it changes
+ * (owner's rule for live values, CLAUDE.md), without touching each element's getInfo.
+ */
+let fixedWidth = false;
+
+/** Runs `fn` with the value helpers giving fixed-width text. */
+export function withFixedWidthValues<T>(fn: () => T): T {
+  const was = fixedWidth;
+  fixedWidth = true;
+  try {
+    return fn();
+  } finally {
+    fixedWidth = was;
+  }
+}
+
 /** Upstream `showFormat` (3 decimals) and `shortFormat` (1 decimal). */
-export const showFormat = (v: number): string => formatNumber(v, 3);
+export const showFormat = (v: number): string => (fixedWidth ? fixedNumber(v) : formatNumber(v, 3));
 export const shortFormat = (v: number): string => formatNumber(v, 1);
 export const fixedFormat = (v: number): string => formatNumber(v, 3, true);
+
+/** A bare number with a sign place, three decimals and room for four integer digits. */
+function fixedNumber(v: number): string {
+  let s = formatNumber(v, 3, true);
+  if (s === '-0.000') s = '0.000';
+  return s.padStart(9);
+}
 
 function exponentFormat(v: number): string {
   // GWT "#.##E000"
@@ -55,7 +80,7 @@ function unitText(v: number, u: string, sf: boolean, fixed = false): string {
 
 /** `1.5 kΩ` style text with three decimals. */
 export function getUnitText(v: number, u: string): string {
-  return unitText(v, u, false);
+  return fixedWidth ? getFixedUnitText(v, u) : unitText(v, u, false);
 }
 
 /**
@@ -76,7 +101,7 @@ export function getFixedUnitText(v: number, u: string): string {
     [1e6, 'M'],
     [1e9, 'G'],
   ];
-  if (Math.abs(v) >= 1e12) return getUnitText(v, u);
+  if (Math.abs(v) >= 1e12) return unitText(v, u, false);
   let num = '0.000';
   let prefix = ' ';
   if (Math.abs(v) >= 1e-14 && Number.isFinite(v)) {
@@ -102,6 +127,14 @@ export function getShortUnitText(v: number, u: string): string {
 
 export function getUnitTextWithScale(val: number, utext: string, scale: number, fixed = false) {
   if (Math.abs(val) > 1e12) return getUnitText(val, utext);
+  if (fixedWidth) {
+    const p = scale === SCALE_1 ? ' ' : scale === SCALE_M ? 'm' : scale === SCALE_MU ? MU : null;
+    if (p === null) return getFixedUnitText(val, utext);
+    const k = scale === SCALE_M ? 1e3 : scale === SCALE_MU ? 1e6 : 1;
+    return `${fixedNumber(val * k)
+      .trimStart()
+      .padStart(8)} ${p}${utext}`;
+  }
   const nf = fixed ? fixedFormat : showFormat;
   if (scale === SCALE_1) return nf(val) + ' ' + utext;
   if (scale === SCALE_M) return nf(1e3 * val) + ' m' + utext;
@@ -136,6 +169,14 @@ export function getCurrentDText(i: number): string {
  * and minute counts are doubles concatenated in GWT, so they print without ".0".
  */
 export function getTimeText(v: number): string {
+  if (fixedWidth && v >= 60) {
+    // h:mm:ss.sss, padded to the width of the seconds form below an hour
+    const was = fixedWidth;
+    fixedWidth = false;
+    const t = getTimeText(v);
+    fixedWidth = was;
+    return t.padStart(11);
+  }
   if (v >= 60) {
     const h = Math.floor(v / 3600);
     v -= 3600 * h;

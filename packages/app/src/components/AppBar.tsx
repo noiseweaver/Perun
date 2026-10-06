@@ -10,41 +10,54 @@ import {
   userThemeId,
 } from '../themes.ts';
 import * as Menu from '@radix-ui/react-dropdown-menu';
-import { useRef, useState, type ReactNode, type RefObject } from 'react';
+import { Fragment, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { ExampleMenu } from '../examples.ts';
 import { openDialog } from '../commands.ts';
 import { controller } from '../SimController.ts';
 import { openExample } from '../startup.ts';
 import { updateSettings, useApp, type CircuitDisplay, setPaletteOpen } from '../store.ts';
+import { CategoryIcon } from './CategoryIcon.tsx';
 import { CircuitsSheet } from './CircuitsSheet.tsx';
 import { Icon } from './Icon.tsx';
 import { useNarrow } from './useNarrow.ts';
 import { OpenLinkDialog } from './OpenLinkDialog.tsx';
+import { promptInstall } from '../pwa.ts';
+import { t, resolveLanguage, setLanguage } from '../i18n.ts';
+import { LANGUAGES } from '@circuitjs-next/elements';
 
 function ExampleItems({ menu }: { menu: ExampleMenu }) {
   return (
     <>
       {menu.items.map((it, i) =>
         it.kind === 'menu' ? (
-          <Menu.Sub key={`m${i}`}>
-            <Menu.SubTrigger className="menu-item">
-              {it.title}
-              <Icon name="chevronRight" className="icon menu-trailing" />
-            </Menu.SubTrigger>
-            <Menu.Portal>
-              <Menu.SubContent className="menu-content" sideOffset={4} alignOffset={-8}>
-                <ExampleItems menu={it} />
-              </Menu.SubContent>
-            </Menu.Portal>
-          </Menu.Sub>
+          <Fragment key={`m${i}`}>
+            {/* a divider between categories (and before the first one after some circuits) */}
+            {i > 0 && <Menu.Separator className="menu-separator category-separator" />}
+            <Menu.Sub>
+              <Menu.SubTrigger className="menu-item">
+                <CategoryIcon title={it.title} />
+                {t(it.title)}
+                <Icon name="chevronRight" className="icon menu-trailing" />
+              </Menu.SubTrigger>
+              <Menu.Portal>
+                <Menu.SubContent className="menu-content" sideOffset={4} alignOffset={-8}>
+                  <ExampleItems menu={it} />
+                </Menu.SubContent>
+              </Menu.Portal>
+            </Menu.Sub>
+          </Fragment>
         ) : (
-          <Menu.Item
-            key={it.file}
-            className="menu-item"
-            onSelect={() => void openExample(it.file, it.title, true, true)}
-          >
-            {it.title}
-          </Menu.Item>
+          <Fragment key={it.file}>
+            {i > 0 && menu.items[i - 1]?.kind === 'menu' && (
+              <Menu.Separator className="menu-separator category-separator" />
+            )}
+            <Menu.Item
+              className="menu-item"
+              onSelect={() => void openExample(it.file, it.title, true, true)}
+            >
+              {t(it.title)}
+            </Menu.Item>
+          </Fragment>
         ),
       )}
     </>
@@ -61,7 +74,7 @@ function AppMenu(props: {
   return (
     <Menu.Root>
       <Menu.Trigger className="menu-trigger" disabled={props.disabled} data-testid={props.testId}>
-        {props.label}
+        {t(props.label)}
         <Icon name="dropDown" size={18} />
       </Menu.Trigger>
       <Menu.Portal>
@@ -87,6 +100,7 @@ export function AppBar() {
   const [linkOpen, setLinkOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const narrow = useNarrow();
+  const install = useApp((s) => s.install);
 
   const setDisplay = (patch: Partial<CircuitDisplay>): void =>
     useApp.setState({ display: { ...useApp.getState().display, ...patch } });
@@ -104,9 +118,9 @@ export function AppBar() {
       <button
         type="button"
         className="icon-button"
-        aria-label={paletteOpen ? 'Hide components' : 'Show components'}
+        aria-label={t(paletteOpen ? 'Hide components' : 'Show components')}
         aria-pressed={paletteOpen}
-        title="Components"
+        title={t('Components')}
         data-testid="palette-toggle"
         onClick={() => setPaletteOpen(!paletteOpen)}
       >
@@ -120,7 +134,7 @@ export function AppBar() {
       <h1 className="app-bar-title" data-testid="circuit-title">
         {title}
       </h1>
-      <nav className="app-bar-menus" aria-label="Menus">
+      <nav className="app-bar-menus" aria-label={t('Menus')}>
         <AppMenu label="File" testId="file-menu">
           <Item label="New blank circuit" onSelect={() => controller.newCircuit()} />
           <Item label="Open file…" hint={`${MOD}O`} onSelect={() => fileInput.current?.click()} />
@@ -139,6 +153,25 @@ export function AppBar() {
             onSelect={() => openDialog('exportLink')}
           />
           <Item label="Export as text…" onSelect={() => openDialog('exportText')} />
+          <Item
+            label="Create Subcircuit…"
+            testId="menu-create-subcircuit"
+            onSelect={() => controller.createSubcircuit()}
+          />
+          <Item
+            label="Subcircuit Manager…"
+            testId="menu-subcircuit-manager"
+            onSelect={() => openDialog('subcircuitManager')}
+          />
+          <Menu.Separator className="menu-separator" />
+          {install !== 'none' && (
+            <Item
+              label="Install app…"
+              testId="menu-install"
+              onSelect={() => (install === 'prompt' ? void promptInstall() : openDialog('install'))}
+            />
+          )}
+          <Item label="About…" testId="menu-about" onSelect={() => openDialog('about')} />
         </AppMenu>
 
         <AppMenu label="Edit" testId="edit-menu">
@@ -204,7 +237,7 @@ export function AppBar() {
             data-state={sheetOpen ? 'open' : 'closed'}
             onClick={() => setSheetOpen(true)}
           >
-            Circuits
+            {t('Circuits')}
             <Icon name="dropDown" size={18} />
           </button>
         ) : (
@@ -226,21 +259,21 @@ export function AppBar() {
             checked={display.showDots}
             onCheckedChange={(v) => setDisplay({ showDots: v })}
           >
-            <Check on={display.showDots} /> Show current
+            <Check on={display.showDots} /> {t('Show current')}
           </Menu.CheckboxItem>
           <Menu.CheckboxItem
             className="menu-item"
             checked={display.voltageColors}
             onCheckedChange={(v) => setDisplay({ voltageColors: v })}
           >
-            <Check on={display.voltageColors} /> Show voltage
+            <Check on={display.voltageColors} /> {t('Show voltage')}
           </Menu.CheckboxItem>
           <Menu.CheckboxItem
             className="menu-item"
             checked={display.showValues}
             onCheckedChange={(v) => setDisplay({ showValues: v })}
           >
-            <Check on={display.showValues} /> Show values
+            <Check on={display.showValues} /> {t('Show values')}
           </Menu.CheckboxItem>
           <Menu.Separator className="menu-separator" />
           <Menu.CheckboxItem
@@ -248,21 +281,21 @@ export function AppBar() {
             checked={settings.euroResistors}
             onCheckedChange={(v) => updateSettings({ euroResistors: v })}
           >
-            <Check on={settings.euroResistors} /> European resistors
+            <Check on={settings.euroResistors} /> {t('European resistors')}
           </Menu.CheckboxItem>
           <Menu.CheckboxItem
             className="menu-item"
             checked={settings.euroGates}
             onCheckedChange={(v) => updateSettings({ euroGates: v })}
           >
-            <Check on={settings.euroGates} /> IEC gates
+            <Check on={settings.euroGates} /> {t('IEC gates')}
           </Menu.CheckboxItem>
           <Menu.CheckboxItem
             className="menu-item"
             checked={settings.showOhm}
             onCheckedChange={(v) => updateSettings({ showOhm: v })}
           >
-            <Check on={settings.showOhm} /> Show Ω after resistances
+            <Check on={settings.showOhm} /> {t('Show Ω after resistances')}
           </Menu.CheckboxItem>
           <Menu.CheckboxItem
             className="menu-item"
@@ -270,18 +303,18 @@ export function AppBar() {
             onCheckedChange={(v) => updateSettings({ junctionDots: v })}
             data-testid="menu-junction-dots"
           >
-            <Check on={settings.junctionDots} /> Junction dots
+            <Check on={settings.junctionDots} /> {t('Junction dots')}
           </Menu.CheckboxItem>
           <Menu.CheckboxItem
             className="menu-item"
             checked={settings.conventionalCurrent}
             onCheckedChange={(v) => updateSettings({ conventionalCurrent: v })}
           >
-            <Check on={settings.conventionalCurrent} /> Conventional current motion
+            <Check on={settings.conventionalCurrent} /> {t('Conventional current motion')}
           </Menu.CheckboxItem>
           <Menu.Sub>
             <Menu.SubTrigger className="menu-item" data-testid="menu-text-font">
-              Default text box font
+              {t('Default text box font')}
               <Icon name="chevronRight" className="icon menu-trailing" />
             </Menu.SubTrigger>
             <Menu.Portal>
@@ -310,7 +343,7 @@ export function AppBar() {
                       className="menu-item"
                       data-testid={`text-font-${id}`}
                     >
-                      <Check on={settings.textFont.family === id} /> {label}
+                      <Check on={settings.textFont.family === id} /> {t(label)}
                     </Menu.RadioItem>
                   ))}
                 </Menu.RadioGroup>
@@ -322,7 +355,7 @@ export function AppBar() {
                     updateSettings({ textFont: { ...settings.textFont, bold: v } })
                   }
                 >
-                  <Check on={settings.textFont.bold} /> Bold
+                  <Check on={settings.textFont.bold} /> {t('Bold')}
                 </Menu.CheckboxItem>
                 <Menu.CheckboxItem
                   className="menu-item"
@@ -331,11 +364,12 @@ export function AppBar() {
                     updateSettings({ textFont: { ...settings.textFont, italic: v } })
                   }
                 >
-                  <Check on={settings.textFont.italic} /> Italic
+                  <Check on={settings.textFont.italic} /> {t('Italic')}
                 </Menu.CheckboxItem>
               </Menu.SubContent>
             </Menu.Portal>
           </Menu.Sub>
+          <LanguageMenu />
           <Menu.Separator className="menu-separator" />
           <Item
             label="Simulation settings…"
@@ -357,8 +391,8 @@ export function AppBar() {
         <button
           type="button"
           className="icon-button"
-          aria-label="Undo"
-          title={`Undo (${MOD}Z)`}
+          aria-label={t('Undo')}
+          title={`${t('Undo')} (${MOD}Z)`}
           disabled={!editor.canUndo}
           onClick={() => controller.undo()}
           data-testid="undo"
@@ -368,8 +402,8 @@ export function AppBar() {
         <button
           type="button"
           className="icon-button"
-          aria-label="Redo"
-          title={`Redo (${MOD}Y)`}
+          aria-label={t('Redo')}
+          title={`${t('Redo')} (${MOD}Y)`}
           disabled={!editor.canRedo}
           onClick={() => controller.redo()}
           data-testid="redo"
@@ -423,7 +457,7 @@ function Item(props: {
       onSelect={props.onSelect}
       data-testid={props.testId}
     >
-      {props.label}
+      {t(props.label)}
       {props.hint && <span className="menu-trailing menu-hint">{props.hint}</span>}
     </Menu.Item>
   );
@@ -436,29 +470,29 @@ function ThemeMenu({ themeInput }: { themeInput: RefObject<HTMLInputElement | nu
   return (
     <Menu.Sub>
       <Menu.SubTrigger className="menu-item" data-testid="menu-theme">
-        Theme
+        {t('Theme')}
         <Icon name="chevronRight" className="icon menu-trailing" />
       </Menu.SubTrigger>
       <Menu.Portal>
         <Menu.SubContent className="menu-content" sideOffset={4} alignOffset={-8}>
           <Menu.RadioGroup value={themeId} onValueChange={selectTheme}>
-            {Object.entries(BUILTIN_THEMES).map(([id, t]) => (
+            {Object.entries(BUILTIN_THEMES).map(([id, th]) => (
               <Menu.RadioItem key={id} value={id} className="menu-item" data-testid={`theme-${id}`}>
-                <Check on={themeId === id} /> {t.meta.name}
+                <Check on={themeId === id} /> {th.meta.name}
                 {id === DEFAULT_THEME_ID && (
-                  <span className="menu-trailing menu-hint">Default</span>
+                  <span className="menu-trailing menu-hint">{t('Default')}</span>
                 )}
               </Menu.RadioItem>
             ))}
             {library.length > 0 && <Menu.Separator className="menu-separator" />}
-            {library.map((t) => (
+            {library.map((th) => (
               <Menu.RadioItem
-                key={t.id}
-                value={userThemeId(t.id)}
+                key={th.id}
+                value={userThemeId(th.id)}
                 className="menu-item"
-                data-testid={`theme-user-${t.theme.meta.name}`}
+                data-testid={`theme-user-${th.theme.meta.name}`}
               >
-                <Check on={themeId === userThemeId(t.id)} /> {t.theme.meta.name}
+                <Check on={themeId === userThemeId(th.id)} /> {th.theme.meta.name}
               </Menu.RadioItem>
             ))}
           </Menu.RadioGroup>
@@ -474,6 +508,46 @@ function ThemeMenu({ themeInput }: { themeInput: RefObject<HTMLInputElement | nu
             testId="menu-import-theme"
             onSelect={() => themeInput.current?.click()}
           />
+        </Menu.SubContent>
+      </Menu.Portal>
+    </Menu.Sub>
+  );
+}
+
+/** Options > Language: upstream's catalogs, or the browser's language. */
+function LanguageMenu() {
+  const setting = useApp((s) => s.settings.language);
+  const choose = (v: string): void => {
+    updateSettings({ language: v });
+    void setLanguage(resolveLanguage(v));
+  };
+  return (
+    <Menu.Sub>
+      <Menu.SubTrigger className="menu-item" data-testid="menu-language">
+        {t('Language')}
+        <Icon name="chevronRight" className="icon menu-trailing" />
+      </Menu.SubTrigger>
+      <Menu.Portal>
+        <Menu.SubContent className="menu-content" sideOffset={4} alignOffset={-8}>
+          <Menu.RadioGroup value={setting} onValueChange={choose}>
+            <Menu.RadioItem value="auto" className="menu-item" data-testid="language-auto">
+              <Check on={setting === 'auto'} /> {t('Browser language')}
+            </Menu.RadioItem>
+            <Menu.Separator className="menu-separator" />
+            {LANGUAGES.map((l) => (
+              <Menu.RadioItem
+                key={l.code}
+                value={l.code}
+                className="menu-item"
+                data-testid={`language-${l.code}`}
+              >
+                <Check on={setting === l.code} />{' '}
+                <span lang={l.code === 'kr' ? 'ko' : l.code === 'csx' ? 'cs' : l.code}>
+                  {l.name}
+                </span>
+              </Menu.RadioItem>
+            ))}
+          </Menu.RadioGroup>
         </Menu.SubContent>
       </Menu.Portal>
     </Menu.Sub>

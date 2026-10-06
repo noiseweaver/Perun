@@ -1,7 +1,7 @@
 {
   "name": "circuitjs-next",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.9.0",
   "description": "TypeScript rebuild of CircuitJS1 with a new UI and a JSON theme system",
   "license": "GPL-2.0-or-later",
   "type": "module",
@@ -10,7 +10,7 @@
     "node": ">=22.13"
   },
   "scripts": {
-    "typecheck": "pnpm -r --parallel typecheck && tsc -p tsconfig.json && tsc -p tools/golden && tsc -p tools/theme-docs",
+    "typecheck": "pnpm -r --parallel typecheck && tsc -p tsconfig.json && tsc -p tools/golden && tsc -p tools/theme-docs && tsc -p tools/bench && tsc -p tools/i18n",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -25,6 +25,8 @@
     "golden:examples": "node tools/golden/src/examples-cli.ts",
     "golden:record-examples": "node tools/golden/src/record-examples.ts",
     "golden:scopes": "node tools/golden/src/record-scopes.ts",
+    "bench": "node tools/bench/src/bench.ts",
+    "i18n": "node tools/i18n/src/coverage.ts",
     "theme:docs": "node tools/theme-docs/src/generate.ts"
   },
   "dependencies": {
@@ -32,6 +34,7 @@
     "@circuitjs-next/theme": "workspace:*"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "1.63.0",
     "@types/node": "^22.18.0",

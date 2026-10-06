@@ -14,11 +14,19 @@ import type { StringTokenizer } from '../StringTokenizer.ts';
 import { getCurrentDText } from '../view/units.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { SwitchElm } from './SwitchElm.ts';
+import type { WireRouter } from '../WireRouter.ts';
 
 const OPENHS = 16;
 
 /** SPDT switch, or a single-pole switch with more throws. Post 0 is the pole. */
 export class Switch2Elm extends SwitchElm {
+  override addRoutingObstacle(router: WireRouter): void {
+    router.addWire(this.point1.x, this.point1.y, this.lead1.x, this.lead1.y);
+    for (let i = 0; i !== this.throwCount; i++)
+      router.addWire(this.swposts[i].x, this.swposts[i].y, this.swpoles[i].x, this.swpoles[i].y);
+    router.addObstaclePoints([this.lead1, ...this.swpoles.slice(0, this.throwCount)]);
+  }
+
   static readonly FLAG_CENTER_OFF = 1;
   /** Tracks runtime flip state for linked switches. */
   static readonly FLAG_FLIPPED = 8;

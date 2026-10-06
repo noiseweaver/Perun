@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Ported from CircuitJS1 src/com/lushprojects/circuitjs1/client/TransistorModel.java (master) at
-// 5a707168778216bb6ed01bfdd62e8bbf7ae0a032. The model edit dialog is left for a later phase.
+// 5a707168778216bb6ed01bfdd62e8bbf7ae0a032.
 // Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) circuitjs-next contributors.
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
+import { EditInfo, type Editable } from '../edit/EditInfo.ts';
+import { pickModelName } from '../edit/modelEditor.ts';
 import { unescapeToken } from '../escape.ts';
 import { parseJavaDouble, parseJavaInt } from '../java.ts';
 import { StringTokenizer } from '../StringTokenizer.ts';
@@ -17,7 +19,7 @@ function compareNames(a: { name: string }, b: { name: string }): number {
 }
 
 /** SPICE Gummel-Poon parameters (bjtload.c names in comments). */
-export class TransistorModel {
+export class TransistorModel implements Editable {
   flags = 0;
   name = '';
   description: string | null = null;
@@ -50,6 +52,8 @@ export class TransistorModel {
   readOnly = false;
   builtIn = false;
   internal = false;
+  /** The library's map, so a renamed model registers itself (upstream's static modelMap). */
+  modelMap: Map<string, TransistorModel> | null = null;
 
   /** Upstream `TransistorModel(String d, double sc)`. */
   static withSatCur(d: string, sc: number): TransistorModel {
@@ -185,6 +189,98 @@ export class TransistorModel {
     this.transitTimeF = r.parseDoubleAttr('tf', this.transitTimeF);
     this.transitTimeR = r.parseDoubleAttr('tr', this.transitTimeR);
     this.updateModel();
+  }
+
+  getDialogTitle(): string {
+    return 'Edit Transistor Model';
+  }
+
+  getEditInfo(n: number): EditInfo | null {
+    if (n === 0) return EditInfo.text('Model Name', this.name);
+    if (n === 1) return new EditInfo('Transport Saturation Current (IS)', this.satCur);
+    if (n === 2) return new EditInfo('Reverse Beta (BR)', this.betaR);
+    if (n === 3) return new EditInfo('Forward Early Voltage (VAF)', 1 / this.invEarlyVoltF);
+    if (n === 4) return new EditInfo('Reverse Early Voltage (VAR)', 1 / this.invEarlyVoltR);
+    if (n === 5)
+      return new EditInfo(
+        'Corner For Forward Beta High Current Roll-Off (IKF)',
+        1 / this.invRollOffF,
+      );
+    if (n === 6)
+      return new EditInfo(
+        'Corner For Reverse Beta High Current Roll-Off (IKR)',
+        1 / this.invRollOffR,
+      );
+    if (n === 7)
+      return new EditInfo('Forward Current Emission Coefficient (NF)', this.emissionCoeffF);
+    if (n === 8)
+      return new EditInfo('Reverse Current Emission Coefficient (NR)', this.emissionCoeffR);
+    if (n === 9) return new EditInfo('B-E Leakage Saturation Current (ISE)', this.BEleakCur);
+    if (n === 10)
+      return new EditInfo('B-E Leakage Emission Coefficient (NE)', this.leakBEemissionCoeff);
+    if (n === 11) return new EditInfo('B-C Leakage Saturation Current (ISC)', this.BCleakCur);
+    if (n === 12)
+      return new EditInfo('B-C Leakage Emission Coefficient (NC)', this.leakBCemissionCoeff);
+    if (n === 13)
+      return new EditInfo('B-E Zero-Bias Junction Capacitance (CJE)', this.junctionCapBE);
+    if (n === 14)
+      return new EditInfo('B-E Junction Potential (VJE)', this.junctionPotBE).setPositive();
+    if (n === 15)
+      return new EditInfo(
+        'B-E Junction Grading Coefficient (MJE)',
+        this.junctionExpBE,
+      ).setPositive();
+    if (n === 16)
+      return new EditInfo('B-C Zero-Bias Junction Capacitance (CJC)', this.junctionCapBC);
+    if (n === 17)
+      return new EditInfo('B-C Junction Potential (VJC)', this.junctionPotBC).setPositive();
+    if (n === 18)
+      return new EditInfo(
+        'B-C Junction Grading Coefficient (MJC)',
+        this.junctionExpBC,
+      ).setPositive();
+    if (n === 19) return new EditInfo('Forward Transit Time TF (s)', this.transitTimeF);
+    if (n === 20) return new EditInfo('Reverse Transit Time TR (s)', this.transitTimeR);
+    return null;
+  }
+
+  /** Set a field; the caller then refetches every element's model (upstream updateModels). */
+  setEditValue(n: number, ei: EditInfo): void {
+    if (n === 0) {
+      this.name = ei.text ?? '';
+      if (this.name.length > 0) this.modelMap?.set(this.name, this);
+    }
+    if (n === 1) this.satCur = ei.value;
+    if (n === 2) this.betaR = ei.value;
+    if (n === 3) this.invEarlyVoltF = 1 / ei.value;
+    if (n === 4) this.invEarlyVoltR = 1 / ei.value;
+    if (n === 5) this.invRollOffF = 1 / ei.value;
+    if (n === 6) this.invRollOffR = 1 / ei.value;
+    if (n === 7) this.emissionCoeffF = ei.value;
+    if (n === 8) this.emissionCoeffR = ei.value;
+    if (n === 9) this.BEleakCur = ei.value;
+    if (n === 10) this.leakBEemissionCoeff = ei.value;
+    if (n === 11) this.BCleakCur = ei.value;
+    if (n === 12) this.leakBCemissionCoeff = ei.value;
+    if (n === 13) this.junctionCapBE = ei.value;
+    if (n === 14) this.junctionPotBE = ei.value;
+    if (n === 15) this.junctionExpBE = ei.value;
+    if (n === 16) this.junctionCapBC = ei.value;
+    if (n === 17) this.junctionPotBC = ei.value;
+    if (n === 18) this.junctionExpBC = ei.value;
+    if (n === 19) {
+      if (ei.value >= 0) this.transitTimeF = ei.value;
+      else ei.setError('must be >= 0');
+    }
+    if (n === 20) {
+      if (ei.value >= 0) this.transitTimeR = ei.value;
+      else ei.setError('must be >= 0');
+    }
+    this.updateModel();
+  }
+
+  pickName(): void {
+    this.name = pickModelName('transistormodel', this.modelMap ?? new Map());
   }
 
   updateModel(): void {}

@@ -22,6 +22,7 @@ export const COMPONENT: Ink = { role: 'component' };
 export const MUTED: Ink = { role: 'componentMuted' };
 export const LABEL: Ink = { role: 'label' };
 export const TEXT: Ink = { role: 'text' };
+export const SELECTION: Ink = { role: 'selection' };
 
 /** Voltage of node n of an element (0 before the first analysis). */
 export function volt(e: CircuitElm, n: number): number {

@@ -14,7 +14,12 @@ import {
   VAL_CURRENT,
   AudioOutputElm,
   CustomCompositeElm,
-  CustomLogicElm,
+  type CustomCompositeModel,
+  layoutNewModel,
+  modelsFor,
+  preservePinLayout,
+  modelEditor,
+  type ModelEditRequest,
   DataRecorderElm,
   VAL_VOLTAGE,
   VoltageElm,
@@ -24,6 +29,12 @@ import {
   getTimeText,
   getUnitText,
   showFormat,
+  withFixedWidthValues,
+  Adjustable,
+  PotElm,
+  VarRailElm,
+  findAdjustable,
+  reorderAdjustables,
   switchRect,
   viewFor,
   type CardHit,
@@ -35,8 +46,9 @@ import {
   type ScopeManager,
   type ScopeRect,
 } from '@circuitjs-next/elements';
-import { Circuit, OptionFlag } from '@circuitjs-next/format';
+import { Circuit, OptionFlag, getCircuitAsComposite } from '@circuitjs-next/format';
 import {
+  AnnotationLayer,
   CircuitRenderer,
   ScopeRenderer,
   currentMultiplier,
@@ -52,7 +64,16 @@ import {
   type Modifiers,
 } from './editor/Editor.ts';
 import { download } from './download.ts';
-import { showToast, shownTheme, useApp, type AppState, type EditorState } from './store.ts';
+import { sliderEntries, type SliderEntry } from './sliders.ts';
+import {
+  showToast,
+  shownTheme,
+  useApp,
+  type AppState,
+  type EditorState,
+  type TeachTool,
+} from './store.ts';
+import { t } from './i18n.ts';
 
 /** Simulation time per frame before the frame is cut short (upstream `frameTimeLimit`). */
 const FRAME_BUDGET_MS = 50;
@@ -100,6 +121,8 @@ export class SimController {
   private splitterHot = false;
   /** Element of the scope under the mouse (highlighted on the circuit, shown in the info). */
   private scopeHoverElm: CircuitElm | null = null;
+  /** The element of the slider under the pointer (upstream Scrollbar.onMouseOver). */
+  private sliderHoverElm: CircuitElm | null = null;
   /** Undocked scope whose card is under the mouse (card look), or null. */
   private hoverUndocked: ScopeElm | null = null;
   /** Play feedback animations (not when the user prefers reduced motion). */
@@ -124,6 +147,7 @@ export class SimController {
     });
     this.circuit.read('');
     this.editor = new Editor(this.circuit, this.makeHost());
+    this.annotations.onChange = () => this.publishTeach();
     this.editor.history.onChange = () => this.publishEditor();
     const stored = readClipboard();
     if (stored !== null) this.editor.setClipboard(stored);
@@ -133,15 +157,23 @@ export class SimController {
       AudioOutputElm.confirmAdjustTimestep = (m) => window.confirm(m);
       AudioOutputElm.notify = (m) => window.alert(m);
       AudioOutputElm.player = playSamples;
-      // the subcircuit editors are not built yet (PROGRESS.md open issues)
-      const later = () => window.alert('Editing subcircuits is not available yet.');
       CustomCompositeElm.hooks = {
-        editPinLayout: later,
-        viewComponents: later,
-        editModel: later,
-        alert: (m) => window.alert(m),
+        editPinLayout: (e) => this.editPinLayout(e),
+        viewComponents: (e) => this.viewComponents(e),
+        editModel: (e) => this.editSubcircuitModel(e),
+        alert: (m) => window.alert(t(m)),
       };
-      CustomLogicElm.editModel = () => window.alert('Editing logic models is not available yet.');
+      const lib = modelsFor(this.circuit.sim).composite;
+      try {
+        lib.storage = window.localStorage;
+        lib.loadModelsFromStorage(this.circuit.sim);
+      } catch {
+        // storage disabled: models last for the session
+      }
+      modelEditor.open = (req) => {
+        this.modelRequest = req;
+        useApp.setState({ dialog: 'model' });
+      };
       DataRecorderElm.download = (name, text) => download(name, text, 'text/plain');
     }
   }
@@ -154,6 +186,12 @@ export class SimController {
    */
   load(text: string, title: string, running = true, undoable = false): boolean {
     const history = this.editor.history;
+    // a new circuit ends any model editing (upstream resetEditingContext)
+    if (this.contextStack.length > 0) {
+      this.contextStack.length = 0;
+      this.circuit.keepLocalModels = false;
+      history.clear();
+    }
     if (undoable) history.begin('Open');
     else history.cancel();
     try {
@@ -179,6 +217,7 @@ export class SimController {
   }
 
   private afterLoad(title: string, running: boolean, fit = true): void {
+    this.viewStack = [];
     const o = this.circuit.options;
     useApp.setState({
       title,
@@ -197,10 +236,13 @@ export class SimController {
     this.lastFrame = 0;
     this.renderer?.setElements(this.circuit.elements);
     this.editor.circuitReplaced();
+    this.sliderHoverElm = null;
+    this.slidersChanged();
     if (fit) this.needsFit = true;
     this.resize();
     this.publishEditor(true);
     this.publishStatus(true);
+    this.publishSubcircuits();
   }
 
   /** Upstream reset button: restart the simulation from t = 0. */
@@ -381,6 +423,7 @@ export class SimController {
       r.circuitHeight = this.circuitHeight();
       r.render(frame);
       this.drawScopes();
+      this.drawAnnotations();
       this.frames++;
     }
     this.publishStatus(false);
@@ -431,9 +474,14 @@ export class SimController {
   /** The element list or an element changed: analyze again (upstream `needAnalyze`). */
   circuitChanged(): void {
     this.circuit.removeUnusedScopeElms();
+    this.circuit.pruneAdjustables();
+    this.slidersChanged();
     this.circuit.sim.setElements(this.circuit.elements);
     if (this.renderer) {
-      this.renderer.elementsChanged(this.circuit.elements);
+      const viewed = this.viewStack.at(-1);
+      this.renderer.elementsChanged(
+        viewed === undefined ? this.circuit.elements : viewed.buildDisplayElmList(),
+      );
       this.renderer.stopElm = null;
     }
     this.unsavedChanges = true;
@@ -461,7 +509,7 @@ export class SimController {
     const prev = useApp.getState().editor;
     const r = this.renderer;
     if (r) {
-      r.hovered = ed.mouseElm ?? this.scopeHoverElm;
+      r.hovered = ed.mouseElm ?? this.scopeHoverElm ?? this.sliderHoverElm;
       r.pending = ed.dragElm;
       r.selectionRect = ed.selectedArea;
     }
@@ -475,6 +523,7 @@ export class SimController {
       canRedo: ed.history.canRedo,
       canPaste: ed.hasClipboard,
       revision: prev.revision + (propertiesChanged ? 1 : 0),
+      moving: ed.isMoving,
     };
     if (
       next.addClass !== prev.addClass ||
@@ -485,7 +534,8 @@ export class SimController {
       next.canUndo !== prev.canUndo ||
       next.canRedo !== prev.canRedo ||
       next.canPaste !== prev.canPaste ||
-      next.revision !== prev.revision
+      next.revision !== prev.revision ||
+      next.moving !== prev.moving
     )
       useApp.setState({ editor: next });
   }
@@ -646,13 +696,17 @@ export class SimController {
     const mgr = this.circuit.scopes;
     mgr.look = this.theme.style.scopeLook;
     mgr.compact = this.cssWidth < COMPACT_WIDTH;
-    const infoWidth = mgr.compact ? 0 : INFO_WIDTH;
+    // the card look's info card holds fixed-width values in the monospace font ("time step =
+    // 5.000 μs" needs 23 characters), so it gets more room than upstream's 160 px, and more again
+    // for a language whose "time step = " is longer
+    const extra = Math.max(0, t('time step = ').length - 12) * MONO_CHAR_WIDTH;
+    const infoWidth = mgr.compact ? 0 : mgr.look === 'cards' ? CARD_INFO_WIDTH + extra : INFO_WIDTH;
     const before = mgr.scopeCount;
     mgr.setupScopes(this.scopeArea(), infoWidth);
     // removing the last scope gives its room back to the circuit
     if (mgr.scopeCount !== before) mgr.setupScopes(this.scopeArea(), infoWidth);
     mgr.dialogShowing = useApp.getState().dialog !== null;
-    mgr.mouseElm = this.editor.mouseElm ?? this.scopeHoverElm;
+    mgr.mouseElm = this.editor.mouseElm ?? this.scopeHoverElm ?? this.sliderHoverElm;
     mgr.cursorScope = null;
     mgr.cursorTime = -1;
     mgr.cursorSnap = null;
@@ -684,18 +738,26 @@ export class SimController {
     const ed = this.editor;
     const mgr = this.circuit.scopes;
     const sim = this.circuit.sim;
-    const elm = ed.mouseElm ?? this.scopeHoverElm;
+    const elm = ed.mouseElm ?? this.scopeHoverElm ?? this.sliderHoverElm;
     const arr: string[] = [];
-    if (elm !== null) {
-      if (elm === ed.mouseElm && ed.mousePost >= 0)
-        arr.push('V = ' + getUnitText(elm.getPostVoltage(ed.mousePost), 'V'));
-      else elm.getInfo(arr);
-    } else if (mgr.scopeCount > 0 && !mgr.compact) {
-      arr[0] = 't = ' + getTimeText(sim.t);
-      const timerate = 160 * this.circuit.getIterCount() * sim.timeStep;
-      if (timerate >= 0.1) arr[0] += ' (' + showFormat(timerate) + 'x)';
-      arr[1] = 'time step = ' + getTimeText(sim.timeStep);
-    }
+    // every value keeps its width as it changes (owner's rule), in the monospace info font
+    withFixedWidthValues(() => {
+      if (elm !== null) {
+        if (elm === ed.mouseElm && ed.mousePost >= 0)
+          arr.push('V = ' + getUnitText(elm.getPostVoltage(ed.mousePost), 'V'));
+        else {
+          elm.getInfo(arr);
+          // upstream translates the first two lines (UIManager)
+          if (typeof arr[0] === 'string') arr[0] = t(arr[0]);
+          if (typeof arr[1] === 'string') arr[1] = t(arr[1]);
+        }
+      } else if (mgr.scopeCount > 0 && !mgr.compact) {
+        arr[0] = 't = ' + getTimeText(sim.t);
+        const timerate = 160 * this.circuit.getIterCount() * sim.timeStep;
+        if (timerate >= 0.1) arr[0] += ' (' + showFormat(timerate).trimStart().padStart(8) + 'x)';
+        arr[1] = t('time step = ') + getTimeText(sim.timeStep);
+      }
+    });
     // upstream stops at the first empty slot
     const info: string[] = [];
     for (const line of arr) {
@@ -704,7 +766,7 @@ export class SimController {
     }
     if (mgr.scopeCount > 0) {
       const bad = this.renderer?.badConnectionCount ?? 0;
-      if (bad > 0) info.push(`${bad} bad connection${bad === 1 ? '' : 's'}`);
+      if (bad > 0) info.push(bad + t(bad === 1 ? ' bad connection' : ' bad connections'));
     }
     return info;
   }
@@ -823,11 +885,21 @@ export class SimController {
   /** Element menu: View in New Scope. */
   viewInScope(elm: CircuitElm): void {
     this.scopeCommand('View in scope', () => this.circuit.scopes.viewInScope(elm));
+    this.showScopeOnPhone();
+  }
+
+  /**
+   * On a phone the property sheet covers the scopes: after putting an element in one, close
+   * the sheet (clear the selection) so the scope can be seen.
+   */
+  private showScopeOnPhone(): void {
+    if (typeof window !== 'undefined' && window.innerWidth < 720) this.editor.clearSelection();
   }
 
   /** Element menu: Add to Existing Scope n. */
   addToScope(n: number, elm: CircuitElm): void {
     this.scopeCommand('Add to scope', () => this.circuit.scopes.addToScope(n, elm));
+    this.showScopeOnPhone();
   }
 
   /** Scope popup menu commands (upstream CommandManager "scopepop"). */
@@ -916,11 +988,17 @@ export class SimController {
     // the first spot on screen that leaves the other undocked scopes uncovered
     const r = this.renderer;
     const others = this.circuit.scopeElms().map((e) => e.box());
+    const panels = this.overlayRects();
     const fits = (p: { x1: number; y1: number }, screen: boolean): boolean => {
       if (screen && r) {
         const tl = r.viewport.toCircuit(0, 0);
         const br = r.viewport.toCircuit(this.cssWidth, this.circuitHeight());
         if (p.x1 < tl.x || p.y1 < tl.y || p.x1 + W > br.x || p.y1 + H > br.y) return false;
+        // nor under a panel floating over the canvas (the sliders)
+        const a = r.viewport.toScreen(p.x1, p.y1);
+        const b = r.viewport.toScreen(p.x1 + W, p.y1 + H);
+        if (panels.some((o) => a.x < o.right && o.left < b.x && a.y < o.bottom && o.top < b.y))
+          return false;
       }
       return !others.some((o) => p.x1 < o.x2 && o.x1 < p.x1 + W && p.y1 < o.y2 && o.y1 < p.y1 + H);
     };
@@ -928,6 +1006,22 @@ export class SimController {
     const x1 = spot?.x1 ?? right;
     const y1 = spot?.y1 ?? above;
     return { x1, y1, x2: x1 + UNDOCKED_WIDTH, y2: y1 + UNDOCKED_HEIGHT };
+  }
+
+  /** Panels floating over the canvas (the sliders), in canvas coordinates. */
+  private overlayRects(): { left: number; top: number; right: number; bottom: number }[] {
+    const canvas = this.renderer?.canvas;
+    if (!canvas) return [];
+    const c = canvas.getBoundingClientRect();
+    return [...document.querySelectorAll('[data-canvas-overlay]')].map((el) => {
+      const b = el.getBoundingClientRect();
+      return {
+        left: b.left - c.left,
+        top: b.top - c.top,
+        right: b.right - c.left,
+        bottom: b.bottom - c.top,
+      };
+    });
   }
 
   private newScopeElm(elm: CircuitElm): ScopeElm | null {
@@ -963,6 +1057,7 @@ export class SimController {
       });
     }
     this.circuitChanged();
+    this.showScopeOnPhone();
   }
 
   /** Scope menu: Undock Scope. The docked scope moves onto the circuit, beside what it shows. */
@@ -1067,7 +1162,431 @@ export class SimController {
 
   applyEdit(e: CircuitElm, n: number, ei: EditInfo): void {
     this.editor.history.record('Edit', () => e.setEditValue(n, ei));
+    // upstream EditDialog.apply: a slider on this value moves to it
+    if (ei.error === null) findAdjustable(this.circuit.adjustables, e, n)?.setSliderValue(ei.value);
     this.circuitChanged();
+  }
+
+  // ---- keyboard selection ------------------------------------------------------------------
+
+  /**
+   * Select the next (or previous) element in circuit order, for keyboard users (`]` and `[`):
+   * brings it into view and tells screen readers what it is.
+   */
+  selectNext(dir: 1 | -1): void {
+    const els = this.circuit.elements;
+    if (els.length === 0) return;
+    const cur = this.editor.selectedElements();
+    const at = cur.length === 1 && cur[0] ? els.indexOf(cur[0]) : -1;
+    const i = at < 0 ? (dir > 0 ? 0 : els.length - 1) : (at + dir + els.length) % els.length;
+    const e = els[i];
+    if (e === undefined) return;
+    this.editor.select(e);
+    this.renderer?.reveal(e);
+    this.publishEditor();
+    useApp.setState({ announcement: `${describeElement(e)}. ${i + 1} of ${els.length}.` });
+  }
+
+  private keyboardMenuElm: CircuitElm | null = null;
+
+  /** Open the element menu on the selected element (keyboard). Returns whether it opened. */
+  openMenuAtSelection(): boolean {
+    const r = this.renderer;
+    const e = this.editor.selectedElements()[0];
+    if (!r || e === undefined) return false;
+    r.reveal(e);
+    this.keyboardMenuElm = e;
+    const mid = r.viewport.toScreen((e.x + e.x2) / 2, (e.y + e.y2) / 2);
+    const rect = r.canvas.getBoundingClientRect();
+    r.canvas.dispatchEvent(
+      new MouseEvent('contextmenu', {
+        bubbles: true,
+        cancelable: true,
+        clientX: rect.left + mid.x,
+        clientY: rect.top + mid.y,
+      }),
+    );
+    return true;
+  }
+
+  // ---- sliders -------------------------------------------------------------------------------
+
+  /** The sliders to show (upstream's side panel), rebuilt on each call. */
+  sliders(): SliderEntry[] {
+    return sliderEntries(this.circuit.elements, this.circuit.adjustables, () => {
+      this.circuit.sim.analyzeFlag = true;
+      this.unsavedChanges = true;
+    });
+  }
+
+  /** Tell the slider panel to read the sliders again. */
+  slidersChanged(): void {
+    useApp.setState((s) => ({ sliderRevision: s.sliderRevision + 1 }));
+  }
+
+  /** A slider drag starts: everything until it ends is one undoable edit. */
+  beginSliderDrag(): void {
+    this.editor.history.begin('Slider');
+  }
+
+  setSlider(entry: SliderEntry, position: number): void {
+    if (!this.editor.history.inEdit) this.editor.history.begin('Slider');
+    entry.set(position);
+    this.editor.history.touch();
+    this.slidersChanged();
+    this.publishEditor(true);
+  }
+
+  endSliderDrag(): void {
+    this.editor.history.commit();
+    this.publishEditor();
+  }
+
+  /** Hovering a slider highlights its element and shows its info (upstream). */
+  setSliderHover(elm: CircuitElm | null): void {
+    this.sliderHoverElm = elm;
+    if (this.renderer) this.renderer.hovered = this.editor.mouseElm ?? this.scopeHoverElm ?? elm;
+  }
+
+  /** Element menu "Sliders…" is offered (upstream MouseManager.sliderItemEnabled). */
+  canAddSliders(elm: CircuitElm): boolean {
+    // prevent confusion: these have sliders of their own
+    if (elm instanceof VarRailElm || elm instanceof PotElm) return false;
+    for (let i = 0; ; i++) {
+      const ei = elm.getEditInfo(i);
+      if (ei === null) return false;
+      if (ei.canCreateAdjustable()) return true;
+    }
+  }
+
+  // ---- teaching tools: pencil, laser and eraser (not upstream; never saved) ---------------------
+
+  /** Strokes and the laser trail drawn over the circuit and scopes. */
+  readonly annotations = new AnnotationLayer();
+
+  private drawAnnotations(): void {
+    const r = this.renderer;
+    const a = this.annotations;
+    if (!r || (a.strokes.length === 0 && !a.active)) return;
+    const ctx = r.canvas.getContext('2d');
+    if (ctx === null) return;
+    a.draw(ctx, r.viewport, window.devicePixelRatio || 1, r.theme, performance.now());
+  }
+
+  private publishTeach(): void {
+    const a = this.annotations;
+    useApp.setState((s) => ({
+      teach: { ...s.teach, strokes: a.strokes.length, canUndo: a.canUndo },
+    }));
+  }
+
+  /** Pick a teaching tool, or null to go back to editing. */
+  setTeachTool(tool: TeachTool | null): void {
+    if (tool !== null) {
+      // placing an element and drawing don't mix
+      this.editor.setSelectMode();
+      this.editor.leave();
+    }
+    this.annotations.laserUp();
+    useApp.setState((s) => ({ teach: { ...s.teach, tool } }));
+    this.publishTeach();
+    const c = this.renderer?.canvas;
+    if (c) c.style.cursor = teachCursor(tool);
+  }
+
+  setTeachPen(pen: number): void {
+    useApp.setState((s) => ({
+      teach: { ...s.teach, pen, tool: s.teach.tool === 'laser' ? s.teach.tool : 'pencil' },
+    }));
+    const c = this.renderer?.canvas;
+    if (c) c.style.cursor = teachCursor(useApp.getState().teach.tool);
+  }
+
+  teachUndo(): void {
+    this.annotations.undo();
+  }
+
+  teachClear(): void {
+    this.annotations.clear();
+  }
+
+  // ---- subcircuits (upstream EditCompositeModelDialog, CirSim contexts, SubcircuitBar) --------
+
+  /** What the pin layout dialog edits. */
+  subcircuitDialog: {
+    model: CustomCompositeModel;
+    /** A new model: the dialog asks for its name. */
+    askName: boolean;
+    /** Saving a model's edited circuit: OK goes back to the circuit that uses it. */
+    popContext: boolean;
+  } | null = null;
+
+  /** Circuits set aside while a subcircuit's own circuit is edited (upstream contextStack). */
+  private readonly contextStack: {
+    circuitDump: string;
+    title: string;
+    history: ReturnType<Editor['history']['stash']>;
+    view: { scale: number; offsetX: number; offsetY: number } | null;
+    modelName: string;
+    changedModels: CustomCompositeModel[];
+  }[] = [];
+
+  /** Subcircuits whose parts are shown, outermost first (upstream `subcircuitStack`). */
+  viewStack: CustomCompositeElm[] = [];
+
+  private publishSubcircuits(): void {
+    const lib = modelsFor(this.circuit.sim).composite;
+    useApp.setState({
+      subcircuitBar: {
+        viewing: this.viewStack.map((e) => e.modelName),
+        editing: this.contextStack.at(-1)?.modelName ?? null,
+      },
+      subcircuitModels: lib.getModelList(this.circuit.sim).map((m) => m.name),
+    });
+  }
+
+  /** File > Create Subcircuit: the circuit (or selection) as a new model, then its pin layout. */
+  createSubcircuit(): void {
+    const model = this.circuitAsModel();
+    if (model === null) return;
+    this.openSubcircuitDialog(model, true, false);
+  }
+
+  /** The circuit as a laid-out model without a name, or null (after telling the user why). */
+  private circuitAsModel(): CustomCompositeModel | null {
+    const r = getCircuitAsComposite(this.circuit);
+    // the nodes were numbered for the model: analyze again before running
+    this.circuitChanged();
+    if (!('model' in r)) {
+      if (r.error !== null) window.alert(t(r.error));
+      return null;
+    }
+    const err = layoutNewModel(r.model);
+    if (err !== null) {
+      window.alert(t(err));
+      return null;
+    }
+    return r.model;
+  }
+
+  editPinLayout(e: CustomCompositeElm): void {
+    if (e.model === null) return;
+    this.openSubcircuitDialog(e.model, false, false);
+  }
+
+  private openSubcircuitDialog(model: CustomCompositeModel, askName: boolean, pop: boolean): void {
+    this.subcircuitDialog = { model, askName, popContext: pop };
+    useApp.setState({ dialog: 'subcircuit' });
+  }
+
+  /** Where a model lives: 0 this circuit, 1 this session, 2 saved across sessions. */
+  subcircuitScope(model: CustomCompositeModel): number {
+    const lib = modelsFor(this.circuit.sim).composite;
+    if (lib.isSaved(model)) return 2;
+    if (model.name.length > 0 && lib.globalModelMap.has(model.name)) return 1;
+    return 0;
+  }
+
+  /**
+   * The pin layout dialog's OK (upstream `enterPressed`): name the model, put it where the user
+   * chose, and have every subcircuit refetch its model. Returns an error message, or null.
+   */
+  commitSubcircuit(model: CustomCompositeModel, name: string | null, scope: number): string | null {
+    const lib = modelsFor(this.circuit.sim).composite;
+    if (name !== null) {
+      if (name.length === 0) return 'Please enter a model name.';
+      lib.lastModelName = name;
+      lib.setName(model, name);
+    }
+    const popContext = this.subcircuitDialog?.popContext ?? false;
+    this.subcircuitDialog = null;
+    const place = (): void => {
+      lib.localModelMap.delete(model.name);
+      lib.globalModelMap.delete(model.name);
+      lib.setSaved(model, false);
+      if (scope === 0) lib.localModelMap.set(model.name, model);
+      else if (scope === 1) lib.globalModelMap.set(model.name, model);
+      else lib.setSaved(model, true);
+      lib.sequenceNumber++;
+    };
+    if (!popContext) {
+      this.editor.history.record('Subcircuit', () => {
+        place();
+        this.updateModels();
+        return true;
+      });
+      this.circuitChanged();
+      const top = this.contextStack.at(-1);
+      // remembered, so the change survives going back to the outer circuit
+      if (top !== undefined) top.changedModels.push(model);
+    } else {
+      place();
+      // back to the circuit that uses the model, then put the new model (and any changed deeper
+      // down) in place of the old ones it brings back
+      const changed = this.popContext();
+      changed.push(model);
+      for (const m of changed) {
+        lib.replaceModel(m);
+        this.refreshModels(m.name);
+      }
+      this.contextStack.at(-1)?.changedModels.push(...changed);
+      this.circuitChanged();
+    }
+    this.publishSubcircuits();
+    this.publishEditor(true);
+    return null;
+  }
+
+  /** Upstream `refreshModels`: subcircuits using this model fetch it again. */
+  private refreshModels(modelName: string): void {
+    for (const e of this.circuit.elements)
+      if (e instanceof CustomCompositeElm && e.modelName === modelName) {
+        e.model = null;
+        e.updateModels();
+      }
+  }
+
+  /** Edit Model: open the model's own circuit, setting this one aside. */
+  editSubcircuitModel(e: CustomCompositeElm): void {
+    const model = e.model;
+    if (model === null) return;
+    this.pushContext(model.name);
+    if (model.modelCircuit !== null && model.modelCircuit.length > 0)
+      this.circuit.read(model.modelCircuit);
+    else this.circuit.readElementsDoc(model.elmDoc);
+    this.afterLoad(useApp.getState().title, useApp.getState().running);
+    this.publishSubcircuits();
+  }
+
+  private pushContext(modelName: string): void {
+    const r = this.renderer;
+    this.contextStack.push({
+      circuitDump: this.circuit.dumpXml(),
+      title: useApp.getState().title,
+      history: this.editor.history.stash(),
+      view: r
+        ? { scale: r.viewport.scale, offsetX: r.viewport.offsetX, offsetY: r.viewport.offsetY }
+        : null,
+      modelName,
+      changedModels: [],
+    });
+    this.circuit.keepLocalModels = true;
+  }
+
+  /** Back to the circuit set aside; returns the models changed while it was away. */
+  popContext(): CustomCompositeModel[] {
+    const ctx = this.contextStack.pop();
+    if (ctx === undefined) return [];
+    this.circuit.keepLocalModels = this.contextStack.length > 0;
+    try {
+      this.circuit.read(ctx.circuitDump);
+    } catch {
+      // it was saved by this app a moment ago
+    }
+    this.afterLoad(ctx.title, useApp.getState().running, ctx.view === null);
+    const r = this.renderer;
+    if (r && ctx.view !== null) {
+      r.viewport.scale = ctx.view.scale;
+      r.viewport.offsetX = ctx.view.offsetX;
+      r.viewport.offsetY = ctx.view.offsetY;
+    }
+    this.editor.history.unstash(ctx.history);
+    this.publishSubcircuits();
+    return ctx.changedModels;
+  }
+
+  /** The subcircuit bar's Save (keep the name) and Save Copy (a new name). */
+  saveSubcircuitModel(copy: boolean): void {
+    const modelName = this.contextStack.at(-1)?.modelName;
+    if (modelName === undefined) return;
+    const model = this.circuitAsModel();
+    if (model === null) return;
+    const lib = modelsFor(this.circuit.sim).composite;
+    // look up the old model before setName puts the new one under its name
+    const existing = lib.getModelWithName(modelName, this.circuit.sim);
+    if (!copy) lib.setName(model, modelName);
+    if (existing !== null) preservePinLayout(model, existing);
+    this.openSubcircuitDialog(model, copy, true);
+  }
+
+  /** View Components: show the subcircuit's parts, running, until Back. */
+  viewComponents(e: CustomCompositeElm): void {
+    this.viewStack.push(e);
+    this.showViewed();
+  }
+
+  /** Back from viewing a subcircuit's parts, or from editing a model's circuit. */
+  subcircuitBack(): void {
+    if (this.viewStack.length > 0) {
+      this.viewStack.pop();
+      this.showViewed();
+    } else this.popContext();
+  }
+
+  private showViewed(): void {
+    const top = this.viewStack.at(-1);
+    const list = top === undefined ? this.circuit.elements : top.buildDisplayElmList();
+    this.editor.clearSelection();
+    this.editor.leave();
+    this.renderer?.setElements(list);
+    this.needsFit = true;
+    this.publishSubcircuits();
+    this.publishEditor();
+  }
+
+  /** Subcircuit Manager: the models a user can delete (not built-in ones). */
+  userSubcircuitModels(): CustomCompositeModel[] {
+    return modelsFor(this.circuit.sim)
+      .composite.getModelList(this.circuit.sim)
+      .filter((m) => !m.builtin);
+  }
+
+  /** Subcircuit Manager's Delete: forget the model here, in this session and in storage. */
+  deleteSubcircuitModel(model: CustomCompositeModel): void {
+    modelsFor(this.circuit.sim).composite.remove(model);
+    this.publishSubcircuits();
+  }
+
+  /** The model the model dialog edits. */
+  modelRequest: ModelEditRequest | null = null;
+
+  /**
+   * Change a model (the model dialog) as one undoable edit, then have every element refetch its
+   * model (upstream `CirSim.updateModels`). `fn` returns false when it changed nothing.
+   */
+  editModel(fn: () => boolean): void {
+    this.editor.history.record('Edit model', () => {
+      if (!fn()) return false;
+      this.updateModels();
+      return true;
+    });
+    this.circuitChanged();
+    // upstream resets the element's dialog when the model dialog closes
+    this.publishEditor(true);
+  }
+
+  /** Upstream `CirSim.updateModels`: every element refetches its model by name. */
+  updateModels(): void {
+    for (const e of this.circuit.elements) (e as { updateModels?: () => void }).updateModels?.();
+  }
+
+  /** The element the Sliders dialog edits. */
+  sliderDialogElm: CircuitElm | null = null;
+
+  openSliderDialog(elm: CircuitElm): void {
+    this.sliderDialogElm = elm;
+    useApp.setState({ dialog: 'sliders' });
+  }
+
+  /** Replace the circuit's sliders with what `build` returns (the Sliders dialog), undoably. */
+  setAdjustables(build: () => Adjustable[]): void {
+    this.editor.history.record('Sliders', () => {
+      this.circuit.adjustables = reorderAdjustables(build());
+      return true;
+    });
+    this.unsavedChanges = true;
+    this.slidersChanged();
+    this.publishEditor();
   }
 
   /** Simulation settings (upstream EditOptions time step fields), undoable, then re-analyze. */
@@ -1379,11 +1898,76 @@ export class SimController {
       split = null;
     };
 
+    // Teaching tools: while one is picked, the first finger, pen or left button draws (or points,
+    // or erases) instead of editing; a second finger cancels the stroke and pinches as usual.
+    let teachId: number | null = null;
+    const teachDown = (e: PointerEvent, p: { x: number; y: number }): boolean => {
+      const { tool, pen } = useApp.getState().teach;
+      const r = this.renderer;
+      if (tool === null || !r) return false;
+      if (teachId !== null) {
+        if (e.pointerType !== 'touch') return true;
+        // a second finger: this was a pinch, not a stroke
+        if (tool === 'pencil') this.annotations.cancelStroke();
+        else if (tool === 'eraser') this.annotations.endErase();
+        else this.annotations.laserUp();
+        teachId = null;
+        return false;
+      }
+      if (e.button !== 0) return false;
+      const c = r.viewport.toCircuit(p.x, p.y);
+      const now = performance.now();
+      if (tool === 'pencil') this.annotations.beginStroke(c, pen, r.viewport.scale);
+      else if (tool === 'eraser') this.annotations.eraseAt(c, r.viewport.scale);
+      else this.annotations.laserTo(c, now);
+      teachId = e.pointerId;
+      // remembered so a second finger becomes a pinch
+      if (e.pointerType === 'touch') touches.set(e.pointerId, p);
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {
+        // already released
+      }
+      e.preventDefault();
+      return true;
+    };
+    const teachMove = (e: PointerEvent, p: { x: number; y: number }): boolean => {
+      const tool = useApp.getState().teach.tool;
+      const r = this.renderer;
+      if (tool === null || !r) return false;
+      if (e.pointerType === 'touch') touches.set(e.pointerId, p);
+      const c = r.viewport.toCircuit(p.x, p.y);
+      if (teachId === e.pointerId) {
+        if (tool === 'pencil') this.annotations.extendStroke(c);
+        else if (tool === 'eraser') this.annotations.eraseAt(c, r.viewport.scale);
+        else this.annotations.laserTo(c, performance.now());
+        return true;
+      }
+      // a mouse points with the laser without pressing a button
+      if (tool === 'laser' && e.pointerType === 'mouse' && teachId === null) {
+        this.annotations.laserTo(c, performance.now());
+        return true;
+      }
+      // a pinch goes on as usual; hovering does nothing while drawing
+      return teachId === null && e.pointerType !== 'touch';
+    };
+    const teachUp = (e: PointerEvent): boolean => {
+      if (teachId !== e.pointerId) return false;
+      teachId = null;
+      touches.delete(e.pointerId);
+      const tool = useApp.getState().teach.tool;
+      this.annotations.endStroke();
+      this.annotations.endErase();
+      if (tool !== 'laser' || e.pointerType !== 'mouse') this.annotations.laserUp();
+      if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+      return true;
+    };
     const down = (e: PointerEvent): void => {
       if (e.button === 2) return; // the context menu handles it
       canvas.focus({ preventScroll: true });
       const p = local(e);
       this.mouse = p;
+      if (teachDown(e, p)) return;
       if (scopePinchDown(e, p)) return;
       if (leaderDown(e, p)) return;
       if (
@@ -1416,9 +2000,14 @@ export class SimController {
       const touchPan =
         e.pointerType === 'touch' &&
         ed.mouseMode === MouseMode.SELECT &&
+        !useApp.getState().boxSelect &&
         ed.pick(g.x, g.y).elm === null;
       joinedBefore = this.renderer?.connectionKeys() ?? null;
-      const res = ed.pointerDown(g.x, g.y, mods(e), e.button === 1 || touchPan);
+      // a subcircuit's parts can be looked at, not edited
+      const res =
+        this.viewStack.length > 0
+          ? 'pan'
+          : ed.pointerDown(g.x, g.y, mods(e), e.button === 1 || touchPan);
       if (res === 'pan') pan = { x: p.x, y: p.y, id: e.pointerId };
       gestureId = e.pointerId;
       try {
@@ -1436,6 +2025,7 @@ export class SimController {
       if (!r) return;
       const p = local(e);
       this.mouse = p;
+      if (teachMove(e, p)) return;
       if (split === e.pointerId) {
         const f = 1 - p.y / Math.max(1, this.cssHeight);
         this.scopeHeightFraction = Math.min(0.9, Math.max(0.1, f));
@@ -1539,11 +2129,12 @@ export class SimController {
       }
       const g = grid(p);
       if (ed.isDragging && gestureId === e.pointerId) ed.pointerDrag(g.x, g.y, mods(e));
-      else if (!ed.isDragging) ed.hover(g.x, g.y);
+      else if (!ed.isDragging && this.viewStack.length === 0) ed.hover(g.x, g.y);
       this.publishEditor();
       updateCursor(g.x, g.y);
     };
     const up = (e: PointerEvent): void => {
+      if (teachUp(e)) return;
       const drag = this.leaderDrag;
       if (drag !== null && drag.id === e.pointerId) {
         this.leaderDrag = null;
@@ -1598,6 +2189,8 @@ export class SimController {
       updateCursor(g.x, g.y);
     };
     const leave = (e: PointerEvent): void => {
+      if (e.pointerId !== teachId && useApp.getState().teach.tool === 'laser')
+        this.annotations.laserTo(null, performance.now());
       if (gestureId !== null || split !== null || scopeGesture !== null) return; // captured
       this.mouse = null;
       this.splitterHot = false;
@@ -1640,6 +2233,10 @@ export class SimController {
       } else r.viewport.pan(-dx, -dy);
     };
     const contextMenu = (e: MouseEvent): void => {
+      if (this.viewStack.length > 0) {
+        e.preventDefault();
+        return;
+      }
       // the browser's own long-press menu event: same as ours, so the timer is not needed
       if (press !== null) {
         const id = press.id;
@@ -1671,14 +2268,17 @@ export class SimController {
         this.publishEditor();
         return;
       }
-      // pick what is under the mouse now (a touch long-press has no hover before it)
+      // pick what is under the mouse now (a touch long-press has no hover before it), or the
+      // selected element for a menu opened from the keyboard
       const g = grid(lp);
       ed.hover(g.x, g.y);
-      this.menuElm = ed.mouseElm;
+      this.menuElm = this.keyboardMenuElm ?? ed.mouseElm;
+      this.keyboardMenuElm = null;
       this.menuPos = g;
       this.publishEditor();
     };
     const dblclick = (e: MouseEvent): void => {
+      if (useApp.getState().teach.tool !== null) return;
       const lp = local(e);
       const u = this.undockedAt(lp.x, lp.y);
       if (u !== null) {
@@ -1694,9 +2294,15 @@ export class SimController {
           this.openScopeProperties(s);
         return;
       }
+      if (this.viewStack.length > 0) return;
       const g = grid(lp);
       const elm = ed.pick(g.x, g.y).elm;
       if (elm === null || elm instanceof SwitchElm) return;
+      // upstream: a subcircuit with part positions opens to show them
+      if (elm instanceof CustomCompositeElm && elm.canViewComponents()) {
+        this.viewComponents(elm);
+        return;
+      }
       ed.select(elm);
       useApp.setState({ inspectorFocus: useApp.getState().inspectorFocus + 1 });
     };
@@ -1768,6 +2374,13 @@ export class SimController {
 }
 
 /** Size of a new undocked scope (circuit units). */
+/** The canvas cursor for a teaching tool (the laser draws its own dot). */
+function teachCursor(tool: TeachTool | null): string {
+  if (tool === 'pencil' || tool === 'eraser') return 'crosshair';
+  if (tool === 'laser') return 'none';
+  return 'default';
+}
+
 const UNDOCKED_WIDTH = 224;
 const UNDOCKED_HEIGHT = 144;
 
@@ -1782,6 +2395,23 @@ function scopeAnchor(elm: CircuitElm, post = -1): { x: number; y: number } {
   if (b === undefined) return { x: (elm.x + elm.x2) / 2, y: (elm.y + elm.y2) / 2 };
   return { x: (b.x1 + b.x2) / 2, y: (b.y1 + b.y2) / 2 };
 }
+
+/** An element in words for screen readers: its info lines, without the fixed-width padding. */
+export function describeElement(e: CircuitElm): string {
+  const arr: string[] = [];
+  e.getInfo(arr);
+  const lines: string[] = [];
+  for (const l of arr) {
+    if (typeof l !== 'string') break;
+    lines.push(l.replace(/\s+/g, ' ').trim());
+  }
+  return lines.join(', ') || e.getClassName();
+}
+
+/** Width of the info card beside docked scopes in the card look. */
+const CARD_INFO_WIDTH = 200;
+/** Advance of one character of the 12 px monospace info font (about 0.6 em). */
+const MONO_CHAR_WIDTH = 7.5;
 
 /** Natural log of the zoom factor for one mouse wheel notch. */
 const WHEEL_ZOOM_PER_NOTCH = 0.08;
