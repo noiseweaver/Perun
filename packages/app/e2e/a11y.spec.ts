@@ -35,6 +35,9 @@ test('the main view, property panel and sliders have no axe violations', async (
 
 test('every built-in theme passes in the main view', async ({ page }) => {
   test.setTimeout(180_000);
+  // no transitions: axe would otherwise sometimes catch a button halfway between the previous
+  // theme's colors and this one's (Catppuccin Mocha to Latte failed that way in CI)
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await ready(page);
   await page.evaluate(() => window.circuitjsNext?.controller.setRunning(false));
   for (const id of Object.keys(BUILTIN_THEMES)) {

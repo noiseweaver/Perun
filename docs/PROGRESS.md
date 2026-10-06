@@ -73,7 +73,7 @@
 - Twelve palette themes (PR #15): Solarized Light, Dracula, Monokai, Tokyo Night, Catppuccin Mocha
   and Latte, Rosé Pine, Everforest Dark, GitHub Dark and Light, Obsidian Dark and Light.
 - Current dots hide where |I| < 1 pA while running (PR #17, DEVIATIONS.md), and the iPhone top gap
-  is 28 px.
+  is 28 px (18 px since: 28 cleared the frost but left too tall a gap).
 - Options submenus (Language, Theme, Default text box font) unfold inside the menu on phones
   instead of running off the screen.
 - Catalan: the app's own catalog in `packages/app/locales/locale_ca.txt` (upstream ships none),
@@ -84,6 +84,8 @@
 - Docked scope cards drag by their title (with two or more scopes): drop on a card's top or bottom
   edge to stack, its left or right edge for a new column, its middle to combine. Undoable.
   `ScopeManager.moveScope`; the Stack, Unstack and Combine commands stay.
+- Example circuit names follow the interface language on phones too (the Circuits sheet, its
+  search, which also matches English) and in the app bar title, from upstream's catalogs.
 - `style.roundness` (0 to 2) in themes, with a slider in the theme editor: scales the Material
   shape tokens and the scope cards' corners, large radii faster than small ones; below 1 round
   buttons become rounded squares.
@@ -91,7 +93,7 @@
 ### Open issues
 
 - The iOS height fix still needs checking on a real iPhone after the deploy.
-- The 28 px top gap needs checking on an iPhone.
+- The 18 px top gap needs checking on an iPhone (12 px showed the frost).
 - Docked scopes in the classic look have no header, so they rearrange only through the menu.
 
 ## 2026-10-05: Phase 9 (polish and release)
