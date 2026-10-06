@@ -43,6 +43,8 @@ export interface FrameState {
   fields: FieldOptions;
   /** Grid spacing in circuit units (16, or 8 with the small grid option). */
   gridSize: number;
+  /** Size of component value text, as a fraction of 12 px (Options > Value text size). */
+  valueScale: number;
 }
 
 export const DEFAULT_FRAME: FrameState = {
@@ -59,6 +61,7 @@ export const DEFAULT_FRAME: FrameState = {
   junctionDots: false,
   fields: NO_FIELDS,
   gridSize: 16,
+  valueScale: 1,
 };
 
 /** Radius of a junction dot, larger than a post so it reads as a schematic junction. */
@@ -309,6 +312,7 @@ export class CircuitRenderer {
       voltageColors: frame.voltageColors,
       voltageRange: frame.voltageRange,
       dots: frame.showDots && frame.running,
+      valueScale: frame.valueScale,
     };
 
     // under the elements, so the parts stay readable

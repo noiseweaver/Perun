@@ -461,6 +461,7 @@ export class SimController {
         junctionDots: state.settings.junctionDots,
         fields: state.settings.fields,
         gridSize: sim.gridSize,
+        valueScale: state.settings.valueSize,
       };
       r.circuitHeight = this.circuitHeight();
       r.render(frame);
@@ -2292,11 +2293,6 @@ export class SimController {
         else this.annotations.laserTo(c, performance.now());
         return true;
       }
-      // a mouse points with the laser without pressing a button
-      if (tool === 'laser' && e.pointerType === 'mouse' && teachId === null) {
-        this.annotations.laserTo(c, performance.now());
-        return true;
-      }
       // a pinch goes on as usual; hovering does nothing while drawing
       return teachId === null && e.pointerType !== 'touch';
     };
@@ -2304,10 +2300,10 @@ export class SimController {
       if (teachId !== e.pointerId) return false;
       teachId = null;
       touches.delete(e.pointerId);
-      const tool = useApp.getState().teach.tool;
       this.annotations.endStroke();
       this.annotations.endErase();
-      if (tool !== 'laser' || e.pointerType !== 'mouse') this.annotations.laserUp();
+      // the laser points only while the button is held (Gady, 2026-10-06)
+      this.annotations.laserUp();
       if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
       return true;
     };
@@ -2750,10 +2746,9 @@ export class SimController {
 }
 
 /** Size of a new undocked scope (circuit units). */
-/** The canvas cursor for a teaching tool (the laser draws its own dot). */
+/** The canvas cursor for a teaching tool. */
 function teachCursor(tool: TeachTool | null): string {
-  if (tool === 'pencil' || tool === 'eraser') return 'crosshair';
-  if (tool === 'laser') return 'none';
+  if (tool !== null) return 'crosshair';
   return 'default';
 }
 

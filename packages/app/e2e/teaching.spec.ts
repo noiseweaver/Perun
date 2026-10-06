@@ -118,15 +118,22 @@ test('the laser pointer leaves a trail that fades', async ({ page }) => {
   await open(page);
   await page.getByTestId('draw-toggle').click();
   await page.getByTestId('teach-laser').click();
+  // pen colors are for the pencil only
+  await expect(page.getByTestId('teach-pen-0')).toHaveCount(0);
   const a = await at(page, 120, 160);
   const b = await at(page, 232, 160);
-  await page.mouse.move(a.x, a.y);
-  await page.mouse.move(b.x, b.y, { steps: 10 });
   const active = (): Promise<boolean> =>
     page.evaluate(() => window.circuitjsNext?.controller.annotations.active ?? false);
+  // moving the mouse alone doesn't point
+  await page.mouse.move(a.x, a.y);
+  await page.mouse.move(b.x, b.y, { steps: 10 });
+  expect(await active()).toBe(false);
+  // dragging with the button held does
+  await page.mouse.down();
+  await page.mouse.move(a.x, a.y, { steps: 10 });
   expect(await active()).toBe(true);
-  // off the canvas, the head goes and the trail fades out
-  await page.mouse.move(2, 2);
+  // let go, and the head goes and the trail fades out
+  await page.mouse.up();
   await expect.poll(active, { timeout: 3000 }).toBe(false);
   // pointing never draws a stroke
   expect(

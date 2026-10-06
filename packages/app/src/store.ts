@@ -13,6 +13,14 @@ import { ALL_FIELDS, NO_FIELDS, type FieldOptions } from '@circuitjs-next/render
 import { create } from 'zustand';
 import type { ExampleList } from './examples.ts';
 
+/** Options > Value text size: how big component values are drawn, against upstream's 12 px. */
+export const VALUE_SIZES = [
+  { scale: 0.75, label: 'Small' },
+  { scale: 0.875, label: 'Medium' },
+  { scale: 1, label: 'Large' },
+  { scale: 1.25, label: 'Extra large' },
+] as const;
+
 /** Display settings that belong to the user, not the circuit (kept in localStorage). */
 export interface UserSettings {
   /** A built-in theme id, or `user:` and the id of a theme in the library (themes.ts). */
@@ -26,6 +34,8 @@ export interface UserSettings {
   junctionDots: boolean;
   /** Options > Visualizations: field, charge and energy overlays. */
   fields: FieldOptions;
+  /** Size of component value text on the canvas, as a fraction of 12 px (VALUE_SIZES). */
+  valueSize: number;
   /** The mouse wheel over a resistor, capacitor or inductor steps its value (upstream option). */
   wheelEdit: boolean;
   /** Font for text boxes; a display choice, not saved with circuits. */
@@ -188,6 +198,7 @@ function loadSettings(): UserSettings {
     junctionDots: false,
     fields: NO_FIELDS,
     wheelEdit: true,
+    valueSize: 0.875,
     textFont: { family: 'default', bold: false, italic: false },
     language: 'auto',
   };
@@ -218,6 +229,9 @@ function loadSettings(): UserSettings {
       junctionDots: typeof s.junctionDots === 'boolean' ? s.junctionDots : defaults.junctionDots,
       fields: readFields(s) ?? defaults.fields,
       wheelEdit: typeof s.wheelEdit === 'boolean' ? s.wheelEdit : defaults.wheelEdit,
+      valueSize: VALUE_SIZES.some((v) => v.scale === s.valueSize)
+        ? (s.valueSize as number)
+        : defaults.valueSize,
       textFont: readTextFont(s.textFont) ?? defaults.textFont,
       language: typeof s.language === 'string' ? s.language : defaults.language,
     };

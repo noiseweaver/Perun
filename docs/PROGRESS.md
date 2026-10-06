@@ -45,6 +45,12 @@
   values shown by the mouse (upstream's Edit Values With Mouse Wheel, now on by default; see
   DEVIATIONS.md). Tests in packages/app/e2e/panels.spec.ts.
 
+- Gady's follow-ups: X-Y (Lissajous) trails keep fractional points and draw with round caps, so
+  they no longer step from pixel to pixel. A scope leader on a probe drawn without its circle
+  (two stubs, nothing in the middle, as upstream) ends on its + post. The laser points only while
+  the button is held; pen colors show only with the pencil. Options > Value text size (Small,
+  Medium, Large = upstream's 12 px, Extra large; default Medium) scales component values only.
+
 ### Next
 
 - Gady to try the preview artifact and decide whether to keep, change or drop it.

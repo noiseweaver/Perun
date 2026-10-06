@@ -1849,3 +1849,8 @@
 "Power in (absorbed) or out"="Potència entrant (absorbida) o sortint"
 "Diode and MOSFET regions"="Regions del díode i del MOSFET"
 "Depletion region, MOSFET channel"="Zona de deplexió, canal del MOSFET"
+"Value text size"="Mida del text dels valors"
+"Small"="Petita"
+"Medium"="Mitjana"
+"Large"="Gran"
+"Extra large"="Molt gran"

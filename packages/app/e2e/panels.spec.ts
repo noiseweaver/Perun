@@ -120,3 +120,14 @@ test('the scope dialog shows the scope live, and its plot chips switch plots', a
     false,
   );
 });
+
+test('Options > Value text size changes how big component values are drawn', async ({ page }) => {
+  await open(page, LOOP);
+  const size = () =>
+    page.evaluate(() => window.circuitjsNext?.controller.lastFrameState?.valueScale);
+  expect(await size()).toBe(0.875);
+  await page.getByRole('button', { name: 'Options' }).click();
+  await page.getByTestId('menu-value-size').click();
+  await page.getByTestId('value-size-1.25').click();
+  await expect.poll(size).toBe(1.25);
+});

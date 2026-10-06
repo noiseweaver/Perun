@@ -16,7 +16,13 @@ import type { ExampleMenu } from '../examples.ts';
 import { openDialog } from '../commands.ts';
 import { controller } from '../SimController.ts';
 import { openExample } from '../startup.ts';
-import { updateSettings, useApp, type CircuitDisplay, setPaletteOpen } from '../store.ts';
+import {
+  VALUE_SIZES,
+  updateSettings,
+  useApp,
+  type CircuitDisplay,
+  setPaletteOpen,
+} from '../store.ts';
 import { CategoryIcon } from './CategoryIcon.tsx';
 import { CircuitsSheet } from './CircuitsSheet.tsx';
 import { Icon } from './Icon.tsx';
@@ -318,6 +324,7 @@ export function AppBar() {
             <Check on={settings.junctionDots} /> {t('Junction dots')}
           </Menu.CheckboxItem>
           <VisualizationsMenu />
+          <ValueSizeMenu />
           <Menu.CheckboxItem
             className="menu-item"
             checked={settings.conventionalCurrent}
@@ -589,6 +596,31 @@ function VisualizationsMenu() {
 }
 
 /** Options > Language: upstream's catalogs, or the browser's language. */
+/** Options > Value text size: the size of component values on the canvas. */
+function ValueSizeMenu() {
+  const setting = useApp((s) => s.settings.valueSize);
+  return (
+    <OptionsSub label="Value text size" testId="menu-value-size">
+      <Menu.RadioGroup
+        value={String(setting)}
+        onValueChange={(v) => updateSettings({ valueSize: Number(v) })}
+      >
+        {VALUE_SIZES.map((v) => (
+          <Menu.RadioItem
+            key={v.scale}
+            value={String(v.scale)}
+            className="menu-item"
+            onSelect={(e) => e.preventDefault()}
+            data-testid={`value-size-${v.scale}`}
+          >
+            <Check on={setting === v.scale} /> {t(v.label)}
+          </Menu.RadioItem>
+        ))}
+      </Menu.RadioGroup>
+    </OptionsSub>
+  );
+}
+
 function LanguageMenu() {
   const setting = useApp((s) => s.settings.language);
   const choose = (v: string): void => {

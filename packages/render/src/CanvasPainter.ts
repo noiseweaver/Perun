@@ -20,6 +20,8 @@ export interface PaintSettings {
   voltageRange: number;
   /** Draw current dots (circuit option and simulation running). */
   dots: boolean;
+  /** Size of component value text, as a fraction of the 12 px default (user setting). */
+  valueScale?: number;
 }
 
 const UPSTREAM_THICK = 3;
@@ -164,6 +166,9 @@ export class CanvasPainter implements Painter {
   }
 
   fontSize(style?: TextStyle): number {
+    // component values (the value font at its default size) follow the user's value size
+    if (style?.font === 'value' && style.size === undefined)
+      return 12 * (this.settings.valueScale ?? 1);
     return style?.size ?? 12;
   }
 
