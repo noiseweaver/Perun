@@ -7,6 +7,20 @@ import { classic, classicDots } from './classic.ts';
 import { adwaitaDark, gruvboxDark, nord, solarizedDark } from './community.ts';
 import { dark } from './dark.ts';
 import { light } from './light.ts';
+import {
+  catppuccinLatte,
+  catppuccinMocha,
+  dracula,
+  everforestDark,
+  githubDark,
+  githubLight,
+  monokai,
+  obsidianDark,
+  obsidianLight,
+  rosePine,
+  solarizedLight,
+  tokyoNight,
+} from './palettes.ts';
 
 /** Built-in themes by id, in menu order. */
 export const BUILTIN_THEMES: Readonly<Record<string, Theme>> = {
@@ -20,6 +34,18 @@ export const BUILTIN_THEMES: Readonly<Record<string, Theme>> = {
   'solarized-dark': solarizedDark,
   'gruvbox-dark': gruvboxDark,
   'adwaita-dark': adwaitaDark,
+  'solarized-light': solarizedLight,
+  dracula,
+  monokai,
+  'tokyo-night': tokyoNight,
+  'catppuccin-mocha': catppuccinMocha,
+  'catppuccin-latte': catppuccinLatte,
+  'rose-pine': rosePine,
+  'everforest-dark': everforestDark,
+  'github-dark': githubDark,
+  'github-light': githubLight,
+  'obsidian-dark': obsidianDark,
+  'obsidian-light': obsidianLight,
 };
 
 /** The theme a new user sees, and the base for themes that name none. */

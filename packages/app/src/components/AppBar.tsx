@@ -25,6 +25,8 @@ import { promptInstall } from '../pwa.ts';
 import { t, resolveLanguage, setLanguage } from '../i18n.ts';
 import { LANGUAGES } from '@circuitjs-next/elements';
 
+const FIRST_PALETTE_THEME = 'nord';
+
 function ExampleItems({ menu }: { menu: ExampleMenu }) {
   return (
     <>
@@ -477,12 +479,16 @@ function ThemeMenu({ themeInput }: { themeInput: RefObject<HTMLInputElement | nu
         <Menu.SubContent className="menu-content" sideOffset={4} alignOffset={-8}>
           <Menu.RadioGroup value={themeId} onValueChange={selectTheme}>
             {Object.entries(BUILTIN_THEMES).map(([id, th]) => (
-              <Menu.RadioItem key={id} value={id} className="menu-item" data-testid={`theme-${id}`}>
-                <Check on={themeId === id} /> {th.meta.name}
-                {id === DEFAULT_THEME_ID && (
-                  <span className="menu-trailing menu-hint">{t('Default')}</span>
-                )}
-              </Menu.RadioItem>
+              <Fragment key={id}>
+                {/* the themes after editor and app palettes follow the app's own */}
+                {id === FIRST_PALETTE_THEME && <Menu.Separator className="menu-separator" />}
+                <Menu.RadioItem value={id} className="menu-item" data-testid={`theme-${id}`}>
+                  <Check on={themeId === id} /> {th.meta.name}
+                  {id === DEFAULT_THEME_ID && (
+                    <span className="menu-trailing menu-hint">{t('Default')}</span>
+                  )}
+                </Menu.RadioItem>
+              </Fragment>
             ))}
             {library.length > 0 && <Menu.Separator className="menu-separator" />}
             {library.map((th) => (

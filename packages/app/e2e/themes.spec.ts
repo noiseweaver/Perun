@@ -82,6 +82,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('every built-in theme applies', async ({ page }) => {
+  // two dozen themes, each picked through the menu
+  test.setTimeout(120_000);
   await page.goto(`/?cct=${cct(RC)}`);
   for (const [id, t] of Object.entries(BUILTIN_THEMES)) {
     await pickFromThemeMenu(page, `theme-${id}`);
