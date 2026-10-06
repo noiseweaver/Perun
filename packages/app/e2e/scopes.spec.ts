@@ -450,6 +450,17 @@ test.describe('undocked scopes', () => {
     await page.keyboard.press('Control+z');
     expect(await scopeCount(page)).toBe(3);
     expect(await undocked(page)).toHaveLength(0);
+    // and Dock All puts them back too
+    await page.keyboard.press('Control+y');
+    expect(await undocked(page)).toHaveLength(3);
+    await page.getByTestId('scopes-menu').click();
+    await page.getByTestId('scopes-dock-all').click();
+    expect(await scopeCount(page)).toBe(3);
+    expect(await undocked(page)).toHaveLength(0);
+    await expect(page.getByTestId('scopes-menu')).toBeVisible();
+    await page.getByTestId('scopes-menu').click();
+    await expect(page.getByTestId('scopes-dock-all')).toHaveAttribute('data-disabled', '');
+    await page.keyboard.press('Escape');
   });
 
   test('an upstream file with undocked scopes loads them', async ({ page }) => {

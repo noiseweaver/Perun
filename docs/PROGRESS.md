@@ -31,11 +31,12 @@
   nearest what it shows, level with it so its leader runs straight in; crowded cards pack an
   even gap apart in target order so leaders don't cross, and the sides share cards out when one
   fills. Cards get the default size, the view fits, and one undo docks them all again. Running it
-  with everything undocked just tidies the cards.
+  with everything undocked just tidies the cards. Scopes > Dock All puts every undocked scope
+  back in its own column (one undo). Catalan strings for these and the Visualizations menu and
+  legend are in (ca at 100%).
 
 ### Next
 
-- Catalan strings for the new menu and legend entries (`pnpm i18n`).
 - Gady to try the preview artifact and decide whether to keep, change or drop it.
 - Not covered yet: tapped and custom transformers, LEDs and varactors, polarized capacitor plate
   shape.

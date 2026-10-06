@@ -1261,6 +1261,36 @@ export class SimController {
     this.publishEditor();
   }
 
+  /** Scopes menu: Dock All is worth offering (an undocked scope and a free column). */
+  canDockAll(): boolean {
+    return this.circuit.scopeElms().length > 0 && this.circuit.scopes.scopeCount < MAX_SCOPES;
+  }
+
+  /** Scopes menu: Dock All. Every undocked scope goes back into its own column, in order. */
+  dockAll(): void {
+    const mgr = this.circuit.scopes;
+    if (!this.canDockAll()) return;
+    const from = new Map(this.circuit.scopeElms().map((e) => [e.elmScope, { ...e.elmScope.slot }]));
+    this.scopeCommand('Dock all scopes', () => {
+      const docked = new Set<ScopeElm>();
+      for (const u of this.circuit.scopeElms()) {
+        if (mgr.scopeCount >= MAX_SCOPES) break;
+        const s = u.elmScope;
+        s.position = mgr.scopeCount;
+        mgr.scopes.push(s);
+        u.selected = false;
+        docked.add(u);
+      }
+      this.circuit.elements = this.circuit.elements.filter(
+        (e) => !(e instanceof ScopeElm && docked.has(e)),
+      );
+    });
+    for (const [s, slot] of from) this.animateCard(s, slot);
+    if (this.hoverUndocked !== null) this.clearScopeHover();
+    this.circuitChanged();
+    this.publishEditor();
+  }
+
   /** Scope menu on an undocked scope: Dock Scope, into a new column. */
   dockScope(u: ScopeElm): void {
     const mgr = this.circuit.scopes;
