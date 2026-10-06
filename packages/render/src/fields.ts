@@ -90,16 +90,21 @@ export class FieldOverlay {
     const s2 = e.dn / 2 + 4;
     // the field runs from the positive plate to the negative one
     const dir = v > 0 ? 1 : -1;
-    const alpha = 0.3 + 0.7 * level;
-
     c.strokeStyle = palette.theme.circuit.electricField;
     c.fillStyle = palette.theme.circuit.electricField;
     c.lineWidth = 1;
     c.setLineDash([]);
-    c.globalAlpha = alpha;
-    // more lines for a stronger field: 1, 3 or 5
-    const offsets = level < 0.34 ? [0] : level < 0.67 ? [-7, 0, 7] : [-9, -4.5, 0, 4.5, 9];
-    for (const t of offsets) {
+    // more lines for a stronger field: the middle one fades in first, then the pairs either side
+    for (const [t, k] of [
+      [0, 0],
+      [-4.5, 1],
+      [4.5, 1],
+      [-9, 2],
+      [9, 2],
+    ] as const) {
+      const a = fadeIn(level, k, 3);
+      if (a === 0) continue;
+      c.globalAlpha = a;
       c.beginPath();
       c.moveTo(...at(s1 + 1, t));
       c.lineTo(...at(s2 - 1, t));
@@ -107,7 +112,7 @@ export class FieldOverlay {
       arrowHead(c, at(e.dn / 2 - dir * 1.5, t), at(e.dn / 2 + dir * 1.5, t), 1.3);
     }
     // fringing field bulging out past the plate ends
-    c.globalAlpha = alpha * 0.6;
+    c.globalAlpha = 0.6 * fadeIn(level, 2, 3);
     for (const side of [1, -1]) {
       c.beginPath();
       c.moveTo(...at(s1, 12 * side));
@@ -116,15 +121,21 @@ export class FieldOverlay {
     }
 
     // charge marks just outside each plate: up to four, never on the lead
-    const marks = [5, -5, 10, -10].slice(0, Math.max(1, Math.round(level * 4)));
     const pos = palette.theme.circuit.voltage.positive;
     const neg = palette.theme.circuit.voltage.negative;
     const sPlus = v > 0 ? s1 - 4 : s2 + 4;
     const sMinus = v > 0 ? s2 + 4 : s1 - 4;
-    c.globalAlpha = alpha;
     c.lineWidth = 1.2;
     const r = 2;
-    for (const t of marks) {
+    for (const [t, k] of [
+      [5, 0],
+      [-5, 0],
+      [10, 1],
+      [-10, 1],
+    ] as const) {
+      const a = fadeIn(level, k, 2);
+      if (a === 0) continue;
+      c.globalAlpha = a;
       // glyphs stay upright whatever way the capacitor points
       const [px, py] = at(sPlus, t);
       c.strokeStyle = pos;
@@ -173,10 +184,12 @@ export class FieldOverlay {
     c.strokeStyle = palette.theme.circuit.magneticField;
     c.fillStyle = palette.theme.circuit.magneticField;
     c.lineWidth = 1;
-    c.globalAlpha = 0.3 + 0.7 * level;
-    // one, two or three loops on each side as the current grows
-    const loops = level < 0.34 ? 1 : level < 0.67 ? 2 : 3;
-    for (let k = 0; k !== loops; k++) {
+    // up to three loops on each side: the inner one fades in first, the outer ones as the
+    // current grows
+    for (let k = 0; k !== 3; k++) {
+      const alpha = fadeIn(level, k, 3);
+      if (alpha === 0) continue;
+      c.globalAlpha = alpha;
       const h = 11 + 6 * k;
       const over = 5 + 5 * k;
       for (const side of [1, -1]) {
@@ -195,6 +208,15 @@ export class FieldOverlay {
       }
     }
   }
+}
+
+/**
+ * Opacity of the `k`th of `n` staggered marks at `level` (0..1): mark k fades in smoothly while the
+ * level goes from k/n to (k+1)/n, so the picture never jumps as the value changes.
+ */
+export function fadeIn(level: number, k: number, n: number): number {
+  const t = Math.min(1, Math.max(0, level * n - k));
+  return t * t * (3 - 2 * t);
 }
 
 /** A filled arrowhead at `tip`, pointing away from `from`. */
