@@ -23,6 +23,7 @@ import {
   type CircuitDisplay,
   setPaletteOpen,
 } from '../store.ts';
+import { openBode } from './BodeDialog.tsx';
 import { CategoryIcon } from './CategoryIcon.tsx';
 import { CircuitsSheet } from './CircuitsSheet.tsx';
 import { Icon } from './Icon.tsx';
@@ -699,6 +700,8 @@ function ScopesMenuItems() {
         testId="scopes-dock-all"
         onSelect={() => controller.dockAll()}
       />
+      <Menu.Separator className="menu-separator" />
+      <Item label="AC Analysis (Bode Plot)…" testId="scopes-bode" onSelect={() => openBode()} />
     </>
   );
 }

@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
 import { Icon, type IconName } from './Icon.tsx';
+import { canBode, openBode } from './BodeDialog.tsx';
 import { t } from '../i18n.ts';
 
 const MOD = typeof navigator !== 'undefined' && /Mac|iP/.test(navigator.platform) ? '⌘' : 'Ctrl+';
@@ -193,6 +194,14 @@ export function CircuitCanvas() {
                 onSelect={() => controller.viewInUndockedScope(menuElm)}
               />
               <AddToScopeItems elm={menuElm} />
+              {canBode(menuElm) && (
+                <Item
+                  label="AC Analysis (Bode Plot)…"
+                  icon="bode"
+                  testId="ctx-bode"
+                  onSelect={() => openBode(menuElm)}
+                />
+              )}
               {isWire && (
                 <Item
                   label="Split Wire"
