@@ -23,6 +23,8 @@ export interface UserSettings {
   conventionalCurrent: boolean;
   /** Mark every connection: a dot where two ends meet, a larger one where three or more do. */
   junctionDots: boolean;
+  /** Field overlay: charge and electric field on capacitors, magnetic field around inductors. */
+  showFields: boolean;
   /** Font for text boxes; a display choice, not saved with circuits. */
   textFont: TextFont;
   /** Interface language: `auto` (the browser's) or an upstream catalog code (i18n.ts). */
@@ -176,6 +178,7 @@ function loadSettings(): UserSettings {
     showOhm: false,
     conventionalCurrent: true,
     junctionDots: false,
+    showFields: false,
     textFont: { family: 'default', bold: false, italic: false },
     language: 'auto',
   };
@@ -204,6 +207,7 @@ function loadSettings(): UserSettings {
           ? s.conventionalCurrent
           : defaults.conventionalCurrent,
       junctionDots: typeof s.junctionDots === 'boolean' ? s.junctionDots : defaults.junctionDots,
+      showFields: typeof s.showFields === 'boolean' ? s.showFields : defaults.showFields,
       textFont: readTextFont(s.textFont) ?? defaults.textFont,
       language: typeof s.language === 'string' ? s.language : defaults.language,
     };

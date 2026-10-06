@@ -25,6 +25,8 @@ export const highContrast: Theme = {
     text: '#ffffff',
     label: '#ffffff',
     badConnection: '#ff6b6b',
+    electricField: '#00e5ff',
+    magneticField: '#ff9cff',
   },
   scope: {
     background: '#000000',
@@ -70,6 +72,8 @@ export const colorblindSafe: Theme = {
     selection: '#cc79a7',
     hover: '#009e73',
     badConnection: '#d55e00',
+    electricField: '#56b4e9',
+    magneticField: '#cc79a7',
   },
   scope: {
     ...dark.scope,

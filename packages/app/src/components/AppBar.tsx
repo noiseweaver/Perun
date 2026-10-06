@@ -309,6 +309,14 @@ export function AppBar() {
           </Menu.CheckboxItem>
           <Menu.CheckboxItem
             className="menu-item"
+            checked={settings.showFields}
+            onCheckedChange={(v) => updateSettings({ showFields: v })}
+            data-testid="menu-show-fields"
+          >
+            <Check on={settings.showFields} /> {t('Show fields')}
+          </Menu.CheckboxItem>
+          <Menu.CheckboxItem
+            className="menu-item"
             checked={settings.conventionalCurrent}
             onCheckedChange={(v) => updateSettings({ conventionalCurrent: v })}
           >

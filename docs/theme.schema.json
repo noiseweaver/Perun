@@ -123,6 +123,16 @@
           "type": "string",
           "maxLength": 64,
           "description": "Posts that touch an element without connecting to it."
+        },
+        "electricField": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Field lines between capacitor plates (Show fields)."
+        },
+        "magneticField": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Field loops around inductors (Show fields)."
         }
       }
     },

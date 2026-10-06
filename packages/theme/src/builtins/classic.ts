@@ -25,6 +25,8 @@ export const classic: Theme = {
     text: '#ffffff',
     label: '#c0c0c0',
     badConnection: '#ff0000',
+    electricField: '#7070ff',
+    magneticField: '#ff00ff',
   },
   // Scope.java, ScopePlot.java and ScopeTrigger.java colors; traces after the first are
   // upstream's eight colors for repeated plots

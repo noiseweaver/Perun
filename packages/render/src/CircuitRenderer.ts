@@ -18,6 +18,7 @@ import {
 import type { Theme } from '@circuitjs-next/theme';
 import { CanvasPainter } from './CanvasPainter.ts';
 import { DotCounters } from './dots.ts';
+import { FieldOverlay } from './fields.ts';
 import { Palette } from './palette.ts';
 import { Viewport } from './Viewport.ts';
 
@@ -38,6 +39,8 @@ export interface FrameState {
   textFont: TextFont;
   /** Mark points where three or more element ends meet with a solid schematic dot. */
   junctionDots: boolean;
+  /** Draw charge and field lines on capacitors and field loops around inductors. */
+  showFields: boolean;
   /** Grid spacing in circuit units (16, or 8 with the small grid option). */
   gridSize: number;
 }
@@ -54,6 +57,7 @@ export const DEFAULT_FRAME: FrameState = {
   showOhm: false,
   textFont: { family: 'default', bold: false, italic: false },
   junctionDots: false,
+  showFields: false,
   gridSize: 16,
 };
 
@@ -104,6 +108,7 @@ export class CircuitRenderer {
   private readonly painter: CanvasPainter;
   private palette: Palette;
   private readonly dots = new DotCounters();
+  private readonly fields = new FieldOverlay();
   private elements: CircuitElm[] = [];
   private posts: PostInfo = { draw: [], bad: [], junctions: [], joins: [] };
   private cssWidth = 0;
@@ -150,6 +155,7 @@ export class CircuitRenderer {
     this.effects = [];
     this.elements = elements;
     this.dots.clear();
+    this.fields.clear();
     this.hovered = null;
     this.stopElm = null;
     this.posts = this.findPosts();
@@ -297,6 +303,14 @@ export class CircuitRenderer {
       voltageRange: frame.voltageRange,
       dots: frame.showDots && frame.running,
     };
+
+    // under the elements, so the parts stay readable
+    if (frame.showFields)
+      this.fields.draw(c, this.elements, this.palette, {
+        running: frame.running,
+        voltageRange: frame.voltageRange,
+        scale: vp.scale,
+      });
 
     const now = performance.now();
     const pops = new Map<CircuitElm, number>();

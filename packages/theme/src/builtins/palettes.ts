@@ -68,6 +68,8 @@ function paletteTheme(p: Palette): Theme {
       text: p.fg,
       label: p.muted,
       badConnection: p.red,
+      electricField: p.blue,
+      magneticField: p.purple,
     },
     scope: {
       background: p.scopeBg,

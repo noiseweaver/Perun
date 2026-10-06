@@ -29,6 +29,8 @@ export const light: Theme = {
     text: '#2b2f36',
     label: '#44474e',
     badConnection: '#c62828',
+    electricField: '#1565c0',
+    magneticField: '#7b1fa2',
   },
   scope: {
     background: '#ffffff',

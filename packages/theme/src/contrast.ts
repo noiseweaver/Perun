@@ -56,6 +56,8 @@ const PAIRS: [string, string, number][] = [
   ['circuit.currentDot', 'canvas.background', GRAPHIC_CONTRAST],
   ['circuit.selection', 'canvas.background', GRAPHIC_CONTRAST],
   ['circuit.hover', 'canvas.background', GRAPHIC_CONTRAST],
+  ['circuit.electricField', 'canvas.background', GRAPHIC_CONTRAST],
+  ['circuit.magneticField', 'canvas.background', GRAPHIC_CONTRAST],
   ['scope.traces.0', 'scope.background', GRAPHIC_CONTRAST],
   ['scope.current', 'scope.background', GRAPHIC_CONTRAST],
   ['teaching.pens.0', 'canvas.background', GRAPHIC_CONTRAST],

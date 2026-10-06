@@ -28,6 +28,8 @@ export const dark: Theme = {
     text: '#c8ccd4',
     label: '#abb2bf',
     badConnection: '#e06c75',
+    electricField: '#61afef',
+    magneticField: '#c678dd',
   },
   scope: {
     background: '#14171c',

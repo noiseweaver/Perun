@@ -36,6 +36,10 @@ export interface Theme {
     label: string;
     /** Posts that touch an element without connecting to it. */
     badConnection: string;
+    /** Field lines between capacitor plates (field overlay). */
+    electricField: string;
+    /** Field loops around inductors (field overlay). */
+    magneticField: string;
   };
   scope: {
     /** Plot area. */
@@ -185,6 +189,8 @@ export const themeInputSchema = z
         text: color('Values drawn next to elements.'),
         label: color('Labels: labeled nodes, outputs, text boxes, op-amp symbols.'),
         badConnection: color('Posts that touch an element without connecting to it.'),
+        electricField: color('Field lines between capacitor plates (Show fields).'),
+        magneticField: color('Field loops around inductors (Show fields).'),
       })
       .partial()
       .optional()
