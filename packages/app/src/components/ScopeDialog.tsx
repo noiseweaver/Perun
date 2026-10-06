@@ -36,9 +36,10 @@ import {
   type Scope,
 } from '@circuitjs-next/elements';
 import * as Dialog from '@radix-ui/react-dialog';
-import { useEffect, useReducer, useState, type ReactNode } from 'react';
+import { useEffect, useReducer, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { openDialog } from '../commands.ts';
 import { controller } from '../SimController.ts';
+import { shownTheme, useApp } from '../store.ts';
 import { Shell } from './DialogShell.tsx';
 import { t } from '../i18n.ts';
 
@@ -93,7 +94,27 @@ function Check(props: {
   disabled?: boolean;
   onChange: (v: boolean) => void;
   testId?: string;
+  /** Draw it as a chip with a dot in this trace color. */
+  chip?: string;
 }) {
+  if (props.chip !== undefined)
+    return (
+      <label
+        className={`scope-chip${props.checked ? ' scope-chip-on' : ''}${props.disabled ? ' field-disabled' : ''}`}
+        style={{ '--chip': props.chip } as CSSProperties}
+      >
+        <input
+          type="checkbox"
+          className="scope-chip-input"
+          checked={props.checked}
+          disabled={props.disabled ?? false}
+          onChange={(e) => props.onChange(e.target.checked)}
+          data-testid={props.testId}
+        />
+        <span className="scope-chip-dot" aria-hidden />
+        <span>{props.label}</span>
+      </label>
+    );
   return (
     <label className={`field field-check${props.disabled ? ' field-disabled' : ''}`}>
       <input
@@ -141,6 +162,57 @@ function Section(props: { title: string; children: ReactNode }) {
   );
 }
 
+/**
+ * The scope as it is drawn right now, copied from the canvas after every frame, so each change
+ * in the dialog shows at once. Hidden when the scope is off screen.
+ */
+function ScopePreview({ scope }: { scope: Scope }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const [shown, setShown] = useState(true);
+  useEffect(() => {
+    let visible = true;
+    const draw = (): void => {
+      const c = ref.current;
+      const src = controller.scopePixels(scope);
+      if ((src !== null) !== visible) {
+        visible = src !== null;
+        setShown(visible);
+      }
+      if (c === null || src === null) return;
+      const room = c.parentElement?.clientWidth ?? 0;
+      const dpr = window.devicePixelRatio || 1;
+      // at most half again the size it has on the canvas, so it stays sharp
+      const w = Math.round(Math.min(room, (1.5 * src.sw) / dpr));
+      if (w <= 0) return;
+      const h = Math.round((w * src.sh) / src.sw);
+      if (c.style.width !== `${w}px`) c.style.width = `${w}px`;
+      if (c.style.height !== `${h}px`) c.style.height = `${h}px`;
+      const pw = Math.round(w * dpr);
+      const ph = Math.round(h * dpr);
+      if (c.width !== pw) c.width = pw;
+      if (c.height !== ph) c.height = ph;
+      const g = c.getContext('2d');
+      if (g === null) return;
+      g.imageSmoothingQuality = 'high';
+      g.drawImage(src.canvas, src.sx, src.sy, src.sw, src.sh, 0, 0, pw, ph);
+    };
+    draw();
+    controller.frameListeners.add(draw);
+    return () => {
+      controller.frameListeners.delete(draw);
+    };
+  }, [scope]);
+  return (
+    <canvas
+      ref={ref}
+      className="scope-preview"
+      hidden={!shown}
+      aria-hidden
+      data-testid="scope-preview"
+    />
+  );
+}
+
 /** Scope properties: plots, scales, trigger, X-Y settings, readouts and label. */
 export function ScopePropertiesDialog() {
   const scope = controller.dialogScope;
@@ -150,6 +222,8 @@ export function ScopePropertiesDialog() {
 
 function ScopeForm({ scope }: { scope: Scope }) {
   const [, refresh] = useReducer((n: number) => n + 1, 0);
+  const sc = useApp(shownTheme).scope;
+  const vColor = sc.traces[0] ?? sc.text;
   const [plotSel, setPlotSel] = useState(0);
   const [label, setLabel] = useState(scope.text ?? '');
   const [scaleText, setScaleText] = useState('');
@@ -245,18 +319,21 @@ function ScopeForm({ scope }: { scope: Scope }) {
       }}
     >
       <div className="scope-dialog" data-testid="scope-dialog">
+        <ScopePreview scope={scope} />
         <Section title={t('Plots')}>
-          <div className="scope-grid">
+          <div className="scope-chips">
             {!transistor ? (
               <>
                 <Check
                   label="Show Voltage"
+                  chip={vColor}
                   checked={scope.showV && scope.hasPlotValue(VAL_VOLTAGE)}
                   onChange={menu('showvoltage')}
                   testId="scope-show-voltage"
                 />
                 <Check
                   label="Show Current"
+                  chip={sc.current}
                   checked={scope.showI && scope.hasPlotValue(VAL_CURRENT)}
                   onChange={menu('showcurrent')}
                   testId="scope-show-current"
@@ -266,31 +343,37 @@ function ScopeForm({ scope }: { scope: Scope }) {
               <>
                 <Check
                   label="Show Ib"
+                  chip={sc.current}
                   checked={scope.hasPlotValue(VAL_IB)}
                   onChange={menu('showib')}
                 />
                 <Check
                   label="Show Ic"
+                  chip={sc.current}
                   checked={scope.hasPlotValue(VAL_IC)}
                   onChange={menu('showic')}
                 />
                 <Check
                   label="Show Ie"
+                  chip={sc.current}
                   checked={scope.hasPlotValue(VAL_IE)}
                   onChange={menu('showie')}
                 />
                 <Check
                   label="Show Vbe"
+                  chip={vColor}
                   checked={scope.hasPlotValue(VAL_VBE)}
                   onChange={menu('showvbe')}
                 />
                 <Check
                   label="Show Vbc"
+                  chip={vColor}
                   checked={scope.hasPlotValue(VAL_VBC)}
                   onChange={menu('showvbc')}
                 />
                 <Check
                   label="Show Vce"
+                  chip={vColor}
                   checked={scope.hasPlotValue(VAL_VCE)}
                   onChange={menu('showvce')}
                 />
@@ -298,6 +381,7 @@ function ScopeForm({ scope }: { scope: Scope }) {
             )}
             <Check
               label="Show Power Consumed"
+              chip={sc.text}
               checked={scope.hasPlotValue(VAL_POWER)}
               onChange={menu('showpower')}
               testId="scope-show-power"
@@ -305,23 +389,27 @@ function ScopeForm({ scope }: { scope: Scope }) {
             {elm instanceof CapacitorElm && (
               <Check
                 label="Show Charge"
+                chip={sc.text}
                 checked={scope.hasPlotValue(VAL_CHARGE)}
                 onChange={menu('showcharge')}
               />
             )}
             <Check
               label="Show Resistance"
+              chip={sc.text}
               checked={scope.hasPlotValue(VAL_R)}
               disabled={!scope.canShowResistance()}
               onChange={menu('showresistance')}
             />
             <Check
               label="Show Spectrum"
+              chip={sc.fft}
               checked={scope.fftPlot.enabled}
               onChange={menu('showfft')}
             />
             <Check
               label="Log Spectrum"
+              chip={sc.fft}
               checked={scope.fftPlot.logSpectrum}
               onChange={menu('logspectrum')}
             />

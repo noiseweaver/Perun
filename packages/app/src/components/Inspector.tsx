@@ -18,6 +18,7 @@ import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
 import { useNarrow } from './useNarrow.ts';
 import { Icon, type IconName } from './Icon.tsx';
+import { LiveHeader } from './LiveHeader.tsx';
 import { t } from '../i18n.ts';
 
 /** Upstream unitString(ei), with voltage sources shown in rms when that is shorter. */
@@ -96,13 +97,32 @@ function NumberField(props: FieldProps) {
     ei.value = next;
     apply(props);
   };
+  // the wheel over the field steps it like the buttons do (through E12 for part values)
+  const stepRef = useRef(step);
+  stepRef.current = step;
+  const stepper = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = stepper.current;
+    if (!el) return;
+    let carry = 0;
+    const wheel = (e: WheelEvent): void => {
+      if (e.ctrlKey || e.metaKey || e.shiftKey || e.deltaY === 0) return;
+      e.preventDefault();
+      carry -= e.deltaMode === 1 ? e.deltaY / 3 : e.deltaY / 100;
+      const n = Math.trunc(carry);
+      carry -= n;
+      for (let k = 0; k !== Math.abs(n); k++) stepRef.current(Math.sign(n));
+    };
+    el.addEventListener('wheel', wheel, { passive: false });
+    return () => el.removeEventListener('wheel', wheel);
+  }, []);
   const id = `field-${props.n}`;
   return (
     <div className="field">
       <label className="field-label" htmlFor={id}>
         {fieldLabel(ei)}
       </label>
-      <div className="stepper">
+      <div className="stepper" ref={stepper}>
         <button
           type="button"
           className="icon-button icon-button-small"
@@ -603,6 +623,7 @@ export function Inspector() {
           <Icon name="close" size={18} />
         </button>
       </header>
+      {selected !== null && <LiveHeader elm={selected} />}
       <SelectionActions elm={selected} />
       {selected !== null && (
         <form className="inspector-fields" onSubmit={(e) => e.preventDefault()}>

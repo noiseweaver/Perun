@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
 
+import { ALL_FIELDS, NO_FIELDS } from '@circuitjs-next/render';
 import { BUILTIN_THEMES, DEFAULT_THEME_ID } from '@circuitjs-next/theme';
 import {
   activeLibraryId,
@@ -15,7 +16,13 @@ import type { ExampleMenu } from '../examples.ts';
 import { openDialog } from '../commands.ts';
 import { controller } from '../SimController.ts';
 import { openExample } from '../startup.ts';
-import { updateSettings, useApp, type CircuitDisplay, setPaletteOpen } from '../store.ts';
+import {
+  VALUE_SIZES,
+  updateSettings,
+  useApp,
+  type CircuitDisplay,
+  setPaletteOpen,
+} from '../store.ts';
 import { CategoryIcon } from './CategoryIcon.tsx';
 import { CircuitsSheet } from './CircuitsSheet.tsx';
 import { Icon } from './Icon.tsx';
@@ -23,6 +30,7 @@ import { useNarrow } from './useNarrow.ts';
 import { OpenLinkDialog } from './OpenLinkDialog.tsx';
 import { promptInstall } from '../pwa.ts';
 import { t, resolveLanguage, setLanguage } from '../i18n.ts';
+import { VISUALIZATIONS } from '../visualizations.ts';
 import { LANGUAGES } from '@circuitjs-next/elements';
 
 const FIRST_PALETTE_THEME = 'nord';
@@ -281,6 +289,14 @@ export function AppBar() {
           <Menu.Separator className="menu-separator" />
           <Menu.CheckboxItem
             className="menu-item"
+            checked={settings.wheelEdit}
+            onCheckedChange={(v) => updateSettings({ wheelEdit: v })}
+            data-testid="menu-wheel-edit"
+          >
+            <Check on={settings.wheelEdit} /> {t('Edit Values With Mouse Wheel')}
+          </Menu.CheckboxItem>
+          <Menu.CheckboxItem
+            className="menu-item"
             checked={settings.euroResistors}
             onCheckedChange={(v) => updateSettings({ euroResistors: v })}
           >
@@ -308,6 +324,8 @@ export function AppBar() {
           >
             <Check on={settings.junctionDots} /> {t('Junction dots')}
           </Menu.CheckboxItem>
+          <VisualizationsMenu />
+          <ValueSizeMenu />
           <Menu.CheckboxItem
             className="menu-item"
             checked={settings.conventionalCurrent}
@@ -545,7 +563,65 @@ function OptionsSub(props: { label: string; testId: string; children: ReactNode 
   );
 }
 
+/** Options > Visualizations: one switch per field, charge or energy overlay (fields.ts). */
+function VisualizationsMenu() {
+  const fields = useApp((s) => s.settings.fields);
+  const all = Object.values(fields).every((v) => v);
+  return (
+    <OptionsSub label="Visualizations" testId="menu-visualizations">
+      {VISUALIZATIONS.map(({ key, label }) => (
+        <Menu.CheckboxItem
+          key={key}
+          className="menu-item"
+          checked={fields[key]}
+          onSelect={(e) => e.preventDefault()}
+          onCheckedChange={(v) => updateSettings({ fields: { ...fields, [key]: v } })}
+          data-testid={`menu-vis-${key}`}
+        >
+          <Check on={fields[key]} /> {t(label)}
+        </Menu.CheckboxItem>
+      ))}
+      <Menu.Separator className="menu-separator" />
+      <Menu.Item
+        className="menu-item"
+        onSelect={(e) => {
+          e.preventDefault();
+          updateSettings({ fields: all ? { ...NO_FIELDS } : { ...ALL_FIELDS } });
+        }}
+        data-testid="menu-vis-all"
+      >
+        <Check on={false} /> {t(all ? 'Turn all off' : 'Turn all on')}
+      </Menu.Item>
+    </OptionsSub>
+  );
+}
+
 /** Options > Language: upstream's catalogs, or the browser's language. */
+/** Options > Value text size: the size of component values on the canvas. */
+function ValueSizeMenu() {
+  const setting = useApp((s) => s.settings.valueSize);
+  return (
+    <OptionsSub label="Value text size" testId="menu-value-size">
+      <Menu.RadioGroup
+        value={String(setting)}
+        onValueChange={(v) => updateSettings({ valueSize: Number(v) })}
+      >
+        {VALUE_SIZES.map((v) => (
+          <Menu.RadioItem
+            key={v.scale}
+            value={String(v.scale)}
+            className="menu-item"
+            onSelect={(e) => e.preventDefault()}
+            data-testid={`value-size-${v.scale}`}
+          >
+            <Check on={setting === v.scale} /> {t(v.label)}
+          </Menu.RadioItem>
+        ))}
+      </Menu.RadioGroup>
+    </OptionsSub>
+  );
+}
+
 function LanguageMenu() {
   const setting = useApp((s) => s.settings.language);
   const choose = (v: string): void => {
@@ -583,7 +659,7 @@ function Check({ on }: { on: boolean }) {
   );
 }
 
-/** Upstream's Scopes menu: arrange all docked scopes at once. */
+/** Upstream's Scopes menu: arrange all docked scopes at once, plus Undock All and Dock All (ours). */
 function ScopesMenuItems() {
   const mgr = controller.scopes;
   const n = mgr.scopeCount;
@@ -610,6 +686,18 @@ function ScopesMenuItems() {
         disabled={n === 0}
         testId="scopes-separate-all"
         onSelect={() => controller.allScopes('separateAll')}
+      />
+      <Item
+        label="Undock All"
+        disabled={!controller.canUndockAll()}
+        testId="scopes-undock-all"
+        onSelect={() => controller.undockAll()}
+      />
+      <Item
+        label="Dock All"
+        disabled={!controller.canDockAll()}
+        testId="scopes-dock-all"
+        onSelect={() => controller.dockAll()}
       />
     </>
   );

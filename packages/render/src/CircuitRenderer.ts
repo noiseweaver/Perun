@@ -18,6 +18,7 @@ import {
 import type { Theme } from '@circuitjs-next/theme';
 import { CanvasPainter } from './CanvasPainter.ts';
 import { DotCounters } from './dots.ts';
+import { anyFields, FieldOverlay, NO_FIELDS, type FieldOptions } from './fields.ts';
 import { Palette } from './palette.ts';
 import { Viewport } from './Viewport.ts';
 
@@ -38,8 +39,12 @@ export interface FrameState {
   textFont: TextFont;
   /** Mark points where three or more element ends meet with a solid schematic dot. */
   junctionDots: boolean;
+  /** Field, charge and energy visualizations to draw (fields.ts). */
+  fields: FieldOptions;
   /** Grid spacing in circuit units (16, or 8 with the small grid option). */
   gridSize: number;
+  /** Size of component value text, as a fraction of 12 px (Options > Value text size). */
+  valueScale: number;
 }
 
 export const DEFAULT_FRAME: FrameState = {
@@ -54,7 +59,9 @@ export const DEFAULT_FRAME: FrameState = {
   showOhm: false,
   textFont: { family: 'default', bold: false, italic: false },
   junctionDots: false,
+  fields: NO_FIELDS,
   gridSize: 16,
+  valueScale: 1,
 };
 
 /** Radius of a junction dot, larger than a post so it reads as a schematic junction. */
@@ -104,6 +111,7 @@ export class CircuitRenderer {
   private readonly painter: CanvasPainter;
   private palette: Palette;
   private readonly dots = new DotCounters();
+  private readonly fields = new FieldOverlay();
   private elements: CircuitElm[] = [];
   private posts: PostInfo = { draw: [], bad: [], junctions: [], joins: [] };
   private cssWidth = 0;
@@ -121,6 +129,8 @@ export class CircuitRenderer {
   scopeHighlights: ReadonlyMap<CircuitElm, string> = new Map();
   /** Height of the circuit area in CSS pixels; scopes take the rest. Null: the whole canvas. */
   circuitHeight: number | null = null;
+  /** Draw without hover or selection highlights and without the grid (a preview of a part). */
+  plain = false;
   /** Play edit feedback animations (off when the user prefers reduced motion). */
   motion = true;
   private effects: Effect[] = [];
@@ -150,9 +160,15 @@ export class CircuitRenderer {
     this.effects = [];
     this.elements = elements;
     this.dots.clear();
+    this.fields.clear();
     this.hovered = null;
     this.stopElm = null;
     this.posts = this.findPosts();
+  }
+
+  /** The simulation restarted: the field overlay forgets the peaks it scales against. */
+  resetFields(): void {
+    this.fields.clear();
   }
 
   /** The circuit was edited (elements added, removed or moved); dot positions are kept. */
@@ -215,9 +231,9 @@ export class CircuitRenderer {
   }
 
   /** Bounds of the circuit in circuit units (upstream `getCircuitBounds`), null when empty. */
-  circuitBounds(): Rect | null {
+  circuitBounds(elements: readonly CircuitElm[] = this.elements): Rect | null {
     let r: Rect | null = null;
-    for (const e of this.elements) {
+    for (const e of elements) {
       const pts: Rect = {
         x1: Math.min(e.x, e.x2),
         y1: Math.min(e.y, e.y2),
@@ -289,14 +305,24 @@ export class CircuitRenderer {
     c.lineCap = 'round';
     c.lineJoin = 'miter';
 
-    this.drawGrid(frame.gridSize);
+    if (!this.plain) this.drawGrid(frame.gridSize);
 
     const painter = this.painter;
     painter.settings = {
       voltageColors: frame.voltageColors,
       voltageRange: frame.voltageRange,
       dots: frame.showDots && frame.running,
+      valueScale: frame.valueScale,
     };
+
+    // under the elements, so the parts stay readable
+    if (anyFields(frame.fields))
+      this.fields.draw(c, this.elements, this.palette, {
+        show: frame.fields,
+        running: frame.running,
+        voltageRange: frame.voltageRange,
+        scale: vp.scale,
+      });
 
     const now = performance.now();
     const pops = new Map<CircuitElm, number>();
@@ -368,6 +394,7 @@ export class CircuitRenderer {
     const painter = this.painter;
     const highlighted =
       !ghost &&
+      !this.plain &&
       (e === this.hovered ||
         e === this.stopElm ||
         e.selected ||

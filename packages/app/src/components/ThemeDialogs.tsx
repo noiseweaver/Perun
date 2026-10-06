@@ -300,6 +300,9 @@ const COLOR_GROUPS: { title: string; fields: [Path, string][] }[] = [
       ['circuit.selection', 'Selection'],
       ['circuit.hover', 'Hover'],
       ['circuit.badConnection', 'Bad connections'],
+      ['circuit.electricField', 'Electric field'],
+      ['circuit.magneticField', 'Magnetic field'],
+      ['circuit.energy', 'Energy'],
     ],
   },
   {

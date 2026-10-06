@@ -42,22 +42,25 @@ export function TeachBar() {
           </button>
         ))}
       </div>
-      <div className="teach-group" role="radiogroup" aria-label={t('Pen color')}>
-        {pens.map((color, i) => (
-          <button
-            key={i}
-            type="button"
-            role="radio"
-            className="teach-swatch"
-            style={{ background: color }}
-            aria-checked={teach.pen === i}
-            aria-label={tf('Pen {n}', { n: i + 1 })}
-            title={tf('Pen {n}', { n: i + 1 })}
-            onClick={() => controller.setTeachPen(i)}
-            data-testid={`teach-pen-${i}`}
-          />
-        ))}
-      </div>
+      {/* pen colors only matter to the pencil */}
+      {teach.tool === 'pencil' && (
+        <div className="teach-group" role="radiogroup" aria-label={t('Pen color')}>
+          {pens.map((color, i) => (
+            <button
+              key={i}
+              type="button"
+              role="radio"
+              className="teach-swatch"
+              style={{ background: color }}
+              aria-checked={teach.pen === i}
+              aria-label={tf('Pen {n}', { n: i + 1 })}
+              title={tf('Pen {n}', { n: i + 1 })}
+              onClick={() => controller.setTeachPen(i)}
+              data-testid={`teach-pen-${i}`}
+            />
+          ))}
+        </div>
+      )}
       <div className="teach-group">
         <button
           type="button"

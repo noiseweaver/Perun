@@ -412,6 +412,57 @@ test.describe('undocked scopes', () => {
     expect(await undocked(page)).toHaveLength(0);
   });
 
+  test('Undock All spreads every scope around the circuit, clear of it and of each other', async ({
+    page,
+  }) => {
+    await page.goto('/?startCircuit=lrc.txt');
+    await ready(page);
+    expect(await scopeCount(page)).toBe(3);
+    await page.getByTestId('scopes-menu').click();
+    await page.getByTestId('scopes-undock-all').click();
+    expect(await scopeCount(page)).toBe(0);
+    const cards = await undocked(page);
+    expect(cards).toHaveLength(3);
+    const parts = await page.evaluate(() => {
+      const c = window.circuitjsNext?.controller.circuit;
+      return (c?.elements ?? [])
+        .filter((e) => e.getClassName() !== 'ScopeElm')
+        .map((e) => ({
+          x1: Math.min(e.x, e.x2),
+          y1: Math.min(e.y, e.y2),
+          x2: Math.max(e.x, e.x2),
+          y2: Math.max(e.y, e.y2),
+        }));
+    });
+    type B = { x1: number; y1: number; x2: number; y2: number };
+    const overlap = (a: B, b: B) => a.x1 < b.x2 && b.x1 < a.x2 && a.y1 < b.y2 && b.y1 < a.y2;
+    for (const c of cards) for (const p of parts) expect(overlap(c, p)).toBe(false);
+    cards.forEach((a, i) => cards.forEach((b, j) => i < j && expect(overlap(a, b)).toBe(false)));
+    // every card is on screen
+    const view = await page.getByTestId('circuit-canvas').boundingBox();
+    for (const c of cards) {
+      const a = await at(page, c.x1, c.y1);
+      const b = await at(page, c.x2, c.y2);
+      expect(a.x).toBeGreaterThanOrEqual(view?.x ?? 0);
+      expect(b.x).toBeLessThanOrEqual((view?.x ?? 0) + (view?.width ?? 0));
+    }
+    // one undo docks them all again
+    await page.keyboard.press('Control+z');
+    expect(await scopeCount(page)).toBe(3);
+    expect(await undocked(page)).toHaveLength(0);
+    // and Dock All puts them back too
+    await page.keyboard.press('Control+y');
+    expect(await undocked(page)).toHaveLength(3);
+    await page.getByTestId('scopes-menu').click();
+    await page.getByTestId('scopes-dock-all').click();
+    expect(await scopeCount(page)).toBe(3);
+    expect(await undocked(page)).toHaveLength(0);
+    await expect(page.getByTestId('scopes-menu')).toBeVisible();
+    await page.getByTestId('scopes-menu').click();
+    await expect(page.getByTestId('scopes-dock-all')).toHaveAttribute('data-disabled', '');
+    await page.keyboard.press('Escape');
+  });
+
   test('an upstream file with undocked scopes loads them', async ({ page }) => {
     await page.goto('/?startCircuit=multivib-a.txt');
     await ready(page);

@@ -9,8 +9,17 @@ import {
   parseTheme,
   type Theme,
 } from '@circuitjs-next/theme';
+import { ALL_FIELDS, NO_FIELDS, type FieldOptions } from '@circuitjs-next/render';
 import { create } from 'zustand';
 import type { ExampleList } from './examples.ts';
+
+/** Options > Value text size: how big component values are drawn, against upstream's 12 px. */
+export const VALUE_SIZES = [
+  { scale: 0.75, label: 'Small' },
+  { scale: 0.875, label: 'Medium' },
+  { scale: 1, label: 'Large' },
+  { scale: 1.25, label: 'Extra large' },
+] as const;
 
 /** Display settings that belong to the user, not the circuit (kept in localStorage). */
 export interface UserSettings {
@@ -23,6 +32,12 @@ export interface UserSettings {
   conventionalCurrent: boolean;
   /** Mark every connection: a dot where two ends meet, a larger one where three or more do. */
   junctionDots: boolean;
+  /** Options > Visualizations: field, charge and energy overlays. */
+  fields: FieldOptions;
+  /** Size of component value text on the canvas, as a fraction of 12 px (VALUE_SIZES). */
+  valueSize: number;
+  /** The mouse wheel over a resistor, capacitor or inductor steps its value (upstream option). */
+  wheelEdit: boolean;
   /** Font for text boxes; a display choice, not saved with circuits. */
   textFont: TextFont;
   /** Interface language: `auto` (the browser's) or an upstream catalog code (i18n.ts). */
@@ -128,6 +143,11 @@ export interface AppState {
   boxSelect: boolean;
   /** Text for screen readers (a polite live region): what keyboard selection picked. */
   announcement: string;
+  /**
+   * The value list shown while the mouse wheel steps a part's value on the canvas: where (canvas
+   * px), the field's name, and the values around the current one (the middle one is current).
+   */
+  wheelValue: { x: number; y: number; name: string; values: (string | null)[]; seq: number } | null;
   /** The catalog the interface shows (`en`, `de`, ...); the app tree is keyed by it. */
   language: string;
   /** The user's theme (settings.themeId resolved). */
@@ -176,6 +196,9 @@ function loadSettings(): UserSettings {
     showOhm: false,
     conventionalCurrent: true,
     junctionDots: false,
+    fields: NO_FIELDS,
+    wheelEdit: true,
+    valueSize: 0.875,
     textFont: { family: 'default', bold: false, italic: false },
     language: 'auto',
   };
@@ -204,12 +227,28 @@ function loadSettings(): UserSettings {
           ? s.conventionalCurrent
           : defaults.conventionalCurrent,
       junctionDots: typeof s.junctionDots === 'boolean' ? s.junctionDots : defaults.junctionDots,
+      fields: readFields(s) ?? defaults.fields,
+      wheelEdit: typeof s.wheelEdit === 'boolean' ? s.wheelEdit : defaults.wheelEdit,
+      valueSize: VALUE_SIZES.some((v) => v.scale === s.valueSize)
+        ? (s.valueSize as number)
+        : defaults.valueSize,
       textFont: readTextFont(s.textFont) ?? defaults.textFont,
       language: typeof s.language === 'string' ? s.language : defaults.language,
     };
   } catch {
     return defaults;
   }
+}
+
+function readFields(s: Partial<UserSettings> & { showFields?: unknown }): FieldOptions | null {
+  // the first prototype had one switch for everything
+  if (s.showFields === true) return { ...ALL_FIELDS };
+  const v = s.fields as unknown;
+  if (typeof v !== 'object' || v === null) return null;
+  const o = v as Record<string, unknown>;
+  const out = { ...NO_FIELDS };
+  for (const k of Object.keys(out) as (keyof FieldOptions)[]) out[k] = o[k] === true;
+  return out;
 }
 
 function readTextFont(v: unknown): TextFont | null {
@@ -308,6 +347,7 @@ export const useApp = create<AppState>(() => ({
   teach: { tool: null, pen: 0, strokes: 0, canUndo: false },
   boxSelect: false,
   announcement: '',
+  wheelValue: null,
   language: 'en',
   dialog: null,
   theme: themeFor(initialSettings.themeId, []),

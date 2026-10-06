@@ -5,6 +5,7 @@ export { AnnotationLayer, LASER_FADE_MS, PENCIL_WIDTH, type Stroke } from './Ann
 export { CanvasPainter, type PaintSettings } from './CanvasPainter.ts';
 export { CircuitRenderer, DEFAULT_FRAME, type FrameState } from './CircuitRenderer.ts';
 export { currentMultiplier, DotCounters, updateDotCount } from './dots.ts';
+export { ALL_FIELDS, NO_FIELDS, type FieldOptions } from './fields.ts';
 export { COLOR_SCALE_COUNT, Palette } from './palette.ts';
 export { MAX_SCALE, MIN_SCALE, Viewport } from './Viewport.ts';
 export { drawPreview } from './preview.ts';

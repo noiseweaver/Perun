@@ -5,8 +5,14 @@
 // 160 * iterCount steps per second, at most about 50 ms of simulation per frame.
 
 import {
+  CapacitorElm,
   INFO_WIDTH,
+  InductorElm,
   MAX_SCOPES,
+  ProbeElm,
+  ResistorElm,
+  getShortUnitText,
+  stepE12,
   ScopeElm,
   SwitchElm,
   UNITS_A,
@@ -65,6 +71,7 @@ import {
   type Modifiers,
 } from './editor/Editor.ts';
 import { download } from './download.ts';
+import { arrangeCards } from './scopeLayout.ts';
 import { sliderEntries, type SliderEntry } from './sliders.ts';
 import {
   showToast,
@@ -155,6 +162,14 @@ export class SimController {
   private readonly leaderTargets = new WeakMap<ScopeElm, { x: number; y: number } | null>();
   /** Docked scope the context menu was opened on, or -1; and its selected plot. */
   menuScope = -1;
+  /** When the mouse wheel last zoomed: for a moment after, it only zooms (upstream zoomTime). */
+  private lastWheelZoom = 0;
+  /** The part the mouse wheel is stepping, its unspent part of a notch, and when it last moved. */
+  private wheelEdit: { elm: CircuitElm; carry: number; timer: number } | null = null;
+  /** What the last frame was drawn with, for the live previews in the panels. */
+  lastFrameState: FrameState | null = null;
+  /** Called after each frame is drawn (the property panel's live header, the scope preview). */
+  readonly frameListeners = new Set<(frame: FrameState) => void>();
   /** Undocked scope the context menu was opened on, or null. */
   menuUndocked: ScopeElm | null = null;
   menuPlot = -1;
@@ -272,7 +287,10 @@ export class SimController {
     // upstream resetAction clears every scope too (scopeManager.resetGraphs)
     this.circuit.scopes.resetGraphs();
     this.stepsOwed = 0;
-    if (this.renderer) this.renderer.stopElm = null;
+    if (this.renderer) {
+      this.renderer.stopElm = null;
+      this.renderer.resetFields();
+    }
     // upstream resumes a stopped simulation when reset at t = 0
     useApp.setState({ running: true });
     this.publishStatus(true);
@@ -441,13 +459,17 @@ export class SimController {
         showOhm: state.settings.showOhm,
         textFont: state.settings.textFont,
         junctionDots: state.settings.junctionDots,
+        fields: state.settings.fields,
         gridSize: sim.gridSize,
+        valueScale: state.settings.valueSize,
       };
       r.circuitHeight = this.circuitHeight();
       r.render(frame);
       this.drawScopes();
       this.drawAnnotations();
       this.frames++;
+      this.lastFrameState = frame;
+      for (const f of this.frameListeners) f(frame);
     }
     this.publishStatus(false);
   }
@@ -1195,6 +1217,128 @@ export class SimController {
     this.circuitChanged();
   }
 
+  /**
+   * Where a scope was last drawn on the main canvas, in device pixels, for the scope dialog's
+   * live preview to copy; null when it is not on screen (another column on a phone).
+   */
+  scopePixels(
+    s: Scope,
+  ): { canvas: HTMLCanvasElement; sx: number; sy: number; sw: number; sh: number } | null {
+    const canvas = this.renderer?.canvas;
+    const sl = s.slot;
+    if (!canvas || sl.width < 8 || sl.height < 8) return null;
+    if (!this.everyScope().includes(s)) return null;
+    if (
+      sl.x < 0 ||
+      sl.y < 0 ||
+      sl.x + sl.width > this.cssWidth ||
+      sl.y + sl.height > this.cssHeight
+    )
+      return null;
+    // a card's title row has buttons that do nothing in a copy: start at its legend row
+    const top = s.rect.y - sl.y;
+    const skip = this.circuit.scopes.look === 'cards' && top >= 46 ? 26 : 0;
+    const k = this.dpr;
+    return {
+      canvas,
+      sx: sl.x * k,
+      sy: (sl.y + skip) * k,
+      sw: sl.width * k,
+      sh: (sl.height - skip) * k,
+    };
+  }
+
+  /** Scopes menu: Undock All is worth offering (a docked scope to move, or cards to tidy). */
+  canUndockAll(): boolean {
+    return (
+      this.circuit.scopes.scopes.some((s) => s.getElm() !== null) ||
+      this.circuit.scopeElms().some((e) => e.elmScope.getElm() !== null)
+    );
+  }
+
+  /**
+   * Scopes menu: Undock All. Every docked scope moves onto the circuit, and all the cards are
+   * spread around it, each on the side nearest what it shows with a straight leader where the
+   * room allows (scopeLayout.ts). Then the view fits the circuit and its cards.
+   */
+  undockAll(): void {
+    const r = this.renderer;
+    const mgr = this.circuit.scopes;
+    const parts = this.circuit.elements.filter((e) => !(e instanceof ScopeElm));
+    const bounds = r?.circuitBounds(parts) ?? null;
+    if (!r || bounds === null || !this.canUndockAll()) return;
+    const from = new Map(this.everyScope().map((s) => [s, { ...s.slot }]));
+    this.scopeCommand('Undock all scopes', () => {
+      const cards = this.circuit.scopeElms().filter((e) => e.elmScope.getElm() !== null);
+      for (let i = mgr.scopes.length - 1; i >= 0; i--) {
+        const s = mgr.scopes[i];
+        const elm = s?.getElm() ?? null;
+        if (s === undefined || elm === null) continue;
+        const se = this.newScopeElm(elm);
+        if (se === null) continue;
+        se.setElmScope(s);
+        // setupScopes() closes the gaps
+        mgr.scopes.splice(i, 1);
+        this.circuit.elements.push(se);
+        cards.push(se);
+      }
+      const targets = cards.map((e) => {
+        const elm = e.elmScope.getElm();
+        return elm !== null ? scopeAnchor(elm, e.leaderPost) : { x: 0, y: 0 };
+      });
+      const boxes = arrangeCards(bounds, targets, {
+        width: UNDOCKED_WIDTH,
+        height: UNDOCKED_HEIGHT,
+        margin: 48,
+        gap: 32,
+        grid: this.circuit.sim.gridSize,
+      });
+      cards.forEach((e, i) => {
+        const b = boxes[i];
+        if (b === undefined) return;
+        e.x = b.x1;
+        e.y = b.y1;
+        e.x2 = b.x2;
+        e.y2 = b.y2;
+        e.setPoints();
+      });
+    });
+    this.circuitChanged();
+    r.fit();
+    for (const [s, slot] of from) this.animateCard(s, slot);
+    this.publishEditor();
+  }
+
+  /** Scopes menu: Dock All is worth offering (an undocked scope and a free column). */
+  canDockAll(): boolean {
+    return this.circuit.scopeElms().length > 0 && this.circuit.scopes.scopeCount < MAX_SCOPES;
+  }
+
+  /** Scopes menu: Dock All. Every undocked scope goes back into its own column, in order. */
+  dockAll(): void {
+    const mgr = this.circuit.scopes;
+    if (!this.canDockAll()) return;
+    const from = new Map(this.circuit.scopeElms().map((e) => [e.elmScope, { ...e.elmScope.slot }]));
+    this.scopeCommand('Dock all scopes', () => {
+      const docked = new Set<ScopeElm>();
+      for (const u of this.circuit.scopeElms()) {
+        if (mgr.scopeCount >= MAX_SCOPES) break;
+        const s = u.elmScope;
+        s.position = mgr.scopeCount;
+        mgr.scopes.push(s);
+        u.selected = false;
+        docked.add(u);
+      }
+      this.circuit.elements = this.circuit.elements.filter(
+        (e) => !(e instanceof ScopeElm && docked.has(e)),
+      );
+    });
+    for (const [s, slot] of from) this.animateCard(s, slot);
+    if (this.hoverUndocked !== null) this.clearScopeHover();
+    this.circuitChanged();
+    this.publishEditor();
+  }
+
   /** Scope menu on an undocked scope: Dock Scope, into a new column. */
   dockScope(u: ScopeElm): void {
     const mgr = this.circuit.scopes;
@@ -1236,15 +1380,84 @@ export class SimController {
     useApp.setState({ dialog: 'scopeProperties' });
   }
 
+  /**
+   * The mouse wheel over a resistor, capacitor or inductor steps its value through the E12 series
+   * (upstream ScrollValuePopup; wheel up for a bigger value), with the values around it shown by
+   * the mouse. One wheel session is one undo step. False when the wheel should zoom instead.
+   */
+  private wheelEditAt(x: number, y: number, notches: number): boolean {
+    const r = this.renderer;
+    if (!r || !useApp.getState().settings.wheelEdit) return false;
+    // just zoomed: keep zooming, so a part that slides under the mouse isn't edited by accident
+    if (performance.now() - this.lastWheelZoom < 1000) return false;
+    const elm = r.elementAt(x, y);
+    if (
+      elm === null ||
+      !(elm instanceof ResistorElm || elm instanceof CapacitorElm || elm instanceof InductorElm)
+    )
+      return false;
+    let w = this.wheelEdit;
+    if (w === null || w.elm !== elm) {
+      this.endWheelEdit();
+      this.editor.history.begin('Change value');
+      w = this.wheelEdit = { elm, carry: 0, timer: 0 };
+    }
+    w.carry -= notches;
+    const steps = Math.trunc(w.carry);
+    w.carry -= steps;
+    const ei = elm.getEditInfo(0);
+    if (ei === null) return true;
+    if (steps !== 0) {
+      let v = ei.value;
+      for (let k = 0; k !== Math.abs(steps); k++) v = stepE12(v, Math.sign(steps));
+      if (v > 0) {
+        ei.value = v;
+        elm.setEditValue(0, ei);
+        this.editor.history.touch();
+        findAdjustable(this.circuit.adjustables, elm, 0)?.setSliderValue(v);
+        this.circuitChanged();
+      }
+    }
+    const values: (string | null)[] = [];
+    const cur = elm.getEditInfo(0)?.value ?? ei.value;
+    const around = (n: number): string | null => {
+      let v = cur;
+      for (let k = 0; k !== Math.abs(n); k++) v = stepE12(v, Math.sign(n));
+      return v > 0 ? getShortUnitText(v, '') : null;
+    };
+    for (let n = 2; n >= -2; n--) values.push(around(n));
+    const prev = useApp.getState().wheelValue;
+    useApp.setState({
+      wheelValue: { x, y, name: ei.name, values, seq: (prev?.seq ?? 0) + 1 },
+    });
+    window.clearTimeout(w.timer);
+    w.timer = window.setTimeout(() => this.endWheelEdit(), 900);
+    return true;
+  }
+
+  /** Finish a mouse wheel value change: record it as one undo step and hide the value list. */
+  private endWheelEdit(): void {
+    const w = this.wheelEdit;
+    if (w === null) return;
+    window.clearTimeout(w.timer);
+    this.wheelEdit = null;
+    // something else may have started its own edit since (which committed this one)
+    if (this.editor.history.pendingLabel === 'Change value') this.editor.history.commit();
+    useApp.setState({ wheelValue: null });
+    this.publishEditor();
+  }
+
   // ---- commands ------------------------------------------------------------------------------
 
   undo(): void {
+    this.endWheelEdit();
     const label = this.editor.history.undoLabel;
     this.editor.history.undo();
     if (label !== null) showToast(`Undid ${label.toLowerCase()}`);
   }
 
   redo(): void {
+    this.endWheelEdit();
     const label = this.editor.history.redoLabel;
     this.editor.history.redo();
     if (label !== null) showToast(`Redid ${label.toLowerCase()}`);
@@ -2080,11 +2293,6 @@ export class SimController {
         else this.annotations.laserTo(c, performance.now());
         return true;
       }
-      // a mouse points with the laser without pressing a button
-      if (tool === 'laser' && e.pointerType === 'mouse' && teachId === null) {
-        this.annotations.laserTo(c, performance.now());
-        return true;
-      }
       // a pinch goes on as usual; hovering does nothing while drawing
       return teachId === null && e.pointerType !== 'touch';
     };
@@ -2092,10 +2300,10 @@ export class SimController {
       if (teachId !== e.pointerId) return false;
       teachId = null;
       touches.delete(e.pointerId);
-      const tool = useApp.getState().teach.tool;
       this.annotations.endStroke();
       this.annotations.endErase();
-      if (tool !== 'laser' || e.pointerType !== 'mouse') this.annotations.laserUp();
+      // the laser points only while the button is held (Gady, 2026-10-06)
+      this.annotations.laserUp();
       if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
       return true;
     };
@@ -2390,6 +2598,8 @@ export class SimController {
       else if (isMouseWheel(e)) {
         // about 8% per notch (100 px in Chrome, 3 lines in Firefox), eased in by frame()
         const notches = e.deltaMode === 1 ? e.deltaY / 3 : dy / 100;
+        if (this.wheelEditAt(p.x, p.y, notches)) return;
+        this.lastWheelZoom = performance.now();
         this.zoomPending -= notches * WHEEL_ZOOM_PER_NOTCH;
         this.zoomAnchor = p;
       } else r.viewport.pan(-dx, -dy);
@@ -2536,10 +2746,9 @@ export class SimController {
 }
 
 /** Size of a new undocked scope (circuit units). */
-/** The canvas cursor for a teaching tool (the laser draws its own dot). */
+/** The canvas cursor for a teaching tool. */
 function teachCursor(tool: TeachTool | null): string {
-  if (tool === 'pencil' || tool === 'eraser') return 'crosshair';
-  if (tool === 'laser') return 'none';
+  if (tool !== null) return 'crosshair';
   return 'default';
 }
 
@@ -2553,6 +2762,9 @@ const UNDOCKED_HEIGHT = 144;
 function scopeAnchor(elm: CircuitElm, post = -1): { x: number; y: number } {
   if (post >= 0 && post < elm.getPostCount()) return elm.getPost(post);
   if (elm.getPostCount() === 1) return elm.getPost(0);
+  // a scope probe without its circle is drawn as two short stubs with nothing in the middle
+  // (upstream draws it so): point at its + end, on the node it measures
+  if (elm instanceof ProbeElm && !elm.drawAsCircle()) return elm.getPost(0);
   const b = viewFor(elm)?.bbox(elm);
   if (b === undefined) return { x: (elm.x + elm.x2) / 2, y: (elm.y + elm.y2) / 2 };
   return { x: (b.x1 + b.x2) / 2, y: (b.y1 + b.y2) / 2 };

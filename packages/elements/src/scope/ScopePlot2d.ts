@@ -141,21 +141,21 @@ export class ScopePlot2d {
       if (newscale) this.clearView();
       const xa = v / this.scaleX;
       const ya = yval / this.scaleY;
-      x = Math.trunc(rect.width * (1 + xa) * 0.499);
-      y = Math.trunc(rect.height * (1 - ya) * 0.499);
+      // upstream truncates to whole pixels; kept fractional here so the antialiased trail is
+      // smooth instead of stepping from pixel to pixel (drawing only)
+      x = rect.width * (1 + xa) * 0.499;
+      y = rect.height * (1 - ya) * 0.499;
     } else {
       const gridPx = this.calcGridPx(rect.width, rect.height);
       const md = scope.manDivisions;
-      x = Math.trunc(
+      x =
         rect.width * 0.499 +
-          (v / plots[px].manScale) * gridPx +
-          (gridPx * md * plots[px].manVPosition) / V_POSITION_STEPS,
-      );
-      y = Math.trunc(
+        (v / plots[px].manScale) * gridPx +
+        (gridPx * md * plots[px].manVPosition) / V_POSITION_STEPS;
+      y =
         rect.height * 0.499 -
-          (yval / plots[py].manScale) * gridPx -
-          (gridPx * md * plots[py].manVPosition) / V_POSITION_STEPS,
-      );
+        (yval / plots[py].manScale) * gridPx -
+        (gridPx * md * plots[py].manVPosition) / V_POSITION_STEPS;
     }
     this.drawTo(x, y, this.computeColor(), this.computeAlpha());
   }

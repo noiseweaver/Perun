@@ -619,6 +619,109 @@ textarea,
   box-shadow: 0 0 0 10px color-mix(in srgb, var(--ui-accent) 12%, transparent);
 }
 
+/* ---- key to the field visualizations (Options > Visualizations) ------------------------- */
+
+/* the values around a part's one while the mouse wheel steps it (WheelValuePopup.tsx) */
+.wheel-value {
+  position: absolute;
+  z-index: 6;
+  padding: 6px 10px;
+  border-radius: var(--md-shape-m);
+  background: color-mix(in srgb, var(--md-surface-container-high) 94%, transparent);
+  box-shadow: var(--md-elevation-2);
+  pointer-events: none;
+  animation: fade-in 120ms var(--md-motion);
+}
+
+.wheel-value-name {
+  font-size: 11px;
+  color: var(--ui-text-muted);
+  margin-bottom: 2px;
+}
+
+.wheel-value-row {
+  font-family: var(--mono-font);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: pre;
+  text-align: center;
+  opacity: 0.45;
+}
+
+.wheel-value-row[data-off='1'] {
+  opacity: 0.7;
+}
+
+.wheel-value-current {
+  opacity: 1;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--ui-accent);
+}
+
+.field-legend {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 5;
+  max-width: calc(100% - 24px);
+  border-radius: var(--md-shape-m);
+  background: color-mix(in srgb, var(--md-surface-container-high) 92%, transparent);
+  box-shadow: var(--md-elevation-2);
+  animation: fade-in 150ms var(--md-motion);
+}
+
+.field-legend-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--md-shape-m);
+  background: none;
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.field-legend-header:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: -2px;
+}
+
+.field-legend-header .menu-trailing {
+  margin-left: auto;
+}
+
+.field-legend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0 12px 10px;
+  list-style: none;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.field-legend-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-legend-swatch {
+  flex: none;
+  width: 28px;
+  height: 14px;
+}
+
 /* ---- the circuit's sliders (upstream's side panel) ---------------------------------------- */
 
 .slider-panel {
@@ -1041,6 +1144,70 @@ kbd,
   font-weight: 500;
 }
 
+/* the part drawn live, with its voltage, current and power (LiveHeader.tsx) */
+.live-header {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 4px;
+}
+
+.live-part {
+  position: relative;
+  flex: none;
+  width: 96px;
+  height: 64px;
+  overflow: hidden;
+  border-radius: var(--md-shape-m);
+  border: 1px solid var(--ui-border);
+}
+
+/* a tall part is drawn on its side so it fills the box */
+.live-part-canvas {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 96px;
+  height: 64px;
+  transform: translate(-50%, -50%);
+}
+
+.live-part-canvas[data-turned] {
+  width: 64px;
+  height: 96px;
+  transform: translate(-50%, -50%) rotate(-90deg);
+}
+
+.live-readouts {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.live-values {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 6px;
+  font-family: var(--mono-font);
+  font-size: 12px;
+  line-height: 14px;
+}
+
+.live-key {
+  font-weight: 600;
+}
+
+.live-value {
+  white-space: pre;
+  font-variant-numeric: tabular-nums;
+}
+
+.live-spark {
+  width: 100%;
+  height: 22px;
+}
+
 .inspector-actions {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
@@ -1449,6 +1616,70 @@ textarea.field-input {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* the scope as drawn right now, at the top of its properties dialog */
+.scope-preview {
+  display: block;
+  margin: 0 auto;
+  border-radius: var(--md-shape-m);
+}
+
+/* plot switches as chips, each with a dot in its trace color */
+.scope-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.scope-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px 0 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color 160ms var(--md-motion),
+    border-color 160ms var(--md-motion);
+}
+
+.scope-chip-on {
+  border-color: var(--chip);
+  background: color-mix(in srgb, var(--chip) 16%, transparent);
+}
+
+.scope-chip-input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.scope-chip:has(.scope-chip-input:focus-visible) {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+.scope-chip-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--chip);
+  transition:
+    background-color 160ms var(--md-motion),
+    transform 220ms var(--md-motion);
+}
+
+.scope-chip-on .scope-chip-dot {
+  background: var(--chip);
+  transform: scale(1.15);
 }
 
 .scope-section {

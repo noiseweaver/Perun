@@ -73,6 +73,11 @@ export class History {
     if (this.pending) this.pending.touched = true;
   }
 
+  /** The label of the edit in progress, or null. */
+  get pendingLabel(): string | null {
+    return this.pending?.label ?? null;
+  }
+
   get inEdit(): boolean {
     return this.pending !== null;
   }

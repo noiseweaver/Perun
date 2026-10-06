@@ -101,7 +101,9 @@ export class CanvasScopeImage implements ScopeImage {
     const c = this.ctx;
     c.globalAlpha = alpha;
     c.strokeStyle = this.palette().color(ink);
-    c.lineWidth = 1;
+    c.lineWidth = 1.25;
+    // round ends so the short segments join without notches
+    c.lineCap = 'round';
     c.beginPath();
     c.moveTo(x1, y1);
     c.lineTo(x2, y2);

@@ -32,7 +32,7 @@ import { addCurCount } from './passive.ts';
 
 const DIODE_HS = 8;
 
-function diodeGeometry(e: DiodeElm) {
+export function diodeGeometry(e: DiodeElm) {
   const [lead1, lead2] = calcLeads(e.point1, e.point2, e.dn, 16);
   const [pa0, pa1] = interp2(lead1, lead2, 0, DIODE_HS);
   const cathode = interp2(lead1, lead2, 1, DIODE_HS);
@@ -152,7 +152,7 @@ export const transistorView: ElementView<TransistorElm> = {
 
 const MOSFET_HS = 16;
 
-function mosfetGeometry(e: MosfetElm) {
+export function mosfetGeometry(e: MosfetElm) {
   const { point1, point2, dn, pnp } = e;
   let hs2 = MOSFET_HS * e.dsign;
   if (e.hasFlag(MosfetElm.FLAG_FLIP)) hs2 = -hs2;

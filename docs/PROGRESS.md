@@ -1,5 +1,65 @@
 # Progress
 
+## 2026-10-06: field overlay prototype (branch claude/project-thread-ojpap8)
+
+### Done
+
+- Options > Show fields (user setting, off by default, not saved in circuits): capacitors get + and
+  - charge marks and electric field lines with arrows from the + plate (strength is |V| over the
+    voltage range); inductors get dashed field loops through the coil that flow with the current
+    (strength against the coil's own recent peak). Display only: reads `voltdiff` and `current`.
+    Code in packages/render/src/fields.ts, drawn under the elements, hidden below zoom 0.5.
+- Theme keys `circuit.electricField` and `circuit.magneticField` in every built-in theme. Charge
+  marks use the voltage positive and negative colors.
+
+- Second round (Gady: "all of them are good"): a glow on capacitors, coils and transformers
+  that follows stored energy on one scale for the whole circuit; chevrons into parts that absorb
+  power and out of parts that deliver it (two-terminal parts); transformer core flux loops and
+  leakage loops (coupling below 1); a Lenz's law EMF arrow beside each coil; relay coil fields
+  with a pull arrow on each blade (scaled to the pull-in current); field lines across DC motors;
+  MOSFET channel filling in past threshold; diode depletion region widening under reverse
+  voltage. New theme key `circuit.energy`. `diodeGeometry`/`mosfetGeometry` are now exported for
+  the overlay; `DCMotorElm` is exported from the elements package.
+
+- Options > Visualizations submenu (Gady's ask) with a switch per overlay (charge, magnetic,
+  EMF, stored energy, energy flow, diode and MOSFET) and Turn all on/off; user setting `fields`,
+  migrating the first prototype's `showFields`. A foldable legend in the canvas's top left lists
+  the overlays that are on, with swatches in theme colors. The energy glow is fainter.
+
+- Scopes > Undock All (Gady's ask): every docked scope becomes a card on the circuit and all the
+  cards are spread around it (packages/app/src/scopeLayout.ts). Each card goes on the side
+  nearest what it shows, level with it so its leader runs straight in; crowded cards pack an
+  even gap apart in target order so leaders don't cross, and the sides share cards out when one
+  fills. Cards get the default size, the view fits, and one undo docks them all again. Running it
+  with everything undocked just tidies the cards. Scopes > Dock All puts every undocked scope
+  back in its own column (one undo). Catalan strings for these and the Visualizations menu and
+  legend are in (ca at 100%).
+
+- Livelier property panels (Gady picked the scope preview, the live header and wheel stepping):
+  the scope dialog opens with the scope copied live from the canvas (title row left off) and its
+  plot switches are chips with a dot in each trace color. The component panel shows the part
+  drawn live by its own small `CircuitRenderer` (`plain` mode: no grid or highlights; tall parts
+  turned on their side), and for two-terminal parts fixed-width V, I and P with a four-second
+  sparkline. Both redraw from `controller.frameListeners`. The mouse wheel steps a number field
+  in the panel, and on the canvas steps a resistor, capacitor or inductor through E12 with the
+  values shown by the mouse (upstream's Edit Values With Mouse Wheel, now on by default; see
+  DEVIATIONS.md). Tests in packages/app/e2e/panels.spec.ts.
+
+- Gady's follow-ups: X-Y (Lissajous) trails keep fractional points and draw with round caps, so
+  they no longer step from pixel to pixel. A scope leader on a probe drawn without its circle
+  (two stubs, nothing in the middle, as upstream) ends on its + post. The laser points only while
+  the button is held; pen colors show only with the pencil. Options > Value text size (Small,
+  Medium, Large = upstream's 12 px, Extra large; default Medium) scales component values only.
+  A probe without its circle symbol (upstream leaves its middle empty, so `amp-schmitt.txt`'s
+  voltmeters looked invisible) gets a faint dashed join and a small V badge. Rail, output,
+  labeled node, test point and similar part labels use the monospace font (`LABEL_FONT`).
+
+### Next
+
+- Gady to try the preview artifact and decide whether to keep, change or drop it.
+- Not covered yet: tapped and custom transformers, LEDs and varactors, polarized capacitor plate
+  shape.
+
 ## 2026-10-06: deploy, iPhone fixes, more themes
 
 ### Done
