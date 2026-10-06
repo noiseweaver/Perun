@@ -122,6 +122,11 @@ export class Editor {
     return this.mouseDragging;
   }
 
+  /** The gesture has moved or changed something (a drag, not a press that may become a click). */
+  get isMoving(): boolean {
+    return this.mouseDragging && this.moved;
+  }
+
   /** The current gesture pans the view (the app does the panning). */
   get isPanning(): boolean {
     return this.mouseDragging && this.tempMouseMode === MouseMode.DRAG_ALL;

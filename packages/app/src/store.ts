@@ -62,6 +62,8 @@ export interface EditorState {
   canPaste: boolean;
   /** Bumped when the selected element's properties may have changed. */
   revision: number;
+  /** A drag on the canvas is moving something: the phone property sheet steps aside. */
+  moving: boolean;
 }
 
 export type TeachTool = 'pencil' | 'laser' | 'eraser';
@@ -292,6 +294,7 @@ export const useApp = create<AppState>(() => ({
     canRedo: false,
     canPaste: false,
     revision: 0,
+    moving: false,
   },
   paletteOpen: initialPaletteOpen(),
   toast: null,

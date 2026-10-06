@@ -44,6 +44,9 @@
 - Divider lines between example circuit categories (Circuits menu and the phone sheet). On touch
   screens a drag-to-select button in the bottom bar makes a one-finger drag on empty canvas draw
   a selection box instead of panning (two fingers still pan and zoom); it is hidden with a mouse.
+- On phones the property sheet slides down to its handle while a component is dragged, and
+  closes after View in New Scope, View in New Undocked Scope or Add to Existing Scope so the
+  scope can be seen.
 - Theme colors with surrounding whitespace (`"#fff\n"`) are now refused; the theme fuzz test
   found one reaching a CSS custom property.
 - README, About dialog (version, upstream credits, GPL notice, links to the source, LICENSE.txt and

@@ -360,6 +360,28 @@ test.describe('on a touch screen', () => {
     await page.getByTestId('ctx-delete').tap();
     expect((await elements(page)).some((e) => e.cls === 'ResistorElm')).toBe(false);
   });
+  test('the property sheet steps aside while a component is dragged', async ({ page }) => {
+    await open(page, LOOP);
+    await clickCircuit(page, 176, 96);
+    const sheet = page.getByTestId('inspector');
+    await expect(sheet).toBeVisible();
+    const r = await at(page, 176, 96);
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', dx: number) =>
+      cdp.send('Input.dispatchTouchEvent', {
+        type,
+        touchPoints: type === 'touchEnd' ? [] : [{ x: r.x + dx, y: r.y }],
+      });
+    await touch('touchStart', 0);
+    for (let i = 1; i <= 4; i++) await touch('touchMove', 12 * i);
+    await expect(sheet).toHaveAttribute('data-canvas-drag', 'true');
+    await touch('touchEnd', 0);
+    await expect(sheet).not.toHaveAttribute('data-canvas-drag');
+    // it was a drag: the resistor moved
+    expect((await elements(page)).find((e) => e.cls === 'ResistorElm')?.pos).not.toEqual([
+      96, 96, 256, 96,
+    ]);
+  });
   test('the property panel is a sheet that drags down to a tab and back up', async ({ page }) => {
     await open(page, LOOP);
     await clickCircuit(page, 176, 96);

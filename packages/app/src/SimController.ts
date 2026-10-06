@@ -523,6 +523,7 @@ export class SimController {
       canRedo: ed.history.canRedo,
       canPaste: ed.hasClipboard,
       revision: prev.revision + (propertiesChanged ? 1 : 0),
+      moving: ed.isMoving,
     };
     if (
       next.addClass !== prev.addClass ||
@@ -533,7 +534,8 @@ export class SimController {
       next.canUndo !== prev.canUndo ||
       next.canRedo !== prev.canRedo ||
       next.canPaste !== prev.canPaste ||
-      next.revision !== prev.revision
+      next.revision !== prev.revision ||
+      next.moving !== prev.moving
     )
       useApp.setState({ editor: next });
   }
@@ -883,11 +885,21 @@ export class SimController {
   /** Element menu: View in New Scope. */
   viewInScope(elm: CircuitElm): void {
     this.scopeCommand('View in scope', () => this.circuit.scopes.viewInScope(elm));
+    this.showScopeOnPhone();
+  }
+
+  /**
+   * On a phone the property sheet covers the scopes: after putting an element in one, close
+   * the sheet (clear the selection) so the scope can be seen.
+   */
+  private showScopeOnPhone(): void {
+    if (typeof window !== 'undefined' && window.innerWidth < 720) this.editor.clearSelection();
   }
 
   /** Element menu: Add to Existing Scope n. */
   addToScope(n: number, elm: CircuitElm): void {
     this.scopeCommand('Add to scope', () => this.circuit.scopes.addToScope(n, elm));
+    this.showScopeOnPhone();
   }
 
   /** Scope popup menu commands (upstream CommandManager "scopepop"). */
@@ -1045,6 +1057,7 @@ export class SimController {
       });
     }
     this.circuitChanged();
+    this.showScopeOnPhone();
   }
 
   /** Scope menu: Undock Scope. The docked scope moves onto the circuit, beside what it shows. */

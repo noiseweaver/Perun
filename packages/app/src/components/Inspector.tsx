@@ -484,6 +484,7 @@ export function Inspector() {
   const selected = useApp((s) => s.editor.panelElm);
   const count = useApp((s) => s.editor.panelCount);
   const revision = useApp((s) => s.editor.revision);
+  const moving = useApp((s) => s.editor.moving);
   const focus = useApp((s) => s.inspectorFocus);
   const [error, setError] = useState<string | null>(null);
   const [rebuild, setRebuild] = useState(0);
@@ -547,6 +548,7 @@ export function Inspector() {
       data-testid="inspector"
       data-sheet={narrow ? snap : undefined}
       data-dragging={dragHeight !== null || undefined}
+      data-canvas-drag={(narrow && moving) || undefined}
       style={narrow && heights !== null ? { height: dragHeight ?? heights[snap] } : undefined}
       ref={panel}
     >

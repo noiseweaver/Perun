@@ -1320,11 +1320,19 @@ textarea.field-input {
     border-radius: var(--md-shape-l) var(--md-shape-l) 0 0;
     box-shadow: var(--md-elevation-3);
     background: var(--md-surface-container-high);
-    transition: height 200ms ease;
+    transition:
+      height 200ms ease,
+      transform 200ms var(--md-motion);
   }
 
   .inspector[data-dragging] {
     transition: none;
+  }
+
+  /* while a component is dragged on the canvas the sheet slides out of the way, and back after */
+  .inspector[data-canvas-drag] {
+    transform: translateY(calc(100% - 28px));
+    pointer-events: none;
   }
 
   .sheet-handle {
