@@ -183,6 +183,7 @@ export class SimController {
     });
     this.circuit.read('');
     this.editor = new Editor(this.circuit, this.makeHost());
+    this.editor.wiresFollow = useApp.getState().settings.wiresFollow;
     this.annotations.onChange = () => this.publishTeach();
     this.editor.history.onChange = () => this.publishEditor();
     const stored = readClipboard();
@@ -371,6 +372,8 @@ export class SimController {
       // X-Y plot images are drawn in theme colors as the simulation runs
       this.circuit.scopes.resetGraphs();
     }
+    if (s.settings.wiresFollow !== prev.settings.wiresFollow)
+      this.editor.wiresFollow = s.settings.wiresFollow;
     const o = this.circuit.options;
     // only changes made through the UI; a load sets the store from the circuit, not the reverse
     if (s.speed !== prev.speed) o.speed = s.speed;

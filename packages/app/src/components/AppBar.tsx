@@ -298,6 +298,15 @@ export function AppBar() {
           </Menu.CheckboxItem>
           <Menu.CheckboxItem
             className="menu-item"
+            checked={settings.wiresFollow}
+            onCheckedChange={(v) => updateSettings({ wiresFollow: v })}
+            title={t('Hold Alt while dragging to leave the wires behind')}
+            data-testid="menu-wires-follow"
+          >
+            <Check on={settings.wiresFollow} /> {t('Wires follow dragged parts')}
+          </Menu.CheckboxItem>
+          <Menu.CheckboxItem
+            className="menu-item"
             checked={settings.euroResistors}
             onCheckedChange={(v) => updateSettings({ euroResistors: v })}
           >
