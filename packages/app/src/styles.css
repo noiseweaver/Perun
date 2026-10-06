@@ -92,11 +92,11 @@ textarea,
   }
 }
 
-/* installed on an iPhone held upright, iOS 26 frosts a band reaching about 48px below the status bar: the app
+/* installed on an iPhone held upright, iOS 26 frosts a band reaching about 28px below the status bar: the app
    bar starts under it, and the band shows the app's background (pwa.ts sets the attribute) */
 @media (orientation: portrait) and (max-width: 600px) {
   :root[data-ios-app] .app {
-    padding-top: calc(env(safe-area-inset-top) + 48px);
+    padding-top: calc(env(safe-area-inset-top) + 28px);
   }
 }
 

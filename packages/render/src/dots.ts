@@ -31,6 +31,13 @@ export function updateDotCount(cur: number, cc: number, currentMult: number): nu
   return cc + cadd;
 }
 
+/**
+ * Currents below this count as none: their dots are hidden rather than left standing still.
+ * Upstream hides dots only at a position of exactly 0, so a branch whose current is rounding
+ * noise (around 1e-16 A) kept still dots while one with exactly 0 A showed none (DEVIATIONS.md).
+ */
+export const NO_CURRENT = 1e-12;
+
 /** Dot positions per element and slot. Upstream keeps them as `curcount` fields on elements. */
 export class DotCounters {
   private counts = new Map<object, number[]>();
@@ -55,6 +62,10 @@ export class DotCounters {
     if (arr === undefined) {
       arr = [];
       this.counts.set(elm, arr);
+    }
+    if (running && Math.abs(current) < NO_CURRENT) {
+      arr[slot] = 0;
+      return 0;
     }
     const cc = arr[slot] ?? 0;
     const next =

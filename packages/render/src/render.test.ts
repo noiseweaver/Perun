@@ -49,6 +49,18 @@ describe('current dots', () => {
     expect(d.advance(elm, 0, NaN, 2, true)).toBe(2);
     expect(d.get(elm, 1)).toBe(0);
   });
+
+  it('hides dots where the current is only rounding noise', () => {
+    const d = new DotCounters();
+    const elm = {};
+    expect(d.advance(elm, 0, 1, 2, true)).toBe(2);
+    // a switch opens: the branch keeps ~1e-16 A of noise, so its dots go, not freeze
+    expect(d.advance(elm, 0, -7.8e-16, 2, true)).toBe(0);
+    expect(d.advance(elm, 0, 0, 2, true)).toBe(0);
+    // paused, the dots stay where they are
+    expect(d.advance(elm, 1, 1, 2, true)).toBe(2);
+    expect(d.advance(elm, 1, 0, 2, false)).toBe(2);
+  });
 });
 
 describe('viewport', () => {
