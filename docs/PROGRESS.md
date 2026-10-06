@@ -11,6 +11,43 @@
   pointing with the current. Which way the inside field points is a convention, since a schematic
   coil does not say which way it is wound.
 
+## 2026-10-06: Phase 10, AC analysis (branch claude/ac-bode-plots-qhbmaf)
+
+### Done
+
+- Gady picked AC/Bode as the first core simulator feature. PLAN.md gets Phase 10 with acceptance
+  criteria; the out-of-scope line now names it as the exception.
+- packages/app/src/analysis/bode.ts: `BodeSweep` reads a copy of the circuit (saved XML), turns
+  the chosen `VoltageElm` into a sine (a DC source's level becomes the bias), and steps through
+  log-spaced frequencies. Each point uses whole timesteps per period (at least 64, never coarser
+  than the circuit's own step), correlates input and output over each period via
+  `Simulation.onTimeStep`, and stops once an Aitken estimate of the remaining change is under
+  0.1% twice running (or after 4000 periods / 2M steps, then drawn hollow). The engine stops on a
+  period boundary with `requestPause`, so the next frequency starts on a zero crossing and the
+  operating point carries over. Input is measured from the source's own node voltages, so the
+  half-step source timing cancels out.
+- Accuracy (bode.test.ts): RC low-pass worst 0.007 dB and 0.05° over 10 Hz to 100 kHz; RLC
+  band-pass peak and bandwidth; inverting op-amp 6.02 dB and 180°. The RC sweep (41 points) is
+  0.5M steps, about 0.4 s headless. Low frequencies cost the most (a 1 Hz point at 5 µs is 200k
+  steps a period).
+- BodeDialog.tsx: Scopes > AC Analysis (Bode Plot)… and the element context menu (a source
+  becomes the input, anything else the output). Gain and phase panes on a shared log axis in the
+  scope theme colors (card, traces[0], traces[1], trigger for the -3 dB lines), hollow rings for
+  unsettled points, a cursor, fixed-width monospace readouts, progress, Stop, CSV export. The
+  last sweep stays when the dialog closes; reopening resumes an unfinished one. A note says when
+  the output never rises above -100 dB (not connected).
+- e2e: packages/app/e2e/bode.spec.ts.
+
+### Next
+
+- Possible follow-ups: input from a current source, a reference node other than ground for the
+  output, overlaying a second run, gain and phase margin readouts for loop gain.
+
+### Open issues
+
+- Very low start frequencies are slow because the circuit's timestep is kept. A coarser step
+  there would be faster but changes accuracy for circuits with fast internal dynamics.
+
 ## 2026-10-06: field overlay prototype (branch claude/project-thread-ojpap8)
 
 ### Done

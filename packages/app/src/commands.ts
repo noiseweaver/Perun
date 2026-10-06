@@ -29,6 +29,7 @@ export type DialogKind =
   | 'install'
   | 'themes'
   | 'themeEditor'
+  | 'bode'
   | null;
 
 export function openDialog(kind: DialogKind): void {

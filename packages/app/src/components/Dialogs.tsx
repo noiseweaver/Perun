@@ -21,6 +21,7 @@ import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
 import { themeLink } from '../themes.ts';
 import { AboutDialog } from './AboutDialog.tsx';
+import { BodeDialog } from './BodeDialog.tsx';
 import { Shell } from './DialogShell.tsx';
 import { ScopePropertiesDialog } from './ScopeDialog.tsx';
 import { SliderDialog } from './SliderDialog.tsx';
@@ -435,6 +436,8 @@ export function Dialogs() {
       return <ThemesDialog />;
     case 'themeEditor':
       return <ThemeEditorDialog />;
+    case 'bode':
+      return <BodeDialog />;
     default:
       return null;
   }

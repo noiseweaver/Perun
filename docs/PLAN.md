@@ -22,7 +22,7 @@ Rebuild Paul Falstad's CircuitJS1 as a modern TypeScript web app with a new UI a
 - Read and write the upstream circuit text format and URL links, so existing circuits and examples load
 
 ### Out of scope (for now)
-- New simulation features (AC analysis, SPICE import)
+- New simulation features (SPICE import and the like). Exception: AC analysis by transient sweep, added as Phase 10 by the owner on 2026-10-06
 - Mobile-first layout (keep it usable on tablets, optimise later)
 - Backend, accounts, hosted theme gallery
 - Desktop wrapper (Tauri, optional later)
@@ -278,6 +278,14 @@ Acceptance: at least 95% of upstream examples pass golden compare (threshold to 
 - [x] Teaching tools: a pencil for drawing on the circuit and a laser pointer whose trail fades out, for highlighting things while teaching. Work with mouse, pen and touch. Annotations are a temporary overlay with a clear button and are not saved in the circuit file, so the upstream format stays untouched. (Added 2026-10-04 by owner; built 2026-10-05: the pencil button in the bottom bar.)
 - [x] Optional i18n hooks. (Options > Language, using upstream's locale catalogs; `pnpm i18n` reports coverage.)
 - [x] README, credits, GPL notices, About dialog.
+
+### Phase 10: AC analysis (Bode plot)
+Added 2026-10-06 by owner (picked as the first core simulator feature after Phase 9).
+- [x] Frequency sweep by transient simulation: for each log-spaced frequency, the chosen voltage source plays a sine on a copy of the circuit, the existing engine runs until the output settles, and a one-period DFT of input and output gives gain and phase. No new element math and no small-signal solver, so it works for every ported element and shows nonlinear behaviour too.
+- [x] The sweep never touches the running circuit or the engine; it runs in slices per animation frame (main thread, section 3) and can be stopped.
+- [x] Dialog from Scopes > AC Analysis and from an element's context menu: input source, output (node, label, probe or voltage across a part), range, points per decade, amplitude; gain and phase plot on a log axis in scope theme colors, -3 dB markers, a cursor with fixed-width readouts, CSV export.
+
+Acceptance: an RC low-pass matches the analytic gain within 0.05 dB and phase within 0.5° from 10 Hz to 100 kHz, and its -3 dB point within 2%. A series RLC band-pass peaks within 3% of its resonance with the right bandwidth. An inverting op-amp reads its gain and 180°. Golden tests unchanged. The UI keeps running while a sweep runs, in Dark and Classic.
 
 ## 8. Java to TypeScript porting pitfalls
 
