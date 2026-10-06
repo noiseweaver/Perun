@@ -71,7 +71,10 @@ function fitIosStandaloneHeight(): void {
 }
 
 export function setupPwa(): void {
-  if (isStandalone() && isIos()) fitIosStandaloneHeight();
+  if (isStandalone() && isIos()) {
+    document.documentElement.dataset['iosApp'] = '';
+    fitIosStandaloneHeight();
+  }
   if (isStandalone()) useApp.setState({ install: 'none' });
   else if (isIos()) useApp.setState({ install: 'ios' });
 
