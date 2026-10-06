@@ -1,5 +1,22 @@
 # Progress
 
+## 2026-10-06: field overlay prototype (branch claude/project-thread-ojpap8)
+
+### Done
+
+- Options > Show fields (user setting, off by default, not saved in circuits): capacitors get + and
+  - charge marks and electric field lines with arrows from the + plate (strength is |V| over the
+  voltage range); inductors get dashed field loops through the coil that flow with the current
+  (strength against the coil's own recent peak). Display only: reads `voltdiff` and `current`.
+  Code in packages/render/src/fields.ts, drawn under the elements, hidden below zoom 0.5.
+- Theme keys `circuit.electricField` and `circuit.magneticField` in every built-in theme. Charge
+  marks use the voltage positive and negative colors.
+
+### Next
+
+- Gady to try the preview artifact and decide whether to keep, change or drop it.
+- Not covered yet: transformers, polarized capacitor plate shape, other parts with capacitance.
+
 ## 2026-10-06: deploy, iPhone fixes, more themes
 
 ### Done
