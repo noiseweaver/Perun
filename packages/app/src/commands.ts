@@ -32,6 +32,7 @@ export type DialogKind =
   | 'bode'
   | 'exportImage'
   | 'partsList'
+  | 'scopeCsv'
   | null;
 
 export function openDialog(kind: DialogKind): void {

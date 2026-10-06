@@ -88,3 +88,33 @@ test('exports the schematic as SVG and PNG, and a parts list', async ({ page }) 
   await expect(table).toContainText('100 nF');
   await expect(table).not.toContainText('Wire');
 });
+
+test('records a scope at full resolution and downloads the CSV', async ({ page }) => {
+  await page.goto(`/?ctz=${compressCircuit(RC)}`);
+  await ready(page);
+  const r = await at(page, 176, 96);
+  await page.mouse.move(r.x, r.y);
+  await page.mouse.click(r.x, r.y, { button: 'right' });
+  await page.getByTestId('ctx-view-in-scope').click();
+  const box = await page.getByTestId('circuit-canvas').boundingBox();
+  const rect = await page.evaluate(
+    () => window.circuitjsNext?.controller.scopes.scopes[0]?.rect ?? null,
+  );
+  if (!box || !rect) throw new Error('no scope');
+  await page.mouse.click(box.x + rect.x + rect.width / 2, box.y + rect.y + rect.height / 2, {
+    button: 'right',
+  });
+  await page.getByTestId('scope-export-csv').click();
+  await expect(page.getByTestId('csv-columns')).toContainText('resistor, 1 kΩ: V (V)');
+  await page.getByTestId('csv-span').fill('2m');
+  await page.getByTestId('csv-record').click();
+  await expect(page.getByTestId('csv-status')).toContainText('Recorded.', { timeout: 20000 });
+  const dl = page.waitForEvent('download');
+  await page.getByTestId('csv-download').click();
+  const file = await dl;
+  const text = await (await file.createReadStream()).toArray();
+  const lines = Buffer.concat(text).toString('utf8').trim().split('\n');
+  expect(lines[0]).toContain('time (s)');
+  // 2 ms at 5 μs a step
+  expect(lines.length).toBeGreaterThan(400);
+});

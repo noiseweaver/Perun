@@ -132,6 +132,7 @@ export interface AppState {
     | 'bode'
     | 'exportImage'
     | 'partsList'
+    | 'scopeCsv'
     | null;
   /** Bumped to move keyboard focus to the property panel (double-click, Enter). */
   inspectorFocus: number;

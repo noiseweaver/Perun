@@ -2,7 +2,12 @@
 // Copyright (C) 2026 circuitjs-next contributors
 // Not in upstream: a schematic image (SVG or PNG) and a parts list (CSV).
 
-import { type CircuitElm } from '@circuitjs-next/elements';
+import {
+  getFixedUnitText,
+  getUnitText,
+  parseUnits,
+  type CircuitElm,
+} from '@circuitjs-next/elements';
 import {
   DEFAULT_SCHEMATIC,
   schematicBounds,
@@ -16,6 +21,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { copyText, defaultFileName, showToast } from '../commands.ts';
 import { download, downloadBlob } from '../download.ts';
+import { MAX_ROWS, plotColumns } from '../analysis/scopeRecord.ts';
 import { partsCsv, partsList } from '../export/partsList.ts';
 import { t } from '../i18n.ts';
 import { controller } from '../SimController.ts';
@@ -329,6 +335,160 @@ export function PartsListDialog() {
           disabled={rows.length === 0}
           data-testid="parts-download"
           onClick={() => download(`${baseName()}-parts.csv`, csv, 'text/csv')}
+        >
+          <Icon name="download" size={18} /> {t('Download CSV')}
+        </button>
+      </div>
+    </Shell>
+  );
+}
+
+/** Simulated time a scope shows across its width. */
+function visibleSpan(): number {
+  const s = controller.csvScope;
+  if (s === null) return 0;
+  return controller.circuit.sim.maxTimeStep * s.speed * s.rect.width;
+}
+
+/** A time typed with or without its unit ("20 ms", "20m", "0.02"); NaN when it isn't one. */
+function parseTime(text: string): number {
+  const s = text.replace(/\s+/g, '').replace(/(?<=\d|[pnuμµmkMG])s$/, '');
+  try {
+    return parseUnits(s);
+  } catch {
+    return Number.NaN;
+  }
+}
+
+const END_TEXT = {
+  done: 'Recorded.',
+  stopped: 'Stopped.',
+  full: `Stopped at ${MAX_ROWS.toLocaleString('en')} rows, the most one recording keeps.`,
+  reset: 'Stopped: the simulation was reset.',
+} as const;
+
+/** A scope's CSV: what is on screen, or every timestep for a stretch of simulated time. */
+export function ScopeCsvDialog() {
+  const scope = controller.csvScope;
+  const running = useApp((s) => s.running);
+  const [spanText, setSpanText] = useState(() => getUnitText(visibleSpan(), 's'));
+  const span = parseTime(spanText);
+  const spanOk = Number.isFinite(span) && span > 0;
+  // the recorder changes as the simulation runs: look again a few times a second
+  const [, tick] = useState(0);
+  const rec = controller.scopeRecorder?.scope === scope ? controller.scopeRecorder : null;
+  const recording = rec !== null && !rec.done;
+  useEffect(() => {
+    if (!recording) return;
+    const id = window.setInterval(() => tick((n) => n + 1), 200);
+    return () => window.clearInterval(id);
+  }, [recording]);
+  if (scope === null) return null;
+  const columns = plotColumns(scope, scope.visiblePlots);
+  const name = baseName();
+  const screen = (): void => {
+    const csv = scope.exportCSV();
+    if (csv !== null) download(`${name}-scope-screen.csv`, csv, 'text/csv');
+  };
+  const progress = rec === null ? 0 : Math.min(1, rec.elapsed / rec.duration);
+  return (
+    <Shell
+      title={t('Export scope data')}
+      description={t('Columns: time, then each plot on this scope.')}
+      wide
+    >
+      <ul className="csv-columns" data-testid="csv-columns">
+        {columns.map((c, i) => (
+          <li key={i}>{c}</li>
+        ))}
+      </ul>
+      <section className="csv-section">
+        <h3 className="csv-heading">{t('Full resolution')}</h3>
+        <p className="dialog-description">
+          {t(
+            'Records every timestep from now on, for as long as you choose. The simulation has to be running.',
+          )}
+        </p>
+        <div className="csv-record">
+          <div className="field">
+            <label className="field-label" htmlFor="csv-span">
+              {t('Simulated time')}
+            </label>
+            <input
+              id="csv-span"
+              className="text-input field-input"
+              value={spanText}
+              disabled={recording}
+              data-invalid={spanOk ? undefined : ''}
+              data-testid="csv-span"
+              onChange={(e) => setSpanText(e.target.value)}
+            />
+          </div>
+          {recording ? (
+            <button
+              type="button"
+              className="button"
+              data-testid="csv-stop"
+              onClick={() => {
+                controller.stopScopeRecording();
+                tick((n) => n + 1);
+              }}
+            >
+              <Icon name="pause" size={18} /> {t('Stop')}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="button"
+              disabled={!spanOk || columns.length === 0}
+              data-testid="csv-record"
+              onClick={() => {
+                controller.startScopeRecording(scope, span);
+                tick((n) => n + 1);
+              }}
+            >
+              <Icon name="play" size={18} /> {t(rec === null ? 'Record' : 'Record again')}
+            </button>
+          )}
+        </div>
+        {rec !== null && (
+          <div className="csv-status" data-testid="csv-status">
+            <progress className="bode-progress" max={1} value={progress} />
+            <span className="csv-status-text">
+              {getFixedUnitText(rec.elapsed, 's')} / {getFixedUnitText(rec.duration, 's')}
+              {'  '}
+              {String(rec.rows).padStart(String(MAX_ROWS).length)} {t('rows')}
+            </span>
+            {rec.end !== null && <span className="csv-status-note">{t(END_TEXT[rec.end])}</span>}
+            {recording && !running && (
+              <span className="csv-status-note">{t('Paused: press Run to record.')}</span>
+            )}
+          </div>
+        )}
+      </section>
+      <div className="dialog-buttons">
+        <button type="button" className="button" disabled={columns.length === 0} onClick={screen}>
+          {t('On screen only')}
+        </button>
+        <button
+          type="button"
+          className="button"
+          disabled={rec === null || rec.rows === 0}
+          onClick={() => rec !== null && void copyText(rec.csv(), 'Data')}
+        >
+          {t('Copy')}
+        </button>
+        <Dialog.Close asChild>
+          <button type="button" className="button">
+            {t('Close')}
+          </button>
+        </Dialog.Close>
+        <button
+          type="button"
+          className="button button-primary"
+          disabled={rec === null || rec.rows === 0}
+          data-testid="csv-download"
+          onClick={() => rec !== null && download(`${name}-scope.csv`, rec.csv(), 'text/csv')}
         >
           <Icon name="download" size={18} /> {t('Download CSV')}
         </button>

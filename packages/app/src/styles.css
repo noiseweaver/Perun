@@ -2928,3 +2928,56 @@ ul.theme-contrast {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.csv-columns {
+  margin: 0 0 8px;
+  padding-left: 20px;
+  font-size: 14px;
+}
+
+.csv-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--md-shape-s);
+}
+
+.csv-heading {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.csv-section .dialog-description {
+  margin: 0;
+}
+
+.csv-record {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.csv-record .field {
+  flex: 0 1 200px;
+}
+
+.csv-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.csv-status-text {
+  font-family: var(--mono-font);
+  font-size: 13px;
+  white-space: pre;
+}
+
+.csv-status-note {
+  font-size: 13px;
+  color: var(--ui-text-muted);
+}
