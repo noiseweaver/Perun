@@ -22,7 +22,7 @@ Rebuild Paul Falstad's CircuitJS1 as a modern TypeScript web app with a new UI a
 - Read and write the upstream circuit text format and URL links, so existing circuits and examples load
 
 ### Out of scope (for now)
-- New simulation features (SPICE import and the like). Exception: AC analysis by transient sweep, added as Phase 10 by the owner on 2026-10-06
+- New simulation features (SPICE import and the like). Exceptions: AC analysis by transient sweep (Phase 10, added by the owner on 2026-10-06), and parameter sweeps, Monte Carlo tolerance runs and the DC operating point table (Phases 11 to 13, the owner picked "everything" on 2026-10-06)
 - Mobile-first layout (keep it usable on tablets, optimise later)
 - Backend, accounts, hosted theme gallery
 - Desktop wrapper (Tauri, optional later)
@@ -286,6 +286,35 @@ Added 2026-10-06 by owner (picked as the first core simulator feature after Phas
 - [x] Dialog from Scopes > AC Analysis and from an element's context menu: input source, output (node, label, probe or voltage across a part), range, points per decade, amplitude; gain and phase plot on a log axis in scope theme colors, -3 dB markers, a cursor with fixed-width readouts, CSV export.
 
 Acceptance: an RC low-pass matches the analytic gain within 0.05 dB and phase within 0.5° from 10 Hz to 100 kHz, and its -3 dB point within 2%. A series RLC band-pass peaks within 3% of its resonance with the right bandwidth. An inverting op-amp reads its gain and 180°. Golden tests unchanged. The UI keeps running while a sweep runs, in Dark and Classic.
+
+### Phase 11: Parameter sweeps
+Added 2026-10-06 by owner (the core features card: "Everything").
+- [ ] Run a copy of the circuit once per value of one numeric property of one part (a list, or a linear or log range), and overlay the runs. The live circuit, the engine and the golden tests are untouched; runs go in slices per animation frame and can be stopped.
+- [ ] Two measurements: a transient (an output's voltage or current from reset to a stop time) and an AC sweep (the Phase 10 Bode measurement per run).
+- [ ] Dialog from the Scopes menu and from an element's context menu (Sweep this value), with one trace per run in the scope theme's trace colors, a legend, a cursor with fixed-width readouts per run, and CSV export.
+
+Acceptance: sweeping R in an RC step response gives each run's time constant within 2% of RC; sweeping C in an RC low-pass moves the -3 dB point as 1/(2πRC) within 2%. Golden tests unchanged. The UI keeps running during a sweep, in Dark and Classic.
+
+### Phase 12: Monte Carlo tolerance runs
+Added 2026-10-06 by owner, built on Phase 11.
+- [ ] Resistors, capacitors and inductors get a Tolerance property (none by default). It is saved as an extra XML attribute only when set, which upstream ignores (DEVIATIONS.md).
+- [ ] Monte Carlo mode in the sweep dialog: a run count, a seed and a distribution (uniform, or Gaussian with the tolerance at 3σ). Every toleranced part gets a random value per run from its own seeded generator, never the engine's, so normal runs and goldens stay identical. The nominal run is drawn on top of the spread, with min, mean and max readouts at the cursor.
+
+Acceptance: the same seed gives the same runs; every drawn value stays within its tolerance (uniform); with no toleranced part the dialog says so. Golden tests unchanged, and a file with tolerances still opens upstream.
+
+### Phase 13: DC operating point table
+Added 2026-10-06 by owner.
+- [ ] A command that runs the engine's existing DC solve (capacitors open) on a copy of the circuit, and a table of node voltages (labeled nodes by name, others by a generated name) and each part's current and power, sortable, with fixed-width monospace values. Selecting a row highlights the node or part on the canvas.
+
+Acceptance: a resistor divider and a transistor bias circuit match hand calculation; capacitors carry no DC current. Golden tests unchanged.
+
+### Phase 14: Editor and export quick wins
+Added 2026-10-06 by owner. No simulation or file format change.
+- [ ] Wires that stay attached: moving a part moves the wire ends on its posts (routed wires reroute), with an option to turn it off and a modifier to detach while dragging.
+- [ ] Export the schematic as SVG or PNG in the current theme, and a parts list (BOM) as CSV.
+- [ ] Full-resolution scope CSV export (every timestep in a window), with columns named after the parts' labels.
+
+Acceptance: dragging a part in an example circuit keeps every attached wire connected, and undo restores it in one step; exported SVG opens in a browser and matches the canvas; the CSV has one row per timestep.
 
 ## 8. Java to TypeScript porting pitfalls
 
