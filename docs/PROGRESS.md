@@ -1,5 +1,22 @@
 # Progress
 
+## 2026-10-06: deploy, iPhone fixes, more themes
+
+### Done
+
+- GitHub Pages deploy (PR #13): every push to main publishes the app at
+  https://noiseweaver.github.io/circuitsjs-next/, installable on iPhone through Safari > Share >
+  Add to Home Screen.
+- iPhone fixes (PR #14): installed on iOS 26 the page height came out short by the status bar;
+  the app now stretches to the screen. The app bar clears the blur under the status bar, tapped
+  buttons no longer stay shaded, and the brand icon shows on phones.
+- Twelve palette themes (PR #15): Solarized Light, Dracula, Monokai, Tokyo Night, Catppuccin Mocha
+  and Latte, Rosé Pine, Everforest Dark, GitHub Dark and Light, Obsidian Dark and Light.
+
+### Open issues
+
+- The iOS height fix still needs checking on a real iPhone after the deploy.
+
 ## 2026-10-05: Phase 9 (polish and release)
 
 ### Done

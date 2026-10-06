@@ -143,9 +143,8 @@ export const themeInputSchema = z
           .string()
           .max(40)
           .describe(
-            'Built-in theme the missing keys come from: dark (the default), light, classic, ' +
-              'classic-dots, high-contrast, colorblind-safe, nord, solarized-dark, gruvbox-dark ' +
-              'or adwaita-dark.',
+            'Id of the built-in theme the missing keys come from, such as dark (the default), ' +
+              'light or classic. Any id in the built-in themes table works.',
           ),
       })
       .partial()
