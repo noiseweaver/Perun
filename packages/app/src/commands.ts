@@ -30,6 +30,8 @@ export type DialogKind =
   | 'themes'
   | 'themeEditor'
   | 'bode'
+  | 'exportImage'
+  | 'partsList'
   | null;
 
 export function openDialog(kind: DialogKind): void {

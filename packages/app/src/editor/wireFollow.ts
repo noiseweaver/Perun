@@ -35,10 +35,13 @@ function setEnds(w: CircuitElm, x: number, y: number, x2: number, y2: number): v
  * far, so the follow can be switched off and on mid-drag (the wires spring back).
  */
 export class WireFollow {
-  private constructor(
-    private readonly elements: CircuitElm[],
-    private readonly attached: Attached[],
-  ) {}
+  private readonly elements: CircuitElm[];
+  private readonly attached: Attached[];
+
+  private constructor(elements: CircuitElm[], attached: Attached[]) {
+    this.elements = elements;
+    this.attached = attached;
+  }
 
   /** The unselected wires with an end on a post of a selected element, or null if none. */
   static start(elements: CircuitElm[]): WireFollow | null {

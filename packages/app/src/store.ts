@@ -130,6 +130,8 @@ export interface AppState {
     | 'themes'
     | 'themeEditor'
     | 'bode'
+    | 'exportImage'
+    | 'partsList'
     | null;
   /** Bumped to move keyboard focus to the property panel (double-click, Enter). */
   inspectorFocus: number;

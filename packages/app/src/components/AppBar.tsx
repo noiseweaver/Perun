@@ -166,6 +166,16 @@ export function AppBar() {
           />
           <Item label="Export as text…" onSelect={() => openDialog('exportText')} />
           <Item
+            label="Export image…"
+            testId="menu-export-image"
+            onSelect={() => openDialog('exportImage')}
+          />
+          <Item
+            label="Parts list…"
+            testId="menu-parts-list"
+            onSelect={() => openDialog('partsList')}
+          />
+          <Item
             label="Create Subcircuit…"
             testId="menu-create-subcircuit"
             onSelect={() => controller.createSubcircuit()}
