@@ -269,6 +269,8 @@ export class SimController {
   /** Upstream reset button: restart the simulation from t = 0. */
   reset(): void {
     this.circuit.reset();
+    // upstream resetAction clears every scope too (scopeManager.resetGraphs)
+    this.circuit.scopes.resetGraphs();
     this.stepsOwed = 0;
     if (this.renderer) this.renderer.stopElm = null;
     // upstream resumes a stopped simulation when reset at t = 0
