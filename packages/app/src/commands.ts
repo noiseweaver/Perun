@@ -30,6 +30,7 @@ export type DialogKind =
   | 'themes'
   | 'themeEditor'
   | 'bode'
+  | 'sweep'
   | null;
 
 export function openDialog(kind: DialogKind): void {

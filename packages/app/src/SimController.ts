@@ -46,6 +46,7 @@ import {
   type CardHit,
   type CircuitElm,
   type EditInfo,
+  type TolerancedElm,
   type Rect,
   type Scope,
   type ScopeDefaultsStore,
@@ -1493,6 +1494,16 @@ export class SimController {
     this.editor.history.record('Edit', () => e.setEditValue(n, ei));
     // upstream EditDialog.apply: a slider on this value moves to it
     if (ei.error === null) findAdjustable(this.circuit.adjustables, e, n)?.setSliderValue(ei.value);
+    this.circuitChanged();
+  }
+
+  /** Set a part's tolerance (not in upstream, DEVIATIONS.md), as one undoable edit. */
+  applyTolerance(e: TolerancedElm, percent: number): void {
+    this.editor.history.record('Edit', () => {
+      if (e.tolerance === percent) return false;
+      e.tolerance = percent;
+      return true;
+    });
     this.circuitChanged();
   }
 

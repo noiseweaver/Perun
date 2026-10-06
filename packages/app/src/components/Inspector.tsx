@@ -8,8 +8,11 @@
 import {
   CircuitElm,
   VoltageElm,
+  hasTolerance,
   parseUnits,
   stepE12,
+  toleranceEditInfo,
+  toleranceFromEditInfo,
   unitString,
   type EditInfo,
 } from '@circuitjs-next/elements';
@@ -53,6 +56,8 @@ interface FieldProps {
   ei: EditInfo;
   autoFocus: boolean;
   onError: (msg: string | null) => void;
+  /** Apply the value some other way than the element's setEditValue (fields not in upstream). */
+  onApply?: (ei: EditInfo) => void;
 }
 
 function apply(props: FieldProps): void {
@@ -60,7 +65,10 @@ function apply(props: FieldProps): void {
   ei.error = null;
   if (ei.positive && ei.value <= 0) ei.setError('must be > 0');
   if (ei.nonNegative && ei.value < 0) ei.setError('must be >= 0');
-  if (ei.error === null) controller.applyEdit(elm, n, ei);
+  if (ei.error === null) {
+    if (props.onApply) props.onApply(ei);
+    else controller.applyEdit(elm, n, ei);
+  }
   if (ei.error !== null) {
     const field = ei.errorFieldName ?? ei.name;
     onError(field ? `${labelText(field)}: ${ei.error}` : ei.error);
@@ -645,6 +653,18 @@ export function Inspector() {
             if (ei.text !== null) return <TextField key={key} {...props} />;
             return <NumberField key={key} {...props} />;
           })}
+          {hasTolerance(selected) && (
+            // not in upstream (DEVIATIONS.md): the part's tolerance for Monte Carlo runs
+            <ChoiceField
+              key={`tol:${revision}:${rebuild}`}
+              elm={selected}
+              n={infos.length}
+              ei={toleranceEditInfo(selected)}
+              autoFocus={false}
+              onError={onError}
+              onApply={(ei) => controller.applyTolerance(selected, toleranceFromEditInfo(ei))}
+            />
+          )}
           {error !== null && (
             <p className="field-error" role="alert">
               {error}

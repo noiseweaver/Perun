@@ -132,9 +132,10 @@ export class BodeSweep {
   private pointDone = false;
   private settled = false;
 
-  constructor(circuitText: string, settings: BodeSettings) {
+  /** `circuit` is saved circuit text, or a circuit copy the sweep may change and own. */
+  constructor(circuit: string | Circuit, settings: BodeSettings) {
     this.freqs = sweepFrequencies(settings.fStart, settings.fStop, settings.pointsPerDecade);
-    this.circuit = readCircuit(circuitText);
+    this.circuit = typeof circuit === 'string' ? readCircuit(circuit) : circuit;
     const els = this.circuit.elements;
     const src = els[settings.source];
     const out = els[settings.output];

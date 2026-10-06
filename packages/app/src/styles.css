@@ -1842,6 +1842,116 @@ textarea.field-input {
   }
 }
 
+/* ---- Parameter sweep and Monte Carlo dialog ---------------------------------------------- */
+
+.sweep-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+/* Material 3 segmented buttons */
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--md-shape-full);
+  overflow: hidden;
+}
+
+.segmented-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-left: 1px solid var(--ui-border);
+  background: transparent;
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background var(--md-motion);
+}
+
+.segmented-button:first-child {
+  border-left: 0;
+}
+
+.segmented-button[data-selected] {
+  background: var(--md-secondary-container);
+}
+
+.segmented-button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.segmented-button:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: -2px;
+}
+
+.sweep-form {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.sweep-form .sweep-wide {
+  grid-column: span 2;
+}
+
+.sweep-form .sweep-list {
+  grid-column: span 3;
+}
+
+.sweep-parts {
+  font-size: 13px;
+  color: var(--ui-text-muted);
+  padding-top: 6px;
+}
+
+/* fixed-width live values, as in the Bode readout */
+.sweep-readout {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 20px;
+  padding: 0 4px;
+  font-family: var(--mono-font);
+  font-size: 13px;
+  white-space: pre;
+}
+
+.sweep-readout-head {
+  white-space: pre;
+}
+
+.sweep-runs-list {
+  display: grid;
+  gap: 2px 20px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.sweep-run {
+  white-space: pre;
+}
+
+@media (max-width: 719px) {
+  .bode-form.sweep-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .bode-form.sweep-form > .field:nth-child(n) {
+    grid-column: auto;
+  }
+
+  .bode-form.sweep-form > .sweep-wide,
+  .bode-form.sweep-form > .sweep-list {
+    grid-column: 1 / -1;
+  }
+}
+
 .scope-xy-grid {
   display: grid;
   grid-template-columns: auto 1fr;

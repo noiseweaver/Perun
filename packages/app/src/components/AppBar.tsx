@@ -24,6 +24,7 @@ import {
   setPaletteOpen,
 } from '../store.ts';
 import { openBode } from './BodeDialog.tsx';
+import { openSweep } from './SweepDialog.tsx';
 import { CategoryIcon } from './CategoryIcon.tsx';
 import { CircuitsSheet } from './CircuitsSheet.tsx';
 import { Icon } from './Icon.tsx';
@@ -702,6 +703,12 @@ function ScopesMenuItems() {
       />
       <Menu.Separator className="menu-separator" />
       <Item label="AC Analysis (Bode Plot)…" testId="scopes-bode" onSelect={() => openBode()} />
+      <Item label="Parameter Sweep…" testId="scopes-sweep" onSelect={() => openSweep('values')} />
+      <Item
+        label="Monte Carlo…"
+        testId="scopes-montecarlo"
+        onSelect={() => openSweep('montecarlo')}
+      />
     </>
   );
 }

@@ -2,7 +2,6 @@
 // Copyright (C) 2026 circuitjs-next contributors
 
 import {
-  LabeledNodeElm,
   VoltageElm,
   getFixedUnitText,
   parseUnits,
@@ -20,6 +19,7 @@ import {
   type BodeSettings,
 } from '../analysis/bode.ts';
 import { bodeLayout, drawBode, freqAtX } from '../analysis/bodePlot.ts';
+import { elementNames, outputRank } from '../analysis/names.ts';
 import { download, openDialog } from '../commands.ts';
 import { t } from '../i18n.ts';
 import { controller } from '../SimController.ts';
@@ -48,36 +48,12 @@ const SLICE_MS = 12;
 /** Below this everywhere the output is numerical noise, not a response. */
 const QUIET_DB = -100;
 
-/** "Resistor 2", "Labeled Node "out"": a name to pick an element by in a list. */
-function elementNames(els: readonly CircuitElm[]): Map<CircuitElm, string> {
-  const kinds = new Map<string, CircuitElm[]>();
-  for (const e of els) {
-    const k = t(e.getDialogTitle().replace(/^Edit /, ''));
-    const list = kinds.get(k) ?? [];
-    list.push(e);
-    kinds.set(k, list);
-  }
-  const names = new Map<CircuitElm, string>();
-  for (const [k, list] of kinds) {
-    list.forEach((e, i) => {
-      if (e instanceof LabeledNodeElm) names.set(e, `${k} "${e.text}"`);
-      else names.set(e, list.length > 1 ? `${k} ${i + 1}` : k);
-    });
-  }
-  return names;
-}
-
-/** Outputs in the order people look for them: labels, meters and outputs before parts. */
-function outputRank(e: CircuitElm): number {
-  return e.getPostCount() === 1 ? 0 : e.getDumpType() === 'p'.charCodeAt(0) ? 0 : 1;
-}
-
 const fmtFreq = (f: number): string => getFixedUnitText(f, 'Hz');
 const fmtDb = (v: number): string =>
   Number.isFinite(v) ? `${v.toFixed(2).padStart(8)} dB` : `${'-∞'.padStart(8)} dB`;
 const fmtDeg = (v: number): string => `${v.toFixed(1).padStart(7)}°`;
 
-function readPositive(text: string): number | null {
+export function readPositive(text: string): number | null {
   try {
     const v = parseUnits(text.trim().replace(/hz$/i, '').replace(/v$/i, '').replace(/[µμ]/, 'u'));
     return Number.isFinite(v) && v > 0 ? v : null;
@@ -86,7 +62,7 @@ function readPositive(text: string): number | null {
   }
 }
 
-const shortNum = (v: number): string =>
+export const shortNum = (v: number): string =>
   getFixedUnitText(v, '')
     .trim()
     .replace(/\.?0+(?=\s|$)/, '')
@@ -444,7 +420,7 @@ export function BodeDialog() {
   );
 }
 
-function NumberField(props: {
+export function NumberField(props: {
   id: string;
   label: string;
   value: string;

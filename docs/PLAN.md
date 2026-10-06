@@ -289,16 +289,16 @@ Acceptance: an RC low-pass matches the analytic gain within 0.05 dB and phase wi
 
 ### Phase 11: Parameter sweeps
 Added 2026-10-06 by owner (the core features card: "Everything").
-- [ ] Run a copy of the circuit once per value of one numeric property of one part (a list, or a linear or log range), and overlay the runs. The live circuit, the engine and the golden tests are untouched; runs go in slices per animation frame and can be stopped.
-- [ ] Two measurements: a transient (an output's voltage or current from reset to a stop time) and an AC sweep (the Phase 10 Bode measurement per run).
-- [ ] Dialog from the Scopes menu and from an element's context menu (Sweep this value), with one trace per run in the scope theme's trace colors, a legend, a cursor with fixed-width readouts per run, and CSV export.
+- [x] Run a copy of the circuit once per value of one numeric property of one part (a list, or a linear or log range), and overlay the runs. The live circuit, the engine and the golden tests are untouched; runs go in slices per animation frame and can be stopped.
+- [x] Two measurements: a transient (an output's voltage or current from reset to a stop time) and an AC sweep (the Phase 10 Bode measurement per run).
+- [x] Dialog from the Scopes menu and from an element's context menu (Sweep this value), with one trace per run in the scope theme's trace colors, a legend, a cursor with fixed-width readouts per run, and CSV export.
 
 Acceptance: sweeping R in an RC step response gives each run's time constant within 2% of RC; sweeping C in an RC low-pass moves the -3 dB point as 1/(2πRC) within 2%. Golden tests unchanged. The UI keeps running during a sweep, in Dark and Classic.
 
 ### Phase 12: Monte Carlo tolerance runs
 Added 2026-10-06 by owner, built on Phase 11.
-- [ ] Resistors, capacitors and inductors get a Tolerance property (none by default). It is saved as an extra XML attribute only when set, which upstream ignores (DEVIATIONS.md).
-- [ ] Monte Carlo mode in the sweep dialog: a run count, a seed and a distribution (uniform, or Gaussian with the tolerance at 3σ). Every toleranced part gets a random value per run from its own seeded generator, never the engine's, so normal runs and goldens stay identical. The nominal run is drawn on top of the spread, with min, mean and max readouts at the cursor.
+- [x] Resistors, capacitors and inductors get a Tolerance property (none by default). It is saved as an extra XML attribute only when set, which upstream ignores (DEVIATIONS.md).
+- [x] Monte Carlo mode in the sweep dialog: a run count, a seed and a distribution (uniform, or Gaussian with the tolerance at 3σ). Every toleranced part gets a random value per run from its own seeded generator, never the engine's, so normal runs and goldens stay identical. The nominal run is drawn on top of the spread, with min, mean and max readouts at the cursor.
 
 Acceptance: the same seed gives the same runs; every drawn value stays within its tolerance (uniform); with no toleranced part the dialog says so. Golden tests unchanged, and a file with tolerances still opens upstream.
 
