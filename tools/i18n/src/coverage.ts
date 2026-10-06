@@ -4,17 +4,24 @@
 // pnpm i18n [--missing]
 // How much of the interface each upstream string catalog translates. It collects the English
 // strings the app looks up (t('...'), tf('...'), palette names and groups, menu labels) and
-// checks them against reference/.../public/locale_*.txt the way the app does (exact, then any
+// checks them against reference/.../public/locale_*.txt (and packages/app/locales/) the way the app does (exact, then any
 // capitalisation, `…` matching `...`). --missing prints the strings no catalog has, the list a
 // translator would start from.
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { LANGUAGES, parseLocale } from '../../../packages/elements/src/i18n.ts';
 
 const ROOT = new URL('../../../', import.meta.url).pathname;
 const APP = join(ROOT, 'packages/app/src');
 const PUBLIC = join(ROOT, 'reference/circuitjs1/src/com/lushprojects/circuitjs1/public');
+const APP_LOCALES = join(ROOT, 'packages/app/locales');
+
+/** The app's own catalogs (Catalan) are in packages/app/locales, upstream's in reference/. */
+function catalog(code: string): string {
+  const own = join(APP_LOCALES, `locale_${code}.txt`);
+  return existsSync(own) ? own : join(PUBLIC, `locale_${code}.txt`);
+}
 
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((f) => {
@@ -31,7 +38,7 @@ function strings(): Set<string> {
   const patterns = [
     new RegExp(String.raw`\bt[f]?\(\s*${lit}`, 'g'),
     new RegExp(String.raw`\bt\([^()]*\?\s*${lit}\s*:\s*${lit}`, 'g'),
-    /\blabel="([^"]+)"/g,
+    /\b(?:label|caption)="([^"]+)"/g,
   ];
   for (const file of sources(APP)) {
     const text = readFileSync(file, 'utf8');
@@ -57,7 +64,7 @@ const missingEverywhere = new Set(wanted);
 console.log(`${wanted.length} interface strings`);
 for (const { code, name } of LANGUAGES) {
   if (code === 'en') continue;
-  const map = parseLocale(readFileSync(join(PUBLIC, `locale_${code}.txt`), 'utf8'));
+  const map = parseLocale(readFileSync(catalog(code), 'utf8'));
   const folded = new Map([...map].map(([k, v]) => [k.toLowerCase(), v]));
   let n = 0;
   for (const s of wanted)

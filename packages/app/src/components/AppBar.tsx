@@ -314,63 +314,55 @@ export function AppBar() {
           >
             <Check on={settings.conventionalCurrent} /> {t('Conventional current motion')}
           </Menu.CheckboxItem>
-          <Menu.Sub>
-            <Menu.SubTrigger className="menu-item" data-testid="menu-text-font">
-              {t('Default text box font')}
-              <Icon name="chevronRight" className="icon menu-trailing" />
-            </Menu.SubTrigger>
-            <Menu.Portal>
-              <Menu.SubContent className="menu-content" sideOffset={4} alignOffset={-8}>
-                <Menu.RadioGroup
-                  value={settings.textFont.family}
-                  onValueChange={(v) =>
-                    updateSettings({
-                      textFont: {
-                        ...settings.textFont,
-                        family: v === 'serif' || v === 'mono' ? v : 'default',
-                      },
-                    })
-                  }
-                >
-                  {(
-                    [
-                      ['default', 'Default'],
-                      ['serif', 'Serif'],
-                      ['mono', 'Monospace'],
-                    ] as const
-                  ).map(([id, label]) => (
-                    <Menu.RadioItem
-                      key={id}
-                      value={id}
-                      className="menu-item"
-                      data-testid={`text-font-${id}`}
-                    >
-                      <Check on={settings.textFont.family === id} /> {t(label)}
-                    </Menu.RadioItem>
-                  ))}
-                </Menu.RadioGroup>
-                <Menu.Separator className="menu-separator" />
-                <Menu.CheckboxItem
+          <OptionsSub label="Default text box font" testId="menu-text-font">
+            <Menu.RadioGroup
+              value={settings.textFont.family}
+              onValueChange={(v) =>
+                updateSettings({
+                  textFont: {
+                    ...settings.textFont,
+                    family: v === 'serif' || v === 'mono' ? v : 'default',
+                  },
+                })
+              }
+            >
+              {(
+                [
+                  ['default', 'Default'],
+                  ['serif', 'Serif'],
+                  ['mono', 'Monospace'],
+                ] as const
+              ).map(([id, label]) => (
+                <Menu.RadioItem
+                  key={id}
+                  value={id}
                   className="menu-item"
-                  checked={settings.textFont.bold}
-                  onCheckedChange={(v) =>
-                    updateSettings({ textFont: { ...settings.textFont, bold: v } })
-                  }
+                  data-testid={`text-font-${id}`}
                 >
-                  <Check on={settings.textFont.bold} /> {t('Bold')}
-                </Menu.CheckboxItem>
-                <Menu.CheckboxItem
-                  className="menu-item"
-                  checked={settings.textFont.italic}
-                  onCheckedChange={(v) =>
-                    updateSettings({ textFont: { ...settings.textFont, italic: v } })
-                  }
-                >
-                  <Check on={settings.textFont.italic} /> {t('Italic')}
-                </Menu.CheckboxItem>
-              </Menu.SubContent>
-            </Menu.Portal>
-          </Menu.Sub>
+                  <Check on={settings.textFont.family === id} /> {t(label)}
+                </Menu.RadioItem>
+              ))}
+            </Menu.RadioGroup>
+            <Menu.Separator className="menu-separator" />
+            <Menu.CheckboxItem
+              className="menu-item"
+              checked={settings.textFont.bold}
+              onCheckedChange={(v) =>
+                updateSettings({ textFont: { ...settings.textFont, bold: v } })
+              }
+            >
+              <Check on={settings.textFont.bold} /> {t('Bold')}
+            </Menu.CheckboxItem>
+            <Menu.CheckboxItem
+              className="menu-item"
+              checked={settings.textFont.italic}
+              onCheckedChange={(v) =>
+                updateSettings({ textFont: { ...settings.textFont, italic: v } })
+              }
+            >
+              <Check on={settings.textFont.italic} /> {t('Italic')}
+            </Menu.CheckboxItem>
+          </OptionsSub>
           <LanguageMenu />
           <Menu.Separator className="menu-separator" />
           <Item
@@ -470,50 +462,82 @@ function ThemeMenu({ themeInput }: { themeInput: RefObject<HTMLInputElement | nu
   const themeId = useApp((s) => s.settings.themeId);
   const library = useApp((s) => s.library);
   return (
+    <OptionsSub label="Theme" testId="menu-theme">
+      <Menu.RadioGroup value={themeId} onValueChange={selectTheme}>
+        {Object.entries(BUILTIN_THEMES).map(([id, th]) => (
+          <Fragment key={id}>
+            {/* the themes after editor and app palettes follow the app's own */}
+            {id === FIRST_PALETTE_THEME && <Menu.Separator className="menu-separator" />}
+            <Menu.RadioItem value={id} className="menu-item" data-testid={`theme-${id}`}>
+              <Check on={themeId === id} /> {th.meta.name}
+              {id === DEFAULT_THEME_ID && (
+                <span className="menu-trailing menu-hint">{t('Default')}</span>
+              )}
+            </Menu.RadioItem>
+          </Fragment>
+        ))}
+        {library.length > 0 && <Menu.Separator className="menu-separator" />}
+        {library.map((th) => (
+          <Menu.RadioItem
+            key={th.id}
+            value={userThemeId(th.id)}
+            className="menu-item"
+            data-testid={`theme-user-${th.theme.meta.name}`}
+          >
+            <Check on={themeId === userThemeId(th.id)} /> {th.theme.meta.name}
+          </Menu.RadioItem>
+        ))}
+      </Menu.RadioGroup>
+      <Menu.Separator className="menu-separator" />
+      <Item
+        label="Edit theme…"
+        testId="menu-edit-theme"
+        onSelect={() => editTheme(useApp.getState().theme, activeLibraryId())}
+      />
+      <Item label="Themes…" testId="menu-themes" onSelect={() => openDialog('themes')} />
+      <Item
+        label="Import theme file…"
+        testId="menu-import-theme"
+        onSelect={() => themeInput.current?.click()}
+      />
+    </OptionsSub>
+  );
+}
+
+/**
+ * A submenu of Options. On a phone a submenu beside its menu runs off the screen, so there its
+ * items unfold inside the menu instead.
+ */
+function OptionsSub(props: { label: string; testId: string; children: ReactNode }) {
+  const narrow = useNarrow();
+  const [open, setOpen] = useState(false);
+  if (narrow)
+    return (
+      <>
+        <Menu.Item
+          className="menu-item"
+          data-testid={props.testId}
+          aria-expanded={open}
+          onSelect={(e) => {
+            e.preventDefault();
+            setOpen(!open);
+          }}
+        >
+          {t(props.label)}
+          <Icon name={open ? 'expandLess' : 'expandMore'} className="icon menu-trailing" />
+        </Menu.Item>
+        {open && <div className="menu-inline-group">{props.children}</div>}
+      </>
+    );
+  return (
     <Menu.Sub>
-      <Menu.SubTrigger className="menu-item" data-testid="menu-theme">
-        {t('Theme')}
+      <Menu.SubTrigger className="menu-item" data-testid={props.testId}>
+        {t(props.label)}
         <Icon name="chevronRight" className="icon menu-trailing" />
       </Menu.SubTrigger>
       <Menu.Portal>
         <Menu.SubContent className="menu-content" sideOffset={4} alignOffset={-8}>
-          <Menu.RadioGroup value={themeId} onValueChange={selectTheme}>
-            {Object.entries(BUILTIN_THEMES).map(([id, th]) => (
-              <Fragment key={id}>
-                {/* the themes after editor and app palettes follow the app's own */}
-                {id === FIRST_PALETTE_THEME && <Menu.Separator className="menu-separator" />}
-                <Menu.RadioItem value={id} className="menu-item" data-testid={`theme-${id}`}>
-                  <Check on={themeId === id} /> {th.meta.name}
-                  {id === DEFAULT_THEME_ID && (
-                    <span className="menu-trailing menu-hint">{t('Default')}</span>
-                  )}
-                </Menu.RadioItem>
-              </Fragment>
-            ))}
-            {library.length > 0 && <Menu.Separator className="menu-separator" />}
-            {library.map((th) => (
-              <Menu.RadioItem
-                key={th.id}
-                value={userThemeId(th.id)}
-                className="menu-item"
-                data-testid={`theme-user-${th.theme.meta.name}`}
-              >
-                <Check on={themeId === userThemeId(th.id)} /> {th.theme.meta.name}
-              </Menu.RadioItem>
-            ))}
-          </Menu.RadioGroup>
-          <Menu.Separator className="menu-separator" />
-          <Item
-            label="Edit theme…"
-            testId="menu-edit-theme"
-            onSelect={() => editTheme(useApp.getState().theme, activeLibraryId())}
-          />
-          <Item label="Themes…" testId="menu-themes" onSelect={() => openDialog('themes')} />
-          <Item
-            label="Import theme file…"
-            testId="menu-import-theme"
-            onSelect={() => themeInput.current?.click()}
-          />
+          {props.children}
         </Menu.SubContent>
       </Menu.Portal>
     </Menu.Sub>
@@ -528,35 +552,25 @@ function LanguageMenu() {
     void setLanguage(resolveLanguage(v));
   };
   return (
-    <Menu.Sub>
-      <Menu.SubTrigger className="menu-item" data-testid="menu-language">
-        {t('Language')}
-        <Icon name="chevronRight" className="icon menu-trailing" />
-      </Menu.SubTrigger>
-      <Menu.Portal>
-        <Menu.SubContent className="menu-content" sideOffset={4} alignOffset={-8}>
-          <Menu.RadioGroup value={setting} onValueChange={choose}>
-            <Menu.RadioItem value="auto" className="menu-item" data-testid="language-auto">
-              <Check on={setting === 'auto'} /> {t('Browser language')}
-            </Menu.RadioItem>
-            <Menu.Separator className="menu-separator" />
-            {LANGUAGES.map((l) => (
-              <Menu.RadioItem
-                key={l.code}
-                value={l.code}
-                className="menu-item"
-                data-testid={`language-${l.code}`}
-              >
-                <Check on={setting === l.code} />{' '}
-                <span lang={l.code === 'kr' ? 'ko' : l.code === 'csx' ? 'cs' : l.code}>
-                  {l.name}
-                </span>
-              </Menu.RadioItem>
-            ))}
-          </Menu.RadioGroup>
-        </Menu.SubContent>
-      </Menu.Portal>
-    </Menu.Sub>
+    <OptionsSub label="Language" testId="menu-language">
+      <Menu.RadioGroup value={setting} onValueChange={choose}>
+        <Menu.RadioItem value="auto" className="menu-item" data-testid="language-auto">
+          <Check on={setting === 'auto'} /> {t('Browser language')}
+        </Menu.RadioItem>
+        <Menu.Separator className="menu-separator" />
+        {LANGUAGES.map((l) => (
+          <Menu.RadioItem
+            key={l.code}
+            value={l.code}
+            className="menu-item"
+            data-testid={`language-${l.code}`}
+          >
+            <Check on={setting === l.code} />{' '}
+            <span lang={l.code === 'kr' ? 'ko' : l.code === 'csx' ? 'cs' : l.code}>{l.name}</span>
+          </Menu.RadioItem>
+        ))}
+      </Menu.RadioGroup>
+    </OptionsSub>
   );
 }
 

@@ -85,9 +85,13 @@ export function catalogLanguage(tag: string): string {
   return LANGUAGES.some((l) => l.code === lang) ? lang : 'en';
 }
 
-/** The languages upstream ships a catalog for, in its Options order, with their own names. */
+/**
+ * The languages upstream ships a catalog for, in its Options order, with their own names, plus
+ * Catalan (packages/app/locales/locale_ca.txt, this app's own catalog).
+ */
 export const LANGUAGES: readonly { code: string; name: string }[] = [
   // Czech is csx instead of cs upstream, so browsers set to Czech don't pick it automatically yet
+  { code: 'ca', name: 'Català' },
   { code: 'csx', name: 'Čeština' },
   { code: 'da', name: 'Dansk' },
   { code: 'de', name: 'Deutsch' },
