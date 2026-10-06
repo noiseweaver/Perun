@@ -618,6 +618,70 @@ textarea,
   box-shadow: 0 0 0 10px color-mix(in srgb, var(--ui-accent) 12%, transparent);
 }
 
+/* ---- key to the field visualizations (Options > Visualizations) ------------------------- */
+
+.field-legend {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 5;
+  max-width: calc(100% - 24px);
+  border-radius: var(--md-shape-m);
+  background: color-mix(in srgb, var(--md-surface-container-high) 92%, transparent);
+  box-shadow: var(--md-elevation-2);
+  animation: fade-in 150ms var(--md-motion);
+}
+
+.field-legend-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--md-shape-m);
+  background: none;
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.field-legend-header:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: -2px;
+}
+
+.field-legend-header .menu-trailing {
+  margin-left: auto;
+}
+
+.field-legend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0 12px 10px;
+  list-style: none;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.field-legend-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-legend-swatch {
+  flex: none;
+  width: 28px;
+  height: 14px;
+}
+
 /* ---- the circuit's sliders (upstream's side panel) ---------------------------------------- */
 
 .slider-panel {

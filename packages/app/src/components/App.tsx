@@ -17,6 +17,7 @@ import { Dialogs } from './Dialogs.tsx';
 import { Inspector } from './Inspector.tsx';
 import { Icon } from './Icon.tsx';
 import { Palette } from './Palette.tsx';
+import { FieldLegend } from './FieldLegend.tsx';
 import { SliderPanel } from './SliderPanel.tsx';
 import { SubcircuitBar } from './SubcircuitBar.tsx';
 import { TeachBar } from './TeachBar.tsx';
@@ -74,6 +75,7 @@ export function App() {
             )}
             <CircuitCanvas />
             <SliderPanel />
+            <FieldLegend />
             <ModeChip />
             <SubcircuitBar />
             <TeachBar />

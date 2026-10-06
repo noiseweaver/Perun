@@ -21,11 +21,17 @@
   voltage. New theme key `circuit.energy`. `diodeGeometry`/`mosfetGeometry` are now exported for
   the overlay; `DCMotorElm` is exported from the elements package.
 
+- Options > Visualizations submenu (Gady's ask) with a switch per overlay (charge, magnetic,
+  EMF, stored energy, energy flow, diode and MOSFET) and Turn all on/off; user setting `fields`,
+  migrating the first prototype's `showFields`. A foldable legend in the canvas's top left lists
+  the overlays that are on, with swatches in theme colors. The energy glow is fainter.
+
 ### Next
 
+- Catalan strings for the new menu and legend entries (`pnpm i18n`).
 - Gady to try the preview artifact and decide whether to keep, change or drop it.
 - Not covered yet: tapped and custom transformers, LEDs and varactors, polarized capacitor plate
-  shape. Everything sits behind the one Show fields switch; separate switches may be wanted.
+  shape.
 
 ## 2026-10-06: deploy, iPhone fixes, more themes
 

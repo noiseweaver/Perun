@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
 
+import { ALL_FIELDS, NO_FIELDS } from '@circuitjs-next/render';
 import { BUILTIN_THEMES, DEFAULT_THEME_ID } from '@circuitjs-next/theme';
 import {
   activeLibraryId,
@@ -23,6 +24,7 @@ import { useNarrow } from './useNarrow.ts';
 import { OpenLinkDialog } from './OpenLinkDialog.tsx';
 import { promptInstall } from '../pwa.ts';
 import { t, resolveLanguage, setLanguage } from '../i18n.ts';
+import { VISUALIZATIONS } from '../visualizations.ts';
 import { LANGUAGES } from '@circuitjs-next/elements';
 
 const FIRST_PALETTE_THEME = 'nord';
@@ -307,14 +309,7 @@ export function AppBar() {
           >
             <Check on={settings.junctionDots} /> {t('Junction dots')}
           </Menu.CheckboxItem>
-          <Menu.CheckboxItem
-            className="menu-item"
-            checked={settings.showFields}
-            onCheckedChange={(v) => updateSettings({ showFields: v })}
-            data-testid="menu-show-fields"
-          >
-            <Check on={settings.showFields} /> {t('Show fields')}
-          </Menu.CheckboxItem>
+          <VisualizationsMenu />
           <Menu.CheckboxItem
             className="menu-item"
             checked={settings.conventionalCurrent}
@@ -549,6 +544,39 @@ function OptionsSub(props: { label: string; testId: string; children: ReactNode 
         </Menu.SubContent>
       </Menu.Portal>
     </Menu.Sub>
+  );
+}
+
+/** Options > Visualizations: one switch per field, charge or energy overlay (fields.ts). */
+function VisualizationsMenu() {
+  const fields = useApp((s) => s.settings.fields);
+  const all = Object.values(fields).every((v) => v);
+  return (
+    <OptionsSub label="Visualizations" testId="menu-visualizations">
+      {VISUALIZATIONS.map(({ key, label }) => (
+        <Menu.CheckboxItem
+          key={key}
+          className="menu-item"
+          checked={fields[key]}
+          onSelect={(e) => e.preventDefault()}
+          onCheckedChange={(v) => updateSettings({ fields: { ...fields, [key]: v } })}
+          data-testid={`menu-vis-${key}`}
+        >
+          <Check on={fields[key]} /> {t(label)}
+        </Menu.CheckboxItem>
+      ))}
+      <Menu.Separator className="menu-separator" />
+      <Menu.Item
+        className="menu-item"
+        onSelect={(e) => {
+          e.preventDefault();
+          updateSettings({ fields: all ? { ...NO_FIELDS } : { ...ALL_FIELDS } });
+        }}
+        data-testid="menu-vis-all"
+      >
+        <Check on={false} /> {t(all ? 'Turn all off' : 'Turn all on')}
+      </Menu.Item>
+    </OptionsSub>
   );
 }
 

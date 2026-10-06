@@ -9,6 +9,7 @@ import {
   parseTheme,
   type Theme,
 } from '@circuitjs-next/theme';
+import { ALL_FIELDS, NO_FIELDS, type FieldOptions } from '@circuitjs-next/render';
 import { create } from 'zustand';
 import type { ExampleList } from './examples.ts';
 
@@ -23,8 +24,8 @@ export interface UserSettings {
   conventionalCurrent: boolean;
   /** Mark every connection: a dot where two ends meet, a larger one where three or more do. */
   junctionDots: boolean;
-  /** Field overlay: charge and electric field on capacitors, magnetic field around inductors. */
-  showFields: boolean;
+  /** Options > Visualizations: field, charge and energy overlays. */
+  fields: FieldOptions;
   /** Font for text boxes; a display choice, not saved with circuits. */
   textFont: TextFont;
   /** Interface language: `auto` (the browser's) or an upstream catalog code (i18n.ts). */
@@ -178,7 +179,7 @@ function loadSettings(): UserSettings {
     showOhm: false,
     conventionalCurrent: true,
     junctionDots: false,
-    showFields: false,
+    fields: NO_FIELDS,
     textFont: { family: 'default', bold: false, italic: false },
     language: 'auto',
   };
@@ -207,13 +208,24 @@ function loadSettings(): UserSettings {
           ? s.conventionalCurrent
           : defaults.conventionalCurrent,
       junctionDots: typeof s.junctionDots === 'boolean' ? s.junctionDots : defaults.junctionDots,
-      showFields: typeof s.showFields === 'boolean' ? s.showFields : defaults.showFields,
+      fields: readFields(s) ?? defaults.fields,
       textFont: readTextFont(s.textFont) ?? defaults.textFont,
       language: typeof s.language === 'string' ? s.language : defaults.language,
     };
   } catch {
     return defaults;
   }
+}
+
+function readFields(s: Partial<UserSettings> & { showFields?: unknown }): FieldOptions | null {
+  // the first prototype had one switch for everything
+  if (s.showFields === true) return { ...ALL_FIELDS };
+  const v = s.fields as unknown;
+  if (typeof v !== 'object' || v === null) return null;
+  const o = v as Record<string, unknown>;
+  const out = { ...NO_FIELDS };
+  for (const k of Object.keys(out) as (keyof FieldOptions)[]) out[k] = o[k] === true;
+  return out;
 }
 
 function readTextFont(v: unknown): TextFont | null {

@@ -61,7 +61,47 @@ const MOTOR_R = 18;
 /** Spacing of energy flow chevrons along a lead. */
 const CHEVRON_GAP = 7;
 
+/** Which visualizations to draw (Options > Visualizations). */
+export interface FieldOptions {
+  /** Capacitor charge marks and electric field lines. */
+  charge: boolean;
+  /** Magnetic field of coils, transformers, relays and motors. */
+  magnetic: boolean;
+  /** Lenz's law: the EMF a coil induces against a change in its current. */
+  emf: boolean;
+  /** Glow on parts that store energy. */
+  energy: boolean;
+  /** Chevrons into parts that absorb power and out of parts that deliver it. */
+  energyFlow: boolean;
+  /** MOSFET channel and diode depletion region. */
+  semiconductors: boolean;
+}
+
+export const NO_FIELDS: FieldOptions = {
+  charge: false,
+  magnetic: false,
+  emf: false,
+  energy: false,
+  energyFlow: false,
+  semiconductors: false,
+};
+
+export const ALL_FIELDS: FieldOptions = {
+  charge: true,
+  magnetic: true,
+  emf: true,
+  energy: true,
+  energyFlow: true,
+  semiconductors: true,
+};
+
+/** Whether any visualization is on. */
+export function anyFields(o: FieldOptions): boolean {
+  return Object.values(o).some((v) => v);
+}
+
 interface Frame {
+  readonly show: FieldOptions;
   readonly running: boolean;
   /** Full-scale voltage of the voltage colors; a capacitor at this voltage draws at full level. */
   readonly voltageRange: number;
@@ -144,20 +184,27 @@ export class FieldOverlay {
     c.save();
     c.lineCap = 'round';
     c.lineJoin = 'round';
-    if (this.energyPeak > NO_ENERGY)
+    const show = frame.show;
+    if (show.energy && this.energyPeak > NO_ENERGY)
       for (const [e, en] of energies) this.energyGlow(c, e, en / this.energyPeak, palette);
     for (const e of elements) {
       if (e.dn < 1) continue;
-      if (e instanceof CapacitorElm) this.capacitor(c, e, palette, frame);
-      else if (e instanceof InductorElm) this.inductor(c, e, palette, frame, dt, decay);
-      else if (e instanceof TransformerElm) this.transformer(c, e, palette, frame, dt, decay);
-      else if (e instanceof RelayElm) this.relay(c, e, palette, frame, dt);
-      else if (e instanceof DCMotorElm) this.motor(c, e, palette, frame, dt, decay);
-      else if (e instanceof MosfetElm) this.mosfet(c, e, palette, frame);
-      else if (e instanceof DiodeElm && !(e instanceof LEDElm) && !(e instanceof VaractorElm))
-        this.diode(c, e, palette, frame);
+      if (e instanceof CapacitorElm) {
+        if (show.charge) this.capacitor(c, e, palette, frame);
+      } else if (e instanceof InductorElm) this.inductor(c, e, palette, frame, dt, decay);
+      else if (e instanceof TransformerElm) {
+        if (show.magnetic) this.transformer(c, e, palette, frame, dt, decay);
+      } else if (e instanceof RelayElm) {
+        if (show.magnetic) this.relay(c, e, palette, frame, dt);
+      } else if (e instanceof DCMotorElm) {
+        if (show.magnetic) this.motor(c, e, palette, frame, dt, decay);
+      } else if (e instanceof MosfetElm) {
+        if (show.semiconductors) this.mosfet(c, e, palette, frame);
+      } else if (e instanceof DiodeElm && !(e instanceof LEDElm) && !(e instanceof VaractorElm)) {
+        if (show.semiconductors) this.diode(c, e, palette, frame);
+      }
     }
-    if (this.powerPeak > NO_POWER)
+    if (show.energyFlow && this.powerPeak > NO_POWER)
       for (const [e, p] of powers) this.energyFlow(c, e, p / this.powerPeak, palette, frame, dt);
     c.restore();
   }
@@ -272,19 +319,21 @@ export class FieldOverlay {
     const level = this.peakLevel(e, Math.abs(e.current), decay, NO_CURRENT);
     const dir = e.current > 0 ? 1 : -1;
     const phase = this.flow(e, dir * level, frame, dt);
-    coilField(c, fr, a, b, level, phase, dir, [1, -1], palette.theme.circuit.magneticField);
+    if (frame.show.magnetic)
+      coilField(c, fr, a, b, level, phase, dir, [1, -1], palette.theme.circuit.magneticField);
     // Lenz's law: the coil's voltage is the EMF it induces against the change in current
     const v = e.volts[0] - e.volts[1];
-    lenzArrow(
-      c,
-      fr,
-      a,
-      b,
-      v,
-      frame.voltageRange,
-      palette.theme.circuit.text,
-      palette.theme.style.font,
-    );
+    if (frame.show.emf)
+      lenzArrow(
+        c,
+        fr,
+        a,
+        b,
+        v,
+        frame.voltageRange,
+        palette.theme.circuit.text,
+        palette.theme.style.font,
+      );
   }
 
   private transformer(
@@ -513,7 +562,8 @@ export class FieldOverlay {
     level: number,
     palette: Palette,
   ): void {
-    const a = 0.55 * fadeIn(Math.sqrt(Math.max(0, level)), 0, 1);
+    // faint: it sits behind the parts as a hint, not on top of them
+    const a = 0.22 * fadeIn(Math.sqrt(Math.max(0, level)), 0, 1);
     if (a < MIN_LEVEL) return;
     const ctr = elementCenter(e);
     const r = 14 + 10 * Math.sqrt(level);

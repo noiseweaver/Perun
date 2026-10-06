@@ -439,7 +439,7 @@ export class SimController {
         showOhm: state.settings.showOhm,
         textFont: state.settings.textFont,
         junctionDots: state.settings.junctionDots,
-        showFields: state.settings.showFields,
+        fields: state.settings.fields,
         gridSize: sim.gridSize,
       };
       r.circuitHeight = this.circuitHeight();

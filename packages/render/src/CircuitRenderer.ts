@@ -18,7 +18,7 @@ import {
 import type { Theme } from '@circuitjs-next/theme';
 import { CanvasPainter } from './CanvasPainter.ts';
 import { DotCounters } from './dots.ts';
-import { FieldOverlay } from './fields.ts';
+import { anyFields, FieldOverlay, NO_FIELDS, type FieldOptions } from './fields.ts';
 import { Palette } from './palette.ts';
 import { Viewport } from './Viewport.ts';
 
@@ -39,8 +39,8 @@ export interface FrameState {
   textFont: TextFont;
   /** Mark points where three or more element ends meet with a solid schematic dot. */
   junctionDots: boolean;
-  /** Draw charge and field lines on capacitors and field loops around inductors. */
-  showFields: boolean;
+  /** Field, charge and energy visualizations to draw (fields.ts). */
+  fields: FieldOptions;
   /** Grid spacing in circuit units (16, or 8 with the small grid option). */
   gridSize: number;
 }
@@ -57,7 +57,7 @@ export const DEFAULT_FRAME: FrameState = {
   showOhm: false,
   textFont: { family: 'default', bold: false, italic: false },
   junctionDots: false,
-  showFields: false,
+  fields: NO_FIELDS,
   gridSize: 16,
 };
 
@@ -305,8 +305,9 @@ export class CircuitRenderer {
     };
 
     // under the elements, so the parts stay readable
-    if (frame.showFields)
+    if (anyFields(frame.fields))
       this.fields.draw(c, this.elements, this.palette, {
+        show: frame.fields,
         running: frame.running,
         voltageRange: frame.voltageRange,
         scale: vp.scale,
