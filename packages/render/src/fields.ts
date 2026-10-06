@@ -688,10 +688,15 @@ function inflate(pts: readonly Pt[], g: number): Pt[] {
   });
 }
 
+/** How far beside a coil's axis the arrow for the field inside it is drawn. */
+const INSIDE_T = 4;
+
 /**
  * Field loops of a coil lying from s = a to s = b along `fr`: through the coil, out past its end and
  * back outside, on the given sides. Up to three loops per side fade in as `level` grows; the dashes
- * flow with the field and the arrows outside point against it.
+ * flow with the field. Inside the coil the field runs with the current (`dir`, a convention: the
+ * real direction depends on which way the wire is wound) and comes back the other way outside, so
+ * the arrows on the loops point against the current and the arrows inside point with it.
  */
 function coilField(
   c: CanvasRenderingContext2D,
@@ -728,6 +733,16 @@ function coilField(
       c.setLineDash([]);
       arrowHead(c, at(mid + dir * 1.5, h * side), at(mid - dir * 1.5, h * side), 2.5);
     }
+  }
+  // the field inside, beside the axis where the coil symbol leaves room
+  c.globalAlpha = fadeIn(level, 0, 3);
+  for (const side of sides) {
+    const t = INSIDE_T * side;
+    c.beginPath();
+    c.moveTo(...at(mid - dir * 7, t));
+    c.lineTo(...at(mid + dir * 7, t));
+    c.stroke();
+    arrowHead(c, at(mid - dir * 7, t), at(mid + dir * 7, t), 2);
   }
 }
 

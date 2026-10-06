@@ -1,5 +1,16 @@
 # Progress
 
+## 2026-10-06: coil field arrows
+
+### Done
+
+- Gady asked whether the coil field arrows, which point against the current, are right. They are:
+  the loops drawn beside a coil are the field coming back outside, which runs opposite to the field
+  inside. The inside leg lay under the coil symbol, so nothing showed it. Each coil field (inductor,
+  relay, transformer leakage) now also draws a short arrow just inside the coil, beside the axis,
+  pointing with the current. Which way the inside field points is a convention, since a schematic
+  coil does not say which way it is wound.
+
 ## 2026-10-06: field overlay prototype (branch claude/project-thread-ojpap8)
 
 ### Done
