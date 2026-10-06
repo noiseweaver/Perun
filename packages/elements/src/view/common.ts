@@ -17,6 +17,11 @@ export interface ElementView<E extends CircuitElm = CircuitElm> {
 
 export const VALUE_FONT: TextStyle = { font: 'value' };
 export const UNITS_FONT: TextStyle = { font: 'units' };
+/**
+ * Labels drawn as part of a part (rails, labeled nodes, outputs): the monospace font at 12 px,
+ * where upstream uses its text font (Gady, 2026-10-06). Not scaled by the value size setting.
+ */
+export const LABEL_FONT: TextStyle = { font: 'value', size: 12 };
 
 export const COMPONENT: Ink = { role: 'component' };
 export const MUTED: Ink = { role: 'componentMuted' };
@@ -89,7 +94,7 @@ export function drawLabeledNode(
   pt1: Pt,
   pt2: Pt,
   ink: Ink,
-  font: TextStyle = UNITS_FONT,
+  font: TextStyle = LABEL_FONT,
 ): void {
   const p = ctx.painter;
   let lineOver = false;

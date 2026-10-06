@@ -138,7 +138,7 @@ export const thermistorView: ElementView<ThermistorNTCElm> = {
   bbox: (e) => elementBox(e, 12),
 };
 
-const TP_FONT: TextStyle = { size: 14 };
+const TP_FONT: TextStyle = { font: 'value', size: 14 };
 
 /**
  * The live reading of a test point. It changes while the simulation runs, so it has a fixed
@@ -233,7 +233,7 @@ function labeledLeadView<T extends StopTriggerElm | DataRecorderElm>(
 ): ElementView<T> {
   return {
     draw(e, ctx) {
-      const font: TextStyle = { size: 14, bold: ctx.highlighted };
+      const font: TextStyle = { font: 'value', size: 14, bold: ctx.highlighted };
       drawLabeledNode(ctx, label, e.point1, e.lead1, LABEL, font);
       ctx.painter.line(e.point1, e.lead1, vInk(volt(e, 0)));
     },

@@ -50,6 +50,9 @@
   (two stubs, nothing in the middle, as upstream) ends on its + post. The laser points only while
   the button is held; pen colors show only with the pencil. Options > Value text size (Small,
   Medium, Large = upstream's 12 px, Extra large; default Medium) scales component values only.
+  A probe without its circle symbol (upstream leaves its middle empty, so `amp-schmitt.txt`'s
+  voltmeters looked invisible) gets a faint dashed join and a small V badge. Rail, output,
+  labeled node, test point and similar part labels use the monospace font (`LABEL_FONT`).
 
 ### Next
 

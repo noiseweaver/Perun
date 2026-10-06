@@ -16,6 +16,7 @@ import {
   COMPONENT,
   drawCenteredText,
   drawLabeledNode,
+  LABEL_FONT,
   drawValues,
   elementBox,
   LABEL,
@@ -40,14 +41,14 @@ function drawRotatedLabel(ctx: DrawContext, str: string, pt1: Pt, pt2: Pt, ink: 
     lineOver = true;
     str = str.substring(1);
   }
-  const w = Math.trunc(p.measureText(str, UNITS_FONT));
-  const h = Math.trunc(p.fontSize(UNITS_FONT));
+  const w = Math.trunc(p.measureText(str, LABEL_FONT));
+  const h = Math.trunc(p.fontSize(LABEL_FONT));
   const dir = sign(pt2.y - pt1.y);
   // further from the wire so long names do not overlap it
   const offset = h + Math.max(0, Math.trunc(w / 2) - h);
   const at = pt(pt2.x, pt2.y + dir * offset);
   p.text(str, at, ink, {
-    ...UNITS_FONT,
+    ...LABEL_FONT,
     align: 'center',
     baseline: 'middle',
     rotate: -Math.PI / 2,
@@ -77,6 +78,10 @@ export const labeledNodeView: ElementView<LabeledNodeElm> = {
 };
 
 const PROBE_CIRCLE = 12;
+/** The small badge and dashed join drawn in a circle-less probe's empty middle. */
+const PROBE_BADGE = 7;
+const PROBE_DASH = { width: 1, dash: [4, 3] } as const;
+const PROBE_BADGE_FONT: TextStyle = { size: 9, bold: true, align: 'center', baseline: 'middle' };
 
 export const probeView: ElementView<ProbeElm> = {
   draw(e, ctx) {
@@ -101,6 +106,16 @@ export const probeView: ElementView<ProbeElm> = {
       const center = interp(e.point1, e.point2, 0.5);
       p.circle(center, PROBE_CIRCLE * 0.98, LABEL);
       drawCenteredText(ctx, 'V', center.x, center.y, true, LABEL);
+    } else if (len > 2 * PROBE_BADGE + 8) {
+      // Upstream leaves the middle empty, so a probe reads as two stray stubs (Gady,
+      // 2026-10-06). Join them with a faint dashed line and a small V badge.
+      const center = interp(e.point1, e.point2, 0.5);
+      const a = interp(e.point1, e.point2, 0.5 - PROBE_BADGE / e.dn);
+      const b = interp(e.point1, e.point2, 0.5 + PROBE_BADGE / e.dn);
+      p.line(lead1, a, MUTED, PROBE_DASH);
+      p.line(b, lead2, MUTED, PROBE_DASH);
+      p.circle(center, PROBE_BADGE, MUTED, { width: 1 });
+      p.text('V', center, MUTED, PROBE_BADGE_FONT);
     }
   },
   bbox: (e) => elementBox(e, e.hasFlag(ProbeElm.FLAG_CIRCLE) ? PROBE_CIRCLE : 8),
@@ -109,7 +124,7 @@ export const probeView: ElementView<ProbeElm> = {
 export const outputView: ElementView<OutputElm> = {
   draw(e, ctx) {
     const p = ctx.painter;
-    const font: TextStyle = { size: 14, bold: ctx.highlighted };
+    const font: TextStyle = { font: 'value', size: 14, bold: ctx.highlighted };
     const s = e.hasFlag(OutputElm.FLAG_VALUE)
       ? getUnitTextWithScale(volt(e, 0), 'V', e.scale, e.hasFlag(OutputElm.FLAG_FIXED))
       : 'out';
@@ -124,7 +139,7 @@ export const outputView: ElementView<OutputElm> = {
 export const audioOutputView: ElementView<AudioOutputElm> = {
   draw(e, ctx) {
     const p = ctx.painter;
-    const font: TextStyle = { size: 14, bold: ctx.highlighted };
+    const font: TextStyle = { font: 'value', size: 14, bold: ctx.highlighted };
     const s = e.getLabel();
     const w = Math.trunc(p.measureText(s, font));
     // how much of the recording buffer is filled
@@ -230,7 +245,7 @@ export const lineView: ElementView<LineElm> = {
 export const instructionDisplayView: ElementView<InstructionDisplayElm> = {
   draw(e, ctx) {
     const p = ctx.painter;
-    const style: TextStyle = { size: 14, bold: ctx.highlighted };
+    const style: TextStyle = { font: 'value', size: 14, bold: ctx.highlighted };
     const s = e.getDisplayText();
     const w = Math.trunc(p.measureText(s, style));
     const lead = interp(e.point1, e.point2, 1 - (Math.trunc(w / 2) + 8) / e.dn);
