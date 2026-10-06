@@ -763,6 +763,15 @@ export function ThemeEditorDialog() {
               onChange={(v) => set('style.dotRadius', v)}
               testId="dotRadius"
             />
+            <NumberField
+              label="Corner roundness"
+              value={draft.style.roundness}
+              min={0}
+              max={2}
+              step={0.1}
+              onChange={(v) => set('style.roundness', v)}
+              testId="roundness"
+            />
             <SelectField
               label="Grid"
               value={draft.style.grid}

@@ -258,3 +258,18 @@ test('the library edits and deletes saved themes', async ({ page }) => {
   // deleting the theme in use falls back to the default
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
+
+test('the roundness slider squares off the UI, round buttons included', async ({ page }) => {
+  await page.goto('/');
+  await pickFromThemeMenu(page, 'menu-edit-theme');
+  expect(await cssVar(page, '--md-shape-full')).toBe('999px');
+  await page.getByTestId('range-roundness').fill('0.4');
+  await expect.poll(() => cssVar(page, '--md-shape-full')).not.toBe('999px');
+  // a 40 px round button is now a rounded square
+  const radius = await page
+    .locator('.icon-button')
+    .first()
+    .evaluate((b) => parseFloat(getComputedStyle(b).borderTopLeftRadius));
+  expect(radius).toBeLessThan(10);
+  expect(radius).toBeGreaterThan(0);
+});

@@ -58,5 +58,6 @@ export const dark: Theme = {
     font: "'Roboto Variable', Roboto, system-ui, sans-serif",
     monoFont: "'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace",
     scopeLook: 'cards',
+    roundness: 1,
   },
 };

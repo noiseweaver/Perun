@@ -288,6 +288,12 @@
           "type": "string",
           "enum": ["classic", "cards"],
           "description": "classic draws scopes as CircuitJS does; cards puts each in a card with a header, legend and labeled axes."
+        },
+        "roundness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Corner rounding of the UI and scope cards: 0 square, 1 Material 3 (default), 2 extra round. Large radii change faster than small ones; below 1 round buttons become rounded squares."
         }
       }
     }

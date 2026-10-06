@@ -10,11 +10,12 @@ import type {
   ScopeImage,
   ScopeInk,
   ScopeManager,
+  ScopeDrop,
   ScopeRect,
   ScopeTextStyle,
 } from '@circuitjs-next/elements';
 import { CARD_GAP, drawLeader } from '@circuitjs-next/elements';
-import { toCss, type Theme } from '@circuitjs-next/theme';
+import { fullRadius, shapeRadius, toCss, type Theme } from '@circuitjs-next/theme';
 
 /** Scope inks resolved to CSS colors for one theme. */
 export class ScopePalette {
@@ -207,7 +208,7 @@ export class CanvasScopeGraphics implements ScopeGraphics {
 
   fillRoundRect(x: number, y: number, w: number, h: number, r: number): void {
     this.flush();
-    roundRect(this.ctx, x, y, w, h, Math.min(r, w / 2, h / 2));
+    roundRect(this.ctx, x, y, w, h, r, this.palette.theme.style.roundness);
     this.ctx.fill();
   }
 
@@ -216,7 +217,7 @@ export class CanvasScopeGraphics implements ScopeGraphics {
     const c = this.ctx;
     c.lineWidth = width;
     this.pathWidth = 0;
-    roundRect(c, x, y, w, h, Math.min(r, w / 2, h / 2));
+    roundRect(c, x, y, w, h, r, this.palette.theme.style.roundness);
     c.stroke();
   }
 
@@ -321,6 +322,20 @@ export interface BottomAreaState {
   info: readonly string[];
   /** The mouse is on the splitter between circuit and scopes. */
   splitterHot: boolean;
+  /**
+   * A docked card being dragged by its handle: where it would land (ScopeManager.moveScope),
+   * the pointer, and what dropping does, in words.
+   */
+  drag?: {
+    from: Scope;
+    to: Scope | null;
+    where: ScopeDrop | null;
+    x: number;
+    y: number;
+    label: string;
+  } | null;
+  /** The name of the card header button under the mouse, centred below (x, y). */
+  tip?: { text: string; x: number; y: number } | null;
 }
 
 /** Text size of scope labels and the info area (upstream `unitsFont`, 12 px). */
@@ -505,6 +520,7 @@ export class ScopeRenderer {
       for (const s of mgr.scopes) if (mgr.isShown(s)) this.drawScope(s, now);
       g.flush();
       g.setTextStyle('normal');
+      if (state.drag) this.drawDrag(state.drag, area);
       if (state.splitterHot) {
         c.fillStyle = theme.circuit.selection;
         c.fillRect(area.x, area.y - 3, area.width, 4);
@@ -529,7 +545,7 @@ export class ScopeRenderer {
         const h = area.height - CARD_GAP;
         if (w > 40 && h > 20) {
           c.fillStyle = theme.scope.card;
-          roundRect(c, x, y, w, h, 10);
+          roundRect(c, x, y, w, h, 10, theme.style.roundness);
           c.fill();
           c.save();
           c.beginPath();
@@ -553,14 +569,98 @@ export class ScopeRenderer {
         const y = (hasScopes ? area.y - 8 : area.y + area.height) - h;
         c.globalAlpha = 0.85;
         c.fillStyle = cards ? theme.scope.card : theme.scope.background;
-        roundRect(c, x - 10, y, bw, h, 8);
+        roundRect(c, x - 10, y, bw, h, 8, theme.style.roundness);
         c.fill();
         c.globalAlpha = 1;
         c.fillStyle = theme.scope.text;
         for (let i = 0; i !== info.length; i++) c.fillText(info[i] ?? '', x, y + 15 * (i + 1));
       }
     }
+    if (state.drag && state.drag.label !== '')
+      this.pill(state.drag.label, state.drag.x + 14, state.drag.y + 18, 'left');
+    if (state.tip) this.pill(state.tip.text, state.tip.x, state.tip.y + 6, 'center');
     c.restore();
+  }
+
+  /** Where a dragged docked card would land: a bar between cards or columns, or a frame. */
+  private drawDrag(drag: NonNullable<BottomAreaState['drag']>, area: ScopeRect): void {
+    const c = this.ctx;
+    const theme = this.palette.theme;
+    // the card being moved fades back
+    const f = drag.from.slot;
+    c.globalAlpha = 0.55;
+    c.fillStyle = theme.canvas.background;
+    roundRect(c, f.x, f.y, f.width, f.height, 10, theme.style.roundness);
+    c.fill();
+    c.globalAlpha = 1;
+    const to = drag.to;
+    if (to === null || drag.where === null) return;
+    const r = to.slot;
+    c.fillStyle = c.strokeStyle = theme.ui.accent;
+    const bar = 4;
+    switch (drag.where) {
+      case 'above':
+        roundRect(c, r.x, r.y - bar / 2, r.width, bar, bar / 2, theme.style.roundness);
+        break;
+      case 'below':
+        roundRect(c, r.x, r.y + r.height - bar / 2, r.width, bar, bar / 2, theme.style.roundness);
+        break;
+      case 'left':
+        roundRect(
+          c,
+          r.x - bar / 2,
+          area.y + 2,
+          bar,
+          area.height - 4,
+          bar / 2,
+          theme.style.roundness,
+        );
+        break;
+      case 'right':
+        roundRect(
+          c,
+          r.x + r.width - bar / 2,
+          area.y + 2,
+          bar,
+          area.height - 4,
+          bar / 2,
+          theme.style.roundness,
+        );
+        break;
+      case 'combine':
+        c.globalAlpha = 0.12;
+        roundRect(c, r.x, r.y, r.width, r.height, 10, theme.style.roundness);
+        c.fill();
+        c.globalAlpha = 1;
+        c.lineWidth = 2;
+        roundRect(c, r.x + 1, r.y + 1, r.width - 2, r.height - 2, 10, theme.style.roundness);
+        c.stroke();
+        return;
+    }
+    c.fill();
+  }
+
+  /** A small label in a pill (inverse colors, as a tooltip), kept inside the canvas. */
+  private pill(text: string, x: number, y: number, align: 'left' | 'center'): void {
+    const c = this.ctx;
+    const theme = this.palette.theme;
+    c.font = `${FONT_SIZE}px ${theme.style.font}`;
+    const w = Math.ceil(c.measureText(text).width) + 16;
+    const h = 22;
+    const cw = this.canvas.width / this.dpr;
+    const ch = this.canvas.height / this.dpr;
+    let left = align === 'center' ? x - w / 2 : x;
+    left = Math.max(4, Math.min(cw - w - 4, left));
+    const top = Math.max(4, Math.min(ch - h - 4, y));
+    c.globalAlpha = 0.92;
+    c.fillStyle = theme.ui.text;
+    roundRect(c, left, top, w, h, 6, theme.style.roundness);
+    c.fill();
+    c.globalAlpha = 1;
+    c.fillStyle = theme.ui.surface;
+    c.textBaseline = 'middle';
+    c.fillText(text, left + 8, top + h / 2 + 1);
+    c.textBaseline = 'alphabetic';
   }
 }
 
@@ -574,14 +674,28 @@ function fontsFor(theme: Theme): Record<ScopeTextStyle, string> {
   };
 }
 
+/**
+ * A canvas corner radius under the theme's `style.roundness`, as the UI's CSS radii follow it: a
+ * radius of half the side or more is a round end (round while roundness is 1 or more). Glyphs and
+ * markers (14 px or smaller: icon parts, legend dots, cursor rings) keep their shape.
+ */
+function corner(r: number, w: number, h: number, roundness: number): number {
+  const half = Math.max(0, Math.min(w, h) / 2);
+  if (Math.max(w, h) <= 14) return Math.min(r, half);
+  if (r >= half) return roundness >= 1 ? half : Math.min(half, parseFloat(fullRadius(roundness)));
+  return Math.min(half, shapeRadius(r, roundness));
+}
+
 function roundRect(
   c: CanvasRenderingContext2D,
   x: number,
   y: number,
   w: number,
   h: number,
-  r: number,
+  radius: number,
+  roundness = 1,
 ): void {
+  const r = corner(radius, w, h, roundness);
   c.beginPath();
   c.moveTo(x + r, y);
   c.arcTo(x + w, y, x + w, y + h, r);

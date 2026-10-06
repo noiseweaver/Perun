@@ -4,6 +4,7 @@
 import { BUILTIN_THEMES, DEFAULT_THEME_ID, builtinTheme } from './builtins/index.ts';
 import { luminance, rgba } from './color.ts';
 import { MAX_THEME_BYTES, themeInputSchema, type Theme, type ThemeInput } from './schema.ts';
+import { shapeCssVariables } from './shape.ts';
 
 /** Fill the keys a theme leaves out from its base built-in (`meta.base`, default Dark). */
 export function resolveTheme(input: ThemeInput): Theme {
@@ -75,6 +76,7 @@ export function themeCssVariables(theme: Theme): Record<string, string> {
   vars['--ui-shadow'] = dark ? theme.ui.surface : theme.ui.text;
   vars['--font'] = theme.style.font;
   vars['--mono-font'] = theme.style.monoFont;
+  Object.assign(vars, shapeCssVariables(theme.style.roundness));
   return vars;
 }
 
