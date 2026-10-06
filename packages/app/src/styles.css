@@ -42,7 +42,8 @@
 html,
 body,
 #root {
-  height: 100%;
+  /* --app-height: installed on iPhone, where 100% falls short (pwa.ts) */
+  height: var(--app-height, 100%);
   margin: 0;
 }
 
@@ -87,7 +88,8 @@ textarea,
    left an empty band above the app bar. */
 @media (display-mode: standalone), (display-mode: fullscreen) {
   .app {
-    padding-top: env(safe-area-inset-top);
+    /* iOS blurs a strip just below the status bar, so keep the app bar clear of it */
+    padding-top: calc(env(safe-area-inset-top) + 12px);
   }
 }
 
@@ -113,10 +115,13 @@ textarea,
   transition: opacity 150ms var(--md-motion);
 }
 
-.menu-trigger:hover::before,
-.button:hover::before,
-.icon-button:hover::before {
-  opacity: 0.08;
+/* a touch screen keeps :hover on the last tapped button, which left it shaded */
+@media (hover: hover) {
+  .menu-trigger:hover::before,
+  .button:hover::before,
+  .icon-button:hover::before {
+    opacity: 0.08;
+  }
 }
 
 .menu-trigger:focus-visible::before,
@@ -1239,13 +1244,20 @@ textarea.field-input {
   }
 
   .app-bar-brand {
-    display: none;
+    width: 32px;
+    height: 32px;
+    margin-left: 4px;
+  }
+
+  .app-bar-brand > svg {
+    width: 20px;
+    height: 20px;
   }
 
   .app-bar-title {
     flex: 1;
     max-width: none;
-    margin: 0 4px 0 0;
+    margin: 0 4px;
     font-size: 18px;
   }
 
