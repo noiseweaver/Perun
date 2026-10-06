@@ -127,6 +127,7 @@ export interface AppState {
     | 'install'
     | 'themes'
     | 'themeEditor'
+    | 'bode'
     | null;
   /** Bumped to move keyboard focus to the property panel (double-click, Enter). */
   inspectorFocus: number;
