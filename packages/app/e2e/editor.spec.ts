@@ -531,7 +531,9 @@ test.describe('drag to select on a touch screen', () => {
     await drag();
     expect(await selected()).toBe(0);
     const toggle = page.getByTestId('box-select-toggle');
-    await toggle.tap();
+    // a click, not a tap: right after a synthetic touch drag Chromium sometimes sends no click
+    // for the next tap (the gesture detector is still settling), which is not what's tested here
+    await toggle.click();
     await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     // the first drag panned the circuit away: bring it back under the box
     await page.evaluate(() => window.circuitjsNext?.controller.fit());
