@@ -33,7 +33,7 @@ function Group(props: { menu: ExampleMenu; depth: number; pick: (it: ExampleItem
         onClick={() => setOpen(!open)}
       >
         <CategoryIcon title={menu.title} />
-        <span className="sheet-row-title">{menu.title}</span>
+        <span className="sheet-row-title">{t(menu.title)}</span>
         <Icon name="chevronRight" className="icon sheet-chevron" />
       </button>
       {open && <Items menu={menu} depth={depth + 1} pick={props.pick} />}
@@ -55,7 +55,7 @@ function Items(props: { menu: ExampleMenu; depth: number; pick: (it: ExampleItem
               style={{ paddingLeft: 16 + props.depth * 16 }}
               onClick={() => props.pick(it)}
             >
-              <span className="sheet-row-title">{it.title}</span>
+              <span className="sheet-row-title">{t(it.title)}</span>
             </button>
           </li>
         ),
@@ -72,7 +72,14 @@ export function CircuitsSheet(props: { root: ExampleMenu; onClose: () => void })
   const [query, setQuery] = useState('');
   const all = useMemo(() => flatten(props.root), [props.root]);
   const q = query.trim().toLowerCase();
-  const found = q === '' ? [] : all.filter((e) => e.item.title.toLowerCase().includes(q));
+  // titles match in the interface language and in English
+  const found =
+    q === ''
+      ? []
+      : all.filter(
+          (e) =>
+            t(e.item.title).toLowerCase().includes(q) || e.item.title.toLowerCase().includes(q),
+        );
   const pick = (it: ExampleItem): void => {
     props.onClose();
     void openExample(it.file, it.title, true, true);
@@ -110,8 +117,8 @@ export function CircuitsSheet(props: { root: ExampleMenu; onClose: () => void })
                 {found.map(({ item, path }) => (
                   <li key={item.file}>
                     <button type="button" className="sheet-row" onClick={() => pick(item)}>
-                      <span className="sheet-row-title">{item.title}</span>
-                      <span className="sheet-row-path">{path.join(' › ')}</span>
+                      <span className="sheet-row-title">{t(item.title)}</span>
+                      <span className="sheet-row-path">{path.map((p) => t(p)).join(' › ')}</span>
                     </button>
                   </li>
                 ))}

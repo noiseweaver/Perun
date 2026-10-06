@@ -59,4 +59,21 @@ test.describe('on a phone', () => {
     await page.getByTestId('language-ca').click();
     await expect(page.locator('html')).toHaveAttribute('lang', 'ca');
   });
+
+  test('example circuits show in the interface language, and search finds them either way', async ({
+    page,
+  }) => {
+    await page.goto('/?lang=de');
+    await expect(page.getByTestId('circuit-title')).toHaveText(
+      'RLC-Schwingkreis (gleichstromerregt)',
+    );
+    await expect(page.getByTestId('circuits-menu')).toBeEnabled();
+    await page.getByTestId('circuits-menu').tap();
+    const sheet = page.getByTestId('circuits-sheet');
+    await expect(sheet.getByRole('button', { name: 'Grundlagen' })).toBeVisible();
+    await page.getByTestId('circuits-search').fill('ohmsches');
+    await expect(sheet.getByText('Ohmsches Gesetz', { exact: false })).toBeVisible();
+    await page.getByTestId('circuits-search').fill("ohm's law");
+    await expect(sheet.getByText('Ohmsches Gesetz', { exact: false })).toBeVisible();
+  });
 });
