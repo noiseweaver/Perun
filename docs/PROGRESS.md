@@ -24,6 +24,8 @@
 - Docked scope cards drag by their title (with two or more scopes): drop on a card's top or bottom
   edge to stack, its left or right edge for a new column, its middle to combine. Undoable.
   `ScopeManager.moveScope`; the Stack, Unstack and Combine commands stay.
+- Example circuit names follow the interface language on phones too (the Circuits sheet, its
+  search, which also matches English) and in the app bar title, from upstream's catalogs.
 - `style.roundness` (0 to 2) in themes, with a slider in the theme editor: scales the Material
   shape tokens and the scope cards' corners, large radii faster than small ones; below 1 round
   buttons become rounded squares.

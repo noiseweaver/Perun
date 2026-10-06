@@ -134,7 +134,8 @@ export function AppBar() {
         </svg>
       </div>
       <h1 className="app-bar-title" data-testid="circuit-title">
-        {title}
+        {/* an example's title is in the catalogs, as in the Circuits menu */}
+        {t(title)}
       </h1>
       <nav className="app-bar-menus" aria-label={t('Menus')}>
         <AppMenu label="File" testId="file-menu">

@@ -83,7 +83,7 @@ export function CircuitCanvas() {
           ref={ref}
           className="circuit-canvas"
           data-testid="circuit-canvas"
-          aria-label={`Circuit: ${title}`}
+          aria-label={`Circuit: ${t(title)}`}
           aria-describedby="canvas-help"
           tabIndex={0}
         />
