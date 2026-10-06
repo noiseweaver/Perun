@@ -103,6 +103,29 @@ describe('scopes', () => {
     expect(mgr.scopeCount).toBe(3);
   });
 
+  it('moves a dragged scope: stacked above or below another, into a new column, or combined', () => {
+    const mgr = readCircuit(LRC).scopes;
+    const [a, b, c] = mgr.scopes;
+    const layout = (): string[] =>
+      mgr.scopes.map((s) => `${'abc'[[a, b, c].indexOf(s)]}${s.position}`);
+    expect(layout()).toEqual(['a0', 'b1', 'c2']);
+    mgr.moveScope(2, 0, 'below');
+    expect(layout()).toEqual(['a0', 'c0', 'b1']);
+    mgr.moveScope(2, 0, 'above');
+    expect(layout()).toEqual(['b0', 'a0', 'c0']);
+    // out of the stack into a column of its own, left or right of the target's
+    mgr.moveScope(1, 0, 'right');
+    expect(layout()).toEqual(['b0', 'c0', 'a1']);
+    mgr.moveScope(1, 2, 'left');
+    expect(layout()).toEqual(['b0', 'c1', 'a2']);
+    mgr.moveScope(0, 2, 'right');
+    expect(layout()).toEqual(['c0', 'a1', 'b2']);
+    mgr.moveScope(2, 0, 'combine');
+    mgr.setupScopes({ x: 0, y: 400, width: 900, height: 150 });
+    expect(layout()).toEqual(['c0', 'a1']);
+    expect(mgr.scopes[0]?.plots).toHaveLength(4);
+  });
+
   it('adds a scope for an element and removes it on clear', () => {
     const c = readCircuit(LRC.split('\no ')[0] + '\n');
     const mgr = c.scopes;

@@ -335,22 +335,29 @@ function ChoiceField(props: FieldProps) {
   );
 }
 
+/** An icon with a short caption under it (touch screens show no tooltips), the full label on hover. */
 function ActionButton(props: {
   icon: IconName;
   label: string;
+  caption: string;
   onClick: () => void;
   testId?: string;
 }) {
   return (
     <button
       type="button"
-      className="icon-button"
+      className="action-button"
       data-testid={props.testId}
       aria-label={t(props.label)}
       title={t(props.label)}
       onClick={props.onClick}
     >
-      <Icon name={props.icon} />
+      <span className="action-button-icon">
+        <Icon name={props.icon} />
+      </span>
+      <span className="action-button-caption" aria-hidden="true">
+        {t(props.caption)}
+      </span>
     </button>
   );
 }
@@ -360,23 +367,40 @@ function SelectionActions({ elm }: { elm: CircuitElm | null }) {
   const ed = controller.editor;
   return (
     <div className="inspector-actions">
-      <ActionButton icon="rotateLeft" label="Rotate CCW" onClick={() => ed.rotateCCW()} />
-      <ActionButton icon="rotateRight" label="Rotate CW" onClick={() => ed.rotateCW()} />
-      <ActionButton icon="flip" label="Mirror X" onClick={() => ed.mirrorX()} />
+      <ActionButton
+        icon="rotateLeft"
+        label="Rotate CCW"
+        caption="Rotate left"
+        onClick={() => ed.rotateCCW()}
+      />
+      <ActionButton
+        icon="rotateRight"
+        label="Rotate CW"
+        caption="Rotate right"
+        onClick={() => ed.rotateCW()}
+      />
+      <ActionButton icon="flip" label="Mirror X" caption="Mirror" onClick={() => ed.mirrorX()} />
       {elm !== null && elm.getPostCount() === 2 && (
-        <ActionButton icon="swap" label="Swap terminals" onClick={() => ed.swapTerminals(elm)} />
+        <ActionButton
+          icon="swap"
+          label="Swap terminals"
+          caption="Swap"
+          onClick={() => ed.swapTerminals(elm)}
+        />
       )}
       {elm !== null && elm.canViewInScope() && (
         <>
           <ActionButton
             icon="scope"
             label="View in new scope"
+            caption="Scope"
             testId="action-view-in-scope"
             onClick={() => controller.viewInScope(elm)}
           />
           <ActionButton
-            icon="scopeUndocked"
+            icon="openInNew"
             label="View in new undocked scope"
+            caption="Undocked scope"
             testId="action-view-in-undocked-scope"
             onClick={() => controller.viewInUndockedScope(elm)}
           />
@@ -386,12 +410,23 @@ function SelectionActions({ elm }: { elm: CircuitElm | null }) {
         <ActionButton
           icon="tune"
           label="Sliders…"
+          caption="Sliders"
           testId="action-sliders"
           onClick={() => controller.openSliderDialog(elm)}
         />
       )}
-      <ActionButton icon="copy" label="Duplicate" onClick={() => ed.duplicate(null)} />
-      <ActionButton icon="delete" label="Delete" onClick={() => ed.deleteSelected(null)} />
+      <ActionButton
+        icon="copy"
+        label="Duplicate"
+        caption="Duplicate"
+        onClick={() => ed.duplicate(null)}
+      />
+      <ActionButton
+        icon="delete"
+        label="Delete"
+        caption="Delete"
+        onClick={() => ed.deleteSelected(null)}
+      />
     </div>
   );
 }

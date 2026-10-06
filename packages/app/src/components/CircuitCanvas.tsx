@@ -187,7 +187,7 @@ export function CircuitCanvas() {
               />
               <Item
                 label="View in New Undocked Scope"
-                icon="scopeUndocked"
+                icon="openInNew"
                 disabled={!menuElm.canViewInScope()}
                 testId="ctx-view-in-undocked-scope"
                 onSelect={() => controller.viewInUndockedScope(menuElm)}

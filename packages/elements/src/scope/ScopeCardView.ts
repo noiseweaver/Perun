@@ -72,8 +72,9 @@ export function cardPlotRect(slot: ScopeRect, undocked = false): ScopeRect {
 }
 
 /**
- * Something clickable on a card. `index` is the plot (chip) or column (tab). Undocked cards also
- * have a drag handle (`handle`, the whole card when it is a mini one) and a resize grip.
+ * Something clickable on a card. `index` is the plot (chip) or column (tab). Cards have a drag
+ * handle (`handle`: six dots on an undocked card, the whole card when it is a mini one, the title
+ * on a docked one unless it is the only one) and undocked ones a resize grip.
  */
 export interface CardHit {
   kind: 'settings' | 'close' | 'dock' | 'freeze' | 'chip' | 'tab' | 'handle' | 'resize';
@@ -587,6 +588,17 @@ function drawHeader(
   const title = fit(g, cardTitle(scope), Math.max(0, titleRoom));
   g.drawString(title, left, base1);
   const titleEnd = left + (title === '' ? 0 : g.measureWidth(title) + 14);
+  // docked, with others to go with: the title drags the card onto another to stack, move or
+  // combine it (a handle of its own would take room from the legend)
+  if (scope.position >= 0 && mgr.scopeCount > 1)
+    hits.push({
+      kind: 'handle',
+      index: 0,
+      x: slot.x + 2,
+      y: slot.y + 2,
+      width: Math.max(titleEnd - slot.x - 12, 32),
+      height: LINE,
+    });
 
   // legend chips, then readouts: on the second line, or after the title if there is one line
   let x = lines === 2 ? left : titleEnd;

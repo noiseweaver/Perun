@@ -4,6 +4,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   BUILTIN_THEMES,
+  fullRadius,
+  shapeCssVariables,
+  shapeRadius,
   mixColor,
   parseColor,
   parseTheme,
@@ -74,5 +77,34 @@ describe('themes', () => {
     const t = BUILTIN_THEMES['classic-dots'];
     expect(t?.style.grid).toBe('dots');
     expect(t?.circuit).toEqual(BUILTIN_THEMES['classic']?.circuit);
+  });
+});
+
+describe('roundness', () => {
+  it('keeps Material radii at 1 and squares everything at 0', () => {
+    expect(shapeCssVariables(1)).toEqual({
+      '--md-shape-xs': '4px',
+      '--md-shape-s': '8px',
+      '--md-shape-m': '12px',
+      '--md-shape-l': '16px',
+      '--md-shape-xl': '28px',
+      '--md-shape-full': '999px',
+    });
+    for (const v of Object.values(shapeCssVariables(0))) expect(v).toBe('0px');
+  });
+
+  it('shrinks large radii faster than small ones, and grows small ones faster', () => {
+    const ratio = (base: number, r: number) => shapeRadius(base, r) / base;
+    expect(ratio(28, 0.5)).toBeLessThan(ratio(4, 0.5));
+    expect(ratio(4, 2)).toBeGreaterThan(ratio(28, 2));
+    // the order of the sizes never changes
+    for (const r of [0.2, 0.5, 0.8, 1.5, 2])
+      expect(shapeRadius(4, r)).toBeLessThanOrEqual(shapeRadius(28, r));
+  });
+
+  it('turns round buttons into rounded squares below 1', () => {
+    expect(fullRadius(1)).toBe('999px');
+    expect(parseFloat(fullRadius(0.6))).toBeLessThan(20);
+    expect(parseFloat(fullRadius(0.6))).toBeGreaterThan(0);
   });
 });

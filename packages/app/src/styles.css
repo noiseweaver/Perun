@@ -92,11 +92,11 @@ textarea,
   }
 }
 
-/* installed on an iPhone held upright, iOS 26 frosts a band reaching about 48px below the status bar: the app
+/* installed on an iPhone held upright, iOS 26 frosts a band reaching about 28px below the status bar: the app
    bar starts under it, and the band shows the app's background (pwa.ts sets the attribute) */
 @media (orientation: portrait) and (max-width: 600px) {
   :root[data-ios-app] .app {
-    padding-top: calc(env(safe-area-inset-top) + 48px);
+    padding-top: calc(env(safe-area-inset-top) + 28px);
   }
 }
 
@@ -272,6 +272,15 @@ textarea,
 .menu-trailing {
   margin-left: auto;
   color: var(--ui-text-muted);
+}
+
+/* a submenu unfolded inside its menu on phones, where a side submenu would run off the screen */
+.menu-inline-group {
+  background: color-mix(in srgb, var(--ui-text) 4%, transparent);
+}
+
+.menu-inline-group .menu-item {
+  padding-left: 28px;
 }
 
 .menu-hint {
@@ -1032,10 +1041,57 @@ kbd,
 }
 
 .inspector-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
   gap: 4px;
   margin: 8px 0 4px;
+}
+
+/* an inspector action: icon on a tonal circle with a short caption under it */
+.action-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px 2px;
+  color: var(--ui-text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--md-shape-s);
+  font-family: var(--font);
+  font-size: 11px;
+  line-height: 14px;
+  cursor: pointer;
+}
+
+.action-button-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 32px;
+  background: color-mix(in srgb, var(--ui-text) 8%, transparent);
+  border-radius: var(--md-shape-full);
+}
+
+.action-button-caption {
+  max-width: 100%;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.action-button:focus-visible {
+  outline: 2px solid var(--ui-accent);
+}
+
+@media (hover: hover) {
+  .action-button:hover {
+    color: var(--ui-text);
+  }
+
+  .action-button:hover .action-button-icon {
+    background: color-mix(in srgb, var(--ui-text) 14%, transparent);
+  }
 }
 
 .inspector-fields {

@@ -26,6 +26,7 @@ export {
   themeCssVariables,
   type ThemeParseResult,
 } from './resolve.ts';
+export { SHAPE_SIZES, fullRadius, shapeCssVariables, shapeRadius } from './shape.ts';
 export { MAX_THEME_BYTES, themeInputSchema, type Theme, type ThemeInput } from './schema.ts';
 export {
   MAX_THEME_PARAM,

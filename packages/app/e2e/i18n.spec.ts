@@ -38,3 +38,25 @@ test.describe('browser language', () => {
     await expect(page.getByTestId('file-menu')).toHaveText('ファイル');
   });
 });
+
+test('Catalan comes from the app’s own catalog', async ({ page }) => {
+  await page.goto('/?lang=ca');
+  await expect(page.getByTestId('file-menu')).toHaveText('Fitxer');
+  await expect(page.locator('.palette-label').filter({ hasText: /^Resistència$/ })).toBeVisible();
+});
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+  test('Language unfolds inside the Options menu and stays on screen', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('options-menu').click();
+    await page.getByTestId('menu-language').click();
+    const last = page.getByTestId('language-kr');
+    await last.scrollIntoViewIfNeeded();
+    const box = await last.boundingBox();
+    // within the screen (give or take subpixel rounding)
+    expect(box && box.x >= 0 && box.x + box.width <= 391).toBe(true);
+    await page.getByTestId('language-ca').click();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ca');
+  });
+});

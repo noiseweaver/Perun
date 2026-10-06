@@ -89,6 +89,11 @@ export interface Theme {
      * with a header, legend and labeled axes.
      */
     scopeLook: 'classic' | 'cards';
+    /**
+     * Corner rounding of the UI and scope cards: 0 square, 1 Material's own, 2 extra round.
+     * Below 1 round buttons become rounded squares.
+     */
+    roundness: number;
   };
 }
 
@@ -251,6 +256,15 @@ export const themeInputSchema = z
           .describe(
             'classic draws scopes as CircuitJS does; cards puts each in a card with a header, ' +
               'legend and labeled axes.',
+          ),
+        roundness: z
+          .number()
+          .min(0)
+          .max(2)
+          .describe(
+            'Corner rounding of the UI and scope cards: 0 square, 1 Material 3 (default), 2 extra ' +
+              'round. Large radii change faster than small ones; below 1 round buttons become ' +
+              'rounded squares.',
           ),
       })
       .partial()
