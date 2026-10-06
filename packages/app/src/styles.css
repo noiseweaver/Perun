@@ -324,6 +324,11 @@ textarea,
   margin: 8px 0;
 }
 
+/* the Circuits menu has a divider between every category: keep them tight */
+.category-separator {
+  margin: 2px 0;
+}
+
 /* ---- canvas ------------------------------------------------------------------------------- */
 
 .workspace {
@@ -1644,6 +1649,12 @@ textarea.field-input {
   list-style: none;
 }
 
+/* a divider between categories, and between the last category and the circuits after it */
+.sheet-category + li,
+li + .sheet-category {
+  border-top: 1px solid var(--ui-border);
+}
+
 .sheet-row {
   display: flex;
   flex-direction: column;
@@ -2379,6 +2390,14 @@ ul.theme-contrast {
   height: 36px;
 }
 
+.icon-button[aria-pressed='true'][data-testid='box-select-toggle'],
 .icon-button[aria-pressed='true'][data-testid='draw-toggle'] {
   color: var(--ui-accent);
+}
+
+/* controls only a touch screen needs (a mouse drag already selects) */
+@media not (any-pointer: coarse) {
+  .touch-only {
+    display: none;
+  }
 }

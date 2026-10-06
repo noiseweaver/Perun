@@ -68,6 +68,33 @@ function DrawButton() {
   );
 }
 
+/** Touch screens pan with one finger; this turns a one-finger drag into a selection box. */
+function BoxSelectButton() {
+  const on = useApp((s) => s.boxSelect);
+  const label = on ? 'Drag to pan' : 'Drag to select';
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>
+        <button
+          type="button"
+          className="icon-button touch-only"
+          onClick={() => useApp.setState({ boxSelect: !on })}
+          aria-label={t(label)}
+          aria-pressed={on}
+          data-testid="box-select-toggle"
+        >
+          <Icon name="selectAll" />
+        </button>
+      </Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content className="tooltip" sideOffset={6}>
+          {t(label)}
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  );
+}
+
 /** An icon button with a plain tooltip. */
 function IconButton(props: {
   label: string;
@@ -208,6 +235,7 @@ export function ControlBar() {
           <Icon name="fit" />
         </IconButton>
         <SpeedButton />
+        <BoxSelectButton />
         <DrawButton />
       </div>
 

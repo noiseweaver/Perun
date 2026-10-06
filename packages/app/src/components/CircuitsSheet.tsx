@@ -24,7 +24,7 @@ function Group(props: { menu: ExampleMenu; depth: number; pick: (it: ExampleItem
   const [open, setOpen] = useState(false);
   const { menu, depth } = props;
   return (
-    <li>
+    <li className="sheet-category">
       <button
         type="button"
         className="sheet-row sheet-group"

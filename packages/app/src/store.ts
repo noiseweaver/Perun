@@ -119,6 +119,11 @@ export interface AppState {
   subcircuitModels: string[];
   /** Teaching tools: the tool in use (null: editing as usual), the pen and the strokes' state. */
   teach: { tool: TeachTool | null; pen: number; strokes: number; canUndo: boolean };
+  /**
+   * Touch box select: one finger dragging on empty canvas draws a selection box instead of
+   * panning (two fingers still pan and zoom). A mouse drag always selects.
+   */
+  boxSelect: boolean;
   /** Text for screen readers (a polite live region): what keyboard selection picked. */
   announcement: string;
   /** The catalog the interface shows (`en`, `de`, ...); the app tree is keyed by it. */
@@ -298,6 +303,7 @@ export const useApp = create<AppState>(() => ({
   subcircuitBar: { viewing: [], editing: null },
   subcircuitModels: [],
   teach: { tool: null, pen: 0, strokes: 0, canUndo: false },
+  boxSelect: false,
   announcement: '',
   language: 'en',
   dialog: null,

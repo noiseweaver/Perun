@@ -10,7 +10,7 @@ import {
   userThemeId,
 } from '../themes.ts';
 import * as Menu from '@radix-ui/react-dropdown-menu';
-import { useRef, useState, type ReactNode, type RefObject } from 'react';
+import { Fragment, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { ExampleMenu } from '../examples.ts';
 import { openDialog } from '../commands.ts';
 import { controller } from '../SimController.ts';
@@ -30,26 +30,34 @@ function ExampleItems({ menu }: { menu: ExampleMenu }) {
     <>
       {menu.items.map((it, i) =>
         it.kind === 'menu' ? (
-          <Menu.Sub key={`m${i}`}>
-            <Menu.SubTrigger className="menu-item">
-              <CategoryIcon title={it.title} />
-              {t(it.title)}
-              <Icon name="chevronRight" className="icon menu-trailing" />
-            </Menu.SubTrigger>
-            <Menu.Portal>
-              <Menu.SubContent className="menu-content" sideOffset={4} alignOffset={-8}>
-                <ExampleItems menu={it} />
-              </Menu.SubContent>
-            </Menu.Portal>
-          </Menu.Sub>
+          <Fragment key={`m${i}`}>
+            {/* a divider between categories (and before the first one after some circuits) */}
+            {i > 0 && <Menu.Separator className="menu-separator category-separator" />}
+            <Menu.Sub>
+              <Menu.SubTrigger className="menu-item">
+                <CategoryIcon title={it.title} />
+                {t(it.title)}
+                <Icon name="chevronRight" className="icon menu-trailing" />
+              </Menu.SubTrigger>
+              <Menu.Portal>
+                <Menu.SubContent className="menu-content" sideOffset={4} alignOffset={-8}>
+                  <ExampleItems menu={it} />
+                </Menu.SubContent>
+              </Menu.Portal>
+            </Menu.Sub>
+          </Fragment>
         ) : (
-          <Menu.Item
-            key={it.file}
-            className="menu-item"
-            onSelect={() => void openExample(it.file, it.title, true, true)}
-          >
-            {t(it.title)}
-          </Menu.Item>
+          <Fragment key={it.file}>
+            {i > 0 && menu.items[i - 1]?.kind === 'menu' && (
+              <Menu.Separator className="menu-separator category-separator" />
+            )}
+            <Menu.Item
+              className="menu-item"
+              onSelect={() => void openExample(it.file, it.title, true, true)}
+            >
+              {t(it.title)}
+            </Menu.Item>
+          </Fragment>
         ),
       )}
     </>

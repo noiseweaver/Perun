@@ -1987,6 +1987,7 @@ export class SimController {
       const touchPan =
         e.pointerType === 'touch' &&
         ed.mouseMode === MouseMode.SELECT &&
+        !useApp.getState().boxSelect &&
         ed.pick(g.x, g.y).elm === null;
       joinedBefore = this.renderer?.connectionKeys() ?? null;
       // a subcircuit's parts can be looked at, not edited

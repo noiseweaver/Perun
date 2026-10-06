@@ -41,6 +41,9 @@
   disabled menu items are now dimmed (they looked enabled). Example circuit categories in the
   Circuits menu and the phone Circuits sheet show a small drawing of a component from the
   category (a plain icon where that would be an unreadable chip).
+- Divider lines between example circuit categories (Circuits menu and the phone sheet). On touch
+  screens a drag-to-select button in the bottom bar makes a one-finger drag on empty canvas draw
+  a selection box instead of panning (two fingers still pan and zoom); it is hidden with a mouse.
 - Theme colors with surrounding whitespace (`"#fff\n"`) are now refused; the theme fuzz test
   found one reaching a CSS custom property.
 - README, About dialog (version, upstream credits, GPL notice, links to the source, LICENSE.txt and

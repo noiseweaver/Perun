@@ -506,3 +506,42 @@ test('a diode gets a new model from the model dialog', async ({ page }) => {
   await expect(page.getByTestId('field-0').locator('option:checked')).toHaveText('fwdrop=0.65');
   await expect(page.getByRole('button', { name: 'Edit Model' })).toBeVisible();
 });
+
+test.describe('drag to select on a touch screen', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('one finger draws a selection box once the toggle is on', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+    const selected = () =>
+      page.evaluate(
+        () => window.circuitjsNext?.controller.circuit.elements.filter((e) => e.selected).length,
+      );
+    const box = await page.getByTestId('circuit-canvas').boundingBox();
+    if (box === null) throw new Error('no canvas');
+    const cdp = await page.context().newCDPSession(page);
+    const drag = async (): Promise<void> => {
+      const at = (i: number) => [{ x: box.x + 5 + i * 35, y: box.y + 5 + i * 45, id: 1 }];
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: at(0) });
+      for (let i = 1; i <= 10; i++)
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: at(i) });
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    };
+    // by default a drag on empty canvas pans
+    await drag();
+    expect(await selected()).toBe(0);
+    const toggle = page.getByTestId('box-select-toggle');
+    await toggle.tap();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    // the first drag panned the circuit away: bring it back under the box
+    await page.evaluate(() => window.circuitjsNext?.controller.fit());
+    await drag();
+    await expect.poll(selected).toBeGreaterThan(0);
+  });
+});
+
+test('the drag-to-select toggle is only shown on touch screens', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByTestId('draw-toggle')).toBeVisible();
+  await expect(page.getByTestId('box-select-toggle')).toBeHidden();
+});
