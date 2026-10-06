@@ -128,6 +128,9 @@ test('Options > Value text size changes how big component values are drawn', asy
   expect(await size()).toBe(0.875);
   await page.getByRole('button', { name: 'Options' }).click();
   await page.getByTestId('menu-value-size').click();
-  await page.getByTestId('value-size-1.25').click();
+  // a click moves the mouse across the parent menu, which can close the submenu on a slow runner
+  const item = page.getByTestId('value-size-1.25');
+  await expect(item).toBeVisible();
+  await item.dispatchEvent('click');
   await expect.poll(size).toBe(1.25);
 });
