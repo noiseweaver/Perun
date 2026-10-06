@@ -13,6 +13,7 @@ import { controller } from '../SimController.ts';
 import { AppBar } from './AppBar.tsx';
 import { CircuitCanvas } from './CircuitCanvas.tsx';
 import { ControlBar } from './ControlBar.tsx';
+import { DcPanel } from './DcPanel.tsx';
 import { Dialogs } from './Dialogs.tsx';
 import { Inspector } from './Inspector.tsx';
 import { Icon } from './Icon.tsx';
@@ -75,7 +76,10 @@ export function App() {
               </button>
             )}
             <CircuitCanvas />
-            <SliderPanel />
+            <div className="overlay-right">
+              <SliderPanel />
+              <DcPanel />
+            </div>
             <FieldLegend />
             <WheelValuePopup />
             <ModeChip />

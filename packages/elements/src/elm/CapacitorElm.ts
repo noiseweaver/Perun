@@ -40,6 +40,12 @@ export class CapacitorElm extends CircuitElm {
   voltdiff = 0;
   seriesResistance = 0;
   initialVoltage = 0;
+  /**
+   * Not upstream: during DC analysis, stamp nothing (a true open circuit) instead of 100 MΩ, so
+   * nothing leaks through. Off by default; only the DC operating point table sets it, on its
+   * own copy of the circuit. Islands left behind get the engine's usual 100 MΩ to ground.
+   */
+  dcOpen = false;
   capNode2 = 0;
   curSourceValue = 0;
 
@@ -107,7 +113,7 @@ export class CapacitorElm extends CircuitElm {
     const sim = this.sim;
     if (this.doDcAnalysis()) {
       // when finding DC operating point, replace cap with a 100M resistor
-      sim.stampResistor(this.nodes[0], this.nodes[1], 1e8);
+      if (!this.dcOpen) sim.stampResistor(this.nodes[0], this.nodes[1], 1e8);
       this.curSourceValue = 0;
       this.capNode2 = 1;
       return;
@@ -150,12 +156,16 @@ export class CapacitorElm extends CircuitElm {
   override calculateCurrent(): void {
     const voltdiff = this.volts[0] - this.volts[this.capNode2];
     if (this.doDcAnalysis()) {
-      this.current = voltdiff / 1e8;
+      this.current = this.dcOpen ? 0 : voltdiff / 1e8;
       return;
     }
     // compResistance is 0 before stamp() has run; avoid infinite current
     if (this.compResistance > 0)
       this.current = voltdiff / this.compResistance + this.curSourceValue;
+  }
+
+  override getConnection(_n1: number, _n2: number): boolean {
+    return !(this.dcOpen && this.doDcAnalysis());
   }
 
   override doStep(): void {
