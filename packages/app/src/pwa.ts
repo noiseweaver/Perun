@@ -49,7 +49,29 @@ export function applyUpdate(): void {
   waiting.postMessage('skipWaiting');
 }
 
+/**
+ * Installed on iPhone (iOS 26), the page's 100% height comes out short by the status bar while
+ * the page still starts at the top of the screen, which left an empty band under the app. When
+ * the window is full screen and only a status bar's worth short, stretch the page to the screen.
+ */
+function fitIosStandaloneHeight(): void {
+  const fit = (): void => {
+    const portrait = window.matchMedia('(orientation: portrait)').matches;
+    // iOS reports the screen in portrait whatever the orientation
+    const w = portrait ? screen.width : screen.height;
+    const h = portrait ? screen.height : screen.width;
+    const short = h - window.innerHeight;
+    const root = document.documentElement.style;
+    if (Math.abs(window.innerWidth - w) <= 1 && short > 0 && short <= 80)
+      root.setProperty('--app-height', `${h}px`);
+    else root.removeProperty('--app-height');
+  };
+  fit();
+  window.addEventListener('resize', fit);
+}
+
 export function setupPwa(): void {
+  if (isStandalone() && isIos()) fitIosStandaloneHeight();
   if (isStandalone()) useApp.setState({ install: 'none' });
   else if (isIos()) useApp.setState({ install: 'ios' });
 
