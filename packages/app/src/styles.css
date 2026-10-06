@@ -88,8 +88,15 @@ textarea,
    left an empty band above the app bar. */
 @media (display-mode: standalone), (display-mode: fullscreen) {
   .app {
-    /* iOS blurs a strip just below the status bar, so keep the app bar clear of it */
-    padding-top: calc(env(safe-area-inset-top) + 12px);
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* installed on an iPhone held upright, iOS 26 frosts a band reaching about 48px below the status bar: the app
+   bar starts under it, and the band shows the app's background (pwa.ts sets the attribute) */
+@media (orientation: portrait) and (max-width: 600px) {
+  :root[data-ios-app] .app {
+    padding-top: calc(env(safe-area-inset-top) + 48px);
   }
 }
 
