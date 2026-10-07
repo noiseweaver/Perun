@@ -3395,3 +3395,29 @@ ul.theme-contrast {
   font-size: 13px;
   color: var(--ui-text-muted);
 }
+
+.sweep-frequency {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--ui-border);
+}
+
+.sweep-frequency-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  white-space: pre;
+}
+
+.sweep-frequency-head .segmented {
+  font-family: var(--font);
+  font-size: 12px;
+}
+
+.sweep-frequency-head .segmented-button {
+  min-height: 28px;
+  padding: 0 10px;
+}

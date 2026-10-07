@@ -65,6 +65,11 @@ export interface RunResult {
   /** AC: gain and phase per frequency. */
   points: BodePoint[];
   done: boolean;
+  /**
+   * Transient: the output's frequency once the run is done, from its rising crossings after the
+   * first fifth of the run (time to start up and settle); null when it does not oscillate.
+   */
+  frequency: number | null;
 }
 
 // ---- what to run ----------------------------------------------------------------------------
@@ -214,10 +219,74 @@ function measure(e: CircuitElm, quantity: 'voltage' | 'current'): number {
   return quantity === 'current' ? e.getCurrent() : outputVoltage(e);
 }
 
+/** Share of a transient run left out of the frequency measurement, for start-up. */
+const FREQUENCY_SETTLE = 0.2;
+/** Most steps the frequency measurement keeps (later ones are left out). */
+const FREQUENCY_MAX_POINTS = 2_000_000;
+
+/**
+ * The frequency of a waveform sampled at every step: rising crossings of the middle of its range,
+ * with 10% hysteresis so noise near the level does not count, interpolated between steps. Null
+ * with fewer than three crossings (not oscillating, or too few cycles).
+ */
+export function measureFrequency(ts: ArrayLike<number>, vs: ArrayLike<number>): number | null {
+  const n = Math.min(ts.length, vs.length);
+  if (n < 3) return null;
+  let min = Infinity;
+  let max = -Infinity;
+  for (let i = 0; i < n; i++) {
+    const v = vs[i] as number;
+    if (v < min) min = v;
+    if (v > max) max = v;
+  }
+  const span = max - min;
+  if (!(span > 1e-9 * Math.max(1, Math.abs(max)))) return null;
+  const level = (min + max) / 2;
+  const low = level - 0.1 * span;
+  let armed = false;
+  let first = NaN;
+  let last = NaN;
+  let count = 0;
+  for (let i = 1; i < n; i++) {
+    const a = vs[i - 1] as number;
+    const b = vs[i] as number;
+    if (b < low) armed = true;
+    if (armed && a < level && b >= level) {
+      const ta = ts[i - 1] as number;
+      const tb = ts[i] as number;
+      const t = ta + ((level - a) / (b - a)) * (tb - ta);
+      if (count === 0) first = t;
+      last = t;
+      count++;
+      armed = false;
+    }
+  }
+  return count >= 3 && last > first ? (count - 1) / (last - first) : null;
+}
+
+/** Collects every step's output after the start-up share, for `measureFrequency`. */
+class FrequencyMeter {
+  private ts: number[] = [];
+  private vs: number[] = [];
+
+  constructor(private readonly from: number) {}
+
+  record(t: number, v: number): void {
+    if (t < this.from || this.ts.length >= FREQUENCY_MAX_POINTS) return;
+    this.ts.push(t);
+    this.vs.push(v);
+  }
+
+  frequency(): number | null {
+    return measureFrequency(this.ts, this.vs);
+  }
+}
+
 /** One transient run: reset, then step to the stop time, sampling on an even grid. */
 class TransientRun {
   readonly circuit: Circuit;
   private readonly out: CircuitElm;
+  private readonly meter: FrequencyMeter;
   private k = 0;
   private tPrev = 0;
   private yPrev = 0;
@@ -234,6 +303,7 @@ class TransientRun {
     const out = circuit.elements[m.output];
     if (out === undefined || !isBodeOutput(out)) throw new Error('Pick an output.');
     this.out = out;
+    this.meter = new FrequencyMeter(m.duration * FREQUENCY_SETTLE);
     const sim = circuit.sim;
     sim.onTimeStep = () => this.sample();
     sim.canDelayWireProcessing = () => true;
@@ -244,6 +314,7 @@ class TransientRun {
     const sim = this.circuit.sim;
     const t = sim.t;
     const v = measure(this.out, this.m.quantity);
+    this.meter.record(t, v);
     const n = this.times.length;
     if (!this.started) {
       // the first step stands for everything before it
@@ -264,6 +335,11 @@ class TransientRun {
       this.done = true;
       sim.requestPause();
     }
+  }
+
+  /** The output's frequency over the run so far (see `measureFrequency`). */
+  frequency(): number | null {
+    return this.meter.frequency();
   }
 
   /** Simulate up to `maxSteps` steps; returns the number done. */
@@ -295,7 +371,7 @@ export class MultiRun {
     private readonly text: string,
     runs: readonly RunSpec[],
     readonly measure: Measure,
-    private readonly target: SweepTarget | null = null,
+    readonly target: SweepTarget | null = null,
   ) {
     if (runs.length === 0) throw new Error('Nothing to run.');
     if (measure.kind === 'transient') {
@@ -303,7 +379,7 @@ export class MultiRun {
       for (let i = 0; i < TRANSIENT_SAMPLES; i++)
         this.times.push((measure.duration * i) / (TRANSIENT_SAMPLES - 1));
     }
-    this.results = runs.map((spec) => ({ spec, y: [], points: [], done: false }));
+    this.results = runs.map((spec) => ({ spec, y: [], points: [], done: false, frequency: null }));
     // check the settings on the first run now, so a bad pick fails before anything runs
     this.startRun();
   }
@@ -368,6 +444,7 @@ export class MultiRun {
 
   private finishRun(res: RunResult): void {
     res.done = true;
+    if (this.transient !== null) res.frequency = this.transient.frequency();
     this.transient = null;
     this.bode = null;
     this.index++;
