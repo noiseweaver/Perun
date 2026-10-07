@@ -13,6 +13,7 @@ import { controller } from '../SimController.ts';
 import { AppBar } from './AppBar.tsx';
 import { CircuitCanvas } from './CircuitCanvas.tsx';
 import { ControlBar } from './ControlBar.tsx';
+import { Timeline } from './Timeline.tsx';
 import { DcPanel } from './DcPanel.tsx';
 import { Dialogs } from './Dialogs.tsx';
 import { Inspector } from './Inspector.tsx';
@@ -91,6 +92,7 @@ export function App() {
           </main>
           <Inspector />
         </div>
+        <Timeline />
         <ControlBar />
         <Dialogs />
         <Announcer />

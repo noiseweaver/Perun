@@ -13,7 +13,9 @@ import {
   ResistorElm,
   getShortUnitText,
   stepE12,
+  Scope,
   ScopeElm,
+  ScopeManager,
   SwitchElm,
   UNITS_A,
   UNITS_V,
@@ -48,10 +50,8 @@ import {
   type EditInfo,
   type TolerancedElm,
   type Rect,
-  type Scope,
   type ScopeDefaultsStore,
   type ScopeDrop,
-  type ScopeManager,
   type ScopeRect,
   applyBindings,
   evaluateExpression,
@@ -77,6 +77,7 @@ import {
   type Modifiers,
 } from './editor/Editor.ts';
 import { ScopeRecorder } from './analysis/scopeRecord.ts';
+import { History, type StateRoots } from './rewind/history.ts';
 import { download } from './download.ts';
 import { arrangeCards } from './scopeLayout.ts';
 import { sliderEntries, type SliderEntry } from './sliders.ts';
@@ -139,6 +140,19 @@ export class SimController {
   /** For tests and debugging: frames rendered and steps run. */
   frames = 0;
   steps = 0;
+
+  // ---- rewind and scrub (PLAN.md Phase 20, not in upstream) ----
+  /** The last seconds of the run, frame by frame. */
+  readonly history = new History(() => this.historyRoots());
+  /** The recorded frame the timeline shows, or -1 while showing the run as it is. */
+  private rewindIndex = -1;
+  /** Replay position, in the history's running time (ms). */
+  private rewindClock = 0;
+  /** circuitVersion when the timeline left the live run: an edit since continues from there. */
+  private rewindVersion = 0;
+  /** The parts and their places when the history started: moving or adding parts restarts it. */
+  private historyShape: number[] = [];
+  private historyParts: object[] = [];
 
   // ---- scopes (upstream ScopeManager and the scope parts of MouseManager) ----
   private scopeRenderer: ScopeRenderer | null = null;
@@ -308,6 +322,8 @@ export class SimController {
 
   private afterLoad(title: string, running: boolean, fit = true): void {
     this.circuitVersion++;
+    this.history.clear();
+    this.rewindIndex = -1;
     this.viewStack = [];
     const o = this.circuit.options;
     useApp.setState({
@@ -338,6 +354,8 @@ export class SimController {
 
   /** Upstream reset button: restart the simulation from t = 0. */
   reset(): void {
+    this.history.clear();
+    this.rewindIndex = -1;
     this.circuit.reset();
     // upstream resetAction clears every scope too (scopeManager.resetGraphs)
     this.circuit.scopes.resetGraphs();
@@ -352,8 +370,9 @@ export class SimController {
   }
 
   setRunning(running: boolean): void {
-    // a stopped simulation (convergence failure etc.) only restarts through reset
-    if (running && this.circuit.sim.stopMessage !== null) return;
+    // a stopped simulation (convergence failure etc.) only restarts through reset, though what
+    // led up to it can still be replayed
+    if (running && this.circuit.sim.stopMessage !== null && this.rewindIndex < 0) return;
     this.lastFrame = 0;
     useApp.setState({ running });
   }
@@ -461,7 +480,18 @@ export class SimController {
     const sim = this.circuit.sim;
     let running = state.running;
 
-    if (running) {
+    // an edit while a recorded frame is shown carries on from that frame
+    if (
+      this.rewindIndex >= 0 &&
+      (this.circuitVersion !== this.rewindVersion || this.editor.isMoving)
+    )
+      this.continueFromRewind();
+
+    if (this.rewindIndex >= 0) {
+      if (running) running = this.replay(elapsed);
+    } else if (running) {
+      this.history.beforeStep();
+      const stepsBefore = this.steps;
       const steprate = 160 * this.circuit.getIterCount();
       this.stepsOwed += (steprate * elapsed) / 1000;
       // after loading, resetting or a switch flip, run at least one step so the drawing is current
@@ -487,6 +517,7 @@ export class SimController {
           break;
         }
       }
+      if (this.steps !== stepsBefore) this.history.afterStep(elapsed, sim.t);
       if (sim.stopMessage !== null) {
         running = false;
         useApp.setState({ running: false });
@@ -547,6 +578,116 @@ export class SimController {
         badConnections: this.renderer?.badConnectionCount ?? 0,
       },
     });
+    this.publishRewind();
+  }
+
+  // ---- rewind and scrub ------------------------------------------------------------------------
+
+  /** What the history keeps: every part (composite children too), the scopes, the time. */
+  private historyRoots(): StateRoots {
+    const c = this.circuit;
+    this.historyParts = [...c.elements];
+    this.historyShape = shapeOf(c.elements);
+    return {
+      elements: [...c.elements, ...c.sim.elmList],
+      others: c.scopes.scopes,
+      shallow: [{ obj: c.sim, keys: ['t', 'timeStep', 'timeStepAccum', 'timeStepCount'] }],
+      skip: (o) => o === c || o instanceof ScopeManager,
+      noFrameDiff: (o) => o instanceof Scope,
+    };
+  }
+
+  /** The circuit was edited: a new or moved part starts the history again. */
+  private historyEdited(): void {
+    const els = this.circuit.elements;
+    const same =
+      els.length === this.historyParts.length &&
+      els.every((e, i) => e === this.historyParts[i]) &&
+      sameShape(shapeOf(els), this.historyShape);
+    if (!same) this.history.clear();
+    if (this.rewindIndex >= 0) this.continueFromRewind();
+  }
+
+  /** The timeline is showing a recorded frame. */
+  get rewound(): boolean {
+    return this.rewindIndex >= 0;
+  }
+
+  /** Show recorded frame `i` (0 is the oldest kept); the last one is the run as it is. */
+  scrub(i: number): void {
+    const h = this.history;
+    if (h.length === 0) return;
+    i = Math.max(0, Math.min(h.length - 1, Math.round(i)));
+    if (i === h.length - 1) {
+      this.goLive();
+      if (useApp.getState().running) useApp.setState({ running: false });
+      return;
+    }
+    if (this.rewindIndex < 0) {
+      h.enter();
+      this.rewindVersion = this.circuitVersion;
+    }
+    if (useApp.getState().running) useApp.setState({ running: false });
+    this.rewindIndex = i;
+    this.rewindClock = h.clockAt(i);
+    h.seek(i);
+    this.publishStatus(true);
+  }
+
+  /** Back to the run as it is now (it stays paused or running as it was). */
+  goLive(): void {
+    if (this.rewindIndex < 0) return;
+    this.history.restoreLive();
+    this.rewindIndex = -1;
+    if (this.circuit.sim.stopMessage !== null && useApp.getState().running)
+      useApp.setState({ running: false });
+    this.publishStatus(true);
+  }
+
+  /** An edit while rewound: the run goes on from the frame shown, and the history restarts. */
+  private continueFromRewind(): void {
+    this.rewindIndex = -1;
+    this.history.clear();
+    this.circuit.sim.analyzeFlag = true;
+    this.publishStatus(true);
+  }
+
+  /**
+   * Replay: step through the recorded frames at the pace they were recorded, and carry on with the
+   * run once they are used up. Returns whether the frame shows a running circuit.
+   */
+  private replay(elapsed: number): boolean {
+    const h = this.history;
+    this.rewindClock += elapsed;
+    if (h.length === 0 || this.rewindClock >= h.clockAt(h.length - 1)) {
+      this.goLive();
+      return useApp.getState().running;
+    }
+    const i = h.indexAtClock(this.rewindClock);
+    if (i !== this.rewindIndex) {
+      this.rewindIndex = i;
+      h.seek(i);
+    }
+    return true;
+  }
+
+  /** Open or close the timeline; closing it returns to the run as it is. */
+  setRewindOpen(open: boolean): void {
+    if (!open) this.goLive();
+    useApp.setState((s) => ({ rewind: { ...s.rewind, open } }));
+    this.publishRewind();
+  }
+
+  private publishRewind(): void {
+    const prev = useApp.getState().rewind;
+    if (!prev.open) return;
+    const h = this.history;
+    const live = this.rewindIndex < 0;
+    const frames = h.length;
+    const index = live ? Math.max(0, frames - 1) : this.rewindIndex;
+    const t = live ? this.circuit.sim.t : h.timeAt(index);
+    if (prev.frames !== frames || prev.index !== index || prev.live !== live || prev.t !== t)
+      useApp.setState({ rewind: { open: true, frames, index, live, t } });
   }
 
   // ---- editor host ---------------------------------------------------------------------------
@@ -579,6 +720,7 @@ export class SimController {
   /** The element list or an element changed: analyze again (upstream `needAnalyze`). */
   circuitChanged(): void {
     this.circuitVersion++;
+    this.historyEdited();
     this.circuit.removeUnusedScopeElms();
     this.circuit.pruneAdjustables();
     this.slidersChanged();
@@ -3033,6 +3175,17 @@ function readClipboard(): string | null {
   } catch {
     return null;
   }
+}
+
+/** Each part's place, to tell a move from a value change. */
+function shapeOf(els: readonly CircuitElm[]): number[] {
+  const out: number[] = [];
+  for (const e of els) out.push(e.x, e.y, e.x2, e.y2);
+  return out;
+}
+
+function sameShape(a: readonly number[], b: readonly number[]): boolean {
+  return a.length === b.length && a.every((v, i) => v === b[i]);
 }
 
 export const controller = new SimController();

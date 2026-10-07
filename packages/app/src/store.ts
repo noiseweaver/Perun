@@ -89,6 +89,20 @@ export interface EditorState {
   moving: boolean;
 }
 
+/** The rewind timeline: the frames kept of the last seconds of the run, and the one shown. */
+export interface RewindState {
+  /** The timeline bar is showing. */
+  open: boolean;
+  /** Frames kept. */
+  frames: number;
+  /** The frame shown (the last one while live). */
+  index: number;
+  /** Showing the run as it is now, not a recorded frame. */
+  live: boolean;
+  /** Simulated time of the frame shown. */
+  t: number;
+}
+
 export type TeachTool = 'pencil' | 'laser' | 'eraser';
 
 export interface AppState {
@@ -152,6 +166,8 @@ export interface AppState {
   subcircuitModels: string[];
   /** Teaching tools: the tool in use (null: editing as usual), the pen and the strokes' state. */
   teach: { tool: TeachTool | null; pen: number; strokes: number; canUndo: boolean };
+  /** Rewind and scrub (PLAN.md Phase 20): the timeline bar and what it shows. */
+  rewind: RewindState;
   /**
    * Touch box select: one finger dragging on empty canvas draws a selection box instead of
    * panning (two fingers still pan and zoom). A mouse drag always selects.
@@ -371,6 +387,7 @@ export const useApp = create<AppState>(() => ({
   subcircuitBar: { viewing: [], editing: null },
   subcircuitModels: [],
   teach: { tool: null, pen: 0, strokes: 0, canUndo: false },
+  rewind: { open: false, frames: 0, index: 0, live: true, t: 0 },
   boxSelect: false,
   announcement: '',
   wheelValue: null,

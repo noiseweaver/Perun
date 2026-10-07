@@ -1,5 +1,18 @@
 # Progress
 
+## 2026-10-07: Phase 20, rewind and scrub (branch claude/project-thread-xl3poa)
+
+Done: packages/app/src/rewind/history.ts records the last 10 s of the run frame by frame (key
+frames plus changes, about 1 to 14 KB a frame on the bundled examples, at most 1.2 ms a frame) and
+writes a frame back into the parts and scopes to show it. SimController records after each
+frame's steps and, while a recorded frame is shown, replays instead of stepping. The timeline bar
+(components/Timeline.tsx) opens from the Rewind button in the bottom bar. Tests: history.test.ts
+(every example replays exactly and continues bit for bit), e2e rewind.spec.ts. Checked in Dark,
+Classic, phone portrait and landscape.
+
+Next: Gady tries the preview. Open: X-Y plots draw into an image as they run, so a rewound X-Y
+plot keeps its newest trace.
+
 ## 2026-10-07: Phase 19, live formula cards (branch claude/project-thread-0qtuqk)
 
 Done: packages/elements/src/formulas.ts gives a part's laws with its live values as fixed-width

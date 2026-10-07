@@ -359,6 +359,15 @@ Added 2026-10-07 by owner (picked "Formula cards" on the next-feature card; the 
 
 Acceptance: each law's result matches the engine's value for that part (resistor, capacitor, inductor, diode, LED with series resistance, Zener in breakdown, BJT in its active region, MOSFET in each region, op-amp follower and open loop, loaded transformer, sources); token widths stay the same while a capacitor charges. Golden tests unchanged.
 
+### Phase 20: Rewind and scrub
+Added 2026-10-07 by owner (picked "Rewind and scrub" on the next-feature card; the second teaching idea in the backlog). Display only: the engine, the simulation and the file format are unchanged.
+- [x] The app keeps the last 10 seconds of the run (running time; time paused does not count), frame by frame: every number the parts and scopes hold, stored as a full copy every 60 frames and only the changes in between, up to 48 MB. Only values that move as the circuit runs are shown again: what a simulation step changed, and a part's values changed while running (a switch flipped). The selection and the scopes' places on screen are left alone. A reset, a load, or adding or moving parts starts the history again.
+- [x] A Rewind button in the bottom bar (next to Reset) opens a timeline bar under the canvas: Play/Pause, a slider over the kept frames, the shown frame's time in the fixed-width time format, Back to live, and Close. Dragging the slider (or its arrow keys) pauses the run and shows that frame: canvas, values, scopes, cards and the time readout. Play (or the bottom bar's Run, labelled Replay) replays from there at the pace it was recorded, then carries on with the run. Back to live, dragging to the end and closing the bar return to the run as it was.
+- [x] An edit while a recorded frame is shown (a switch, a slider, a value, a move) carries on from that frame: the run continues from the past state with the edit, and the history starts again.
+- [x] Phones: the bar fits portrait, and in landscape it sits under the canvas beside the right-side rail.
+
+Acceptance: for every bundled example, each recorded frame is shown exactly as it was recorded (part voltages and currents, scope data, time), and after rewinding and returning the run continues bit for bit like one never rewound (packages/app/src/rewind/history.test.ts). Goldens and the 373 upstream examples are unchanged.
+
 ## 8. Java to TypeScript porting pitfalls
 
 - **Integer math.** Java `int` division truncates and overflows at 32 bits. JS does neither. Use `Math.trunc` or `| 0` wherever upstream relies on int behaviour. Check `(int)` casts, `%` on negatives, `>>` vs `>>>`, `char` arithmetic.
