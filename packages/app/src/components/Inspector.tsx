@@ -22,6 +22,7 @@ import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
 import { useNarrow } from './useNarrow.ts';
 import { Icon, type IconName } from './Icon.tsx';
+import { FormulaCard } from './FormulaCard.tsx';
 import { LiveHeader } from './LiveHeader.tsx';
 import { t } from '../i18n.ts';
 
@@ -682,6 +683,7 @@ export function Inspector() {
         </button>
       </header>
       {selected !== null && <LiveHeader elm={selected} />}
+      {selected !== null && <FormulaCard elm={selected} />}
       <SelectionActions elm={selected} />
       {selected !== null && (
         <form className="inspector-fields" onSubmit={(e) => e.preventDefault()}>
