@@ -29,7 +29,7 @@
   <w x="656 384 688 384" f="0"/>
   <w x="688 384 688 256" f="0"/>
   <x x="112 48 112 48" f="0" si="20" te="Expo converter VCO: one transistor"/>
-  <x x="112 456 112 456" f="0" si="14" te="The transistor turns the control voltage into a current that charges C exponentially, so the\npitch follows the control voltage. Its saturation current roughly doubles every 6 °C, so the\npitch runs away as it warms. Scopes &gt; Parameter sweep: sweep Circuit temperature from 0 to\n60 °C and read the frequency, Hz or Pitch."/>
+  <x x="112 528 112 528" f="0" si="14" te="The transistor turns the control voltage into a current that charges C exponentially, so the\npitch follows the control voltage. Its saturation current roughly doubles every 6 °C, so the\npitch runs away as it warms. Scopes &gt; Parameter sweep: sweep Circuit temperature from 0 to\n60 °C and read the frequency, Hz or Pitch."/>
   <o en="11" sp="16" f="x3" p="0">
     <p v="0" sc="5"/>
     <p v="3" sc="0.1"/>

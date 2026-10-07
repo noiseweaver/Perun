@@ -37,7 +37,7 @@
   <w x="656 384 688 384" f="0"/>
   <w x="688 384 688 256" f="0"/>
   <x x="112 48 112 48" f="0" si="20" te="Expo converter VCO: pair with a tempco resistor"/>
-  <x x="112 456 112 456" f="0" si="14" te="The 1 kΩ leg of the control divider is a +3300 ppm/°C tempco resistor, so the control voltage\ngrows with temperature exactly as kT/q does and the exponent stays put. Sweep Circuit\ntemperature from -20 to 60 °C: about 0.02 %/°C, the drift the matched pair had left."/>
+  <x x="112 528 112 528" f="0" si="14" te="The 1 kΩ leg of the control divider is a +3300 ppm/°C tempco resistor, so the control voltage\ngrows with temperature exactly as kT/q does and the exponent stays put. Sweep Circuit\ntemperature from -20 to 60 °C: about 0.02 %/°C, the drift the matched pair had left."/>
   <o en="19" sp="16" f="x3" p="0">
     <p v="0" sc="5"/>
     <p v="3" sc="0.1"/>

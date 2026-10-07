@@ -37,7 +37,7 @@
   <w x="656 384 688 384" f="0"/>
   <w x="688 384 688 256" f="0"/>
   <x x="112 48 112 48" f="0" si="20" te="Expo converter VCO: matched pair"/>
-  <x x="112 456 112 456" f="0" si="14" te="Both transistors share one emitter current, so only the difference of their base voltages sets\nthe current: the saturation current cancels and the drift is down to the thermal voltage kT/q,\nabout +0.33 %/°C in the exponent. Sweep Circuit temperature from -20 to 60 °C: about\n1.4 %/°C left, 60 times better than one transistor."/>
+  <x x="112 528 112 528" f="0" si="14" te="Both transistors share one emitter current, so only the difference of their base voltages sets\nthe current: the saturation current cancels and the drift is down to the thermal voltage kT/q,\nabout +0.33 %/°C in the exponent. Sweep Circuit temperature from -20 to 60 °C: about\n1.4 %/°C left, 60 times better than one transistor."/>
   <o en="19" sp="16" f="x3" p="0">
     <p v="0" sc="5"/>
     <p v="3" sc="0.1"/>
