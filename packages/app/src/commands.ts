@@ -30,6 +30,7 @@ export type DialogKind =
   | 'themes'
   | 'themeEditor'
   | 'bode'
+  | 'sweep'
   | 'exportImage'
   | 'partsList'
   | 'scopeCsv'

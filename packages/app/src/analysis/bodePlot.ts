@@ -40,7 +40,7 @@ export function freqAtX(l: BodeLayout, x: number): number {
   return Math.pow(10, l.logMin + k * (l.logMax - l.logMin));
 }
 
-function xAtFreq(l: BodeLayout, f: number): number {
+export function xAtFreq(l: BodeLayout, f: number): number {
   return l.left + ((Math.log10(f) - l.logMin) / (l.logMax - l.logMin)) * (l.right - l.left);
 }
 
@@ -90,16 +90,8 @@ export interface BodeDrawOptions {
   theme: Theme;
 }
 
-/** Draw the gain and phase panes into a canvas of `w` x `h` CSS pixels. */
-export function drawBode(g: CanvasRenderingContext2D, w: number, h: number, o: BodeDrawOptions) {
-  const sc = o.theme.scope;
-  const l = bodeLayout(w, h, o.fStart, o.fStop);
-  const mono = o.theme.style.monoFont;
-  g.clearRect(0, 0, w, h);
-  g.fillStyle = sc.background;
-  g.fillRect(0, 0, w, h);
-
-  const finite = o.points.filter((p) => Number.isFinite(p.gainDb));
+/** Pane scales for these points: tidy gain and phase ranges. */
+export function bodeScales(finite: readonly BodePoint[]) {
   let gLo = Infinity;
   let gHi = -Infinity;
   let pLo = Infinity;
@@ -116,8 +108,22 @@ export function drawBode(g: CanvasRenderingContext2D, w: number, h: number, o: B
     pLo = -90;
     pHi = 0;
   }
-  const gr = niceRange(gLo, gHi, GAIN_STEPS, 6);
-  const pr = niceRange(pLo, pHi, PHASE_STEPS, 45);
+  return { gr: niceRange(gLo, gHi, GAIN_STEPS, 6), pr: niceRange(pLo, pHi, PHASE_STEPS, 45) };
+}
+
+/**
+ * Background, frequency and value grids with labels for the gain and phase panes, scaled to fit
+ * `finite` (points with a finite gain). Returns the value-to-y maps.
+ */
+export function drawBodeGrid(
+  g: CanvasRenderingContext2D,
+  l: BodeLayout,
+  finite: readonly BodePoint[],
+  theme: Theme,
+) {
+  const sc = theme.scope;
+  const mono = theme.style.monoFont;
+  const { gr, pr } = bodeScales(finite);
   const yGain = (v: number): number =>
     l.gainBottom - ((v - gr.lo) / (gr.hi - gr.lo)) * (l.gainBottom - l.gainTop);
   const yPhase = (v: number): number =>
@@ -174,6 +180,20 @@ export function drawBode(g: CanvasRenderingContext2D, w: number, h: number, o: B
   };
   hLines(gr, yGain, ' dB');
   hLines(pr, yPhase, '°');
+
+  return { yGain, yPhase, panes };
+}
+
+/** Draw the gain and phase panes into a canvas of `w` x `h` CSS pixels. */
+export function drawBode(g: CanvasRenderingContext2D, w: number, h: number, o: BodeDrawOptions) {
+  const sc = o.theme.scope;
+  const l = bodeLayout(w, h, o.fStart, o.fStop);
+  g.clearRect(0, 0, w, h);
+  g.fillStyle = sc.background;
+  g.fillRect(0, 0, w, h);
+
+  const finite = o.points.filter((p) => Number.isFinite(p.gainDb));
+  const { yGain, yPhase, panes } = drawBodeGrid(g, l, finite, o.theme);
 
   // -3 dB markers
   if (o.cutoffs.length > 0) {

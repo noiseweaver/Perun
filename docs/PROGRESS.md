@@ -1,5 +1,49 @@
 # Progress
 
+## 2026-10-06: Phases 11 and 12, parameter sweeps and Monte Carlo (branch claude/sweeps-monte-carlo-x2fno2)
+
+### Done
+
+- Gady answered the core features card with "Everything". PLAN.md gets Phases 11 (sweeps), 12
+  (Monte Carlo), 13 (DC operating point table) and 14 (editor and export quick wins), each with
+  acceptance criteria; the out-of-scope line names 11 to 13 as exceptions. Phases 13 and 14 are
+  built in their own threads.
+- packages/app/src/analysis/sweep.ts: `MultiRun` loads a copy of the circuit per run, applies
+  the run's values through each part's `setEditValue`, and measures it: a transient (an
+  output's voltage or current from reset to a stop time, 401 evenly spaced samples
+  interpolated between timesteps) or an AC sweep (one `BodeSweep` per run; `BodeSweep` now also
+  takes a circuit copy). Runs go in slices per animation frame and can be stopped.
+- Sweeps step any value a slider could drive (`EditInfo.canCreateAdjustable`): a list
+  ("1k, 2.2k, 4.7k") or a linear or log range of 2 to 10 values, rounded to three significant
+  digits. Monte Carlo draws the nominal run plus 10 to 200 runs; each toleranced part gets
+  nominal × (1 + tol × d), with d uniform in [-1, 1] or normal with the tolerance at 3σ, cut at
+  the tolerance. A mulberry32 generator seeded from the seed and the run number, never the
+  engine's `JavaRandom`, so the same seed gives the same runs and goldens are untouched.
+- Tolerance: `tolerance` (percent) on ResistorElm, CapacitorElm (and the polarized one) and
+  InductorElm, saved as `tol` only when set (DEVIATIONS.md). The property panel shows a
+  Tolerance drop-down (None, ±0.1% to ±20%) after the part's own fields, as one undoable edit
+  (packages/elements/src/tolerance.ts, `SimController.applyTolerance`).
+- SweepDialog.tsx: Scopes > Parameter Sweep… and Monte Carlo…, and Sweep This Value… in the
+  element context menu. Material segmented buttons pick what to vary and what to measure. A
+  sweep draws a run per value in the scope trace colors with a legend that reads each run at the
+  cursor; Monte Carlo draws the spread faint in the first trace color and the nominal run on
+  top in the second, with nominal, mean, min and max at the cursor. Readouts are fixed-width
+  monospace. CSV export. The last run stays when the dialog closes.
+- Tests: sweep.test.ts (R swept in an RC step: each tau within 2% of RC; C swept in an RC
+  low-pass: each -3 dB point within 2%; Monte Carlo values within tolerance, same seed same
+  runs, each run's tau matches its drawn R·C; `tol` round trip). e2e: packages/app/e2e/sweep.spec.ts.
+
+### Next
+
+- Possible follow-ups: sweep two values at once (a grid), sweep a temperature once Phase 6 of
+  the ideas list (temperature) exists, a histogram of a measured quantity (say the -3 dB point)
+  over the Monte Carlo runs, tolerance on more parts (potentiometers, transformers).
+
+### Open issues
+
+- Run labels use upstream's `unitString`, so a resistor reads "1k" (no Ω), as upstream's own
+  edit fields do.
+
 ## 2026-10-06: Phase 14, editor and export quick wins (branch claude/quick-wins-wires-export-wi0gpu)
 
 ### Done

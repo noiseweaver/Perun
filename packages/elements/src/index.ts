@@ -231,3 +231,11 @@ export {
 export { AttrReader, AttrWriter } from './xmlattrs.ts';
 export { LANGUAGES, LS, catalogLanguage, parseLocale, setLocalization } from './i18n.ts';
 export { WireRouter, setRoutingBoundingBox } from './WireRouter.ts';
+export {
+  TOLERANCES,
+  hasTolerance,
+  toleranceEditInfo,
+  toleranceFromEditInfo,
+  toleranceItem,
+  type TolerancedElm,
+} from './tolerance.ts';

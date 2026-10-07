@@ -132,6 +132,7 @@ export interface AppState {
     | 'themes'
     | 'themeEditor'
     | 'bode'
+    | 'sweep'
     | 'exportImage'
     | 'partsList'
     | 'scopeCsv'

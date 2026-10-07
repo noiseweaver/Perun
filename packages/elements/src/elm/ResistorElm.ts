@@ -27,6 +27,11 @@ export class ResistorElm extends CircuitElm {
   }
 
   resistance = 0;
+  /**
+   * Not in upstream (DEVIATIONS.md): tolerance in percent for Monte Carlo runs, 0 for none. Saved
+   * as the extra XML attribute `tol` only when set; upstream ignores it.
+   */
+  tolerance = 0;
 
   override getClassName(): string {
     return 'ResistorElm';
@@ -46,11 +51,13 @@ export class ResistorElm extends CircuitElm {
   override dumpXml(w: XmlAttrWriter): void {
     super.dumpXml(w);
     w.dumpAttr('r', this.resistance);
+    if (this.tolerance !== 0) w.dumpAttr('tol', this.tolerance);
   }
 
   override undumpXml(r: XmlAttrReader): void {
     super.undumpXml(r);
     this.resistance = r.parseDoubleAttr('r', this.resistance);
+    this.tolerance = Math.max(0, r.parseDoubleAttr('tol', 0));
   }
 
   override calculateCurrent(): void {
