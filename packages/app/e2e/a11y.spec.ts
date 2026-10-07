@@ -17,6 +17,15 @@ const ready = async (page: Page, query = ''): Promise<void> => {
 };
 
 const violations = async (page: Page): Promise<string[]> => {
+  // axe measures contrast mid fade-in on a slow runner (a dialog opening, a menu): wait until
+  // nothing but endless animations is still running
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .every(
+        (a) => a.playState !== 'running' || a.effect?.getComputedTiming().iterations === Infinity,
+      ),
+  );
   const r = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   return r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
 };

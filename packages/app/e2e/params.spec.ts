@@ -170,3 +170,30 @@ test('a parameter binds a part value, and each subcircuit copy sets its own', as
   await expect(page.getByTestId('param-name-0')).toHaveValue('RB');
   await expect(page.getByTestId('param-value-0')).toHaveValue('1k');
 });
+
+test('the sweep dialog steps the circuit temperature', async ({ page }) => {
+  await open(page, DIODE);
+  await page.getByTestId('scopes-menu').click();
+  await page.getByTestId('scopes-sweep').click();
+  await expect(page.getByTestId('sweep-dialog')).toBeVisible();
+  await page.getByTestId('sweep-part').selectOption('-2');
+  await expect(page.getByTestId('sweep-values')).toHaveValue('-20, 27, 85');
+  const diode = await page.evaluate(
+    () =>
+      window.circuitjsNext?.controller.circuit.elements.findIndex(
+        (e) => e.getClassName() === 'DiodeElm',
+      ) ?? -1,
+  );
+  await page.getByTestId('sweep-output').selectOption(String(diode));
+  await page.getByTestId('sweep-duration').fill('1ms');
+  await page.getByTestId('sweep-run').click();
+  await expect(page.getByTestId('sweep-status')).toContainText('3/3', { timeout: 30000 });
+  const runs = page.getByTestId('sweep-run-row');
+  await expect(runs).toHaveCount(3);
+  await expect(runs.nth(0)).toContainText('-20 °C');
+  await expect(runs.nth(2)).toContainText('85 °C');
+  // the circuit itself stays at 27 °C
+  expect(await page.evaluate(() => window.circuitjsNext?.controller.circuit.sim.temperature)).toBe(
+    27,
+  );
+});

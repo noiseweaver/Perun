@@ -127,6 +127,11 @@ export class InductorElm extends CircuitElm {
   initialCurrent = 0;
   /** 0 = disabled (linear). */
   saturationCurrent = 0;
+  /**
+   * Not in upstream (DEVIATIONS.md): tolerance in percent for Monte Carlo runs, 0 for none. Saved
+   * as the extra XML attribute `tol` only when set; upstream ignores it.
+   */
+  tolerance = 0;
 
   override getClassName(): string {
     return 'InductorElm';
@@ -157,6 +162,7 @@ export class InductorElm extends CircuitElm {
     w.dumpAttr('l', this.inductance);
     w.dumpAttr('ic', this.initialCurrent);
     if (this.saturationCurrent !== 0) w.dumpAttr('isat', this.saturationCurrent);
+    if (this.tolerance !== 0) w.dumpAttr('tol', this.tolerance);
   }
 
   override dumpXmlState(w: XmlAttrWriter): void {
@@ -169,6 +175,7 @@ export class InductorElm extends CircuitElm {
     this.initialCurrent = r.parseDoubleAttr('ic', this.initialCurrent);
     this.current = r.parseDoubleAttr('i', this.current);
     this.saturationCurrent = r.parseDoubleAttr('isat', this.saturationCurrent);
+    this.tolerance = Math.max(0, r.parseDoubleAttr('tol', 0));
     this.ind.setup(this.inductance, this.current, this.flags, this.saturationCurrent);
   }
 

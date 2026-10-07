@@ -11,6 +11,7 @@ import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
 import { Icon, type IconName } from './Icon.tsx';
 import { canBode, openBode } from './BodeDialog.tsx';
+import { canSweep, openSweep } from './SweepDialog.tsx';
 import { t } from '../i18n.ts';
 
 const MOD = typeof navigator !== 'undefined' && /Mac|iP/.test(navigator.platform) ? '⌘' : 'Ctrl+';
@@ -200,6 +201,14 @@ export function CircuitCanvas() {
                   icon="bode"
                   testId="ctx-bode"
                   onSelect={() => openBode(menuElm)}
+                />
+              )}
+              {canSweep(menuElm) && (
+                <Item
+                  label="Sweep This Value…"
+                  icon="sweep"
+                  testId="ctx-sweep"
+                  onSelect={() => openSweep('values', menuElm)}
                 />
               )}
               {isWire && (

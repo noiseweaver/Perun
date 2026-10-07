@@ -46,6 +46,11 @@ export class CapacitorElm extends CircuitElm {
    * own copy of the circuit. Islands left behind get the engine's usual 100 MΩ to ground.
    */
   dcOpen = false;
+  /**
+   * Not in upstream (DEVIATIONS.md): tolerance in percent for Monte Carlo runs, 0 for none. Saved
+   * as the extra XML attribute `tol` only when set; upstream ignores it.
+   */
+  tolerance = 0;
   capNode2 = 0;
   curSourceValue = 0;
 
@@ -79,6 +84,7 @@ export class CapacitorElm extends CircuitElm {
     w.dumpAttr('c', this.capacitance);
     w.dumpAttr('iv', this.initialVoltage);
     w.dumpAttr('sr', this.seriesResistance);
+    if (this.tolerance !== 0) w.dumpAttr('tol', this.tolerance);
   }
 
   override dumpXmlState(w: XmlAttrWriter): void {
@@ -90,6 +96,7 @@ export class CapacitorElm extends CircuitElm {
     this.capacitance = r.parseDoubleAttr('c', this.capacitance);
     this.initialVoltage = r.parseDoubleAttr('iv', this.initialVoltage);
     this.seriesResistance = r.parseDoubleAttr('sr', this.seriesResistance);
+    this.tolerance = Math.max(0, r.parseDoubleAttr('tol', 0));
     this.voltdiff = r.parseDoubleAttr('vd', this.voltdiff);
   }
 
