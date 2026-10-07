@@ -110,6 +110,12 @@ export class Simulation {
   pauseRequested = false;
   solverType: SolverType = SolverType.AUTO;
   usingSparse = false;
+  /**
+   * Circuit temperature in °C (not in upstream, DEVIATIONS.md). Upstream's semiconductor models
+   * are all at SPICE's nominal 27 °C, and at 27 °C the elements run upstream's code unchanged.
+   * Elements read it when they stamp, so a change takes effect at the next analysis.
+   */
+  temperature = 27;
 
   converged = false;
   subIterations = 0;

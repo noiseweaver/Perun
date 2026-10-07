@@ -26,6 +26,7 @@ import { Shell } from './DialogShell.tsx';
 import { ScopePropertiesDialog } from './ScopeDialog.tsx';
 import { SliderDialog } from './SliderDialog.tsx';
 import { ModelDialog } from './ModelDialog.tsx';
+import { ParamsDialog } from './ParamsDialog.tsx';
 import { SubcircuitDialog, SubcircuitManagerDialog } from './SubcircuitDialog.tsx';
 import { ThemeEditorDialog, ThemesDialog } from './ThemeDialogs.tsx';
 import { t } from '../i18n.ts';
@@ -219,6 +220,14 @@ function readTime(text: string): number | null {
   }
 }
 
+/** A temperature in °C, above absolute zero and below 1000; null for anything else. */
+function readTemperature(text: string): number | null {
+  const s = text.trim().replace(/\s*°?\s*C$/i, '');
+  if (!/^[-+]?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?$/i.test(s)) return null;
+  const v = Number(s);
+  return v > -273.15 && v <= 1000 ? v : null;
+}
+
 const shortTime = (v: number): string => getUnitText(v, 's').replace(/ ?s$/, '').replace(' ', '');
 
 function SimSettingsDialog() {
@@ -226,9 +235,11 @@ function SimSettingsDialog() {
   const [step, setStep] = useState(() => shortTime(sim.maxTimeStep));
   const [adjust, setAdjust] = useState(sim.adjustTimeStep);
   const [min, setMin] = useState(() => shortTime(sim.minTimeStep));
+  const [temp, setTemp] = useState(() => String(sim.temperature));
   const stepValue = readTime(step);
   const minValue = adjust ? readTime(min) : sim.minTimeStep;
-  const ok = stepValue !== null && minValue !== null;
+  const tempValue = readTemperature(temp);
+  const ok = stepValue !== null && minValue !== null && tempValue !== null;
   return (
     <Shell
       title={t('Simulation settings')}
@@ -239,7 +250,7 @@ function SimSettingsDialog() {
         onSubmit={(e) => {
           e.preventDefault();
           if (!ok) return;
-          controller.setTimeStep(stepValue, adjust, minValue);
+          controller.setTimeStep(stepValue, adjust, minValue, tempValue);
           openDialog(null);
         }}
       >
@@ -286,6 +297,31 @@ function SimSettingsDialog() {
             )}
           </div>
         )}
+        <div className="field">
+          <label className="field-label" htmlFor="sim-temperature">
+            {t('Temperature (°C)')}
+          </label>
+          <input
+            id="sim-temperature"
+            className="text-input field-input"
+            value={temp}
+            inputMode="decimal"
+            spellCheck={false}
+            onChange={(e) => setTemp(e.target.value)}
+            data-testid="sim-temperature"
+          />
+          {tempValue === null ? (
+            <span className="field-error">
+              {t('Enter a temperature from -273 to 1000 °C, like 27 or -20.')}
+            </span>
+          ) : (
+            <span className="field-hint">
+              {t(
+                'Diodes, transistors and resistors with a temperature coefficient follow it. Parts are specified at 27 °C, the SPICE default.',
+              )}
+            </span>
+          )}
+        </div>
         <div className="dialog-buttons">
           <Dialog.Close asChild>
             <button type="button" className="button">
@@ -418,6 +454,8 @@ export function Dialogs() {
       return <ShortcutsDialog />;
     case 'simSettings':
       return <SimSettingsDialog />;
+    case 'params':
+      return <ParamsDialog />;
     case 'scopeProperties':
       return <ScopePropertiesDialog />;
     case 'sliders':

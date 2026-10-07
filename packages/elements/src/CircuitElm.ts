@@ -14,6 +14,7 @@ import { getCurrentDText, getVoltageDText } from './view/units.ts';
 import type { StringTokenizer } from './StringTokenizer.ts';
 import type { WireRouter } from './WireRouter.ts';
 import type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from './xml.ts';
+import { formatBindings, parseBindings } from './params.ts';
 
 /** Placeholder for leads an element never sets (upstream leaves them null). */
 export const NO_LEAD: Point = Object.freeze(new Point()) as Point;
@@ -24,6 +25,12 @@ export const NO_LEAD: Point = Object.freeze(new Point()) as Point;
  * `initNew()` and `undump()` hold what those two constructors do (see ElementType).
  */
 export abstract class CircuitElm extends SimElement {
+  /**
+   * Fields bound to parameter expressions, by edit item (`{R*2}` in the property panel). Not in
+   * upstream (DEVIATIONS.md): saved as the extra XML attribute `px`, only when there are any.
+   */
+  paramExprs: Map<number, string> | null = null;
+
   /** Defaults of a newly placed element (upstream `CircuitElm(int xx, int yy)` constructors). */
   initNew(): void {}
 
@@ -45,6 +52,7 @@ export abstract class CircuitElm extends SimElement {
     w.dumpAttr('x', `${this.x} ${this.y} ${this.x2} ${this.y2}`);
     // always written: some elements set nonzero flags in their constructor
     w.dumpAttr('f', this.flags);
+    if (this.paramExprs !== null) w.dumpAttr('px', formatBindings(this.paramExprs));
   }
 
   /** Simulation state saved after the settings (capacitor voltage, inductor current). */
@@ -52,6 +60,7 @@ export abstract class CircuitElm extends SimElement {
 
   undumpXml(r: XmlAttrReader): void {
     this.flags = r.parseIntAttr('f', this.flags);
+    this.paramExprs = parseBindings(r.parseStringAttr('px', null));
   }
 
   /**

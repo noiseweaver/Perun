@@ -439,6 +439,11 @@ textarea,
   min-width: 22ch;
 }
 
+.readout-temp {
+  /* "T = -273.1 °C" is 13 characters */
+  min-width: 14ch;
+}
+
 .readout-button {
   border: 0;
   border-radius: 4px;
@@ -1562,6 +1567,38 @@ textarea.field-input {
 
 .field-input[data-invalid] {
   border-color: var(--ui-danger);
+}
+
+.param-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.param-name,
+.param-value {
+  font-family: var(--mono-font);
+  min-width: 0;
+}
+
+.param-equals {
+  color: var(--ui-text-muted);
+}
+
+.param-error {
+  grid-column: 1 / -1;
+}
+
+.param-add {
+  align-self: flex-start;
+}
+
+.field-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ui-text-muted);
 }
 
 .field-error {

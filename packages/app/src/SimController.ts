@@ -52,6 +52,11 @@ import {
   type ScopeDrop,
   type ScopeManager,
   type ScopeRect,
+  applyBindings,
+  evaluateExpression,
+  paramEnv,
+  type ParamDef,
+  type ParamEnv,
 } from '@circuitjs-next/elements';
 import { Circuit, OptionFlag, getCircuitAsComposite } from '@circuitjs-next/format';
 import {
@@ -486,6 +491,7 @@ export class SimController {
       status: {
         t: sim.t,
         timeStep: sim.timeStep,
+        temperature: sim.temperature,
         stopMessage: sim.stopMessage,
         badConnections: this.renderer?.badConnectionCount ?? 0,
       },
@@ -1494,10 +1500,61 @@ export class SimController {
   }
 
   applyEdit(e: CircuitElm, n: number, ei: EditInfo): void {
-    this.editor.history.record('Edit', () => e.setEditValue(n, ei));
+    this.editor.history.record('Edit', () => {
+      // a typed value replaces a parameter binding
+      if (e.paramExprs?.delete(n) === true && e.paramExprs.size === 0) e.paramExprs = null;
+      return e.setEditValue(n, ei);
+    });
     // upstream EditDialog.apply: a slider on this value moves to it
     if (ei.error === null) findAdjustable(this.circuit.adjustables, e, n)?.setSliderValue(ei.value);
     this.circuitChanged();
+  }
+
+  // ---- parameters (PLAN.md Phase 16) ---------------------------------------------------------
+
+  /** The open circuit's parameters as values for expressions. */
+  paramEnv(): ParamEnv {
+    return paramEnv(this.circuit.params);
+  }
+
+  /**
+   * Bind an element's number field to a parameter expression (`{R*2}` in the property panel),
+   * undoably. Returns an error message, or null when the field now follows the expression.
+   */
+  bindEdit(e: CircuitElm, n: number, ei: EditInfo, expr: string): string | null {
+    let v: number;
+    try {
+      v = evaluateExpression(expr, this.paramEnv());
+    } catch (err) {
+      return err instanceof Error ? err.message : String(err);
+    }
+    this.editor.history.record('Edit', () => {
+      e.paramExprs ??= new Map();
+      e.paramExprs.set(n, expr);
+      ei.value = v;
+      e.setEditValue(n, ei);
+      return true;
+    });
+    if (ei.error === null) findAdjustable(this.circuit.adjustables, e, n)?.setSliderValue(ei.value);
+    this.circuitChanged();
+    return ei.error;
+  }
+
+  /**
+   * Replace the open circuit's parameters (the Parameters dialog), undoably, and set every bound
+   * field from them. Returns the bindings that no longer evaluate, as messages.
+   */
+  setParams(defs: ParamDef[]): string[] {
+    let errors: string[] = [];
+    this.editor.history.record('Parameters', () => {
+      this.circuit.params = defs.map((d) => ({ ...d }));
+      const env = this.paramEnv();
+      errors = this.circuit.elements.flatMap((e) => applyBindings(e, env));
+      return true;
+    });
+    this.circuitChanged();
+    this.publishEditor(true);
+    return errors;
   }
 
   // ---- keyboard selection ------------------------------------------------------------------
@@ -1798,6 +1855,8 @@ export class SimController {
     if (model.modelCircuit !== null && model.modelCircuit.length > 0)
       this.circuit.read(model.modelCircuit);
     else this.circuit.readElementsDoc(model.elmDoc);
+    // the model's parameters are this circuit's while it is edited, at their defaults
+    this.circuit.params = model.params.map((d) => ({ ...d }));
     this.afterLoad(useApp.getState().title, useApp.getState().running);
     this.publishSubcircuits();
   }
@@ -1934,21 +1993,30 @@ export class SimController {
   }
 
   /** Simulation settings (upstream EditOptions time step fields), undoable, then re-analyze. */
-  setTimeStep(maxTimeStep: number, adjust: boolean, minTimeStep: number): void {
+  setTimeStep(
+    maxTimeStep: number,
+    adjust: boolean,
+    minTimeStep: number,
+    temperature = this.circuit.sim.temperature,
+  ): void {
     const sim = this.circuit.sim;
-    this.editor.history.record('Time step', () => {
+    this.editor.history.record('Simulation settings', () => {
       if (
         sim.maxTimeStep === maxTimeStep &&
         sim.adjustTimeStep === adjust &&
-        sim.minTimeStep === minTimeStep
+        sim.minTimeStep === minTimeStep &&
+        sim.temperature === temperature
       )
         return false;
       sim.maxTimeStep = maxTimeStep;
       sim.adjustTimeStep = adjust;
       sim.minTimeStep = minTimeStep;
+      // not in upstream (PLAN.md Phase 15): parts pick it up when the circuit is analyzed again
+      sim.temperature = temperature;
       return true;
     });
     this.circuitChanged();
+    this.publishStatus(true);
   }
 
   /** The circuit as upstream saves it. */

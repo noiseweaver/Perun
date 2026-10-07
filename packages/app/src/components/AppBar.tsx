@@ -176,6 +176,7 @@ export function AppBar() {
             testId="menu-subcircuit-manager"
             onSelect={() => openDialog('subcircuitManager')}
           />
+          <Item label="Parameters…" testId="menu-params" onSelect={() => openDialog('params')} />
           <Menu.Separator className="menu-separator" />
           {install !== 'none' && (
             <Item

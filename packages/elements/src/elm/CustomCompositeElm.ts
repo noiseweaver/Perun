@@ -17,6 +17,7 @@ import { modelsFor } from '../models/ModelLibrary.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import { getVoltageText } from '../view/units.ts';
 import type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from '../xml.ts';
+import { formatParamValues, paramEnv, parseParamValues } from '../params.ts';
 import { ChipElm } from './ChipElm.ts';
 import { CompositeElm } from './CompositeElm.ts';
 import type { WireRouter } from '../WireRouter.ts';
@@ -84,6 +85,11 @@ export class CustomCompositeElm extends CompositeElm {
   postCount = 0;
   model: CustomCompositeModel | null = null;
   highVoltage = 0;
+  /**
+   * This copy's parameter values, where they differ from the model's defaults (PLAN.md Phase
+   * 16). Not in upstream (DEVIATIONS.md): saved as the extra XML attribute `pv`.
+   */
+  paramValues = new Map<string, number>();
   private models: CustomCompositeModel[] = [];
 
   override getClassName(): string {
@@ -136,11 +142,14 @@ export class CustomCompositeElm extends CompositeElm {
     super.dumpXml(w);
     w.dumpAttr('mo', this.modelName);
     if (this.highVoltage !== 0) w.dumpAttr('hv', this.highVoltage);
+    const values = this.ownParamValues();
+    if (values.size > 0) w.dumpAttr('pv', formatParamValues(values));
   }
 
   override undumpXml(r: XmlAttrReader): void {
     this.modelName = r.parseStringAttr('mo', this.modelName) ?? this.modelName;
     this.highVoltage = r.parseDoubleAttr('hv', 0);
+    this.paramValues = parseParamValues(r.parseStringAttr('pv', null));
     this.updateModels();
     super.undumpXml(r);
   }
@@ -265,10 +274,35 @@ export class CustomCompositeElm extends CompositeElm {
     const externalNodes = model.extList.map((e) => e.node);
     // the old text format keeps each part's state in the element line
     if (st !== null) this.loadComposite(st, model.getNodeList(), externalNodes);
-    else this.loadCompositeXml(model.getElmEntries(), externalNodes);
+    else
+      this.loadCompositeXml(
+        model.getElmEntries(),
+        externalNodes,
+        model.params.length > 0 ? paramEnv(model.params, this.paramValues) : undefined,
+      );
     this.propagateHighVoltage();
     this.allocNodes();
     this.setPoints();
+  }
+
+  /** The values this copy sets that its model has, and that differ from the defaults. */
+  ownParamValues(): Map<string, number> {
+    const out = new Map<string, number>();
+    for (const d of this.model?.params ?? []) {
+      const v = this.paramValues.get(d.name);
+      if (v !== undefined && v !== d.value) out.set(d.name, v);
+    }
+    // a missing model: keep what the file says, so it is saved again
+    if (this.model === null) return new Map(this.paramValues);
+    return out;
+  }
+
+  /** Edit item of the model's first parameter (they follow the other items). */
+  private paramBase(): number {
+    const model = this.model;
+    if (model === null) return -1;
+    const hvIdx = this.canViewComponents() ? 3 : 2;
+    return hvIdx + 1 + (model.canLoadModelCircuit() ? 1 : 0);
   }
 
   propagateHighVoltage(): void {
@@ -359,6 +393,15 @@ export class CustomCompositeElm extends CompositeElm {
       return new EditInfo('High Logic Voltage (0=default)', this.highVoltage, 0, 10).setUnitStep();
     if (n === hvIdx + 1 && model.canLoadModelCircuit())
       return EditInfo.createButton('Edit Model', () => hooks?.editModel(this));
+    const param = model.params[n - this.paramBase()];
+    if (param !== undefined && n >= this.paramBase())
+      // no sliders: upstream would find no such item when it reads the file
+      return new EditInfo(
+        param.name,
+        this.paramValues.get(param.name) ?? param.value,
+        -1,
+        -1,
+      ).disallowSliders();
     return null;
   }
 
@@ -389,6 +432,13 @@ export class CustomCompositeElm extends CompositeElm {
     if (n === hvIdx) {
       this.highVoltage = ei.value;
       this.propagateHighVoltage();
+    }
+    const param = this.model.params[n - this.paramBase()];
+    if (param !== undefined && n >= this.paramBase()) {
+      if (ei.value === param.value) this.paramValues.delete(param.name);
+      else this.paramValues.set(param.name, ei.value);
+      // build the parts again with the new values
+      this.updateModels();
     }
   }
 

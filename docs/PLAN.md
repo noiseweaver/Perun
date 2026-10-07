@@ -22,7 +22,7 @@ Rebuild Paul Falstad's CircuitJS1 as a modern TypeScript web app with a new UI a
 - Read and write the upstream circuit text format and URL links, so existing circuits and examples load
 
 ### Out of scope (for now)
-- New simulation features (SPICE import and the like). Exception: AC analysis by transient sweep, added as Phase 10 by the owner on 2026-10-06
+- New simulation features (SPICE import and the like). Exceptions: AC analysis by transient sweep, added as Phase 10 by the owner on 2026-10-06; temperature effects and subcircuit parameters (Phases 15 and 16, the owner picked "Core leftovers" on 2026-10-07)
 - Mobile-first layout (keep it usable on tablets, optimise later)
 - Backend, accounts, hosted theme gallery
 - Desktop wrapper (Tauri, optional later)
@@ -286,6 +286,23 @@ Added 2026-10-06 by owner (picked as the first core simulator feature after Phas
 - [x] Dialog from Scopes > AC Analysis and from an element's context menu: input source, output (node, label, probe or voltage across a part), range, points per decade, amplitude; gain and phase plot on a log axis in scope theme colors, -3 dB markers, a cursor with fixed-width readouts, CSV export.
 
 Acceptance: an RC low-pass matches the analytic gain within 0.05 dB and phase within 0.5° from 10 Hz to 100 kHz, and its -3 dB point within 2%. A series RLC band-pass peaks within 3% of its resonance with the right bandwidth. An inverting op-amp reads its gain and 180°. Golden tests unchanged. The UI keeps running while a sweep runs, in Dark and Classic.
+
+### Phase 15: Temperature effects
+Added 2026-10-07 by owner (picked "Core leftovers": temperature and subcircuit parameters, SPICE import later).
+- [x] A circuit temperature in Simulation settings (27 °C, SPICE's nominal temperature, by default), saved as an extra XML attribute only when it is not 27 °C (DEVIATIONS.md). The bottom bar shows it, in a fixed width, when it is not the default.
+- [x] Diodes (and every part built on the diode junction: LEDs, Zeners, SCRs, the MOSFET body diodes, JFET gates), BJTs and MOSFETs follow it with SPICE's temperature equations and default coefficients: the thermal voltage, IS with EG = 1.11 eV and XTI = 3, a BJT's ISE and ISC, and a MOSFET's KP and threshold (level 1 with GAMMA = 0, PHI = 0.6). JFETs keep their threshold and beta, as SPICE's defaults do.
+- [x] Resistors get an optional temperature coefficient in ppm/°C, saved only when set.
+- [ ] Temperature as a sweep parameter (Phase 11) once both are merged.
+
+Acceptance: at 27 °C every example and golden simulates bit for bit as before (the engine reads upstream's own constants there). A diode at 1 mA drops about 2 mV per °C. Files still open upstream, at 27 °C.
+
+### Phase 16: Subcircuit parameters
+Added 2026-10-07 by owner, with Phase 15.
+- [x] File > Parameters… (and Parameters on the subcircuit bar while a model is edited): named parameters with default values for the open circuit. Any number field binds to an expression of them, typed `{R*2}` in the property panel; the field shows the expression and its value.
+- [x] A subcircuit made from the circuit takes its parameters. Each placed copy lists them in its properties and can set its own values; its parts are built with them. Nested subcircuits can bind their copy values to the outer model's parameters.
+- [x] Saved as extra XML attributes upstream ignores, only when used (`prm` on the circuit and the model, `px` on a bound part, `pv` on a copy). A bound part also keeps its value at the defaults, so upstream runs every copy at the defaults (DEVIATIONS.md).
+
+Acceptance: two copies of a divider subcircuit with different values of its lower resistor give the right voltages; parameters, bindings and copy values survive save, load and undo; a circuit without parameters saves exactly as before. Golden tests unchanged.
 
 ## 8. Java to TypeScript porting pitfalls
 

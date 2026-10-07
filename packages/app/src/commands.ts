@@ -20,6 +20,7 @@ export type DialogKind =
   | 'importText'
   | 'shortcuts'
   | 'simSettings'
+  | 'params'
   | 'scopeProperties'
   | 'sliders'
   | 'model'

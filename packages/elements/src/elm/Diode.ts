@@ -9,14 +9,15 @@
 
 import type { CircuitNode, SimElement } from '@circuitjs-next/engine';
 import type { DiodeModel } from '../models/DiodeModel.ts';
+import { NOMINAL_TEMPERATURE, saturationCurrentLogFactor, thermalVoltage } from '../temperature.ts';
+
+/** The circuit temperature, or the nominal one for an element not in a simulation yet. */
+export function temperatureOf(e: SimElement): number {
+  return (e.sim as SimElement['sim'] | undefined)?.temperature ?? NOMINAL_TEMPERATURE;
+}
 
 /** Electron thermal voltage at SPICE's default temperature of 27 C (300.15 K). */
-const vt = 0.025865;
-/**
- * The Zener breakdown curve is a steeper exponential, like the ideal Shockley curve but flipped
- * and translated: vt and vzcoef replace vscale and vdcoef there. vzcoef is 1/vt.
- */
-const vzcoef = 1 / vt;
+const VT_NOMINAL = 0.025865;
 
 /**
  * A P-N junction that can be embedded in other elements. Series resistance is handled in
@@ -39,16 +40,41 @@ export class Diode {
   vcrit = 0;
   vzcrit = 0;
   lastvoltdiff = 0;
+  /**
+   * Thermal voltage. The Zener breakdown curve is a steeper exponential, like the ideal Shockley
+   * curve but flipped and translated: vt and vzcoef replace vscale and vdcoef there. vzcoef is
+   * 1/vt. Upstream's constants at 27 °C; other temperatures are not in upstream (DEVIATIONS.md).
+   */
+  vt = VT_NOMINAL;
+  vzcoef = 1 / VT_NOMINAL;
+  /** The model the parameters came from, and the temperature they are for. */
+  private model: DiodeModel | null = null;
+  private temperature = NOMINAL_TEMPERATURE;
 
   constructor(owner: SimElement) {
     this.owner = owner;
   }
 
   setup(model: DiodeModel): void {
+    this.model = model;
+    this.temperature = temperatureOf(this.owner);
     this.leakage = model.saturationCurrent;
     this.zvoltage = model.breakdownVoltage;
     this.vscale = model.vscale;
     this.vdcoef = model.vdcoef;
+    this.vt = VT_NOMINAL;
+    this.vzcoef = 1 / VT_NOMINAL;
+    if (this.temperature !== NOMINAL_TEMPERATURE) {
+      // SPICE: IS(T) = IS exp(((T/Tnom - 1) EG/Vt + XTI ln(T/Tnom)) / N), with Vt at T
+      const n = model.emissionCoefficient;
+      this.vt = thermalVoltage(this.temperature);
+      this.vzcoef = 1 / this.vt;
+      this.leakage *= Math.exp(saturationCurrentLogFactor(this.temperature) / n);
+      this.vscale = n * this.vt;
+      this.vdcoef = 1 / this.vscale;
+    }
+    const vt = this.vt;
+    const vzcoef = this.vzcoef;
 
     // critical voltage for limiting; current is vscale/sqrt(2) at this voltage
     this.vcrit = this.vscale * Math.log(this.vscale / (Math.sqrt(2) * this.leakage));
@@ -69,6 +95,7 @@ export class Diode {
 
   limitStep(vnew: number, vold: number): number {
     const sim = this.owner.sim;
+    const vt = this.vt;
     let arg: number;
 
     // check new voltage; has current changed by factor of e^2?
@@ -110,6 +137,9 @@ export class Diode {
   }
 
   stamp(n0: CircuitNode, n1: CircuitNode): void {
+    // the circuit temperature changed since setup
+    if (this.model !== null && this.owner.sim.temperature !== this.temperature)
+      this.setup(this.model);
     this.nodes[0] = n0;
     this.nodes[1] = n1;
     this.owner.sim.stampNonLinear(this.nodes[0]);
@@ -133,7 +163,7 @@ export class Diode {
       if (gmin > 0.1) gmin = 0.1;
     }
 
-    const { leakage, vdcoef } = this;
+    const { leakage, vdcoef, vzcoef } = this;
     if (voltdiff >= 0 || this.zvoltage === 0) {
       // regular diode or forward-biased zener
       const evalue = Math.exp(voltdiff * vdcoef);
@@ -163,6 +193,7 @@ export class Diode {
   }
 
   calculateCurrent(voltdiff: number): number {
+    const vzcoef = this.vzcoef;
     if (voltdiff >= 0 || this.zvoltage === 0)
       return this.leakage * (Math.exp(voltdiff * this.vdcoef) - 1);
     return (

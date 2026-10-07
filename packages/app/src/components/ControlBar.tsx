@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
 
-import { getUnitText } from '@circuitjs-next/elements';
+import { NOMINAL_TEMPERATURE, getUnitText } from '@circuitjs-next/elements';
 import * as Popover from '@radix-ui/react-popover';
 import * as Slider from '@radix-ui/react-slider';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -200,12 +200,27 @@ export function timeText(t: number): string {
 }
 
 /**
+ * The circuit temperature in a fixed width (sign, three digits, one decimal), so the bar does not
+ * shift when it changes.
+ */
+export function temperatureText(c: number): string {
+  const s = (Object.is(Math.round(c * 10), -0) ? 0 : c).toFixed(1);
+  return `T = ${s.padStart(6)} °C`;
+}
+
+/**
  * Bottom bar: run controls, speed sliders, the time readouts and messages (upstream shows these
  * in the canvas info area).
  */
 export function ControlBar() {
   const running = useApp((s) => s.running);
-  const { t: simTime, timeStep, stopMessage, badConnections } = useApp((s) => s.status);
+  const {
+    t: simTime,
+    timeStep,
+    temperature,
+    stopMessage,
+    badConnections,
+  } = useApp((s) => s.status);
   const warnings = useApp((s) => s.warnings);
   const error = useApp((s) => s.error);
   const stopped = stopMessage !== null;
@@ -283,6 +298,17 @@ export function ControlBar() {
           {t('time step = ')}
           {getUnitText(timeStep, 's')}
         </button>
+        {temperature !== NOMINAL_TEMPERATURE && (
+          <button
+            type="button"
+            className="readout readout-temp readout-button"
+            title={t('Change the circuit temperature')}
+            data-testid="sim-temperature-readout"
+            onClick={() => openDialog('simSettings')}
+          >
+            {temperatureText(temperature)}
+          </button>
+        )}
       </div>
     </footer>
   );

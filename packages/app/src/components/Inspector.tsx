@@ -8,6 +8,7 @@
 import {
   CircuitElm,
   VoltageElm,
+  bindingText,
   parseUnits,
   stepE12,
   unitString,
@@ -69,10 +70,35 @@ function apply(props: FieldProps): void {
 
 function NumberField(props: FieldProps) {
   const { elm, ei } = props;
-  const [text, setText] = useState(() => displayValue(elm, ei));
+  // a field bound to a parameter expression shows it in braces (PLAN.md Phase 16); kept in
+  // state too, since binding changes the element but not the props
+  const boundNow = (): string | undefined => elm.paramExprs?.get(props.n);
+  const [bound, setBound] = useState(boundNow);
+  const shown = (b = bound): string => (b !== undefined ? `{${b}}` : displayValue(elm, ei));
+  const [text, setText] = useState(() => shown());
   const [bad, setBad] = useState(false);
-  useEffect(() => setText(displayValue(elm, ei)), [elm, ei]);
+  const [bindError, setBindError] = useState<string | null>(null);
+  useEffect(() => {
+    const b = boundNow();
+    setBound(b);
+    setText(shown(b));
+    setBindError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elm, ei, props.n]);
   const commit = (s: string): void => {
+    const expr = bindingText(s);
+    if (expr !== null) {
+      setBad(false);
+      if (expr === bound) return;
+      const err = controller.bindEdit(elm, props.n, ei, expr);
+      setBindError(err);
+      if (err === null) {
+        props.onError(null);
+        setBound(boundNow());
+      }
+      return;
+    }
+    setBindError(null);
     let v: number;
     try {
       v = readValue(elm, s);
@@ -81,11 +107,13 @@ function NumberField(props: FieldProps) {
       return;
     }
     setBad(false);
-    if (v === ei.value) return;
+    if (v === ei.value && bound === undefined) return;
     ei.value = v;
     apply(props);
+    setBound(boundNow());
   };
   const step = (dir: number): void => {
+    if (bound !== undefined) return;
     let cur: number;
     try {
       cur = readValue(elm, text);
@@ -127,6 +155,7 @@ function NumberField(props: FieldProps) {
           type="button"
           className="icon-button icon-button-small"
           aria-label={`${t('Decrease')} ${fieldLabel(ei)}`}
+          disabled={bound !== undefined}
           onClick={() => step(-1)}
         >
           <Icon name="minus" size={18} />
@@ -144,8 +173,9 @@ function NumberField(props: FieldProps) {
           onKeyDown={(e) => {
             if (e.key === 'Enter') commit(e.currentTarget.value);
             if (e.key === 'Escape') {
-              setText(displayValue(elm, ei));
+              setText(shown());
               setBad(false);
+              setBindError(null);
               e.currentTarget.blur();
             }
           }}
@@ -155,12 +185,23 @@ function NumberField(props: FieldProps) {
           type="button"
           className="icon-button icon-button-small"
           aria-label={`${t('Increase')} ${fieldLabel(ei)}`}
+          disabled={bound !== undefined}
           onClick={() => step(1)}
         >
           <Icon name="add" size={18} />
         </button>
       </div>
       {bad && <span className="field-error">{t('Not a number. Try 4.7k, 100n or 2k2.')}</span>}
+      {bindError !== null && (
+        <span className="field-error" data-testid={`field-${props.n}-bind-error`}>
+          {bindError}
+        </span>
+      )}
+      {bound !== undefined && bindError === null && (
+        <span className="field-hint" data-testid={`field-${props.n}-bound`}>
+          {`= ${displayValue(elm, ei)}`}
+        </span>
+      )}
     </div>
   );
 }

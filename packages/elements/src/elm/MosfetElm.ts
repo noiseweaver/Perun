@@ -12,6 +12,7 @@ import type { Point } from '@circuitjs-next/engine';
 import { CircuitElm, elementType, type ElementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaDouble } from '../java.ts';
+import { mosfetAtTemperature } from '../temperature.ts';
 import { modelsFor } from '../models/ModelLibrary.ts';
 import { modelEditor } from '../edit/modelEditor.ts';
 import { MosfetModel } from '../models/MosfetModel.ts';
@@ -58,6 +59,13 @@ export class MosfetElm extends CircuitElm {
   bodyTerminal = 0;
   vt = 0;
   beta = 0;
+  /**
+   * Threshold and beta the simulation uses: `vt` and `beta` at the circuit temperature (SPICE
+   * level 1 for MOSFETs, see mosfetAtTemperature; JFETs keep theirs, as SPICE's defaults do).
+   * Equal to them at 27 °C. Not in upstream (DEVIATIONS.md).
+   */
+  simVt = 0;
+  simBeta = 0;
 
   // gate capacitance companion model state
   capVoltGS = 0;
@@ -309,6 +317,14 @@ export class MosfetElm extends CircuitElm {
   override stamp(): void {
     const sim = this.sim;
     const nodes = this.nodes;
+    if (this.isJfet()) {
+      this.simVt = this.vt;
+      this.simBeta = this.beta;
+    } else {
+      const at = mosfetAtTemperature(this.vt, this.beta, this.pnp === -1, sim.temperature);
+      this.simVt = at.threshold;
+      this.simBeta = at.beta;
+    }
     sim.stampNonLinear(nodes[1]);
     sim.stampNonLinear(nodes[2]);
     if (this.hasGateCaps()) sim.stampNonLinear(nodes[0]);
@@ -414,8 +430,8 @@ export class MosfetElm extends CircuitElm {
     this.ids = 0;
     this.gm = 0;
     let Gds: number;
-    const vt = this.vt;
-    const beta = this.beta;
+    const vt = this.simVt;
+    const beta = this.simBeta;
     if (vgs < vt) {
       // should be all zero, but that causes a singular matrix, so instead we treat it as a
       // large resistor

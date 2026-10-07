@@ -15,6 +15,7 @@ import type { XmlAttrReader, XmlDocWriter } from '../xml.ts';
 import { AttrReader, AttrWriter, copyInto } from '../xmlattrs.ts';
 import { XmlElement, parseXml, prettyPrint } from '../xmldoc.ts';
 import { modelsFor } from './ModelLibrary.ts';
+import { formatParamList, parseParamList, type ParamDef } from '../params.ts';
 
 /** A pin of a subcircuit: its name, internal node, and place on the chip outline. */
 export class ExtListEntry {
@@ -62,6 +63,11 @@ export class CustomCompositeModel {
   internal = false;
   /** Included by default; can't be deleted. */
   builtin = false;
+  /**
+   * Parameters each placed copy can set (PLAN.md Phase 16). Not in upstream (DEVIATIONS.md):
+   * saved as the extra XML attribute `prm`, only when there are any.
+   */
+  params: ParamDef[] = [];
 
   showLabel(): boolean {
     return (this.flags & CustomCompositeModel.FLAG_SHOW_LABEL) !== 0;
@@ -145,6 +151,7 @@ export class CustomCompositeModel {
     w.dumpAttr('sy', this.sizeY);
     const bcs = this.busNodesConsecutive();
     if (bcs) w.dumpAttr('bcs', 1);
+    if (this.params.length > 0) w.dumpAttr('prm', formatParamList(this.params));
     for (const ent of this.extList) {
       if (bcs && ent.busZ > 0) continue;
       const ext = w.addChild('ext');
@@ -173,6 +180,7 @@ export class CustomCompositeModel {
     this.sizeX = r.parseIntAttr('sx', this.sizeX);
     this.sizeY = r.parseIntAttr('sy', this.sizeY);
     const bcs = r.parseIntAttr('bcs', 0) !== 0;
+    this.params = parseParamList(r.parseStringAttr('prm', null));
     this.extList = [];
     const root = new XmlElement('elms');
     this.elmDoc = root;

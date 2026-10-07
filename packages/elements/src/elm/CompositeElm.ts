@@ -16,6 +16,7 @@ import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { AttrReader, AttrWriter, copyInto } from '../xmlattrs.ts';
 import { XmlElement } from '../xmldoc.ts';
 import { GroundElm } from './GroundElm.ts';
+import { applyBindings, type ParamEnv } from '../params.ts';
 
 /**
  * A circuit element made of other circuit elements, simulated part by part. Subclasses build
@@ -95,7 +96,11 @@ export abstract class CompositeElm extends CircuitElm {
   /** Called for each `ccm` model record among the parts (subcircuits register it). */
   loadNestedModel(_r: XmlAttrReader): void {}
 
-  loadCompositeXml(elmEntries: XmlElement[], externalNodes: number[]): void {
+  /**
+   * `env`: the parameter values of a subcircuit copy, for parts with bound fields (not in
+   * upstream, PLAN.md Phase 16). Without it the parts keep the values saved in the model.
+   */
+  loadCompositeXml(elmEntries: XmlElement[], externalNodes: number[], env?: ParamEnv): void {
     this.compElmList = [];
     const nodeInfoList: string[] = [];
 
@@ -124,6 +129,7 @@ export abstract class CompositeElm extends CircuitElm {
       if (newce === null) continue;
       if (newce instanceof GroundElm) newce.flags |= GroundElm.FLAG_OLD_STYLE;
       newce.undumpXml(new AttrReader(childElem));
+      if (env !== undefined && newce.paramExprs !== null) applyBindings(newce, env);
       newce.parent = this;
       this.compElmList.push(newce);
       nodeInfoList.push(childElem.getAttribute('nn') ?? '');

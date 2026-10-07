@@ -1,5 +1,47 @@
 # Progress
 
+## 2026-10-07: Phases 15 and 16, temperature and subcircuit parameters (branch claude/temperature-subcircuit-params-nid9p9)
+
+### Done
+
+- Gady picked "Core leftovers" (temperature and subcircuit parameters; SPICE import later, in
+  its own thread). PLAN.md gets Phases 15 and 16; the out-of-scope line names them.
+- Temperature (packages/elements/src/temperature.ts): `Simulation.temperature` (°C, 27 by
+  default), set in Simulation settings, saved as `temp` on `<cir>` only when not 27, and shown
+  in the bottom bar (fixed width) when not 27. `Diode` (so every junction part), `TransistorElm`
+  and `MosfetElm` take SPICE's temperature equations with SPICE's default coefficients: the
+  thermal voltage scales with T, IS with EG = 1.11 and XTI = 3 (exp(f/N) for diodes, exp(f) for
+  BJTs, ISE and ISC with NE and NC; XTB = 0), MOSFET KP as (T/Tnom)^-1.5 and the level 1
+  threshold shift with GAMMA = 0 and PHI = 0.6 (about -1 mV/°C NMOS, -1.3 mV/°C PMOS). JFETs
+  keep threshold and beta. Elements recompute at stamp when the temperature changed. At 27 °C
+  every function returns upstream's own constant, so nothing changes: all 373 examples were
+  compared exactly (500 steps each) against main and are bit for bit identical; at 85 °C 154
+  differ and none produce NaN. Resistors get a Temperature coefficient (ppm/°C) property, `tc`.
+- Parameters (packages/elements/src/params.ts): a small expression evaluator (SI prefixes,
+  - - - / ^, functions, pi). `Circuit.params` (`prm` on `<cir>`), File > Parameters… and a
+        Parameters button on the subcircuit bar. `CircuitElm.paramExprs` (`px`, edit item to
+        expression): typing `{R*2}` in a property panel number field binds it, a plain number unbinds
+        it. Create Subcircuit and Save copy the circuit's parameters into the model (`prm` on `<ccm>`);
+        Edit Model loads them back. A placed subcircuit lists them after its other properties
+        (`paramValues`, `pv`, only values that differ from the default; no sliders, since upstream
+        would not find the item). `CompositeElm.loadCompositeXml` applies the bindings with the copy's
+        values, so nested copies can bind their values to the outer model's parameters.
+- Tests: packages/format/src/params.test.ts (two copies of a divider, nested copies, round trip,
+  nothing saved by default, diode drift, resistor coefficient), packages/elements/src/params.test.ts
+  (expressions), packages/app/e2e/params.spec.ts.
+
+### Next
+
+- Temperature as a sweep parameter once the sweeps PR (#23) is merged.
+- Possible follow-ups: per-model EG/XTI/XTB (vendor models), temperature-dependent junction
+  potentials and capacitances, a slider on a circuit parameter.
+
+### Open issues
+
+- The NTC thermistor keeps its own temperature setting; it does not follow the circuit's.
+- A slider moving a bound field leaves the binding in place, so the next parameter change sets
+  the field back.
+
 ## 2026-10-06: Phase 13, DC operating point table (branch claude/dc-bias-table-l9npgo)
 
 ### Done
