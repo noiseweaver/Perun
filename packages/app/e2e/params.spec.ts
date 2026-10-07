@@ -246,3 +246,21 @@ test('self-heating warms a resistor live, with its heat path in its properties',
   await rth.press('Enter');
   await expect(page.getByText('Not a number. Try 4.7k, 100n or 2k2.')).toBeVisible();
 });
+
+test('Options > Visualizations > Heat shows a legend entry and saves nothing', async ({ page }) => {
+  await open(page, HEATER);
+  const before = await page.evaluate(() => window.circuitjsNext?.controller.saveText() ?? '');
+  await page.getByRole('button', { name: 'Options' }).click();
+  await page.getByTestId('menu-visualizations').click();
+  // a click moves the mouse across the parent menu, which can close the submenu on a slow runner
+  const item = page.getByTestId('menu-vis-heat');
+  await expect(item).toBeVisible();
+  await item.dispatchEvent('click');
+  await expect
+    .poll(() => page.evaluate(() => window.circuitjsNext?.controller.lastFrameState?.fields.heat))
+    .toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('field-legend')).toContainText('Warmer than ambient');
+  // display only: the circuit is unchanged
+  expect(await page.evaluate(() => window.circuitjsNext?.controller.saveText())).toBe(before);
+});

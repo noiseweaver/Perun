@@ -48,14 +48,20 @@
   exactly against the previous commit: identical. Tests: packages/format/src/thermal.test.ts
   (resistor RC response, a resistor with a coefficient at equilibrium, BJT runaway and the
   emitter-resistor fix, reset, the ramp, saving) and the self-heating test in params.spec.ts.
+- Heat visualization (Gady said go, 2026-10-07): `heat` in `FieldOptions` (packages/render/src/
+  fields.ts), a glow under each heating part warmer than ambient and a right-aligned, fixed-width
+  " 85 °C" label over it in the monospace font. Self-heating off: the settle estimate from a
+  0.5 s average of the part's power. New theme key `circuit.heat` in every built-in (contrast
+  checked). Tests: packages/app/src/heat.test.ts and the Heat test in params.spec.ts.
 - The mouse-wheel browser test retries its first wheel step until the pointer is over the
   resistor (it failed once in CI on a slow runner).
 
 ### Next
 
-- Possible follow-ups for self-heating: a scope plot of a part's temperature, tinting hot parts
-  on the canvas, coupling parts on one heatsink, the thermistor following the ambient
-  temperature.
+- Gady (2026-10-07) asked to keep temperature in scope: thermal realism (package presets, shared
+  heatsinks, two-stage warm-up, burning parts) and more temperature-dependent components are
+  parked, not planned. Small follow-ups if wanted: a scope plot of a part's temperature, the
+  thermistor following the ambient temperature.
 - Possible follow-ups: per-model EG/XTI/XTB (vendor models), temperature-dependent junction
   potentials and capacitances, a slider on a circuit parameter.
 

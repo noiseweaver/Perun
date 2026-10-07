@@ -28,6 +28,7 @@ export const highContrast: Theme = {
     electricField: '#00e5ff',
     magneticField: '#ff9cff',
     energy: '#ffd000',
+    heat: '#ff5c39',
   },
   scope: {
     background: '#000000',
@@ -76,6 +77,7 @@ export const colorblindSafe: Theme = {
     electricField: '#56b4e9',
     magneticField: '#cc79a7',
     energy: '#e69f00',
+    heat: '#d55e00',
   },
   scope: {
     ...dark.scope,

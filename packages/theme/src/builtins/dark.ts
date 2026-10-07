@@ -31,6 +31,7 @@ export const dark: Theme = {
     electricField: '#61afef',
     magneticField: '#c678dd',
     energy: '#d19a66',
+    heat: '#ff6b4a',
   },
   scope: {
     background: '#14171c',
