@@ -55,6 +55,23 @@
   checked). Tests: packages/app/src/heat.test.ts and the Heat test in params.spec.ts.
 - The mouse-wheel browser test retries its first wheel step until the pointer is over the
   resistor (it failed once in CI on a slow runner).
+- Phase 18, the VCO temperature-compensation kit (Gady picked "All three"; the reason for
+  temperature is VCO stability and learning about compensation). Sweeps measure each transient
+  run's frequency (`measureFrequency` in packages/app/src/analysis/sweep.ts: rising crossings of
+  the middle of the output's range, 10 % hysteresis, interpolated, after the first fifth of the
+  run) and the dialog lists it per run with a Frequency | Pitch toggle (packages/app/src/
+  analysis/pitch.ts: 12-TET, A4 = 440 Hz, middle C = C4). A temperature sweep references the
+  27 °C run and shows the drift in ppm/°C or cents/°C. Capacitors get a temperature
+  coefficient with dielectric presets (`tc`, like the resistor's), restamped as the temperature
+  moves; electrolytics have none. `EditInfo.derived` marks a preset picker that only restates
+  the number next to it, so the parts list reads the number.
+- This port's own examples: packages/app/examples/{setuplist.txt,circuits/} are served and built
+  by vite-plugin-examples.ts (`mergeSetupLists` puts them after upstream's last menu), with a
+  thermostat icon for the new Temperature Compensation category. Three expo converter VCOs
+  (one transistor, matched pair, pair with a +3300 ppm/°C tempco resistor), each about 1 kHz at
+  27 °C with a scope on the ramp and a note saying what to sweep. Tests:
+  packages/app/src/examples.test.ts (the merge, the files, the frequencies and the drifts),
+  packages/app/src/analysis/pitch.test.ts, measureFrequency tests in sweep.test.ts.
 
 ### Next
 

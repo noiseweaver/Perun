@@ -343,6 +343,14 @@ Added 2026-10-07 by owner (picked "Self-heating" on the card asking for temperat
 
 Acceptance: with neither on, every example and golden simulates bit for bit as before. A resistor reaches ambient + P·Rth with its time constant; the BJT runaway and its emitter-resistor fix behave as above; a reset starts every part from ambient again.
 
+### Phase 18: VCO temperature compensation
+Added 2026-10-07 by owner (picked "All three" on the card asking for the VCO temperature-compensation kit; the goal behind temperature is a stable VCO).
+- [x] A parameter sweep over a transient measures each run's frequency from the output's rising crossings of the middle of its range (10 % hysteresis, interpolated, after the first fifth of the run) and lists it under the plot: Hz with the change from a reference run, or Pitch (the nearest note and cents off it, A4 = 440 Hz, middle C = C4, with the change in cents). A temperature sweep references the 27 °C run and adds the drift, ppm/°C or cents/°C.
+- [x] Capacitors get a Temperature coefficient (ppm/°C) with a Dielectric picker over it (C0G/NP0 0, P100 +100, polyester +400, polystyrene -150, polypropylene -200, N750, N1500, Custom); the capacitance is its value at 27 °C and the part is stamped again as its temperature moves. Electrolytics have none. Saved as the extra XML attribute `tc` only when set (DEVIATIONS.md).
+- [x] Three example circuits of this port under Circuits > Temperature Compensation (`packages/app/examples/`, appended to upstream's list by the examples plugin): an exponential converter driving a simple sawtooth VCO at about 1 kHz, as one transistor, as a matched pair, and as the pair with a +3300 ppm/°C tempco resistor in the control divider. Swept from -20 to 60 °C they drift about +8 %/°C, +1.4 %/°C and +0.02 %/°C.
+
+Acceptance: the goldens and all 373 upstream examples are unchanged (a capacitor coefficient of 0 changes nothing). The three examples oscillate at about 1 kHz at 27 °C and their drifts fall in that order.
+
 ## 8. Java to TypeScript porting pitfalls
 
 - **Integer math.** Java `int` division truncates and overflows at 32 bits. JS does neither. Use `Math.trunc` or `| 0` wherever upstream relies on int behaviour. Check `(int)` casts, `%` on negatives, `>>` vs `>>>`, `char` arithmetic.

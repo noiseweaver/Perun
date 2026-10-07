@@ -264,3 +264,39 @@ test('Options > Visualizations > Heat shows a legend entry and saves nothing', a
   // display only: the circuit is unchanged
   expect(await page.evaluate(() => window.circuitjsNext?.controller.saveText())).toBe(before);
 });
+
+test('a temperature sweep of the matched-pair VCO reads its frequency and pitch', async ({
+  page,
+}) => {
+  // Phase 18: one of this port's own examples, swept over temperature
+  await page.goto('/?startCircuit=vco-expo-pair.txt');
+  await expect(page.getByTestId('circuit-canvas')).toBeVisible();
+  await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+  await page.getByTestId('scopes-menu').click();
+  await page.getByTestId('scopes-sweep').click();
+  await page.getByTestId('sweep-part').selectOption('-2');
+  await page.getByTestId('sweep-values').fill('27, 60');
+  const cap = await page.evaluate(
+    () =>
+      window.circuitjsNext?.controller.circuit.elements.findIndex(
+        (e) => e.getClassName() === 'CapacitorElm',
+      ) ?? -1,
+  );
+  await page.getByTestId('sweep-output').selectOption(String(cap));
+  await page.getByTestId('sweep-duration').fill('30ms');
+  await page.getByTestId('sweep-run').click();
+  await expect(page.getByTestId('sweep-status')).toContainText('2/2', { timeout: 120000 });
+
+  const rows = page.getByTestId('sweep-frequency-row');
+  await expect(rows).toHaveCount(2);
+  // about 960 Hz at 27 °C, and the run at 60 °C is the reference's frequency plus a third
+  await expect(rows.nth(0)).toContainText('Hz');
+  await expect(rows.nth(0)).toContainText('ref');
+  await expect(rows.nth(1)).toContainText('+4');
+  await expect(page.getByTestId('sweep-drift')).toContainText('ppm/°C');
+
+  await page.getByTestId('sweep-frequency-view-pitch').click();
+  // 959 Hz is just under halfway from A#5 (932.33 Hz) to B5
+  await expect(rows.nth(0)).toContainText('A#5');
+  await expect(page.getByTestId('sweep-drift')).toContainText('¢/°C');
+});

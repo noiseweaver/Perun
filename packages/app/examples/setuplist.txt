@@ -1,0 +1,7 @@
+# Extra example circuits of this port, appended to upstream's setuplist.txt
+# (packages/app/vite-plugin-examples.ts). GPL-2.0-or-later, like the app.
++Temperature Compensation
+vco-expo-single.txt Expo Converter VCO, One Transistor
+vco-expo-pair.txt Expo Converter VCO, Matched Pair
+vco-expo-tempco.txt Expo Converter VCO, Pair with Tempco Resistor
+-

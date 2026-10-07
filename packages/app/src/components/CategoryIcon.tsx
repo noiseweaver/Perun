@@ -44,6 +44,8 @@ const CATEGORY_ICONS: Readonly<Record<string, string | { icon: IconName }>> = {
   Varactor: 'VaractorElm',
   'Norton Amplifier': 'NortonAmpElm',
   '2-D Scope': { icon: 'scope' },
+  // this port's own examples (packages/app/examples/setuplist.txt)
+  'Temperature Compensation': { icon: 'thermostat' },
 };
 
 export function CategoryIcon({ title }: { title: string }) {
