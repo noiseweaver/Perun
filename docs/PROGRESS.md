@@ -21,6 +21,11 @@
   the tick at the end; radio choices inside submenus keep their leading tick. The context menu's
   Max Scale and Freeze get icons too. `MenuIcon` moved to Icon.tsx and is shared.
 - e2e: sheet dismissal by tap and pull (viewer.spec.ts), landscape rail layout.
+- No page zoom on touch screens (Gady: zooming the interface kept hiding the buttons):
+  packages/app/src/pageZoom.ts cancels Safari's gesture events and two-finger moves outside the
+  canvas, body has touch-action: manipulation (no double-tap zoom), and text fields are 16px on
+  coarse pointers so iPhone does not zoom into them. The viewport meta keeps user scaling, since
+  user-scalable=no fails axe's meta-viewport rule and iOS ignores it.
 
 ### Next
 

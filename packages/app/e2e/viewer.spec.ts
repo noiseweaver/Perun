@@ -392,6 +392,31 @@ test.describe('Circuits on a phone', () => {
     await expect(sheet).toBeHidden();
   });
 
+  test('pinching or double-tapping the interface does not zoom the page', async ({ page }) => {
+    await page.goto(`/?cct=${cct(RC)}`);
+    await expect(page.getByTestId('circuits-menu')).toBeEnabled();
+    const blocked = await page.locator('.app-bar').evaluate((el) => {
+      const touch = (x: number): Touch =>
+        new Touch({ identifier: x, target: el, clientX: x, clientY: 20 });
+      const e = new TouchEvent('touchmove', {
+        touches: [touch(50), touch(150)],
+        bubbles: true,
+        cancelable: true,
+      });
+      el.dispatchEvent(e);
+      return e.defaultPrevented;
+    });
+    expect(blocked).toBe(true);
+    expect(await page.evaluate(() => getComputedStyle(document.body).touchAction)).toBe(
+      'manipulation',
+    );
+    // focusing a text field on iPhone zooms in below 16px
+    await page.getByTestId('circuits-menu').tap();
+    expect(
+      await page.getByTestId('circuits-search').evaluate((el) => getComputedStyle(el).fontSize),
+    ).toBe('16px');
+  });
+
   test('every menu fits on screen, and dialogs open above the property sheet', async ({ page }) => {
     await page.goto(`/?cct=${cct(RC)}`);
     await expect(page.getByTestId('circuits-menu')).toBeEnabled();

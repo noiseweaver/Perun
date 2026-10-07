@@ -6,6 +6,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './components/App.tsx';
 import { controller } from './SimController.ts';
 import { setupPwa } from './pwa.ts';
+import { lockPageZoom } from './pageZoom.ts';
 import { resolveLanguage, setLanguage } from './i18n.ts';
 import { useApp } from './store.ts';
 // bundled fonts (theme fonts are family names only, PLAN.md section 6)
@@ -34,3 +35,4 @@ declare global {
 window.circuitjsNext = { controller };
 
 setupPwa();
+lockPageZoom();

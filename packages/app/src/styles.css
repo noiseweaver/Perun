@@ -60,6 +60,17 @@ body {
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+  /* no double-tap zoom of the interface (pageZoom.ts); the canvas sets its own touch-action */
+  touch-action: manipulation;
+}
+
+/* iPhone zooms the page into a focused text field set below 16px, and leaves it zoomed */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }
 
 .icon {
