@@ -127,6 +127,8 @@ export class CircuitRenderer {
   selectionRect: Rect | null = null;
   /** Elements the scope under the mouse shows; drawn highlighted (upstream scopePlotRoles). */
   scopeHighlights: ReadonlyMap<CircuitElm, string> = new Map();
+  /** Elements an analysis table row points at (a node's wires, a part); drawn highlighted. */
+  analysisHighlights: ReadonlySet<CircuitElm> = new Set();
   /** Height of the circuit area in CSS pixels; scopes take the rest. Null: the whole canvas. */
   circuitHeight: number | null = null;
   /** Draw without hover or selection highlights and without the grid (a preview of a part). */
@@ -400,7 +402,8 @@ export class CircuitRenderer {
         e.selected ||
         e.drawsHighlighted() ||
         e === this.pending ||
-        this.scopeHighlights.has(e));
+        this.scopeHighlights.has(e) ||
+        this.analysisHighlights.has(e));
     painter.highlighted = highlighted;
     painter.highlightColor =
       e === this.stopElm || e.selected || e.drawsHighlighted() || e === this.pending

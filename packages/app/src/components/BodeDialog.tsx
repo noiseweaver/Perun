@@ -2,7 +2,6 @@
 // Copyright (C) 2026 circuitjs-next contributors
 
 import {
-  LabeledNodeElm,
   VoltageElm,
   getFixedUnitText,
   parseUnits,
@@ -25,6 +24,7 @@ import { t } from '../i18n.ts';
 import { controller } from '../SimController.ts';
 import { shownTheme, useApp } from '../store.ts';
 import { Shell } from './DialogShell.tsx';
+import { elementNames } from './elementNames.ts';
 import { Icon } from './Icon.tsx';
 
 /** The last sweep, kept while the dialog is closed so reopening shows it again. */
@@ -47,25 +47,6 @@ const PPD = [5, 10, 20, 50];
 const SLICE_MS = 12;
 /** Below this everywhere the output is numerical noise, not a response. */
 const QUIET_DB = -100;
-
-/** "Resistor 2", "Labeled Node "out"": a name to pick an element by in a list. */
-function elementNames(els: readonly CircuitElm[]): Map<CircuitElm, string> {
-  const kinds = new Map<string, CircuitElm[]>();
-  for (const e of els) {
-    const k = t(e.getDialogTitle().replace(/^Edit /, ''));
-    const list = kinds.get(k) ?? [];
-    list.push(e);
-    kinds.set(k, list);
-  }
-  const names = new Map<CircuitElm, string>();
-  for (const [k, list] of kinds) {
-    list.forEach((e, i) => {
-      if (e instanceof LabeledNodeElm) names.set(e, `${k} "${e.text}"`);
-      else names.set(e, list.length > 1 ? `${k} ${i + 1}` : k);
-    });
-  }
-  return names;
-}
 
 /** Outputs in the order people look for them: labels, meters and outputs before parts. */
 function outputRank(e: CircuitElm): number {

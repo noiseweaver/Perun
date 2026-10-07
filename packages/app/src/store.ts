@@ -110,6 +110,8 @@ export interface AppState {
   updateReady: boolean;
   /** Every file is cached: the app works offline. */
   offlineReady: boolean;
+  /** The DC operating point panel is open. */
+  dcPanel: boolean;
   /** Open dialog (commands.ts DialogKind). */
   dialog:
     | 'save'
@@ -350,6 +352,7 @@ export const useApp = create<AppState>(() => ({
   announcement: '',
   wheelValue: null,
   language: 'en',
+  dcPanel: false,
   dialog: null,
   theme: themeFor(initialSettings.themeId, []),
   preview: null,

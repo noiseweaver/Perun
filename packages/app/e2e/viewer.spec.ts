@@ -105,7 +105,10 @@ test('Classic and Dark restyle the canvas and UI without a reload', async ({ pag
   const pick = async (id: string) => {
     await page.getByTestId('options-menu').click();
     await page.getByTestId('menu-theme').click();
-    await page.getByTestId(`theme-${id}`).click();
+    // a click moves the mouse across the parent menu, which can close the submenu on a slow runner
+    const item = page.getByTestId(`theme-${id}`);
+    await expect(item).toBeVisible();
+    await item.dispatchEvent('click');
   };
 
   await pick('classic');
