@@ -351,6 +351,14 @@ Added 2026-10-07 by owner (picked "All three" on the card asking for the VCO tem
 
 Acceptance: the goldens and all 373 upstream examples are unchanged (a capacitor coefficient of 0 changes nothing). The three examples oscillate at about 1 kHz at 27 °C and their drifts fall in that order.
 
+### Phase 19: Live formula cards
+Added 2026-10-07 by owner (picked "Formula cards" on the next-feature card; the first teaching idea in the backlog). Display only: no simulation or file format change.
+- [x] Selecting a part shows a card under the property panel's live header with the law it follows, in symbols, then the live values put in, then the result, e.g. `I = V / R`, `= 5.000 V / 1.000 kΩ`, `= 5.000 mA`. Every value has a fixed width in the monospace font, and lines wrap only between values, so nothing shifts as they change. The card collapses to its title, remembered on this device.
+- [x] Laws: resistors and lamps (Ohm's law and power, a lamp's live filament resistance), capacitors (Q = C·V and I = C·dV/dt), inductors (V = L·dI/dt, with saturation), diodes, LEDs and Zeners (Shockley's equation at the junction voltage, the series resistance step when the model has one, breakdown past half the Zener voltage), BJTs (β = Ic/Ib as measured, and Ie = Ib + Ic). Other parts show no card.
+- [x] Gady asked for the suggested extras too (2026-10-07): MOSFETs by region (cutoff, the square law in saturation, the linear region, with channel-length modulation when the model has it; JFETs excluded), op-amps (Vd = V+ − V−, then Vout = A·Vd, or the output at its limit), transformers (V2 ≈ V1·N2/N1 against the measured V2) and sources (power delivered, P = V·I, for voltage and current sources and batteries).
+
+Acceptance: each law's result matches the engine's value for that part (resistor, capacitor, inductor, diode, LED with series resistance, Zener in breakdown, BJT in its active region, MOSFET in each region, op-amp follower and open loop, loaded transformer, sources); token widths stay the same while a capacitor charges. Golden tests unchanged.
+
 ## 8. Java to TypeScript porting pitfalls
 
 - **Integer math.** Java `int` division truncates and overflows at 32 bits. JS does neither. Use `Math.trunc` or `| 0` wherever upstream relies on int behaviour. Check `(int)` casts, `%` on negatives, `>>` vs `>>>`, `char` arithmetic.

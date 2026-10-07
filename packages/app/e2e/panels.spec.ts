@@ -58,6 +58,29 @@ test('the property panel shows the part live with its voltage, current and power
   expect(new Set(widths).size).toBe(1);
 });
 
+test("the formula card shows the selected resistor's law with live numbers", async ({ page }) => {
+  await open(page, LOOP);
+  const p = await at(page, 176, 96);
+  await page.mouse.click(p.x, p.y);
+  const card = page.getByTestId('formula-card');
+  await expect(card).toBeVisible();
+  const law = card.getByTestId('formula-law').first();
+  await expect(law).toContainText('I = V / R');
+  // values keep a fixed width, so 10 V and 1 kΩ are padded to the full budget
+  const lines = law.getByTestId('formula-line');
+  await expect(lines.nth(0)).toHaveText(/=\s+-?10\.000 +V\s*\/\s+1\.000 kΩ/);
+  await expect(lines.nth(1)).toHaveText(/=\s+-?10\.000 mA/);
+  // collapsing it is remembered for the next part
+  await card.getByRole('button').click();
+  await expect(card.getByTestId('formula-law')).toHaveCount(0);
+  await page.reload();
+  await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+  const q = await at(page, 176, 96);
+  await page.mouse.click(q.x, q.y);
+  await expect(page.getByTestId('formula-card')).toBeVisible();
+  await expect(page.getByTestId('formula-law')).toHaveCount(0);
+});
+
 test('the mouse wheel over a resistor steps it through E12, one undo for the lot', async ({
   page,
 }) => {

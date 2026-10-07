@@ -1499,6 +1499,71 @@ kbd,
   height: 22px;
 }
 
+/* the selected part's law with live numbers (FormulaCard.tsx) */
+.formula-card {
+  margin: 4px 0;
+  padding: 4px 8px 8px;
+  border-radius: var(--md-shape-m);
+  background: var(--md-surface-container-high);
+}
+
+.formula-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ui-text-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.formula-heading {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.formula-law {
+  font-family: var(--mono-font);
+  font-size: 12px;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.formula-law + .formula-law {
+  margin-top: 6px;
+}
+
+.formula-symbols {
+  color: var(--ui-accent);
+  font-weight: 600;
+}
+
+/* values wrap as whole tokens, under the formula, never inside a value */
+.formula-line {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 0.6em;
+  padding-left: 1.2em;
+}
+
+.formula-rel {
+  color: var(--ui-text-muted);
+}
+
+.formula-token {
+  white-space: pre;
+}
+
 .inspector-actions {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));

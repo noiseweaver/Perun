@@ -269,3 +269,4 @@ export {
   toleranceItem,
   type TolerancedElm,
 } from './tolerance.ts';
+export { fixedPlain, formulasFor, type FormulaLaw, type FormulaLine } from './formulas.ts';

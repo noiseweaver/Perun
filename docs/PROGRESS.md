@@ -1,5 +1,20 @@
 # Progress
 
+## 2026-10-07: Phase 19, live formula cards (branch claude/project-thread-0qtuqk)
+
+Done: packages/elements/src/formulas.ts gives a part's laws with its live values as fixed-width
+tokens (`formulasFor`); packages/app/src/components/FormulaCard.tsx shows them under the property
+panel's live header, updating every frame, collapsible (remembered in localStorage). Covers
+resistors, lamps, capacitors, inductors, diodes/LEDs/Zeners and BJTs. Tests:
+packages/format/src/formulas.test.ts (each result matches the engine), an e2e test in
+panels.spec.ts. Checked in Dark, Classic, phone portrait and landscape.
+
+Then Gady asked for the extras: MOSFET (by region), op-amp (input difference and gain, or
+the limit), transformer (turns ratio against the measured V2) and sources (power delivered).
+The preview's demo circuit has one of each.
+
+Next: Gady tries the preview.
+
 ## 2026-10-07: fix white screen after a deploy (branch claude/temperature-subcircuit-params-nid9p9)
 
 Done: after the Phase 15-18 deploy the installed app could open to a white screen. GitHub Pages sends
