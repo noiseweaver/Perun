@@ -62,7 +62,17 @@ test('the mouse wheel over a resistor steps it through E12, one undo for the lot
   page,
 }) => {
   await open(page, LOOP);
-  const p = await at(page, 176, 96);
+  // the view can still be settling (panels opening, a fit) on a slow runner: wait until the
+  // resistor stays put on screen before pointing at it
+  let p = await at(page, 176, 96);
+  await expect
+    .poll(async () => {
+      const q = await at(page, 176, 96);
+      const still = q.x === p.x && q.y === p.y;
+      p = q;
+      return still;
+    })
+    .toBe(true);
   await page.mouse.move(p.x, p.y);
   await page.mouse.wheel(0, -100);
   await expect.poll(() => resistance(page)).toBeCloseTo(1200);
