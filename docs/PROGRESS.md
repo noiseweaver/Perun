@@ -5,23 +5,47 @@
 Done: after the Phase 15-18 deploy the installed app could open to a white screen. GitHub Pages sends
 `max-age=600`, so the new service worker's precache got the old index.html from the browser's HTTP
 cache, and that page points at hashed scripts the server no longer has. The worker now precaches with
-`cache: 'reload'`, checks that every `assets/` file the cached page names belongs to this build (else it
-fails the install so the working version stays), and its own code is part of the cache version.
-Reproduced with a local server sending the same header: broken deploy, then the fixed one, recovers.
-
-Next: none. Open: a phone already showing the white screen recovers on the next launch after the
-fixed worker installs; if not, remove the home-screen app and add it again from Safari.
-
-## 2026-10-07: fix white screen after a deploy (branch claude/temperature-subcircuit-params-nid9p9)
-
-Done: after the Phase 15-18 deploy the installed app could open to a white screen. GitHub Pages sends
-`max-age=600`, so the new service worker's precache got the old index.html from the browser's HTTP
-cache, and that page points at hashed scripts the server no longer has. The worker now precaches with
 `cache: 'reload'`, fails the install when the cached page names `assets/` files outside this build (so
 the working version stays), and hashes its own code into the cache version. Reproduced in Chromium
 with a local server sending the same header; broken deploy then fixed deploy recovers.
 
 Next: none. Open: an app already stuck on the white screen may need removing and re-adding.
+
+## 2026-10-07: Mobile polish (branch claude/mobile-landscape-menu-polish-amx0hv)
+
+### Done
+
+- Top bar: each menu is an icon and its name on wide screens (File folder, Edit, Circuits
+  library, Scopes trace, Options gear) with no dropdown caret. On phones either way up (width
+  under 720 px or height under 560 px) the menus are icon buttons beside the title in one 48 px
+  row (names stay as aria-label and tooltip); portrait no longer spends a second row on them, and
+  the brand tile is hidden there.
+- Phone on its side (height under 560 px, landscape): `.app` becomes a grid. The bottom bar's
+  run controls form a rail down the right of the canvas (Run/Stop icon only, 48 px) and the
+  readouts stack two to a column at the end of the app bar's row, so the canvas gets almost the
+  full height.
+- Circuits sheet: now on phones either way up (it was portrait only), as a bottom sheet with a
+  dimmed scrim. A tap outside, a pull down (from the handle or header, or from the list once it
+  is scrolled to the top), the close button or Escape put it away.
+- Icons on every top bar menu item and submenu entry (Icon.tsx gained Material paths plus three
+  drawn here: European resistor, omega, junction). Options switches now show their icon first and
+  the tick at the end; radio choices inside submenus keep their leading tick. The context menu's
+  Max Scale and Freeze get icons too. `MenuIcon` moved to Icon.tsx and is shared.
+- e2e: sheet dismissal by tap and pull (viewer.spec.ts), landscape rail layout.
+- No page zoom on touch screens (Gady: zooming the interface kept hiding the buttons):
+  packages/app/src/pageZoom.ts cancels Safari's gesture events and two-finger moves outside the
+  canvas, body has touch-action: manipulation (no double-tap zoom), and text fields are 16px on
+  coarse pointers so iPhone does not zoom into them. The viewport meta keeps user scaling, since
+  user-scalable=no fails axe's meta-viewport rule and iOS ignores it.
+
+### Next
+
+- Gady checks the landscape rail and the sheet on the iPhone.
+
+### Open issues
+
+- examples.test.ts "matched pair and tempco resistor" times out at 5 s in the cloud sandbox on
+  main too (slow machine); CI decides.
 
 ## 2026-10-07: Phases 15 and 16, temperature and subcircuit parameters (branch claude/temperature-subcircuit-params-nid9p9)
 

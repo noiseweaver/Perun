@@ -28,8 +28,8 @@ import { openDcPanel } from './DcPanel.tsx';
 import { openSweep } from './SweepDialog.tsx';
 import { CategoryIcon } from './CategoryIcon.tsx';
 import { CircuitsSheet } from './CircuitsSheet.tsx';
-import { Icon } from './Icon.tsx';
-import { useNarrow } from './useNarrow.ts';
+import { Icon, MenuIcon, type IconName } from './Icon.tsx';
+import { useCompact, useNarrow } from './useNarrow.ts';
 import { OpenLinkDialog } from './OpenLinkDialog.tsx';
 import { promptInstall } from '../pwa.ts';
 import { t, resolveLanguage, setLanguage } from '../i18n.ts';
@@ -77,18 +77,34 @@ function ExampleItems({ menu }: { menu: ExampleMenu }) {
   );
 }
 
-/** A top app bar menu: a text button that opens a dropdown menu. */
+/** A top app bar menu's button: an icon and its name, or the icon alone on a phone (styles.css). */
+function TriggerFace({ label, icon }: { label: string; icon: IconName }) {
+  return (
+    <>
+      <Icon name={icon} className="icon menu-trigger-icon" />
+      <span className="menu-trigger-label">{t(label)}</span>
+    </>
+  );
+}
+
+/** A top app bar menu: a tonal button that opens a dropdown menu. */
 function AppMenu(props: {
   label: string;
+  icon: IconName;
   disabled?: boolean;
   testId?: string;
   children: ReactNode;
 }) {
   return (
     <Menu.Root>
-      <Menu.Trigger className="menu-trigger" disabled={props.disabled} data-testid={props.testId}>
-        {t(props.label)}
-        <Icon name="dropDown" size={18} />
+      <Menu.Trigger
+        className="menu-trigger"
+        disabled={props.disabled}
+        data-testid={props.testId}
+        aria-label={t(props.label)}
+        title={t(props.label)}
+      >
+        <TriggerFace label={props.label} icon={props.icon} />
       </Menu.Trigger>
       <Menu.Portal>
         <Menu.Content className="menu-content" sideOffset={4} align="start">
@@ -113,6 +129,8 @@ export function AppBar() {
   const [linkOpen, setLinkOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const narrow = useNarrow();
+  // phones either way up pick circuits from a sheet: the dropdown's side submenus are cramped there
+  const compact = useCompact();
   const install = useApp((s) => s.install);
 
   const setDisplay = (patch: Partial<CircuitDisplay>): void =>
@@ -149,65 +167,93 @@ export function AppBar() {
         {t(title)}
       </h1>
       <nav className="app-bar-menus" aria-label={t('Menus')}>
-        <AppMenu label="File" testId="file-menu">
-          <Item label="New blank circuit" onSelect={() => controller.newCircuit()} />
-          <Item label="Open file…" hint={`${MOD}O`} onSelect={() => fileInput.current?.click()} />
-          <Item label="Open link…" onSelect={() => setLinkOpen(true)} />
-          <Item label="Import from text…" onSelect={() => openDialog('importText')} />
+        <AppMenu label="File" icon="folderOpen" testId="file-menu">
+          <Item label="New blank circuit" icon="noteAdd" onSelect={() => controller.newCircuit()} />
+          <Item
+            label="Open file…"
+            icon="folderOpen"
+            hint={`${MOD}O`}
+            onSelect={() => fileInput.current?.click()}
+          />
+          <Item label="Open link…" icon="link" onSelect={() => setLinkOpen(true)} />
+          <Item label="Import from text…" icon="upload" onSelect={() => openDialog('importText')} />
           <Menu.Separator className="menu-separator" />
           <Item
             label="Save…"
+            icon="save"
             hint={`${MOD}S`}
             testId="menu-save"
             onSelect={() => openDialog('save')}
           />
           <Item
             label="Export link…"
+            icon="share"
             testId="menu-export-link"
             onSelect={() => openDialog('exportLink')}
           />
-          <Item label="Export as text…" onSelect={() => openDialog('exportText')} />
+          <Item
+            label="Export as text…"
+            icon="description"
+            onSelect={() => openDialog('exportText')}
+          />
           <Item
             label="Export image…"
+            icon="image"
             testId="menu-export-image"
             onSelect={() => openDialog('exportImage')}
           />
           <Item
             label="Parts list…"
+            icon="list"
             testId="menu-parts-list"
             onSelect={() => openDialog('partsList')}
           />
           <Item
             label="Create Subcircuit…"
+            icon="chip"
             testId="menu-create-subcircuit"
             onSelect={() => controller.createSubcircuit()}
           />
           <Item
             label="Subcircuit Manager…"
+            icon="folder"
             testId="menu-subcircuit-manager"
             onSelect={() => openDialog('subcircuitManager')}
           />
-          <Item label="Parameters…" testId="menu-params" onSelect={() => openDialog('params')} />
+          <Item
+            label="Parameters…"
+            icon="functions"
+            testId="menu-params"
+            onSelect={() => openDialog('params')}
+          />
           <Menu.Separator className="menu-separator" />
           {install !== 'none' && (
             <Item
               label="Install app…"
+              icon="download"
               testId="menu-install"
               onSelect={() => (install === 'prompt' ? void promptInstall() : openDialog('install'))}
             />
           )}
-          <Item label="About…" testId="menu-about" onSelect={() => openDialog('about')} />
+          <Item
+            label="About…"
+            icon="info"
+            testId="menu-about"
+            onSelect={() => openDialog('about')}
+          />
         </AppMenu>
 
-        <AppMenu label="Edit" testId="edit-menu">
+        <AppMenu label="Edit" icon="editNote" testId="edit-menu">
           <Item
             label="Undo"
+            icon="undo"
             hint={`${MOD}Z`}
             disabled={!editor.canUndo}
             onSelect={() => controller.undo()}
           />
           <Item
             label="Redo"
+            icon="redo"
             hint={`${MOD}Y`}
             disabled={!editor.canRedo}
             onSelect={() => controller.redo()}
@@ -215,148 +261,154 @@ export function AppBar() {
           <Menu.Separator className="menu-separator" />
           <Item
             label="Cut"
+            icon="cut"
             hint={`${MOD}X`}
             disabled={!hasSel}
             onSelect={() => controller.cut(null)}
           />
           <Item
             label="Copy"
+            icon="copy"
             hint={`${MOD}C`}
             disabled={!hasSel}
             onSelect={() => controller.copy(null)}
           />
           <Item
             label="Paste"
+            icon="paste"
             hint={`${MOD}V`}
             disabled={!editor.canPaste}
             onSelect={() => controller.paste()}
           />
           <Item
             label="Duplicate"
+            icon="duplicate"
             hint={`${MOD}D`}
             disabled={!hasSel}
             onSelect={() => ed.duplicate(null)}
           />
           <Item
             label="Delete"
+            icon="delete"
             hint="Del"
             disabled={!hasSel}
             onSelect={() => ed.deleteSelected(null)}
           />
-          <Item label="Select All" hint={`${MOD}A`} onSelect={() => ed.selectAll()} />
+          <Item
+            label="Select All"
+            icon="selectAll"
+            hint={`${MOD}A`}
+            onSelect={() => ed.selectAll()}
+          />
           <Menu.Separator className="menu-separator" />
-          <Item label="Mirror X" onSelect={() => ed.mirrorX()} />
-          <Item label="Mirror Y" onSelect={() => ed.mirrorY()} />
-          <Item label="Rotate CCW" onSelect={() => ed.rotateCCW()} />
-          <Item label="Rotate CW" onSelect={() => ed.rotateCW()} />
+          <Item label="Mirror X" icon="flip" onSelect={() => ed.mirrorX()} />
+          <Item label="Mirror Y" icon="flip" turned onSelect={() => ed.mirrorY()} />
+          <Item label="Rotate CCW" icon="rotateLeft" onSelect={() => ed.rotateCCW()} />
+          <Item label="Rotate CW" icon="rotateRight" onSelect={() => ed.rotateCW()} />
           <Menu.Separator className="menu-separator" />
-          <Item label="Centre Circuit" onSelect={() => controller.fit()} />
+          <Item label="Centre Circuit" icon="fit" onSelect={() => controller.fit()} />
         </AppMenu>
 
-        {narrow ? (
+        {compact ? (
           <button
             type="button"
             className="menu-trigger"
             disabled={examples === null}
             data-testid="circuits-menu"
             data-state={sheetOpen ? 'open' : 'closed'}
+            aria-label={t('Circuits')}
+            title={t('Circuits')}
             onClick={() => setSheetOpen(true)}
           >
-            {t('Circuits')}
-            <Icon name="dropDown" size={18} />
+            <TriggerFace label="Circuits" icon="library" />
           </button>
         ) : (
-          <AppMenu label="Circuits" disabled={examples === null} testId="circuits-menu">
+          <AppMenu
+            label="Circuits"
+            icon="library"
+            disabled={examples === null}
+            testId="circuits-menu"
+          >
             {examples && <ExampleItems menu={examples.root} />}
           </AppMenu>
         )}
-        {narrow && sheetOpen && examples && (
+        {compact && sheetOpen && examples && (
           <CircuitsSheet root={examples.root} onClose={() => setSheetOpen(false)} />
         )}
 
-        <AppMenu label="Scopes" testId="scopes-menu">
+        <AppMenu label="Scopes" icon="scope" testId="scopes-menu">
           <ScopesMenuItems />
         </AppMenu>
 
-        <AppMenu label="Options" testId="options-menu">
-          <Menu.CheckboxItem
-            className="menu-item"
+        <AppMenu label="Options" icon="settings" testId="options-menu">
+          <CheckItem
+            label="Show current"
+            icon="bolt"
             checked={display.showDots}
             onCheckedChange={(v) => setDisplay({ showDots: v })}
-          >
-            <Check on={display.showDots} /> {t('Show current')}
-          </Menu.CheckboxItem>
-          <Menu.CheckboxItem
-            className="menu-item"
+          />
+          <CheckItem
+            label="Show voltage"
+            icon="gradient"
             checked={display.voltageColors}
             onCheckedChange={(v) => setDisplay({ voltageColors: v })}
-          >
-            <Check on={display.voltageColors} /> {t('Show voltage')}
-          </Menu.CheckboxItem>
-          <Menu.CheckboxItem
-            className="menu-item"
+          />
+          <CheckItem
+            label="Show values"
+            icon="label"
             checked={display.showValues}
             onCheckedChange={(v) => setDisplay({ showValues: v })}
-          >
-            <Check on={display.showValues} /> {t('Show values')}
-          </Menu.CheckboxItem>
+          />
           <Menu.Separator className="menu-separator" />
-          <Menu.CheckboxItem
-            className="menu-item"
+          <CheckItem
+            label="Edit Values With Mouse Wheel"
+            icon="mouse"
             checked={settings.wheelEdit}
             onCheckedChange={(v) => updateSettings({ wheelEdit: v })}
-            data-testid="menu-wheel-edit"
-          >
-            <Check on={settings.wheelEdit} /> {t('Edit Values With Mouse Wheel')}
-          </Menu.CheckboxItem>
-          <Menu.CheckboxItem
-            className="menu-item"
+            testId="menu-wheel-edit"
+          />
+          <CheckItem
+            label="Wires follow dragged parts"
+            icon="timeline"
             checked={settings.wiresFollow}
             onCheckedChange={(v) => updateSettings({ wiresFollow: v })}
             title={t('Hold Alt while dragging to leave the wires behind')}
-            data-testid="menu-wires-follow"
-          >
-            <Check on={settings.wiresFollow} /> {t('Wires follow dragged parts')}
-          </Menu.CheckboxItem>
-          <Menu.CheckboxItem
-            className="menu-item"
+            testId="menu-wires-follow"
+          />
+          <CheckItem
+            label="European resistors"
+            icon="euroResistor"
             checked={settings.euroResistors}
             onCheckedChange={(v) => updateSettings({ euroResistors: v })}
-          >
-            <Check on={settings.euroResistors} /> {t('European resistors')}
-          </Menu.CheckboxItem>
-          <Menu.CheckboxItem
-            className="menu-item"
+          />
+          <CheckItem
+            label="IEC gates"
+            icon="chip"
             checked={settings.euroGates}
             onCheckedChange={(v) => updateSettings({ euroGates: v })}
-          >
-            <Check on={settings.euroGates} /> {t('IEC gates')}
-          </Menu.CheckboxItem>
-          <Menu.CheckboxItem
-            className="menu-item"
+          />
+          <CheckItem
+            label="Show Ω after resistances"
+            icon="omega"
             checked={settings.showOhm}
             onCheckedChange={(v) => updateSettings({ showOhm: v })}
-          >
-            <Check on={settings.showOhm} /> {t('Show Ω after resistances')}
-          </Menu.CheckboxItem>
-          <Menu.CheckboxItem
-            className="menu-item"
+          />
+          <CheckItem
+            label="Junction dots"
+            icon="junction"
             checked={settings.junctionDots}
             onCheckedChange={(v) => updateSettings({ junctionDots: v })}
-            data-testid="menu-junction-dots"
-          >
-            <Check on={settings.junctionDots} /> {t('Junction dots')}
-          </Menu.CheckboxItem>
+            testId="menu-junction-dots"
+          />
           <VisualizationsMenu />
           <ValueSizeMenu />
-          <Menu.CheckboxItem
-            className="menu-item"
+          <CheckItem
+            label="Conventional current motion"
+            icon="swap"
             checked={settings.conventionalCurrent}
             onCheckedChange={(v) => updateSettings({ conventionalCurrent: v })}
-          >
-            <Check on={settings.conventionalCurrent} /> {t('Conventional current motion')}
-          </Menu.CheckboxItem>
-          <OptionsSub label="Default text box font" testId="menu-text-font">
+          />
+          <OptionsSub label="Default text box font" icon="textFields" testId="menu-text-font">
             <Menu.RadioGroup
               value={settings.textFont.family}
               onValueChange={(v) =>
@@ -409,14 +461,25 @@ export function AppBar() {
           <Menu.Separator className="menu-separator" />
           <Item
             label="Simulation settings…"
+            icon="settings"
             testId="menu-sim-settings"
             onSelect={() => openDialog('simSettings')}
           />
-          <Item label="Keyboard shortcuts…" hint="?" onSelect={() => openDialog('shortcuts')} />
+          <Item
+            label="Keyboard shortcuts…"
+            icon="keyboard"
+            hint="?"
+            onSelect={() => openDialog('shortcuts')}
+          />
           <Menu.Separator className="menu-separator" />
           {narrow ? (
             // a submenu has no room beside the menu on a phone; the dialog has it all
-            <Item label="Theme…" testId="menu-theme" onSelect={() => openDialog('themes')} />
+            <Item
+              label="Theme…"
+              icon="palette"
+              testId="menu-theme"
+              onSelect={() => openDialog('themes')}
+            />
           ) : (
             <ThemeMenu themeInput={themeInput} />
           )}
@@ -481,6 +544,9 @@ const MOD = typeof navigator !== 'undefined' && /Mac|iP/.test(navigator.platform
 
 function Item(props: {
   label: string;
+  icon: IconName;
+  /** Draw the icon turned a quarter (Mirror Y reuses the Mirror X icon). */
+  turned?: boolean;
   hint?: string;
   disabled?: boolean;
   testId?: string;
@@ -493,6 +559,7 @@ function Item(props: {
       onSelect={props.onSelect}
       data-testid={props.testId}
     >
+      <MenuIcon name={props.icon} turned={props.turned} />
       {t(props.label)}
       {props.hint && <span className="menu-trailing menu-hint">{props.hint}</span>}
     </Menu.Item>
@@ -504,7 +571,7 @@ function ThemeMenu({ themeInput }: { themeInput: RefObject<HTMLInputElement | nu
   const themeId = useApp((s) => s.settings.themeId);
   const library = useApp((s) => s.library);
   return (
-    <OptionsSub label="Theme" testId="menu-theme">
+    <OptionsSub label="Theme" icon="palette" testId="menu-theme">
       <Menu.RadioGroup value={themeId} onValueChange={selectTheme}>
         {Object.entries(BUILTIN_THEMES).map(([id, th]) => (
           <Fragment key={id}>
@@ -533,12 +600,19 @@ function ThemeMenu({ themeInput }: { themeInput: RefObject<HTMLInputElement | nu
       <Menu.Separator className="menu-separator" />
       <Item
         label="Edit theme…"
+        icon="edit"
         testId="menu-edit-theme"
         onSelect={() => editTheme(useApp.getState().theme, activeLibraryId())}
       />
-      <Item label="Themes…" testId="menu-themes" onSelect={() => openDialog('themes')} />
+      <Item
+        label="Themes…"
+        icon="palette"
+        testId="menu-themes"
+        onSelect={() => openDialog('themes')}
+      />
       <Item
         label="Import theme file…"
+        icon="upload"
         testId="menu-import-theme"
         onSelect={() => themeInput.current?.click()}
       />
@@ -550,7 +624,7 @@ function ThemeMenu({ themeInput }: { themeInput: RefObject<HTMLInputElement | nu
  * A submenu of Options. On a phone a submenu beside its menu runs off the screen, so there its
  * items unfold inside the menu instead.
  */
-function OptionsSub(props: { label: string; testId: string; children: ReactNode }) {
+function OptionsSub(props: { label: string; icon: IconName; testId: string; children: ReactNode }) {
   const narrow = useNarrow();
   const [open, setOpen] = useState(false);
   if (narrow)
@@ -565,6 +639,7 @@ function OptionsSub(props: { label: string; testId: string; children: ReactNode 
             setOpen(!open);
           }}
         >
+          <MenuIcon name={props.icon} />
           {t(props.label)}
           <Icon name={open ? 'expandLess' : 'expandMore'} className="icon menu-trailing" />
         </Menu.Item>
@@ -574,6 +649,7 @@ function OptionsSub(props: { label: string; testId: string; children: ReactNode 
   return (
     <Menu.Sub>
       <Menu.SubTrigger className="menu-item" data-testid={props.testId}>
+        <MenuIcon name={props.icon} />
         {t(props.label)}
         <Icon name="chevronRight" className="icon menu-trailing" />
       </Menu.SubTrigger>
@@ -591,7 +667,7 @@ function VisualizationsMenu() {
   const fields = useApp((s) => s.settings.fields);
   const all = Object.values(fields).every((v) => v);
   return (
-    <OptionsSub label="Visualizations" testId="menu-visualizations">
+    <OptionsSub label="Visualizations" icon="visibility" testId="menu-visualizations">
       {VISUALIZATIONS.map(({ key, label }) => (
         <Menu.CheckboxItem
           key={key}
@@ -624,7 +700,7 @@ function VisualizationsMenu() {
 function ValueSizeMenu() {
   const setting = useApp((s) => s.settings.valueSize);
   return (
-    <OptionsSub label="Value text size" testId="menu-value-size">
+    <OptionsSub label="Value text size" icon="formatSize" testId="menu-value-size">
       <Menu.RadioGroup
         value={String(setting)}
         onValueChange={(v) => updateSettings({ valueSize: Number(v) })}
@@ -652,7 +728,7 @@ function LanguageMenu() {
     void setLanguage(resolveLanguage(v));
   };
   return (
-    <OptionsSub label="Language" testId="menu-language">
+    <OptionsSub label="Language" icon="translate" testId="menu-language">
       <Menu.RadioGroup value={setting} onValueChange={choose}>
         <Menu.RadioItem value="auto" className="menu-item" data-testid="language-auto">
           <Check on={setting === 'auto'} /> {t('Browser language')}
@@ -674,6 +750,32 @@ function LanguageMenu() {
   );
 }
 
+/** An Options switch: its icon, its name, and a tick at the end while it is on. */
+function CheckItem(props: {
+  label: string;
+  icon: IconName;
+  checked: boolean;
+  onCheckedChange: (v: boolean) => void;
+  title?: string;
+  testId?: string;
+}) {
+  return (
+    <Menu.CheckboxItem
+      className="menu-item"
+      checked={props.checked}
+      onCheckedChange={props.onCheckedChange}
+      title={props.title}
+      data-testid={props.testId}
+    >
+      <MenuIcon name={props.icon} />
+      {t(props.label)}
+      <span className="menu-trailing menu-check" aria-hidden>
+        {props.checked && <Icon name="check" size={18} />}
+      </span>
+    </Menu.CheckboxItem>
+  );
+}
+
 function Check({ on }: { on: boolean }) {
   return (
     <span className="menu-check" aria-hidden>
@@ -691,43 +793,65 @@ function ScopesMenuItems() {
     <>
       <Item
         label="Stack All"
+        icon="stack"
         disabled={!(n > 1 && last !== undefined && last.position > 0)}
         onSelect={() => controller.allScopes('stackAll')}
       />
       <Item
         label="Unstack All"
+        icon="unstack"
         disabled={!(n > 1 && last !== undefined && last.position !== n - 1)}
         onSelect={() => controller.allScopes('unstackAll')}
       />
       <Item
         label="Combine All"
+        icon="combine"
         disabled={n <= 1}
         onSelect={() => controller.allScopes('combineAll')}
       />
       <Item
         label="Separate All"
+        icon="split"
         disabled={n === 0}
         testId="scopes-separate-all"
         onSelect={() => controller.allScopes('separateAll')}
       />
       <Item
         label="Undock All"
+        icon="openInNew"
         disabled={!controller.canUndockAll()}
         testId="scopes-undock-all"
         onSelect={() => controller.undockAll()}
       />
       <Item
         label="Dock All"
+        icon="dock"
         disabled={!controller.canDockAll()}
         testId="scopes-dock-all"
         onSelect={() => controller.dockAll()}
       />
       <Menu.Separator className="menu-separator" />
-      <Item label="AC Analysis (Bode Plot)…" testId="scopes-bode" onSelect={() => openBode()} />
-      <Item label="DC Operating Point" testId="scopes-dc" onSelect={() => openDcPanel()} />
-      <Item label="Parameter Sweep…" testId="scopes-sweep" onSelect={() => openSweep('values')} />
+      <Item
+        label="AC Analysis (Bode Plot)…"
+        icon="bode"
+        testId="scopes-bode"
+        onSelect={() => openBode()}
+      />
+      <Item
+        label="DC Operating Point"
+        icon="table"
+        testId="scopes-dc"
+        onSelect={() => openDcPanel()}
+      />
+      <Item
+        label="Parameter Sweep…"
+        icon="sweep"
+        testId="scopes-sweep"
+        onSelect={() => openSweep('values')}
+      />
       <Item
         label="Monte Carlo…"
+        icon="dice"
         testId="scopes-montecarlo"
         onSelect={() => openSweep('montecarlo')}
       />
