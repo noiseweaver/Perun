@@ -29,7 +29,21 @@ test('the main view, property panel and sliders have no axe violations', async (
     const e = c?.circuit.elements[1];
     if (c && e) c.editor.select(e);
   });
-  await expect(page.getByTestId('inspector')).toBeVisible();
+  const inspector = page.getByTestId('inspector');
+  await expect(inspector).toBeVisible();
+  // axe measures contrast mid fade-in on a slow runner: let the panel finish arriving
+  await expect
+    .poll(() =>
+      inspector.evaluate(
+        (e) =>
+          document
+            .getAnimations()
+            .filter(
+              (a) => a.effect instanceof KeyframeEffect && e.contains(a.effect.target as Node),
+            ).length,
+      ),
+    )
+    .toBe(0);
   expect(await violations(page)).toEqual([]);
 });
 

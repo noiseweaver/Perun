@@ -22,6 +22,7 @@ import { useApp } from '../store.ts';
 import { themeLink } from '../themes.ts';
 import { AboutDialog } from './AboutDialog.tsx';
 import { BodeDialog } from './BodeDialog.tsx';
+import { ExportImageDialog, PartsListDialog, ScopeCsvDialog } from './ExportDialogs.tsx';
 import { Shell } from './DialogShell.tsx';
 import { ScopePropertiesDialog } from './ScopeDialog.tsx';
 import { SliderDialog } from './SliderDialog.tsx';
@@ -438,6 +439,12 @@ export function Dialogs() {
       return <ThemeEditorDialog />;
     case 'bode':
       return <BodeDialog />;
+    case 'exportImage':
+      return <ExportImageDialog />;
+    case 'partsList':
+      return <PartsListDialog />;
+    case 'scopeCsv':
+      return <ScopeCsvDialog />;
     default:
       return null;
   }

@@ -20,6 +20,7 @@ import {
 } from '@circuitjs-next/elements';
 import type { Circuit } from '@circuitjs-next/format';
 import { History } from './History.ts';
+import { WireFollow } from './wireFollow.ts';
 
 export const MouseMode = {
   ADD_ELM: 0,
@@ -99,6 +100,17 @@ export class Editor {
   private dragRowColElms: { e: CircuitElm; post: number }[] = [];
   private clipboard = '';
   private paletteDragClass = '';
+  /**
+   * Wire ends on a moved part's posts move with it (user setting, not in upstream). Holding Alt
+   * while dragging leaves them behind, as upstream does.
+   */
+  wiresFollow = true;
+  /** The wires following the current drag (undefined: not looked for yet this gesture). */
+  private follow: WireFollow | null | undefined = undefined;
+  /** How far the selection has moved this gesture, for `follow`. */
+  private followDx = 0;
+  private followDy = 0;
+  private followDetached = false;
 
   constructor(
     readonly circuit: Circuit,
@@ -352,6 +364,8 @@ export class Editor {
     this.draggingPost = -1;
     this.mouseDragging = true;
     this.moved = false;
+    this.follow = undefined;
+    this.followDx = this.followDy = 0;
 
     let mode: MouseMode = this.mouseMode;
     if (grab !== null) mode = grab.post >= 0 ? MouseMode.DRAG_POST : MouseMode.SELECT;
@@ -467,12 +481,12 @@ export class Editor {
             changed = true;
           } else {
             this.tempMouseMode = MouseMode.DRAG_SELECTED;
-            changed = success = this.dragSelected(gx, gy);
+            changed = success = this.dragSelected(gx, gy, mods.alt);
           }
         }
         break;
       case MouseMode.DRAG_SELECTED:
-        changed = success = this.dragSelected(gx, gy);
+        changed = success = this.dragSelected(gx, gy, mods.alt);
         break;
       case MouseMode.DRAG_REROUTE:
         if (this.mouseElm instanceof RoutedWireElm) {
@@ -532,6 +546,11 @@ export class Editor {
     this.tempMouseMode = this.mouseMode;
     this.selectedArea = null;
     let circuitChanged = false;
+    if (this.follow) {
+      this.follow.finish();
+      circuitChanged = true;
+    }
+    this.follow = undefined;
     // dropping a post on a wire's middle splits the wire there
     if (this.draggingPost >= 0 && this.mouseElm !== null) {
       const p = this.mouseElm.getPost(this.draggingPost);
@@ -573,10 +592,12 @@ export class Editor {
     return true;
   }
 
-  private dragSelected(x: number, y: number): boolean {
+  private dragSelected(x: number, y: number, detach = false): boolean {
     let me = false;
     const mouseElm = this.mouseElm;
     if (mouseElm !== null && !mouseElm.selected) mouseElm.selected = me = true;
+    if (this.follow === undefined)
+      this.follow = this.wiresFollow ? WireFollow.start(this.elements) : null;
     if (!this.onlyGraphicsElmsSelected()) {
       x = this.snapGrid(x);
       y = this.snapGrid(y);
@@ -585,6 +606,13 @@ export class Editor {
     const dy = y - this.dragGridY;
     if (dx === 0 && dy === 0) {
       if (me && mouseElm) mouseElm.selected = false;
+      if (this.follow && detach !== this.followDetached) {
+        // Alt pressed or released without moving: the wires spring back or catch up
+        this.followDetached = detach;
+        this.follow.apply(this.followDx, this.followDy, !detach);
+        this.host.circuitChanged();
+        return true;
+      }
       return false;
     }
     let allowed = true;
@@ -596,6 +624,12 @@ export class Editor {
     }
     if (allowed) {
       for (const ce of this.elements) if (ce.selected) ce.move(dx, dy);
+      if (this.follow) {
+        this.followDx += dx;
+        this.followDy += dy;
+        this.followDetached = detach;
+        this.follow.apply(this.followDx, this.followDy, !detach);
+      }
       this.host.circuitChanged();
     }
     if (me && mouseElm) mouseElm.selected = false;
@@ -940,7 +974,10 @@ export class Editor {
   moveSelected(dx: number, dy: number): boolean {
     if (this.countSelected() === 0) return false;
     this.history.record('Move', () => {
+      const follow = this.wiresFollow ? WireFollow.start(this.elements) : null;
       for (const ce of this.elements) if (ce.selected) ce.move(dx, dy);
+      follow?.apply(dx, dy, true);
+      follow?.finish();
     });
     this.host.circuitChanged();
     return true;
