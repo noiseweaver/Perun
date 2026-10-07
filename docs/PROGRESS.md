@@ -9,8 +9,11 @@ resistors, lamps, capacitors, inductors, diodes/LEDs/Zeners and BJTs. Tests:
 packages/format/src/formulas.test.ts (each result matches the engine), an e2e test in
 panels.spec.ts. Checked in Dark, Classic, phone portrait and landscape.
 
-Next: Gady tries the preview. Possible extras, only if Gady picks them: MOSFET square law,
-op-amp gain, transformer turns ratio, voltage divider across a selection, a card for sources.
+Then Gady asked for the extras: MOSFET (by region), op-amp (input difference and gain, or
+the limit), transformer (turns ratio against the measured V2) and sources (power delivered).
+The preview's demo circuit has one of each.
+
+Next: Gady tries the preview.
 
 ## 2026-10-07: fix white screen after a deploy (branch claude/temperature-subcircuit-params-nid9p9)
 

@@ -10,10 +10,18 @@ import type { CircuitElm } from './CircuitElm.ts';
 import { CapacitorElm } from './elm/CapacitorElm.ts';
 import { DiodeElm } from './elm/DiodeElm.ts';
 import { InductorElm } from './elm/InductorElm.ts';
+import { BatteryElm } from './elm/BatteryElm.ts';
+import { CurrentElm } from './elm/CurrentElm.ts';
+import { JfetElm } from './elm/JfetElm.ts';
 import { LampElm } from './elm/LampElm.ts';
+import { MosfetElm } from './elm/MosfetElm.ts';
+import { OhmMeterElm } from './elm/OhmMeterElm.ts';
+import { OpAmpElm } from './elm/OpAmpElm.ts';
 import { ResistorElm } from './elm/ResistorElm.ts';
+import { TransformerElm } from './elm/TransformerElm.ts';
 import { TransistorElm } from './elm/TransistorElm.ts';
 import { VaractorElm } from './elm/VaractorElm.ts';
+import { VoltageElm } from './elm/VoltageElm.ts';
 import { OHM, formatNumber, getFixedUnitText } from './view/units.ts';
 
 /** One line under a law: `=` (or `≈`) and its tokens, which wrap only between tokens. */
@@ -32,11 +40,14 @@ export interface FormulaLaw {
 /** Width of a bare number, as in getFixedUnitText: a sign and up to three integer digits. */
 const PLAIN_WIDTH = 8;
 
-/** A dimensionless value with one decimal in a fixed width; a dash when it is undefined. */
-export function fixedPlain(v: number): string {
+/**
+ * A dimensionless value with `digits` decimals (one by default) in a fixed width; a dash when it
+ * is undefined or too big for the width.
+ */
+export function fixedPlain(v: number, digits = 1): string {
   if (!Number.isFinite(v) || Math.abs(v) >= 1e4) return '—'.padStart(PLAIN_WIDTH);
-  let s = formatNumber(v, 1, true);
-  if (s === '-0.0') s = '0.0';
+  let s = formatNumber(v, digits, true);
+  if (/^-0\.0*$/.test(s)) s = s.slice(1);
   return s.padStart(PLAIN_WIDTH);
 }
 
@@ -149,6 +160,129 @@ function transistor(elm: TransistorElm): FormulaLaw[] {
   ];
 }
 
+function mosfet(elm: MosfetElm): FormulaLaw[] {
+  // the engine's own reading: source and drain swap when the drain is the lower end (n-channel),
+  // and p-channel voltages are flipped, so Vgs and Vds read positive when it conducts
+  const [vg = 0, v1 = 0, v2 = 0] = elm.volts;
+  const swapped = elm.pnp * v1 > elm.pnp * v2;
+  const vs = swapped ? v2 : v1;
+  const vd = swapped ? v1 : v2;
+  const vgs = elm.pnp * (vg - vs);
+  const vds = elm.pnp * (vd - vs);
+  const vt = elm.simVt;
+  const beta = elm.simBeta;
+  const lambda = elm.getModel().lambda;
+  const clm = lambda > 0 ? ' · (1 + λ·Vds)' : '';
+  const clmTokens =
+    lambda > 0 ? ['· (1 +', `${fixedPlain(lambda, 3)} /V`, '·', u(vds, 'V'), ')'] : [];
+  const k = lambda > 0 ? 1 + lambda * vds : 1;
+  if (vgs < vt) {
+    return [
+      {
+        name: 'Cutoff',
+        formula: 'Vgs < Vt, so Id ≈ 0',
+        lines: [line('=', u(vgs, 'V'), '<', u(vt, 'V'))],
+      },
+    ];
+  }
+  const vov = vgs - vt;
+  if (vds < vov) {
+    return [
+      {
+        name: 'Linear region',
+        formula: `Id = β · ((Vgs − Vt) · Vds − Vds²/2)${clm}`,
+        lines: [
+          line(
+            '=',
+            u(beta, 'A/V²'),
+            '· ((',
+            u(vov, 'V'),
+            '·',
+            u(vds, 'V'),
+            ') − (',
+            u(vds, 'V'),
+            ')² / 2)',
+            ...clmTokens,
+          ),
+          line('=', u(beta * (vov * vds - (vds * vds) / 2) * k, 'A')),
+        ],
+      },
+    ];
+  }
+  return [
+    {
+      name: 'Saturation (square law)',
+      formula: `Id = ½ · β · (Vgs − Vt)²${clm}`,
+      lines: [
+        line('=', '½ ·', u(beta, 'A/V²'), '·', u(vov, 'V'), '²', ...clmTokens),
+        line('=', u(0.5 * beta * vov * vov * k, 'A')),
+      ],
+    },
+  ];
+}
+
+function opamp(elm: OpAmpElm): FormulaLaw[] {
+  const [vminus = 0, vplus = 0, vout = 0] = elm.volts;
+  const vd = vplus - vminus;
+  const mid = (elm.maxOut + elm.minOut) / 2;
+  const laws: FormulaLaw[] = [
+    {
+      name: 'Input difference',
+      formula: 'Vd = V+ − V−',
+      lines: [line('=', u(vplus, 'V'), '−', u(vminus, 'V')), line('=', u(vd, 'V'))],
+    },
+  ];
+  // the engine pins the output to a rail once A·Vd would pass it
+  const ideal = elm.gain * vd + mid;
+  if (ideal >= elm.maxOut || ideal <= elm.minOut) {
+    const rail = ideal >= elm.maxOut ? elm.maxOut : elm.minOut;
+    laws.push({
+      name: 'Output at its limit',
+      formula: ideal >= elm.maxOut ? 'Vout ≈ Vmax' : 'Vout ≈ Vmin',
+      lines: [line('≈', u(rail, 'V'))],
+    });
+    return laws;
+  }
+  const offset = mid !== 0;
+  laws.push({
+    name: 'Open-loop gain',
+    formula: offset ? 'Vout = A · Vd + Vmid' : 'Vout = A · Vd',
+    lines: [
+      line('=', u(elm.gain, ''), '·', u(vd, 'V'), ...(offset ? ['+', u(mid, 'V')] : [])),
+      line('=', u(vout, 'V')),
+    ],
+  });
+  return laws;
+}
+
+function transformer(elm: TransformerElm): FormulaLaw[] {
+  const [a = 0, b = 0, c = 0, d = 0] = elm.volts;
+  const v1 = a - c;
+  const v2 = b - d;
+  return [
+    {
+      name: 'Turns ratio',
+      formula: 'V2 ≈ V1 · N2/N1',
+      lines: [
+        line('≈', u(v1, 'V'), '·', fixedPlain(elm.ratio, 3)),
+        line('≈', u(v1 * elm.ratio, 'V')),
+        { rel: '=', tokens: [u(v2, 'V'), 'measured'] },
+      ],
+    },
+  ];
+}
+
+/** Power a source delivers: its voltage times the current out of its + end. */
+function source(v: number, iOut: number): FormulaLaw[] {
+  return [
+    {
+      name: 'Power delivered',
+      formula: 'P = V · I',
+      lines: [line('=', u(v, 'V'), '·', u(iOut, 'A')), line('=', u(v * iOut, 'W'))],
+    },
+  ];
+}
+
 /**
  * The laws to show for a part with its live values, or an empty list for parts without a card.
  * Signs follow the part's own voltage and current (post 1 to post 2), as in the readouts above.
@@ -161,5 +295,15 @@ export function formulasFor(elm: CircuitElm): FormulaLaw[] {
   if (elm instanceof InductorElm) return inductor(elm);
   if (elm instanceof DiodeElm && !(elm instanceof VaractorElm)) return diode(elm);
   if (elm instanceof TransistorElm) return transistor(elm);
+  if (elm instanceof MosfetElm && !(elm instanceof JfetElm)) return mosfet(elm);
+  if (elm instanceof OpAmpElm) return opamp(elm);
+  if (elm instanceof TransformerElm) return transformer(elm);
+  // V·I with their own current is the power they deliver (getPower, -V·I, is what they take)
+  if (
+    elm instanceof VoltageElm ||
+    elm instanceof BatteryElm ||
+    (elm instanceof CurrentElm && !(elm instanceof OhmMeterElm))
+  )
+    return source(elm.getVoltageDiff(), elm.getCurrent());
   return [];
 }
