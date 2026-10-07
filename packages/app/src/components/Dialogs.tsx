@@ -322,7 +322,10 @@ function SimSettingsDialog() {
             id="sim-temperature"
             className="text-input field-input"
             value={temp}
-            inputMode="decimal"
+            // not "decimal": the iPhone number pad has no minus key, and temperatures go below 0
+            inputMode="text"
+            autoCapitalize="off"
+            autoCorrect="off"
             spellCheck={false}
             onChange={(e) => setTemp(e.target.value)}
             data-testid="sim-temperature"
@@ -359,7 +362,9 @@ function SimSettingsDialog() {
                 id="sim-ramp-to"
                 className="text-input field-input"
                 value={rampTo}
-                inputMode="decimal"
+                inputMode="text"
+                autoCapitalize="off"
+                autoCorrect="off"
                 spellCheck={false}
                 onChange={(e) => setRampTo(e.target.value)}
                 data-testid="sim-ramp-to"
