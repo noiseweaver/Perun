@@ -356,6 +356,67 @@ test.describe('Circuits on a phone', () => {
       .toBe(3);
   });
 
+  test('the circuits sheet goes away with a tap outside it or a pull down', async ({ page }) => {
+    await page.goto(`/?cct=${cct(RC)}`);
+    await expect(page.getByTestId('circuits-menu')).toBeEnabled();
+    const sheet = page.getByTestId('circuits-sheet');
+    // a tap on the dimmed app above the sheet
+    await page.getByTestId('circuits-menu').tap();
+    await expect(sheet).toBeVisible();
+    await page.touchscreen.tap(200, 20);
+    await expect(sheet).toBeHidden();
+    // a pull down from the handle
+    await page.getByTestId('circuits-menu').tap();
+    await expect(sheet).toBeVisible();
+    await page.waitForTimeout(300);
+    await sheet.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const x = r.left + r.width / 2;
+      const touch = (y: number): Touch =>
+        new Touch({ identifier: 1, target: el, clientX: x, clientY: y });
+      const fire = (type: string, y: number, list: Touch[]): void => {
+        el.dispatchEvent(
+          new TouchEvent(type, {
+            touches: list,
+            changedTouches: [touch(y)],
+            bubbles: true,
+            cancelable: true,
+          }),
+        );
+      };
+      const y0 = r.top + 12;
+      fire('touchstart', y0, [touch(y0)]);
+      for (let d = 20; d <= 200; d += 20) fire('touchmove', y0 + d, [touch(y0 + d)]);
+      fire('touchend', y0 + 200, []);
+    });
+    await expect(sheet).toBeHidden();
+  });
+
+  test('pinching or double-tapping the interface does not zoom the page', async ({ page }) => {
+    await page.goto(`/?cct=${cct(RC)}`);
+    await expect(page.getByTestId('circuits-menu')).toBeEnabled();
+    const blocked = await page.locator('.app-bar').evaluate((el) => {
+      const touch = (x: number): Touch =>
+        new Touch({ identifier: x, target: el, clientX: x, clientY: 20 });
+      const e = new TouchEvent('touchmove', {
+        touches: [touch(50), touch(150)],
+        bubbles: true,
+        cancelable: true,
+      });
+      el.dispatchEvent(e);
+      return e.defaultPrevented;
+    });
+    expect(blocked).toBe(true);
+    expect(await page.evaluate(() => getComputedStyle(document.body).touchAction)).toBe(
+      'manipulation',
+    );
+    // focusing a text field on iPhone zooms in below 16px
+    await page.getByTestId('circuits-menu').tap();
+    expect(
+      await page.getByTestId('circuits-search').evaluate((el) => getComputedStyle(el).fontSize),
+    ).toBe('16px');
+  });
+
   test('every menu fits on screen, and dialogs open above the property sheet', async ({ page }) => {
     await page.goto(`/?cct=${cct(RC)}`);
     await expect(page.getByTestId('circuits-menu')).toBeEnabled();
@@ -395,5 +456,25 @@ test.describe('Circuits on a phone', () => {
       [sheet.x + sheet.width / 2, sheet.y + 20] as const,
     );
     expect(top).toContain('dialog-content');
+  });
+});
+
+test.describe('A phone on its side', () => {
+  test.use({ viewport: { width: 874, height: 402 }, hasTouch: true, isMobile: true });
+
+  test('the run controls move to a rail so the canvas keeps its height', async ({ page }) => {
+    await page.goto(`/?cct=${cct(RC)}`);
+    await expect(page.getByTestId('circuits-menu')).toBeEnabled();
+    const canvas = await page.getByTestId('circuit-canvas').boundingBox();
+    const run = await page.getByTestId('run-stop').boundingBox();
+    if (canvas === null || run === null) throw new Error('no layout');
+    // the run button sits beside the canvas, not under it
+    expect(run.x).toBeGreaterThanOrEqual(canvas.x + canvas.width);
+    expect(canvas.height).toBeGreaterThan(300);
+    // the menus are icons with their names for screen readers, and the time readout still shows
+    await expect(page.getByRole('button', { name: 'Options' })).toBeVisible();
+    await expect(page.getByTestId('sim-time')).toBeVisible();
+    await page.getByTestId('circuits-menu').tap();
+    await expect(page.getByTestId('circuits-sheet')).toBeVisible();
   });
 });

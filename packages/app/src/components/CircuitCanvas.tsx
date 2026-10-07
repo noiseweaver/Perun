@@ -9,7 +9,7 @@ import * as Ctx from '@radix-ui/react-context-menu';
 import { useEffect, useRef, useState } from 'react';
 import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
-import { Icon, type IconName } from './Icon.tsx';
+import { Icon, MenuIcon, type IconName } from './Icon.tsx';
 import { canBode, openBode } from './BodeDialog.tsx';
 import { canSweep, openSweep } from './SweepDialog.tsx';
 import { t } from '../i18n.ts';
@@ -37,17 +37,6 @@ function Item(props: {
       {t(props.label)}
       {props.hint && <span className="menu-trailing menu-hint">{props.hint}</span>}
     </Ctx.Item>
-  );
-}
-
-/** The leading icon column; empty when there is no icon, so the labels still line up. */
-function MenuIcon(props: { name?: IconName | undefined; turned?: boolean | undefined }) {
-  return (
-    <span className="menu-icon" aria-hidden>
-      {props.name && (
-        <Icon name={props.name} size={20} className={props.turned ? 'icon icon-turned' : 'icon'} />
-      )}
-    </span>
   );
 }
 
@@ -308,10 +297,9 @@ function ScopeMenuItems({ index, undocked }: { index: number; undocked: ScopeElm
         />
       )}
       <Ctx.CheckboxItem className="menu-item" checked={s.maxScale} onSelect={run('maxscale')}>
-        <span className="menu-icon menu-check" aria-hidden>
-          {s.maxScale && <Icon name="check" size={18} />}
-        </span>
+        <MenuIcon name="height" />
         {t('Max Scale')}
+        <TrailingCheck on={s.maxScale} />
       </Ctx.CheckboxItem>
       {controller.scopes.look === 'cards' && (
         <Ctx.CheckboxItem
@@ -320,10 +308,9 @@ function ScopeMenuItems({ index, undocked }: { index: number; undocked: ScopeElm
           checked={s.frozen !== null}
           onSelect={run('freeze')}
         >
-          <span className="menu-icon menu-check" aria-hidden>
-            {s.frozen !== null && <Icon name="check" size={18} />}
-          </span>
+          <MenuIcon name="snowflake" />
           {t('Freeze')}
+          <TrailingCheck on={s.frozen !== null} />
         </Ctx.CheckboxItem>
       )}
       {undocked === null && (
@@ -369,5 +356,14 @@ function ScopeMenuItems({ index, undocked }: { index: number; undocked: ScopeElm
         onSelect={run('properties')}
       />
     </>
+  );
+}
+
+/** The tick at the end of a checkbox item that has an icon of its own. */
+function TrailingCheck({ on }: { on: boolean }) {
+  return (
+    <span className="menu-trailing menu-check" aria-hidden>
+      {on && <Icon name="check" size={18} />}
+    </span>
   );
 }

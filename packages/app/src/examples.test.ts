@@ -34,6 +34,9 @@ function frequencyAt(file: string, temperature: number): number | null {
   return measureFrequency(ts, vs);
 }
 
+/** Each run steps 60 000 times; a busy CI runner needs more than vitest's 5 s for several. */
+const SIM_TIMEOUT = 30_000;
+
 describe('our own examples', () => {
   it('adds a menu after upstream’s last one, before its trailing circuits', () => {
     const upstream = '+Basics\nres.txt Resistors\n-\nblank.txt Blank Circuit\n';
@@ -59,24 +62,32 @@ describe('our own examples', () => {
         expect(() => read(`circuits/${line.split(' ')[0]}`)).not.toThrow();
   });
 
-  it('runs the VCO circuits at about 1 kHz at 27 °C', () => {
-    for (const f of ['vco-expo-single.txt', 'vco-expo-pair.txt', 'vco-expo-tempco.txt']) {
-      const hz = frequencyAt(f, 27);
-      expect(hz).toBeGreaterThan(800);
-      expect(hz).toBeLessThan(1200);
-    }
-  });
+  it(
+    'runs the VCO circuits at about 1 kHz at 27 °C',
+    () => {
+      for (const f of ['vco-expo-single.txt', 'vco-expo-pair.txt', 'vco-expo-tempco.txt']) {
+        const hz = frequencyAt(f, 27);
+        expect(hz).toBeGreaterThan(800);
+        expect(hz).toBeLessThan(1200);
+      }
+    },
+    SIM_TIMEOUT,
+  );
 
-  it('shows what the matched pair and the tempco resistor are worth', () => {
-    const pairCold = frequencyAt('vco-expo-pair.txt', -20) as number;
-    const pairHot = frequencyAt('vco-expo-pair.txt', 60) as number;
-    const tcCold = frequencyAt('vco-expo-tempco.txt', -20) as number;
-    const tcHot = frequencyAt('vco-expo-tempco.txt', 60) as number;
-    // the pair still drifts about 1.4 %/°C; one transistor runs away far more than that
-    expect(pairHot / pairCold).toBeGreaterThan(2);
-    expect(frequencyAt('vco-expo-single.txt', 60) as number).toBeGreaterThan(5 * pairHot);
-    // the tempco resistor takes it to under 0.05 %/°C, at least 20 times better
-    expect(tcHot / tcCold).toBeLessThan(1.04);
-    expect(tcHot / tcCold - 1).toBeLessThan((pairHot / pairCold - 1) / 20);
-  });
+  it(
+    'shows what the matched pair and the tempco resistor are worth',
+    () => {
+      const pairCold = frequencyAt('vco-expo-pair.txt', -20) as number;
+      const pairHot = frequencyAt('vco-expo-pair.txt', 60) as number;
+      const tcCold = frequencyAt('vco-expo-tempco.txt', -20) as number;
+      const tcHot = frequencyAt('vco-expo-tempco.txt', 60) as number;
+      // the pair still drifts about 1.4 %/°C; one transistor runs away far more than that
+      expect(pairHot / pairCold).toBeGreaterThan(2);
+      expect(frequencyAt('vco-expo-single.txt', 60) as number).toBeGreaterThan(5 * pairHot);
+      // the tempco resistor takes it to under 0.05 %/°C, at least 20 times better
+      expect(tcHot / tcCold).toBeLessThan(1.04);
+      expect(tcHot / tcCold - 1).toBeLessThan((pairHot / pairCold - 1) / 20);
+    },
+    SIM_TIMEOUT,
+  );
 });
