@@ -1838,11 +1838,12 @@ textarea.field-input {
 @media (max-height: 559px) and (orientation: landscape) {
   .app {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    /* the rail is only as wide as its buttons: the readouts above it reach over the canvas */
+    grid-template-columns: minmax(0, 1fr) auto 64px;
     grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas:
-      'bar status'
-      'work rail';
+      'bar status status'
+      'work work rail';
   }
 
   .app-bar {
@@ -1864,7 +1865,7 @@ textarea.field-input {
     grid-area: rail;
     flex-direction: column;
     gap: 4px;
-    padding: 0 8px 8px;
+    padding: 0 0 8px;
     overflow-y: auto;
     scrollbar-width: none;
   }
