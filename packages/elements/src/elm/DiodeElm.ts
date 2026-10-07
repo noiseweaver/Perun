@@ -17,6 +17,7 @@ import { modelsFor } from '../models/ModelLibrary.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from '../xml.ts';
 import { Diode } from './Diode.ts';
+import { heatStep, Thermal } from '../thermal.ts';
 import { getCurrentText, getUnitText, getVoltageText } from '../view/units.ts';
 import type { WireRouter } from '../WireRouter.ts';
 import type { Point } from '@circuitjs-next/engine';
@@ -38,6 +39,8 @@ export class DiodeElm extends CircuitElm {
   static readonly defaultModelName: string = 'default';
 
   diode = new Diode(this);
+  /** Self-heating (thermal.ts): a small glass diode in free air. */
+  override thermal: Thermal | null = new Thermal(300);
   modelName = '';
   model: DiodeModel | null = null;
   hasResistance = false;
@@ -146,6 +149,7 @@ export class DiodeElm extends CircuitElm {
   override stepFinished(): void {
     // stop for huge currents that make simulator act weird
     if (Math.abs(this.current) > 1e12) this.sim.stop('max current exceeded', this);
+    heatStep(this, this.getPower());
   }
 
   override getInfo(arr: string[]): void {

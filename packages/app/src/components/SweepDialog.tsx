@@ -2,16 +2,20 @@
 // Copyright (C) 2026 circuitjs-next contributors
 
 import {
+  EditInfo,
   getFixedUnitText,
   hasTolerance,
+  NOMINAL_TEMPERATURE,
   parseUnits,
   unitString,
   type CircuitElm,
 } from '@circuitjs-next/elements';
+import type { Theme } from '@circuitjs-next/theme';
 import { useEffect, useReducer, useRef, useState, type CSSProperties } from 'react';
 import { defaultAmplitude, isBodeOutput, isBodeSource } from '../analysis/bode.ts';
 import { bodeLayout, freqAtX } from '../analysis/bodePlot.ts';
 import { outputRank } from '../analysis/names.ts';
+import { cents, nearestNote } from '../analysis/pitch.ts';
 import {
   MultiRun,
   acAt,
@@ -25,8 +29,10 @@ import {
   valueRuns,
   type Distribution,
   type Measure,
+  type RunResult,
   type RunSpec,
   type SweepTarget,
+  TEMPERATURE_TARGET,
 } from '../analysis/sweep.ts';
 import {
   drawAcRuns,
@@ -74,6 +80,8 @@ interface Form {
 
 /** The last form and run, kept while the dialog is closed so reopening shows them again. */
 let last: { form: Form; sweep: MultiRun | null; style: RunStyle; unit: string } | null = null;
+/** How the frequency readout shows each run, kept across openings. */
+let pitchView: FrequencyView = 'frequency';
 let request: { elm: CircuitElm | null; mode: Mode } | null = null;
 
 /** Open the sweep dialog; `elm` becomes the swept part (or the output) when it can be. */
@@ -161,7 +169,8 @@ function initialForm(els: readonly CircuitElm[]): Form {
     return e !== undefined && test(e);
   };
   const sweepable = (e: CircuitElm): boolean => sweepItems(e).length > 0;
-  if (!valid(f.target.element, sweepable)) f.target = { element: -1, item: 0 };
+  if (f.target.element !== TEMPERATURE_TARGET && !valid(f.target.element, sweepable))
+    f.target = { element: -1, item: 0 };
   if (!valid(f.output, isBodeOutput)) f.output = -1;
   if (!valid(f.source, isBodeSource)) f.source = -1;
 
@@ -171,12 +180,13 @@ function initialForm(els: readonly CircuitElm[]): Form {
     if (f.mode === 'values' && sweepable(picked)) f.target = { element: i, item: 0 };
     else if (isBodeOutput(picked) && !isBodeSource(picked)) f.output = i;
   }
-  if (f.target.element < 0) {
+  if (f.target.element === -1) {
     // prefer a part with a value people sweep: resistors, capacitors, inductors
     const r = els.findIndex((e) => hasTolerance(e));
     f.target = { element: r >= 0 ? r : els.findIndex(sweepable), item: 0 };
   }
-  const items = sweepItems(els[f.target.element] as CircuitElm);
+  const tElm = els[f.target.element];
+  const items = tElm !== undefined ? sweepItems(tElm) : [];
   if (!items.some((s) => s.item === f.target.item)) f.target.item = items[0]?.item ?? 0;
   if (f.source < 0) f.source = els.findIndex(isBodeSource);
   if (f.output < 0) {
@@ -194,10 +204,32 @@ function initialForm(els: readonly CircuitElm[]): Form {
   return f;
 }
 
+/** The circuit temperature as a sweepable value (PLAN.md Phase 15). */
+function temperatureInfo(): EditInfo {
+  return new EditInfo(
+    'Temperature (°C)',
+    controller.circuit.sim.temperature,
+    -1,
+    -1,
+  ).setDimensionless();
+}
+
+/** What the target's values are: a part's edit item, or the circuit temperature. */
+function targetInfo(els: readonly CircuitElm[], target: SweepTarget): EditInfo | null {
+  if (target.element === TEMPERATURE_TARGET) return temperatureInfo();
+  return els[target.element]?.getEditInfo(target.item) ?? null;
+}
+
 /** Start the value fields from the part's own value: half, itself, double and so on. */
 function seedValues(f: Form, els: readonly CircuitElm[]): void {
-  const e = els[f.target.element];
-  const ei = e?.getEditInfo(f.target.item) ?? null;
+  if (f.target.element === TEMPERATURE_TARGET) {
+    // cold morning, room, hot case
+    f.listText = '-20, 27, 85';
+    f.fromText = '-20';
+    f.toText = '85';
+    return;
+  }
+  const ei = targetInfo(els, f.target);
   if (ei === null) return;
   const v = ei.value;
   const short = (x: number): string => shortNum(x);
@@ -229,7 +261,7 @@ export function SweepDialog() {
   const sweepable = els.map((e, i) => ({ e, i })).filter(({ e }) => sweepItems(e).length > 0);
   const targetElm = els[form.target.element];
   const items = targetElm !== undefined ? sweepItems(targetElm) : [];
-  const targetEi = targetElm?.getEditInfo(form.target.item) ?? null;
+  const targetEi = targetInfo(els, form.target);
   const outputs = els
     .map((e, i) => ({ e, i }))
     .filter(({ e }) => isBodeOutput(e))
@@ -260,7 +292,11 @@ export function SweepDialog() {
   const seed = Number.parseInt(form.seedText, 10);
   const valuesOk = values !== null && values.length > 0 && values.length <= MAX_VALUES;
   const problem = ((): string | null => {
-    if (form.mode === 'values' && sweepable.length === 0)
+    if (
+      form.mode === 'values' &&
+      sweepable.length === 0 &&
+      form.target.element !== TEMPERATURE_TARGET
+    )
       return t('Nothing in this circuit has a value to sweep.');
     if (form.mode === 'montecarlo' && tolerant.length === 0)
       return t(
@@ -274,7 +310,7 @@ export function SweepDialog() {
     !running &&
     problem === null &&
     form.output >= 0 &&
-    (form.mode === 'values' ? valuesOk && form.target.element >= 0 : Number.isFinite(seed)) &&
+    (form.mode === 'values' ? valuesOk && form.target.element !== -1 : Number.isFinite(seed)) &&
     (form.analysis === 'transient'
       ? duration !== null
       : fStart !== null &&
@@ -339,7 +375,9 @@ export function SweepDialog() {
     let runs: RunSpec[];
     const target = form.mode === 'values' ? form.target : null;
     if (form.mode === 'values') {
-      runs = valueRuns(form.target, values ?? [], (v) => unitString(targetEi, v));
+      runs = valueRuns(form.target, values ?? [], (v) =>
+        form.target.element === TEMPERATURE_TARGET ? `${shortNum(v)} °C` : unitString(targetEi, v),
+      );
     } else {
       runs = monteCarloRuns(
         els,
@@ -468,18 +506,20 @@ export function SweepDialog() {
                   data-testid="sweep-part"
                   onChange={(e) => {
                     const element = Number(e.target.value);
+                    const elm = els[element];
                     const next = {
                       ...form,
                       target: {
                         element,
-                        item: sweepItems(els[element] as CircuitElm)[0]?.item ?? 0,
+                        item: elm !== undefined ? (sweepItems(elm)[0]?.item ?? 0) : 0,
                       },
                     };
                     seedValues(next, els);
                     setForm(next);
                   }}
                 >
-                  {form.target.element < 0 && <option value={-1}>{t('None')}</option>}
+                  {form.target.element === -1 && <option value={-1}>{t('None')}</option>}
+                  <option value={TEMPERATURE_TARGET}>{t('Circuit temperature (°C)')}</option>
                   {sweepable.map(({ e, i }) => (
                     <option key={i} value={i}>
                       {names.get(e)}
@@ -837,6 +877,9 @@ export function SweepDialog() {
                 ) : (
                   cursor !== null && <SpreadReadout sweep={sweep} cursor={cursor} fmtV={fmtV} />
                 )}
+                {style === 'values' && !isAc && (
+                  <FrequencyReadout sweep={sweep} labelWidth={labelWidth} theme={theme} />
+                )}
               </>
             )}
           </div>
@@ -943,6 +986,100 @@ function SpreadReadout(props: {
       {row(t('Mean'), s?.mean)}
       {row(t('Min'), s?.min)}
       {row(t('Max'), s?.max)}
+    </div>
+  );
+}
+
+type FrequencyView = 'frequency' | 'pitch';
+
+/** `v` with its sign always shown, right-aligned in `width` characters. */
+const signed = (v: number, decimals: number, width: number): string =>
+  `${v < 0 ? '-' : '+'}${Math.abs(v).toFixed(decimals)}`.padStart(width);
+
+/**
+ * Each finished run's frequency, as Hz and the change from a reference run, or as pitch (the
+ * nearest note, cents off it, and cents from the reference). The reference is the 27 °C run when
+ * the sweep varies the temperature (the nearest one to it otherwise), else the first run; a
+ * temperature sweep also shows the drift per °C over the swept range. Shown only when a run
+ * oscillates.
+ */
+function FrequencyReadout(props: { sweep: MultiRun; labelWidth: number; theme: Theme }) {
+  const { sweep, labelWidth, theme } = props;
+  const [view, setView] = useState<FrequencyView>(pitchView);
+  const runs = sweep.results
+    .map((r, i) => ({ r, i, f: r.frequency }))
+    .filter((x): x is { r: RunResult; i: number; f: number } => x.f !== null);
+  if (runs.length === 0) return null;
+  const isTemp = sweep.target?.element === TEMPERATURE_TARGET;
+  const tempOf = (r: RunResult): number => r.spec.params[0]?.value ?? NOMINAL_TEMPERATURE;
+  const ref = isTemp
+    ? runs.reduce((a, b) =>
+        Math.abs(tempOf(b.r) - NOMINAL_TEMPERATURE) < Math.abs(tempOf(a.r) - NOMINAL_TEMPERATURE)
+          ? b
+          : a,
+      )
+    : runs[0];
+  if (ref === undefined) return null;
+  const pitch = view === 'pitch';
+  const byTemp = isTemp ? [...runs].sort((a, b) => tempOf(a.r) - tempOf(b.r)) : [];
+  const lo = byTemp[0];
+  const hi = byTemp[byTemp.length - 1];
+  const span = lo !== undefined && hi !== undefined ? tempOf(hi.r) - tempOf(lo.r) : 0;
+  const drift =
+    lo === undefined || hi === undefined || !(span > 0)
+      ? null
+      : pitch
+        ? `${signed(cents(hi.f, lo.f) / span, 2, 8)} ¢/°C`
+        : `${signed(((hi.f - lo.f) / ref.f / span) * 1e6, 1, 8)} ppm/°C`;
+  const row = (x: { r: RunResult; i: number; f: number }): string => {
+    const isRef = x === ref;
+    if (pitch) {
+      const note = nearestNote(x.f);
+      const name =
+        note === null ? blank(4 + 9) : `${note.name.padEnd(4)} ${signed(note.cents, 1, 6)} ¢`;
+      const d = isRef ? `${t('ref').padStart(9)}  ` : `Δ${signed(cents(x.f, ref.f), 1, 8)} ¢`;
+      return ` ${name}  ${d}`;
+    }
+    const d = isRef
+      ? `${t('ref').padStart(8)}  `
+      : `${signed(((x.f - ref.f) / ref.f) * 100, 3, 8)} %`;
+    return ` ${getFixedUnitText(x.f, 'Hz')} ${d}`;
+  };
+  const choose = (v: FrequencyView): void => {
+    pitchView = v;
+    setView(v);
+  };
+  return (
+    <div className="sweep-frequency" data-testid="sweep-frequency">
+      <div className="sweep-frequency-head">
+        <span className="bode-readout-label">{t('Frequency')}</span>
+        <Segmented
+          label={t('Show frequency as')}
+          value={view}
+          disabled={false}
+          testId="sweep-frequency-view"
+          options={[
+            ['frequency', t('Hz')],
+            ['pitch', t('Pitch')],
+          ]}
+          onChange={choose}
+        />
+        {drift !== null && (
+          <span data-testid="sweep-drift">
+            <span className="bode-readout-label">{t('Drift')}</span> {drift}
+          </span>
+        )}
+      </div>
+      <div className="sweep-runs-list" style={columns(labelWidth + 28)}>
+        {runs.map((x) => (
+          <span key={x.i} className="sweep-run" data-testid="sweep-frequency-row">
+            <span className="bode-key" style={{ color: runColor(theme, x.i) }}>
+              {x.r.spec.label.padEnd(labelWidth)}
+            </span>
+            {row(x)}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

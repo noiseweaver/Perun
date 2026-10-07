@@ -13,6 +13,7 @@ import { parseJavaDouble } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import { getUnitText } from '../view/units.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
+import type { Thermal } from '../thermal.ts';
 import { DiodeElm } from './DiodeElm.ts';
 
 /**
@@ -57,6 +58,9 @@ export class VaractorElm extends DiodeElm {
     arr[0] = 'varactor';
     arr[5] = 'C = ' + getUnitText(this.capacitance, 'F');
   }
+
+  /** A reverse-biased tuning diode carries next to no power: no self-heating. */
+  override thermal: Thermal | null = null;
 
   override stepFinished(): void {
     this.capvoltdiff = this.volts[0] - this.volts[1];

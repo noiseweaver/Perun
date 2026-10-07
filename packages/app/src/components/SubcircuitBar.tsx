@@ -4,6 +4,7 @@
 // master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032: which subcircuit's parts are shown, or
 // which model's circuit is being edited, with Back, and Save / Save Copy while editing.
 
+import { openDialog } from '../commands.ts';
 import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
 import { t } from '../i18n.ts';
@@ -50,6 +51,14 @@ export function SubcircuitBar() {
             data-testid="subcircuit-save-copy"
           >
             {t('Save Copy')}
+          </button>
+          <button
+            type="button"
+            className="button"
+            onClick={() => openDialog('params')}
+            data-testid="subcircuit-params"
+          >
+            {t('Parameters')}
           </button>
         </>
       )}

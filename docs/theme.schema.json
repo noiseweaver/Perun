@@ -138,6 +138,11 @@
           "type": "string",
           "maxLength": 64,
           "description": "Stored energy glow and energy flow arrows (Show fields)."
+        },
+        "heat": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Glow and temperature labels on hot parts (Heat visualization)."
         }
       }
     },

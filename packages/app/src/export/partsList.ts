@@ -88,6 +88,8 @@ function describe(e: CircuitElm): { value: string; details: string } {
     const ei = e.getEditInfo(n);
     if (ei === null) break;
     if (ei.file !== null || ei.button !== null || ei.checkbox !== null || ei.isColor) continue;
+    // a preset picker restates the number field next to it
+    if (ei.derived) continue;
     const { name, unit } = fieldName(ei);
     // the state it starts in is simulation, not part of what to buy
     if (name === '' || /^initial/i.test(name)) continue;

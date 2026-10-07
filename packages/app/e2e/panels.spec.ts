@@ -73,9 +73,16 @@ test('the mouse wheel over a resistor steps it through E12, one undo for the lot
       return still;
     })
     .toBe(true);
-  await page.mouse.move(p.x, p.y);
-  await page.mouse.wheel(0, -100);
-  await expect.poll(() => resistance(page)).toBeCloseTo(1200);
+  // a wheel that lands before the canvas has the pointer over the part does nothing: point and
+  // wheel again until the first step takes (only while the value is still 1k, so never twice)
+  await expect(async () => {
+    if ((await resistance(page)) === 1000) {
+      p = await at(page, 176, 96);
+      await page.mouse.move(p.x, p.y);
+      await page.mouse.wheel(0, -100);
+    }
+    await expect.poll(() => resistance(page), { timeout: 1000 }).toBeCloseTo(1200);
+  }).toPass({ timeout: 10000 });
   await expect(page.getByTestId('wheel-value-current')).toHaveText(/1\.2k/);
   await page.mouse.wheel(0, -100);
   await expect.poll(() => resistance(page)).toBeCloseTo(1500);

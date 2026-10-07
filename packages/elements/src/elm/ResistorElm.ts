@@ -13,6 +13,8 @@ import { parseJavaDouble } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { OHM, getUnitText } from '../view/units.ts';
+import { resistanceAtTemperature } from '../temperature.ts';
+import { heatStep, Thermal, temperatureOf } from '../thermal.ts';
 import type { WireRouter } from '../WireRouter.ts';
 import type { Point } from '@circuitjs-next/engine';
 
@@ -32,6 +34,21 @@ export class ResistorElm extends CircuitElm {
    * as the extra XML attribute `tol` only when set; upstream ignores it.
    */
   tolerance = 0;
+  /**
+   * Not in upstream (DEVIATIONS.md): temperature coefficient in ppm/°C, 0 for none. The
+   * resistance is its value at 27 °C. Saved as the extra XML attribute `tc` only when set.
+   */
+  tempco = 0;
+  /** Self-heating (thermal.ts): a quarter-watt resistor in free air. */
+  override thermal: Thermal | null = new Thermal(250);
+  /** The temperature of the last stamp; NaN before one. */
+  private stampedTemperature = Number.NaN;
+
+  /** The resistance at its temperature: `resistance` unless a coefficient is set. */
+  simResistance(): number {
+    const t = Number.isNaN(this.stampedTemperature) ? temperatureOf(this) : this.stampedTemperature;
+    return resistanceAtTemperature(this.resistance, this.tempco, t);
+  }
 
   override getClassName(): string {
     return 'ResistorElm';
@@ -52,26 +69,36 @@ export class ResistorElm extends CircuitElm {
     super.dumpXml(w);
     w.dumpAttr('r', this.resistance);
     if (this.tolerance !== 0) w.dumpAttr('tol', this.tolerance);
+    if (this.tempco !== 0) w.dumpAttr('tc', this.tempco);
   }
 
   override undumpXml(r: XmlAttrReader): void {
     super.undumpXml(r);
     this.resistance = r.parseDoubleAttr('r', this.resistance);
     this.tolerance = Math.max(0, r.parseDoubleAttr('tol', 0));
+    this.tempco = r.parseDoubleAttr('tc', 0);
   }
 
   override calculateCurrent(): void {
-    this.current = (this.volts[0] - this.volts[1]) / this.resistance;
+    this.current = (this.volts[0] - this.volts[1]) / this.simResistance();
   }
 
   override stamp(): void {
-    this.sim.stampResistor(this.nodes[0], this.nodes[1], this.resistance);
+    this.stampedTemperature = temperatureOf(this);
+    this.sim.stampResistor(this.nodes[0], this.nodes[1], this.simResistance());
+  }
+
+  override stepFinished(): void {
+    heatStep(this, this.getPower());
+    // a resistance that moves with temperature is stamped again once it is 0.01 °C off
+    if (this.tempco !== 0 && Math.abs(temperatureOf(this) - this.stampedTemperature) > 0.01)
+      this.sim.restampRequested = true;
   }
 
   override getInfo(arr: string[]): void {
     arr[0] = 'resistor';
     this.getBasicInfo(arr);
-    arr[3] = 'R = ' + getUnitText(this.resistance, OHM);
+    arr[3] = 'R = ' + getUnitText(this.simResistance(), OHM);
     arr[4] = 'P = ' + getUnitText(this.getPower(), 'W');
   }
 
@@ -86,10 +113,19 @@ export class ResistorElm extends CircuitElm {
   override getEditInfo(n: number): EditInfo | null {
     // ohmString doesn't work here on linux
     if (n === 0) return new EditInfo('Resistance (ohms)', this.resistance, 0, 0);
+    if (n === 1) {
+      return new EditInfo('Temperature coefficient (ppm/°C)', this.tempco, 0, 0)
+        .setDimensionless()
+        .setUnitStep();
+    }
     return null;
   }
 
-  override setEditValue(_n: number, ei: EditInfo): void {
+  override setEditValue(n: number, ei: EditInfo): void {
+    if (n === 1) {
+      this.tempco = ei.value;
+      return;
+    }
     this.resistance = ei.value <= 0 ? 1e-9 : ei.value;
   }
 

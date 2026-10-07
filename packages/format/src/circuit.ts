@@ -41,6 +41,10 @@ import {
   type ScopeManager,
   type XmlDocWriter,
   unescapeToken,
+  NOMINAL_TEMPERATURE,
+  formatParamList,
+  parseParamList,
+  type ParamDef,
 } from '@circuitjs-next/elements';
 import { AttrReader, AttrWriter } from './attrs.ts';
 import { XmlElement, parseXml, prettyPrint } from './xml.ts';
@@ -86,6 +90,15 @@ export interface Hint {
 
 const clamp = (v: number, min: number, max: number): number => Math.min(Math.max(v, min), max);
 
+/** `tramp`: "to duration", the ambient ramp's end temperature in °C and its length in seconds. */
+function parseRamp(s: string | null): { to: number; duration: number } | null {
+  if (s === null) return null;
+  const [to, duration] = s.trim().split(/\s+/).map(Number);
+  if (to === undefined || duration === undefined) return null;
+  if (!Number.isFinite(to) || !Number.isFinite(duration) || duration < 0) return null;
+  return { to, duration };
+}
+
 /** A loaded circuit: its simulation, elements and saved settings. */
 export class Circuit {
   readonly sim = new Simulation();
@@ -94,6 +107,12 @@ export class Circuit {
   hint: Hint = { type: -1, item1: 0, item2: 0 };
   /** Sliders (upstream `CirSim.adjustables`), those with their own slider first. */
   adjustables: Adjustable[] = [];
+  /**
+   * The circuit's parameters (PLAN.md Phase 16): what fields bind to with `{...}`, and what a
+   * subcircuit made from the circuit lets each copy set. Not in upstream (DEVIATIONS.md): saved
+   * as the extra XML attribute `prm`, only when there are any.
+   */
+  params: ParamDef[] = [];
   /**
    * While reading: every element record so far, with null for those this port can't load, so
    * scope element numbers count as upstream's do.
@@ -178,6 +197,10 @@ export class Circuit {
     const sim = this.sim;
     sim.resetTime();
     sim.solverType = 0;
+    sim.temperature = NOMINAL_TEMPERATURE;
+    sim.temperatureRamp = null;
+    sim.selfHeating = false;
+    this.params = [];
     this.elements = [];
     this.hint = { type: -1, item1: 0, item2: 0 };
     sim.maxTimeStep = 5e-6;
@@ -463,6 +486,12 @@ export class Circuit {
       this.options.powerBar = clamp(r.parseIntAttr('pb', this.options.powerBar), 1, 99);
       sim.minTimeStep = r.parseDoubleAttr('mts', sim.minTimeStep);
       sim.solverType = r.parseIntAttr('st', sim.solverType) as typeof sim.solverType;
+      // not in upstream (DEVIATIONS.md): the circuit temperature, saved only when not 27 °C
+      sim.temperature = r.parseDoubleAttr('temp', NOMINAL_TEMPERATURE);
+      // also not in upstream: the ambient ramp ("to duration") and self-heating, saved when set
+      sim.temperatureRamp = parseRamp(r.parseStringAttr('tramp', null));
+      sim.selfHeating = r.parseIntAttr('heat', 0) !== 0;
+      this.params = parseParamList(r.parseStringAttr('prm', null));
       this.setGrid();
     }
     this.readElements(root, retain);
@@ -632,6 +661,11 @@ export class Circuit {
     w.dumpAttr('vr', this.options.voltageRange);
     w.dumpAttr('mts', sim.minTimeStep);
     if (sim.solverType !== 0) w.dumpAttr('st', sim.solverType);
+    if (sim.temperature !== NOMINAL_TEMPERATURE) w.dumpAttr('temp', sim.temperature);
+    const ramp = sim.temperatureRamp;
+    if (ramp !== null) w.dumpAttr('tramp', `${String(ramp.to)} ${String(ramp.duration)}`);
+    if (sim.selfHeating) w.dumpAttr('heat', 1);
+    if (this.params.length > 0) w.dumpAttr('prm', formatParamList(this.params));
 
     modelsFor(sim).clearDumpedFlags();
     const doc = docWriter(root);
@@ -776,6 +810,7 @@ export function getCircuitAsComposite(circuit: Circuit): CompositeResult {
   const ccm = new CustomCompositeModel();
   ccm.elmDoc = elmRoot;
   ccm.extList = extList;
+  ccm.params = circuit.params.map((d) => ({ ...d }));
   return { model: ccm };
 }
 

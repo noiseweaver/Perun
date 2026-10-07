@@ -52,6 +52,11 @@ export class PolarCapacitorElm extends CapacitorElm {
     arr[0] = 'capacitor (polarized)';
   }
 
+  /** Not in upstream: electrolytics drift too unevenly for one coefficient, so none here. */
+  protected override tempcoField(): number {
+    return -1;
+  }
+
   override getEditInfo(n: number): EditInfo | null {
     if (n === 4) return new EditInfo('Max Reverse Voltage', this.maxNegativeVoltage, 0, 0);
     return super.getEditInfo(n);

@@ -14,6 +14,8 @@ import { CircuitElm, elementType, type ElementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { unescapeToken } from '../escape.ts';
 import { parseJavaDouble, parseJavaInt } from '../java.ts';
+import { NOMINAL_TEMPERATURE, saturationCurrentLogFactor, thermalVoltage } from '../temperature.ts';
+import { heatStep, Thermal, temperatureOf } from '../thermal.ts';
 import { modelsFor } from '../models/ModelLibrary.ts';
 import { modelEditor } from '../edit/modelEditor.ts';
 import { TransistorModel } from '../models/TransistorModel.ts';
@@ -35,7 +37,7 @@ import {
 import type { WireRouter } from '../WireRouter.ts';
 
 /** Electron thermal voltage at SPICE's default temperature of 27 C (300.15 K). */
-const vt = 0.025865;
+const VT_NOMINAL = 0.025865;
 
 /**
  * Voltage-dependent junction depletion capacitance (the SPICE formula):
@@ -70,6 +72,8 @@ export class TransistorElm extends CircuitElm {
 
   pnp = 1;
   beta = 100;
+  /** Self-heating (thermal.ts): a small-signal part in free air. */
+  override thermal: Thermal | null = new Thermal(200);
   gmin = 0;
   modelName = '';
   model: TransistorModel | null = null;
@@ -94,6 +98,17 @@ export class TransistorElm extends CircuitElm {
   ceqBC = 0;
 
   vcrit = 0;
+  /**
+   * Thermal voltage and the model's saturation and leakage currents at the circuit temperature
+   * (SPICE bjttemp.c with EG = 1.11, XTI = 3 and XTB = 0, SPICE's defaults). At 27 °C these are
+   * upstream's constant and the model's own values. Not in upstream (DEVIATIONS.md).
+   */
+  vt = VT_NOMINAL;
+  csat = 0;
+  c2 = 0;
+  c4 = 0;
+  /** The temperature the values above are for. */
+  private temperature = NOMINAL_TEMPERATURE;
   /**
    * Master's names are crossed for loaded circuits: the file's first junction voltage (base
    * minus collector) is read into lastvbe. Kept as master has it, since the first iteration
@@ -156,8 +171,27 @@ export class TransistorElm extends CircuitElm {
     const model = modelsFor(this.sim).transistor.getModelWithNameOrCopy(this.modelName, this.model);
     this.model = model;
     this.modelName = model.name; // in case we couldn't find that model
-    this.vcrit = vt * Math.log(vt / (Math.sqrt(2) * model.satCur));
+    this.applyTemperature();
     this.noDiagonal = true;
+  }
+
+  /** Model values at the circuit temperature (see `vt`). */
+  private applyTemperature(): void {
+    const model = this.getModel();
+    const temp = temperatureOf(this);
+    this.temperature = temp;
+    this.vt = thermalVoltage(temp);
+    this.csat = model.satCur;
+    this.c2 = model.BEleakCur;
+    this.c4 = model.BCleakCur;
+    if (temp !== NOMINAL_TEMPERATURE) {
+      const f = saturationCurrentLogFactor(temp);
+      this.csat *= Math.exp(f);
+      if (this.c2 !== 0) this.c2 *= Math.exp(f / model.leakBEemissionCoeff);
+      if (this.c4 !== 0) this.c4 *= Math.exp(f / model.leakBCemissionCoeff);
+    }
+    const vt = this.vt;
+    this.vcrit = vt * Math.log(vt / (Math.sqrt(2) * this.csat));
   }
 
   override nonLinear(): boolean {
@@ -229,6 +263,7 @@ export class TransistorElm extends CircuitElm {
   }
 
   limitStep(vnew: number, vold: number): number {
+    const vt = this.vt;
     let arg: number;
     if (vnew > this.vcrit && Math.abs(vnew - vold) > vt + vt) {
       if (vold > 0) {
@@ -248,8 +283,11 @@ export class TransistorElm extends CircuitElm {
    * Total capacitance is depletion (CJE/CJC) plus diffusion (TF*gm, TR*gm).
    */
   override startIteration(): void {
+    // a ramp or self-heating moves the temperature between steps (not in upstream)
+    if (temperatureOf(this) !== this.temperature) this.applyTemperature();
     const model = this.getModel();
     const sim = this.sim;
+    const vt = this.vt;
     const hasBEcap = model.junctionCapBE > 0 || model.transitTimeF > 0;
     const hasBCcap = model.junctionCapBC > 0 || model.transitTimeR > 0;
     if (hasBEcap && sim.timeStep > 0) {
@@ -263,7 +301,7 @@ export class TransistorElm extends CircuitElm {
       // add diffusion capacitance only in forward bias (like SPICE)
       if (model.transitTimeF > 0 && vjBE > 0) {
         const vtn = vt * model.emissionCoeffF;
-        cje += (model.transitTimeF * model.satCur * Math.exp(vjBE / vtn)) / vtn;
+        cje += (model.transitTimeF * this.csat * Math.exp(vjBE / vtn)) / vtn;
       }
       this.geqBE = (2 * cje) / sim.timeStep;
       if (this.geqBE < 1e-20) this.geqBE = this.ceqBE = this.capCurBE = 0;
@@ -280,7 +318,7 @@ export class TransistorElm extends CircuitElm {
       // add diffusion capacitance only in forward bias (like SPICE)
       if (model.transitTimeR > 0 && vjBC > 0) {
         cjc +=
-          (model.transitTimeR * model.satCur * Math.exp(vjBC / (vt * model.emissionCoeffR))) /
+          (model.transitTimeR * this.csat * Math.exp(vjBC / (vt * model.emissionCoeffR))) /
           (vt * model.emissionCoeffR);
       }
       this.geqBC = (2 * cjc) / sim.timeStep;
@@ -290,6 +328,8 @@ export class TransistorElm extends CircuitElm {
   }
 
   override stamp(): void {
+    // the circuit temperature or the model changed since setup
+    if (temperatureOf(this) !== this.temperature) this.applyTemperature();
     this.sim.stampNonLinear(this.nodes[0]);
     this.sim.stampNonLinear(this.nodes[1]);
     this.sim.stampNonLinear(this.nodes[2]);
@@ -326,13 +366,14 @@ export class TransistorElm extends CircuitElm {
     this.lastvbc = vbc;
     this.lastvbe = vbe;
 
-    // dc model parameters (from Spice 3f5, bjtload.c)
-    const csat = model.satCur;
+    // dc model parameters (from Spice 3f5, bjtload.c), at the circuit temperature
+    const vt = this.vt;
+    const csat = this.csat;
     const oik = model.invRollOffF;
-    const c2 = model.BEleakCur;
+    const c2 = this.c2;
     const vte = model.leakBEemissionCoeff * vt;
     const oikr = model.invRollOffR;
-    const c4 = model.BCleakCur;
+    const c4 = this.c4;
     const vtc = model.leakBCemissionCoeff * vt;
     let vtn = vt * model.emissionCoeffF;
     let cbe: number, gbe: number, cben: number, gben: number;
@@ -494,6 +535,7 @@ export class TransistorElm extends CircuitElm {
       this.ic -= icapBC;
     }
     this.localSubIters = 0;
+    heatStep(this, this.getPower());
   }
 
   override getCurrentIntoNode(n: number): number {

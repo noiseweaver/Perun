@@ -42,6 +42,8 @@ export interface Theme {
     magneticField: string;
     /** Stored energy glow and energy flow arrows (field overlay). */
     energy: string;
+    /** Glow and temperature labels on hot parts (heat overlay). */
+    heat: string;
   };
   scope: {
     /** Plot area. */
@@ -194,6 +196,7 @@ export const themeInputSchema = z
         electricField: color('Field lines between capacitor plates (Show fields).'),
         magneticField: color('Field loops around inductors (Show fields).'),
         energy: color('Stored energy glow and energy flow arrows (Show fields).'),
+        heat: color('Glow and temperature labels on hot parts (Heat visualization).'),
       })
       .partial()
       .optional()

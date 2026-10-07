@@ -19,4 +19,5 @@ export const VISUALIZATIONS: readonly {
     label: 'Diode and MOSFET regions',
     legend: 'Depletion region, MOSFET channel',
   },
+  { key: 'heat', label: 'Heat', legend: 'Warmer than ambient, in °C' },
 ];

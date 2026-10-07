@@ -22,7 +22,7 @@ Rebuild Paul Falstad's CircuitJS1 as a modern TypeScript web app with a new UI a
 - Read and write the upstream circuit text format and URL links, so existing circuits and examples load
 
 ### Out of scope (for now)
-- New simulation features (SPICE import and the like). Exceptions: AC analysis by transient sweep (Phase 10, added by the owner on 2026-10-06), and parameter sweeps, Monte Carlo tolerance runs and the DC operating point table (Phases 11 to 13, the owner picked "everything" on 2026-10-06)
+- New simulation features (SPICE import and the like). Exceptions: AC analysis by transient sweep (Phase 10, added by the owner on 2026-10-06), parameter sweeps, Monte Carlo tolerance runs and the DC operating point table (Phases 11 to 13, the owner picked "everything" on 2026-10-06), and temperature effects and subcircuit parameters (Phases 15 and 16, the owner picked "Core leftovers" on 2026-10-07)
 - Mobile-first layout (keep it usable on tablets, optimise later)
 - Backend, accounts, hosted theme gallery
 - Desktop wrapper (Tauri, optional later)
@@ -315,6 +315,41 @@ Added 2026-10-06 by owner. No simulation or file format change.
 - [x] Full-resolution scope CSV export (every timestep in a window), with columns named after the parts' labels.
 
 Acceptance: dragging a part in an example circuit keeps every attached wire connected, and undo restores it in one step; exported SVG opens in a browser and matches the canvas; the CSV has one row per timestep.
+
+### Phase 15: Temperature effects
+Added 2026-10-07 by owner (picked "Core leftovers": temperature and subcircuit parameters, SPICE import later).
+- [x] A circuit temperature in Simulation settings (27 °C, SPICE's nominal temperature, by default), saved as an extra XML attribute only when it is not 27 °C (DEVIATIONS.md). The bottom bar shows it, in a fixed width, when it is not the default.
+- [x] Diodes (and every part built on the diode junction: LEDs, Zeners, SCRs, the MOSFET body diodes, JFET gates), BJTs and MOSFETs follow it with SPICE's temperature equations and default coefficients: the thermal voltage, IS with EG = 1.11 eV and XTI = 3, a BJT's ISE and ISC, and a MOSFET's KP and threshold (level 1 with GAMMA = 0, PHI = 0.6). JFETs keep their threshold and beta, as SPICE's defaults do.
+- [x] Resistors get an optional temperature coefficient in ppm/°C, saved only when set.
+- [x] Temperature as a sweep parameter (Phase 11): Circuit temperature (°C) in the sweep dialog's part list, seeded with -20, 27 and 85 °C.
+
+Acceptance: at 27 °C every example and golden simulates bit for bit as before (the engine reads upstream's own constants there). A diode at 1 mA drops about 2 mV per °C. Files still open upstream, at 27 °C.
+
+### Phase 16: Subcircuit parameters
+Added 2026-10-07 by owner, with Phase 15.
+- [x] File > Parameters… (and Parameters on the subcircuit bar while a model is edited): named parameters with default values for the open circuit. Any number field binds to an expression of them, typed `{R*2}` in the property panel; the field shows the expression and its value.
+- [x] A subcircuit made from the circuit takes its parameters. Each placed copy lists them in its properties and can set its own values; its parts are built with them. Nested subcircuits can bind their copy values to the outer model's parameters.
+- [x] Saved as extra XML attributes upstream ignores, only when used (`prm` on the circuit and the model, `px` on a bound part, `pv` on a copy). A bound part also keeps its value at the defaults, so upstream runs every copy at the defaults (DEVIATIONS.md).
+
+Acceptance: two copies of a divider subcircuit with different values of its lower resistor give the right voltages; parameters, bindings and copy values survive save, load and undo; a circuit without parameters saves exactly as before. Golden tests unchanged.
+
+### Phase 17: Self-heating and ambient ramp
+Added 2026-10-07 by owner (picked "Self-heating" on the card asking for temperature that changes while the circuit runs; it includes the ambient ramp).
+- [x] Simulation settings can ramp the ambient temperature linearly to a set temperature over a set simulated time, then hold it. The bottom bar readout follows it live.
+- [x] Self-heating (off by default): diodes, BJTs, MOSFETs and resistors each get their own temperature, heated by the power they dissipate and cooled to ambient through a thermal resistance with one time constant (an RC pole, integrated exactly per step). Their models run at that temperature, so a BJT at a fixed base voltage runs away and an emitter resistor stops it. A resistor with a temperature coefficient is stamped again once it moves 0.01 °C.
+- [x] Each heating part's property panel shows its temperature live (fixed width) and its thermal resistance (°C/W, lower for a heatsink) and time constant. Defaults: 300 °C/W diode, 200 BJT, 62 MOSFET, 250 resistor, 10 ms (short, so heating shows within a short run).
+- [x] Saved as extra XML attributes, only when set: `tramp` and `heat` on `<cir>`, `rth` and `tth` on a part (DEVIATIONS.md).
+- [x] Options > Visualizations > Heat (off by default; display only): parts warmer than ambient glow in the theme's `circuit.heat` color, labeled with their temperature in a fixed width. With self-heating off the label is where the part would settle (ambient plus its average power times its thermal resistance). Gady (2026-10-07) kept the scope here: thermal realism (packages, heatsinks, burning parts) and more temperature-dependent components are parked in the ideas backlog.
+
+Acceptance: with neither on, every example and golden simulates bit for bit as before. A resistor reaches ambient + P·Rth with its time constant; the BJT runaway and its emitter-resistor fix behave as above; a reset starts every part from ambient again.
+
+### Phase 18: VCO temperature compensation
+Added 2026-10-07 by owner (picked "All three" on the card asking for the VCO temperature-compensation kit; the goal behind temperature is a stable VCO).
+- [x] A parameter sweep over a transient measures each run's frequency from the output's rising crossings of the middle of its range (10 % hysteresis, interpolated, after the first fifth of the run) and lists it under the plot: Hz with the change from a reference run, or Pitch (the nearest note and cents off it, A4 = 440 Hz, middle C = C4, with the change in cents). A temperature sweep references the 27 °C run and adds the drift, ppm/°C or cents/°C.
+- [x] Capacitors get a Temperature coefficient (ppm/°C) with a Dielectric picker over it (C0G/NP0 0, P100 +100, polyester +400, polystyrene -150, polypropylene -200, N750, N1500, Custom); the capacitance is its value at 27 °C and the part is stamped again as its temperature moves. Electrolytics have none. Saved as the extra XML attribute `tc` only when set (DEVIATIONS.md).
+- [x] Three example circuits of this port under Circuits > Temperature Compensation (`packages/app/examples/`, appended to upstream's list by the examples plugin): an exponential converter driving a simple sawtooth VCO at about 1 kHz, as one transistor, as a matched pair, and as the pair with a +3300 ppm/°C tempco resistor in the control divider. Swept from -20 to 60 °C they drift about +8 %/°C, +1.4 %/°C and +0.02 %/°C.
+
+Acceptance: the goldens and all 373 upstream examples are unchanged (a capacitor coefficient of 0 changes nothing). The three examples oscillate at about 1 kHz at 27 °C and their drifts fall in that order.
 
 ## 8. Java to TypeScript porting pitfalls
 

@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 circuitjs-next contributors
 
-import { getFixedUnitText, viewFor, type CircuitElm } from '@circuitjs-next/elements';
+import {
+  getFixedUnitText,
+  temperatureOf,
+  viewFor,
+  type CircuitElm,
+} from '@circuitjs-next/elements';
 import { CircuitRenderer, type FrameState } from '@circuitjs-next/render';
 import type { Theme } from '@circuitjs-next/theme';
 import { useEffect, useRef } from 'react';
@@ -17,6 +22,15 @@ function twoTerminal(elm: CircuitElm): boolean {
 }
 
 /**
+ * A part's temperature in a fixed width (sign, four digits, one decimal), so it does not shift
+ * as it heats.
+ */
+export function partTemperatureText(c: number): string {
+  const s = (Object.is(Math.round(c * 10), -0) ? 0 : c).toFixed(1);
+  return `${s.padStart(6)} °C`;
+}
+
+/**
  * The top of the property panel: the part drawn live (voltage colors, moving current dots), and
  * for two-terminal parts its voltage, current and power with a sparkline of the last few seconds.
  * It redraws after every frame of the main canvas.
@@ -28,7 +42,10 @@ export function LiveHeader({ elm }: { elm: CircuitElm }) {
   const vText = useRef<HTMLSpanElement>(null);
   const iText = useRef<HTMLSpanElement>(null);
   const pText = useRef<HTMLSpanElement>(null);
+  const tText = useRef<HTMLSpanElement>(null);
   const readouts = twoTerminal(elm);
+  // the part's own temperature, with a ramp or self-heating on (PLAN.md Phase 17)
+  const thermal = useApp((s) => s.status.thermal) && elm.thermal !== null;
 
   useEffect(() => {
     const canvas = part.current;
@@ -61,6 +78,7 @@ export function LiveHeader({ elm }: { elm: CircuitElm }) {
       vp.offsetY = (h - bh * vp.scale) / 2 - b.y1 * vp.scale;
       r.refreshPosts();
       r.render({ ...frame, showValues: false });
+      if (tText.current) tText.current.textContent = partTemperatureText(temperatureOf(elm));
       if (!readouts) return;
       const v = elm.getVoltageDiff();
       const i = elm.getCurrent();
@@ -78,7 +96,16 @@ export function LiveHeader({ elm }: { elm: CircuitElm }) {
     return () => {
       controller.frameListeners.delete(draw);
     };
-  }, [elm, theme, readouts]);
+  }, [elm, theme, readouts, thermal]);
+
+  const tempRow = (
+    <>
+      <span className="live-key" style={{ color: theme.scope.text }}>
+        T
+      </span>
+      <span ref={tText} className="live-value" data-testid="live-t" />
+    </>
+  );
 
   return (
     <div className="live-header" data-testid="live-header">
@@ -100,8 +127,14 @@ export function LiveHeader({ elm }: { elm: CircuitElm }) {
               P
             </span>
             <span ref={pText} className="live-value" data-testid="live-p" />
+            {thermal && tempRow}
           </div>
           <canvas ref={spark} className="live-spark" aria-hidden />
+        </div>
+      )}
+      {!readouts && thermal && (
+        <div className="live-readouts">
+          <div className="live-values">{tempRow}</div>
         </div>
       )}
     </div>

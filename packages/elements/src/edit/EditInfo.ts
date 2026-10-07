@@ -72,6 +72,11 @@ export class EditInfo {
   /** Step by 1 instead of through the E12 series. */
   unitStep = false;
   noSliders = false;
+  /**
+   * This field only restates another field's value (a preset picker over a number), so a parts
+   * list or export reads the other one instead.
+   */
+  derived = false;
   isColor = false;
   newColumn = false;
   positive = false;
@@ -130,6 +135,10 @@ export class EditInfo {
   }
   setUnitStep(): this {
     this.unitStep = true;
+    return this;
+  }
+  setDerived(): this {
+    this.derived = true;
     return this;
   }
   disallowSliders(): this {

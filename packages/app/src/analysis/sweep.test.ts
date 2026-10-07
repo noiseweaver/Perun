@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { cutoffFrequencies } from './bode.ts';
 import {
   MultiRun,
+  measureFrequency,
   monteCarloRuns,
   rangeValues,
   seededRandom,
@@ -19,6 +20,7 @@ import {
   type Measure,
   type RunSpec,
   type SweepTarget,
+  TEMPERATURE_TARGET,
 } from './sweep.ts';
 
 /** The value, failing the test when it is missing. */
@@ -95,6 +97,34 @@ describe('parameter sweep, transient', () => {
     });
     // the live text is untouched: a fresh copy still has 1k
     expect((readCircuit(RC_STEP).elements[1] as ResistorElm).resistance).toBe(1000);
+  });
+
+  it('steps the circuit temperature: a diode drop falls as it warms (Phase 15)', () => {
+    // 5 V through 1k into a diode
+    const text = `$ 1 5.0E-6 10 50 5.0 50
+v 96 320 96 96 0 0 40.0 5.0 0.0 0.0 0.5
+r 96 96 256 96 0 1000.0
+d 256 96 256 320 2 spice-default
+w 96 320 256 320 0
+g 96 320 96 352 0
+`;
+    const temps = [-20, 27, 85];
+    const target = { element: TEMPERATURE_TARGET, item: 0 };
+    const s = runAll(
+      text,
+      valueRuns(target, temps, (v) => `${v} °C`),
+      { kind: 'transient', output: 2, quantity: 'voltage', duration: 0.001 },
+      target,
+    );
+    const drops = s.results.map((r) => Math.abs(need(r.y.at(-1))));
+    expect(drops[0]).toBeGreaterThan(need(drops[1]));
+    expect(drops[1]).toBeGreaterThan(need(drops[2]));
+    // about 2 mV per degree
+    const perDegree = (need(drops[2]) - need(drops[0])) / 105;
+    expect(perDegree).toBeLessThan(-1.5e-3);
+    expect(perDegree).toBeGreaterThan(-2.5e-3);
+    // the live circuit stays at 27 °C
+    expect(readCircuit(text).sim.temperature).toBe(27);
   });
 
   it('records current too, and reads values between samples', () => {
@@ -225,5 +255,55 @@ describe('tolerance attribute (not in upstream, DEVIATIONS.md)', () => {
     const d = readCircuit(xml);
     expect((d.elements[1] as ResistorElm).tolerance).toBe(1);
     expect((d.elements[2] as CapacitorElm).tolerance).toBe(0);
+  });
+});
+
+describe('measureFrequency', () => {
+  const sampled = (f: number, dt: number, n: number, offset = 0) => {
+    const ts = Array.from({ length: n }, (_, i) => i * dt);
+    return { ts, vs: ts.map((t) => offset + Math.sin(2 * Math.PI * f * t)) };
+  };
+
+  it('reads a sine to well under a part per thousand', () => {
+    const { ts, vs } = sampled(1234, 1e-6, 20_000, 3);
+    expect(need(measureFrequency(ts, vs)) / 1234).toBeCloseTo(1, 4);
+  });
+
+  it('reads a square wave and ignores the level it sits at', () => {
+    const ts = Array.from({ length: 10_000 }, (_, i) => i * 1e-6);
+    const vs = ts.map((t) => (Math.floor(t * 2000) % 2 === 0 ? 9 : 4));
+    expect(need(measureFrequency(ts, vs)) / 1000).toBeCloseTo(1, 2);
+  });
+
+  it('gives null for a flat line or too few cycles', () => {
+    expect(measureFrequency([0, 1, 2, 3], [1, 1, 1, 1])).toBeNull();
+    const { ts, vs } = sampled(100, 1e-4, 150);
+    expect(measureFrequency(ts, vs)).toBeNull();
+  });
+
+  it('ignores noise near the crossing level', () => {
+    const { ts, vs } = sampled(500, 1e-6, 20_000);
+    const noisy = vs.map((v, i) => v + (i % 2 === 0 ? 0.02 : -0.02));
+    expect(need(measureFrequency(ts, noisy)) / 500).toBeCloseTo(1, 3);
+  });
+
+  it('measures each transient run of a sweep', () => {
+    const s = runAll(RC_LOWPASS, valueRuns({ element: 1, item: 0 }, [1000, 2000], String), {
+      kind: 'transient',
+      output: 2,
+      quantity: 'voltage',
+      duration: 0.01,
+    });
+    for (const r of s.results) expect(need(r.frequency) / 1000).toBeCloseTo(1, 3);
+  });
+
+  it('gives no frequency for a run that settles', () => {
+    const s = runAll(RC_STEP, valueRuns({ element: 1, item: 0 }, [1000], String), {
+      kind: 'transient',
+      output: 2,
+      quantity: 'voltage',
+      duration: 0.01,
+    });
+    expect(s.results[0]?.frequency).toBeNull();
   });
 });

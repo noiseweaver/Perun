@@ -7,6 +7,20 @@ import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
 
 /**
+ * Upstream's circuit list with this port's own entries (`packages/app/examples/setuplist.txt`)
+ * added, after upstream's last menu and before any circuit it lists on its own at the end (its
+ * "Blank Circuit"). Comment lines of either list are left out.
+ */
+export function mergeSetupLists(upstream: string, extra: string): string {
+  const lines = upstream.split(/\r\n|\r|\n/);
+  const add = extra.split(/\r\n|\r|\n/).filter((l) => l !== '' && !l.startsWith('#'));
+  if (add.length === 0) return upstream;
+  let at = lines.length;
+  while (at > 0 && !(lines[at - 1] ?? '').startsWith('-')) at--;
+  return [...lines.slice(0, at), ...add, ...lines.slice(at)].join('\n');
+}
+
+/**
  * Serves upstream's example circuits (`setuplist.txt` and `circuits/*`) and its translations
  * (`locale_*.txt`) from the read-only reference clone, and copies them into the build.
  * Catalogs upstream doesn't ship (Catalan) live in `packages/app/locales/` and are served the same
@@ -14,6 +28,18 @@ import type { Plugin } from 'vite';
  */
 export function upstreamExamples(publicDir: string): Plugin {
   const has = existsSync(join(publicDir, 'setuplist.txt'));
+  /** This port's own circuits, by file name. */
+  const ourCircuits = (): Map<string, string> => {
+    const m = new Map<string, string>();
+    for (const f of readdirSync(APP_CIRCUITS).filter((x) => !x.startsWith('.')))
+      m.set(f, join(APP_CIRCUITS, f));
+    return m;
+  };
+  const setupList = (): string =>
+    mergeSetupLists(
+      has ? readFileSync(join(publicDir, 'setuplist.txt'), 'utf8') : '',
+      readFileSync(APP_SETUP_LIST, 'utf8'),
+    );
   const files = (): string[] =>
     has ? readdirSync(join(publicDir, 'circuits')).filter((f) => !f.startsWith('.')) : [];
   const isLocale = (f: string): boolean => /^locale_[a-z-]+\.txt$/.test(f);
@@ -34,11 +60,18 @@ export function upstreamExamples(publicDir: string): Plugin {
       server.middlewares.use((req, res, next) => {
         const url = decodeURIComponent((req.url ?? '').split('?')[0] ?? '');
         let path: string | null = null;
-        if (url === '/setuplist.txt') path = join(publicDir, 'setuplist.txt');
-        else if (isLocale(url.slice(1))) path = locales().get(url.slice(1)) ?? null;
+        if (url === '/setuplist.txt') {
+          res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+          res.end(setupList());
+          return;
+        }
+        if (isLocale(url.slice(1))) path = locales().get(url.slice(1)) ?? null;
         else if (url.startsWith('/circuits/')) {
-          const p = normalize(join(publicDir, url));
-          if (p.startsWith(join(publicDir, 'circuits'))) path = p;
+          path = ourCircuits().get(url.slice('/circuits/'.length)) ?? null;
+          if (path === null) {
+            const p = normalize(join(publicDir, url));
+            if (p.startsWith(join(publicDir, 'circuits'))) path = p;
+          }
         }
         if (path === null || !existsSync(path)) {
           next();
@@ -51,12 +84,10 @@ export function upstreamExamples(publicDir: string): Plugin {
     generateBundle() {
       for (const [f, p] of locales())
         this.emitFile({ type: 'asset', fileName: f, source: readFileSync(p) });
+      for (const [f, p] of ourCircuits())
+        this.emitFile({ type: 'asset', fileName: `circuits/${f}`, source: readFileSync(p) });
+      this.emitFile({ type: 'asset', fileName: 'setuplist.txt', source: setupList() });
       if (!has) return;
-      this.emitFile({
-        type: 'asset',
-        fileName: 'setuplist.txt',
-        source: readFileSync(join(publicDir, 'setuplist.txt')),
-      });
       for (const f of files())
         this.emitFile({
           type: 'asset',
@@ -68,6 +99,8 @@ export function upstreamExamples(publicDir: string): Plugin {
 }
 
 const APP_LOCALES = fileURLToPath(new URL('./locales', import.meta.url));
+const APP_CIRCUITS = fileURLToPath(new URL('./examples/circuits', import.meta.url));
+const APP_SETUP_LIST = fileURLToPath(new URL('./examples/setuplist.txt', import.meta.url));
 
 export const UPSTREAM_PUBLIC = fileURLToPath(
   new URL('../../reference/circuitjs1/src/com/lushprojects/circuitjs1/public', import.meta.url),

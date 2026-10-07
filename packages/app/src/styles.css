@@ -439,6 +439,11 @@ textarea,
   min-width: 22ch;
 }
 
+.readout-temp {
+  /* "T = -273.1 °C" is 13 characters */
+  min-width: 14ch;
+}
+
 .readout-button {
   border: 0;
   border-radius: 4px;
@@ -1562,6 +1567,44 @@ textarea.field-input {
 
 .field-input[data-invalid] {
   border-color: var(--ui-danger);
+}
+
+.param-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.param-name,
+.param-value {
+  font-family: var(--mono-font);
+  min-width: 0;
+}
+
+.param-equals {
+  color: var(--ui-text-muted);
+}
+
+.param-error {
+  grid-column: 1 / -1;
+}
+
+.param-add {
+  align-self: flex-start;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.field-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ui-text-muted);
 }
 
 .field-error {
@@ -3351,4 +3394,30 @@ ul.theme-contrast {
 .csv-status-note {
   font-size: 13px;
   color: var(--ui-text-muted);
+}
+
+.sweep-frequency {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--ui-border);
+}
+
+.sweep-frequency-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  white-space: pre;
+}
+
+.sweep-frequency-head .segmented {
+  font-family: var(--font);
+  font-size: 12px;
+}
+
+.sweep-frequency-head .segmented-button {
+  min-height: 28px;
+  padding: 0 10px;
 }

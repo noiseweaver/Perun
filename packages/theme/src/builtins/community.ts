@@ -34,6 +34,7 @@ export const nord: Theme = {
     electricField: '#81a1c1',
     magneticField: '#b48ead',
     energy: '#d08770',
+    heat: '#ff7a6e',
   },
   scope: {
     background: '#292e39',
@@ -83,6 +84,7 @@ export const solarizedDark: Theme = {
     electricField: '#268bd2',
     magneticField: '#6c71c4',
     energy: '#cb4b16',
+    heat: '#ff5a4f',
   },
   scope: {
     background: '#00252e',
@@ -132,6 +134,7 @@ export const gruvboxDark: Theme = {
     electricField: '#83a598',
     magneticField: '#d3869b',
     energy: '#fe8019',
+    heat: '#fb4934',
   },
   scope: {
     background: '#1d2021',
@@ -181,6 +184,7 @@ export const adwaitaDark: Theme = {
     electricField: '#78aeed',
     magneticField: '#dc8add',
     energy: '#ffa348',
+    heat: '#ff7b63',
   },
   scope: {
     background: '#1a1a1a',

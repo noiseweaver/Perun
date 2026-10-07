@@ -78,7 +78,8 @@ describe('edit fields', () => {
 
   it('edits a resistor value', () => {
     const r = make('ResistorElm') as ResistorElm;
-    expect(names(r)).toEqual(['Resistance (ohms)']);
+    // the coefficient is not in upstream (PLAN.md Phase 15)
+    expect(names(r)).toEqual(['Resistance (ohms)', 'Temperature coefficient (ppm/°C)']);
     const ei = r.getEditInfo(0) as EditInfo;
     expect(ei.value).toBe(1000);
     ei.value = parseUnits('2k2');

@@ -7,14 +7,15 @@
 
 import {
   CircuitElm,
+  EditInfo,
   VoltageElm,
+  bindingText,
   hasTolerance,
   parseUnits,
   stepE12,
   toleranceEditInfo,
   toleranceFromEditInfo,
   unitString,
-  type EditInfo,
 } from '@circuitjs-next/elements';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { controller } from '../SimController.ts';
@@ -40,6 +41,9 @@ function readValue(elm: CircuitElm, text: string): number {
   }
   return parseUnits(s);
 }
+
+/** Test ids of the self-heating fields (`field-100`, `field-101`), clear of the element's own. */
+const THERMAL_FIELD = 100;
 
 function labelText(name: string): string {
   // upstream translates the name (EditDialog), and allows HTML in names starting with "<"
@@ -77,10 +81,40 @@ function apply(props: FieldProps): void {
 
 function NumberField(props: FieldProps) {
   const { elm, ei } = props;
-  const [text, setText] = useState(() => displayValue(elm, ei));
+  // a field bound to a parameter expression shows it in braces (PLAN.md Phase 16); kept in
+  // state too, since binding changes the element but not the props
+  const boundNow = (): string | undefined => elm.paramExprs?.get(props.n);
+  const [bound, setBound] = useState(boundNow);
+  const shown = (b = bound): string => (b !== undefined ? `{${b}}` : displayValue(elm, ei));
+  const [text, setText] = useState(() => shown());
   const [bad, setBad] = useState(false);
-  useEffect(() => setText(displayValue(elm, ei)), [elm, ei]);
+  const [bindError, setBindError] = useState<string | null>(null);
+  useEffect(() => {
+    const b = boundNow();
+    setBound(b);
+    setText(shown(b));
+    setBindError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elm, ei, props.n]);
   const commit = (s: string): void => {
+    const expr = bindingText(s);
+    // fields outside the element's own list (onApply) can't follow a parameter
+    if (expr !== null && props.onApply) {
+      setBad(true);
+      return;
+    }
+    if (expr !== null) {
+      setBad(false);
+      if (expr === bound) return;
+      const err = controller.bindEdit(elm, props.n, ei, expr);
+      setBindError(err);
+      if (err === null) {
+        props.onError(null);
+        setBound(boundNow());
+      }
+      return;
+    }
+    setBindError(null);
     let v: number;
     try {
       v = readValue(elm, s);
@@ -89,11 +123,13 @@ function NumberField(props: FieldProps) {
       return;
     }
     setBad(false);
-    if (v === ei.value) return;
+    if (v === ei.value && bound === undefined) return;
     ei.value = v;
     apply(props);
+    setBound(boundNow());
   };
   const step = (dir: number): void => {
+    if (bound !== undefined) return;
     let cur: number;
     try {
       cur = readValue(elm, text);
@@ -135,6 +171,7 @@ function NumberField(props: FieldProps) {
           type="button"
           className="icon-button icon-button-small"
           aria-label={`${t('Decrease')} ${fieldLabel(ei)}`}
+          disabled={bound !== undefined}
           onClick={() => step(-1)}
         >
           <Icon name="minus" size={18} />
@@ -152,8 +189,9 @@ function NumberField(props: FieldProps) {
           onKeyDown={(e) => {
             if (e.key === 'Enter') commit(e.currentTarget.value);
             if (e.key === 'Escape') {
-              setText(displayValue(elm, ei));
+              setText(shown());
               setBad(false);
+              setBindError(null);
               e.currentTarget.blur();
             }
           }}
@@ -163,12 +201,23 @@ function NumberField(props: FieldProps) {
           type="button"
           className="icon-button icon-button-small"
           aria-label={`${t('Increase')} ${fieldLabel(ei)}`}
+          disabled={bound !== undefined}
           onClick={() => step(1)}
         >
           <Icon name="add" size={18} />
         </button>
       </div>
       {bad && <span className="field-error">{t('Not a number. Try 4.7k, 100n or 2k2.')}</span>}
+      {bindError !== null && (
+        <span className="field-error" data-testid={`field-${props.n}-bind-error`}>
+          {bindError}
+        </span>
+      )}
+      {bound !== undefined && bindError === null && (
+        <span className="field-hint" data-testid={`field-${props.n}-bound`}>
+          {`= ${displayValue(elm, ei)}`}
+        </span>
+      )}
     </div>
   );
 }
@@ -549,6 +598,7 @@ export function Inspector() {
   const revision = useApp((s) => s.editor.revision);
   const moving = useApp((s) => s.editor.moving);
   const focus = useApp((s) => s.inspectorFocus);
+  const heating = useApp((s) => s.status.selfHeating);
   const [error, setError] = useState<string | null>(null);
   const [rebuild, setRebuild] = useState(0);
   const panel = useRef<HTMLElement>(null);
@@ -664,6 +714,40 @@ export function Inspector() {
               onError={onError}
               onApply={(ei) => controller.applyTolerance(selected, toleranceFromEditInfo(ei))}
             />
+          )}
+          {heating && selected.thermal !== null && (
+            // not in upstream (DEVIATIONS.md): the part's heat path for self-heating
+            <>
+              <NumberField
+                key={`rth:${revision}:${rebuild}`}
+                elm={selected}
+                n={THERMAL_FIELD}
+                ei={new EditInfo(
+                  'Thermal resistance (°C/W)',
+                  selected.thermal.resistance,
+                ).setPositive()}
+                autoFocus={false}
+                onError={onError}
+                onApply={(ei) => controller.applyThermal(selected, { resistance: ei.value })}
+              />
+              <NumberField
+                key={`tth:${revision}:${rebuild}`}
+                elm={selected}
+                n={THERMAL_FIELD + 1}
+                ei={new EditInfo(
+                  'Thermal time constant (s)',
+                  selected.thermal.timeConstant,
+                ).setPositive()}
+                autoFocus={false}
+                onError={onError}
+                onApply={(ei) => controller.applyThermal(selected, { timeConstant: ei.value })}
+              />
+              <p className="field-hint">
+                {t(
+                  'Lower the thermal resistance for a heatsink. Real parts take seconds to minutes to warm up; the short default shows it within a short run.',
+                )}
+              </p>
+            </>
           )}
           {error !== null && (
             <p className="field-error" role="alert">

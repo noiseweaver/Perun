@@ -15,6 +15,7 @@ import {
   WireElm,
   diodeGeometry,
   mosfetGeometry,
+  temperatureOf,
   type CircuitElm,
 } from '@circuitjs-next/elements';
 import { parseColor, toCss } from '@circuitjs-next/theme';
@@ -33,7 +34,10 @@ import type { Palette } from './palette.ts';
  *   past threshold;
  * - energy: a glow on parts that store it (one scale for the whole circuit, so energy can be seen
  *   moving between them) and chevrons running into parts that absorb power and out of parts that
- *   deliver it.
+ *   deliver it;
+ * - heat: a glow on parts warmer than ambient, labeled with their temperature. With self-heating
+ *   on (PLAN.md Phase 17) that is the part's simulated temperature; off, it is where the part
+ *   would settle, ambient plus its average power times its thermal resistance.
  */
 
 interface Pt {
@@ -54,6 +58,14 @@ const NO_ENERGY = 1e-15;
 const NO_POWER = 1e-9;
 /** Speed of flowing dashes and chevrons at full level (circuit units per second). */
 const FLOW_SPEED = 24;
+/** A part this much warmer than ambient (°C) glows at full strength. */
+const HEAT_FULL_RISE = 100;
+/** Rises below this (°C) draw nothing; from HEAT_LABEL_RISE up the part gets a label. */
+const HEAT_MIN_RISE = 1;
+const HEAT_LABEL_RISE = 3;
+/** Time constant (ms) of the average power behind the settle estimate, so AC parts read steady. */
+const HEAT_AVERAGE_MS = 500;
+
 /** Length of the coil body (upstream InductorElm calcLeads(32)). */
 const COIL_LEN = 32;
 /** Radius of the DC motor body (dcMotorView). */
@@ -75,6 +87,8 @@ export interface FieldOptions {
   energyFlow: boolean;
   /** MOSFET channel and diode depletion region. */
   semiconductors: boolean;
+  /** Parts warmer than ambient glow, with their temperature. */
+  heat: boolean;
 }
 
 export const NO_FIELDS: FieldOptions = {
@@ -84,6 +98,7 @@ export const NO_FIELDS: FieldOptions = {
   energy: false,
   energyFlow: false,
   semiconductors: false,
+  heat: false,
 };
 
 export const ALL_FIELDS: FieldOptions = {
@@ -93,6 +108,7 @@ export const ALL_FIELDS: FieldOptions = {
   energy: true,
   energyFlow: true,
   semiconductors: true,
+  heat: true,
 };
 
 /** Whether any visualization is on. */
@@ -141,11 +157,22 @@ export class FieldOverlay {
   private energyPeak = 0;
   private powerPeak = 0;
   private last = 0;
+  /** Average power of each heating part (W), for the settle estimate. */
+  private heatPower = new WeakMap<object, number>();
+  /** Temperature labels to draw over the parts (heat), from the last draw. */
+  private heatLabels: { x: number; y: number; text: string; level: number }[] = [];
+
+  /** The heating parts warmer than ambient at the last draw, with their labels (heat). */
+  get heat(): readonly { readonly x: number; readonly y: number; readonly text: string }[] {
+    return this.heatLabels;
+  }
 
   /** A new circuit: forget remembered peaks. */
   clear(): void {
     this.peaks = new WeakMap();
     this.phases = new WeakMap();
+    this.heatPower = new WeakMap();
+    this.heatLabels = [];
     this.energyPeak = this.powerPeak = 0;
   }
 
@@ -179,12 +206,15 @@ export class FieldOverlay {
     }
     this.energyPeak = Math.max(maxEnergy, this.energyPeak * decay);
     this.powerPeak = Math.max(maxPower, this.powerPeak * decay);
+    this.heatLabels = [];
+    if (frame.show.heat) this.measureHeat(elements, dt, frame.running);
     if (frame.scale < MIN_SCALE) return;
 
     c.save();
     c.lineCap = 'round';
     c.lineJoin = 'round';
     const show = frame.show;
+    if (show.heat) for (const h of this.heatLabels) this.heatGlow(c, h, palette);
     if (show.energy && this.energyPeak > NO_ENERGY)
       for (const [e, en] of energies) this.energyGlow(c, e, en / this.energyPeak, palette);
     for (const e of elements) {
@@ -206,6 +236,88 @@ export class FieldOverlay {
     }
     if (show.energyFlow && this.powerPeak > NO_POWER)
       for (const [e, p] of powers) this.energyFlow(c, e, p / this.powerPeak, palette, frame, dt);
+    c.restore();
+  }
+
+  /**
+   * Each heating part's temperature, kept as a label to draw (and a glow under it) when it is
+   * warmer than ambient. Labels have a fixed width so they don't shift as the value changes.
+   */
+  private measureHeat(elements: readonly CircuitElm[], dt: number, running: boolean): void {
+    const k = running ? 1 - Math.exp(-dt / HEAT_AVERAGE_MS) : 0;
+    for (const e of elements) {
+      const th = e.thermal;
+      if (th === null || e.dn < 1) continue;
+      const sim = e.sim as CircuitElm['sim'] | undefined;
+      if (sim === undefined) continue;
+      const ambient = sim.ambientTemperature();
+      let temp: number;
+      if (sim.selfHeating) temp = temperatureOf(e);
+      else {
+        const p = Math.max(0, e.getPower());
+        const prev = this.heatPower.get(e);
+        const avg = prev === undefined || !Number.isFinite(prev) ? p : prev + (p - prev) * k;
+        this.heatPower.set(e, avg);
+        temp = ambient + avg * th.resistance;
+      }
+      const rise = temp - ambient;
+      if (!Number.isFinite(rise) || rise < HEAT_MIN_RISE) continue;
+      const ctr = elementCenter(e);
+      const level = Math.min(1, rise / HEAT_FULL_RISE);
+      const shown = Math.min(9999, Math.round(temp));
+      this.heatLabels.push({
+        x: ctr.x,
+        y: ctr.y,
+        text: rise >= HEAT_LABEL_RISE ? `${String(shown).padStart(5)} °C` : '',
+        level,
+      });
+    }
+  }
+
+  private heatGlow(
+    c: CanvasRenderingContext2D,
+    h: { x: number; y: number; level: number },
+    palette: Palette,
+  ): void {
+    const a = 0.15 + 0.5 * Math.sqrt(h.level);
+    const r = 14 + 16 * Math.sqrt(h.level);
+    const color = palette.theme.circuit.heat;
+    const g = c.createRadialGradient(h.x, h.y, 0, h.x, h.y, r);
+    g.addColorStop(0, withAlpha(color, a));
+    g.addColorStop(0.6, withAlpha(color, a * 0.45));
+    g.addColorStop(1, withAlpha(color, 0));
+    c.globalAlpha = 1;
+    c.fillStyle = g;
+    c.beginPath();
+    c.arc(h.x, h.y, r, 0, 2 * Math.PI);
+    c.fill();
+  }
+
+  /**
+   * Temperature labels over the parts (heat), after the parts are drawn: in the monospace font,
+   * on a backing in the canvas color so they read over wires.
+   */
+  drawHeatLabels(c: CanvasRenderingContext2D, palette: Palette, scale: number): void {
+    if (scale < MIN_SCALE || this.heatLabels.length === 0) return;
+    const theme = palette.theme;
+    c.save();
+    c.font = `9px ${theme.style.monoFont}`;
+    // right-aligned at the end of the full budget, so the digits never move the unit
+    c.textAlign = 'right';
+    c.textBaseline = 'middle';
+    for (const h of this.heatLabels) {
+      if (h.text === '') continue;
+      const budget = c.measureText(h.text).width;
+      const w = c.measureText(h.text.trimStart()).width;
+      const x = h.x + budget / 2;
+      const y = h.y + 22;
+      c.globalAlpha = 0.85;
+      c.fillStyle = theme.canvas.background;
+      c.fillRect(x - w - 2, y - 6, w + 4, 12);
+      c.globalAlpha = 1;
+      c.fillStyle = theme.circuit.heat;
+      c.fillText(h.text, x, y);
+    }
     c.restore();
   }
 

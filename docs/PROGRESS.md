@@ -1,5 +1,93 @@
 # Progress
 
+## 2026-10-07: Phases 15 and 16, temperature and subcircuit parameters (branch claude/temperature-subcircuit-params-nid9p9)
+
+### Done
+
+- Gady picked "Core leftovers" (temperature and subcircuit parameters; SPICE import later, in
+  its own thread). PLAN.md gets Phases 15 and 16; the out-of-scope line names them.
+- Temperature (packages/elements/src/temperature.ts): `Simulation.temperature` (°C, 27 by
+  default), set in Simulation settings, saved as `temp` on `<cir>` only when not 27, and shown
+  in the bottom bar (fixed width) when not 27. `Diode` (so every junction part), `TransistorElm`
+  and `MosfetElm` take SPICE's temperature equations with SPICE's default coefficients: the
+  thermal voltage scales with T, IS with EG = 1.11 and XTI = 3 (exp(f/N) for diodes, exp(f) for
+  BJTs, ISE and ISC with NE and NC; XTB = 0), MOSFET KP as (T/Tnom)^-1.5 and the level 1
+  threshold shift with GAMMA = 0 and PHI = 0.6 (about -1 mV/°C NMOS, -1.3 mV/°C PMOS). JFETs
+  keep threshold and beta. Elements recompute at stamp when the temperature changed. At 27 °C
+  every function returns upstream's own constant, so nothing changes: all 373 examples were
+  compared exactly (500 steps each) against main and are bit for bit identical; at 85 °C 154
+  differ and none produce NaN. Resistors get a Temperature coefficient (ppm/°C) property, `tc`.
+- Parameters (packages/elements/src/params.ts): a small expression evaluator (SI prefixes,
+  `+ - * / ^`, functions, pi). `Circuit.params` (`prm` on `<cir>`), File > Parameters… and a
+  Parameters button on the subcircuit bar. `CircuitElm.paramExprs` (`px`, edit item to
+  expression): typing `{R*2}` in a property panel number field binds it, a plain number unbinds
+  it. Create Subcircuit and Save copy the circuit's parameters into the model (`prm` on `<ccm>`);
+  Edit Model loads them back. A placed subcircuit lists them after its other properties
+  (`paramValues`, `pv`, only values that differ from the default; no sliders, since upstream
+  would not find the item). `CompositeElm.loadCompositeXml` applies the bindings with the copy's
+  values, so nested copies can bind their values to the outer model's parameters.
+- Tests: packages/format/src/params.test.ts (two copies of a divider, nested copies, round trip,
+  nothing saved by default, diode drift, resistor coefficient), packages/elements/src/params.test.ts
+  (expressions), packages/app/e2e/params.spec.ts.
+
+- After #23 merged: the sweep dialog's part list starts with Circuit temperature (°C)
+  (`TEMPERATURE_TARGET` in packages/app/src/analysis/sweep.ts sets each copy's temperature),
+  seeded with -20, 27 and 85 °C. sweep.test.ts checks the diode drop falls about 2 mV/°C across
+  the runs.
+
+- Phase 17, self-heating and the ambient ramp (Gady picked "Self-heating" on the card, which
+  includes the ramp). Engine: `Simulation.temperatureRamp`, `ambientTemperature()`,
+  `selfHeating`, and `restampRequested` (checked before each step; only resistors with a
+  coefficient set it). packages/elements/src/thermal.ts: `Thermal` (thermal resistance and time
+  constant, one RC pole integrated exactly), `temperatureOf(e)` (the part's own temperature with
+  self-heating on, else the ambient one) and `heatStep` (called from the stepFinished of
+  DiodeElm, TransistorElm, MosfetElm and ResistorElm). Diode re-runs setup in doStep when its
+  owner's temperature moved, BJTs and MOSFETs in startIteration. JFETs and varactors don't heat.
+  Settings dialog: ramp to/over and a Self-heating box; the property panel shows a live T
+  readout and the part's heat path fields. With both off, all 373 examples were compared
+  exactly against the previous commit: identical. Tests: packages/format/src/thermal.test.ts
+  (resistor RC response, a resistor with a coefficient at equilibrium, BJT runaway and the
+  emitter-resistor fix, reset, the ramp, saving) and the self-heating test in params.spec.ts.
+- Heat visualization (Gady said go, 2026-10-07): `heat` in `FieldOptions` (packages/render/src/
+  fields.ts), a glow under each heating part warmer than ambient and a right-aligned, fixed-width
+  " 85 °C" label over it in the monospace font. Self-heating off: the settle estimate from a
+  0.5 s average of the part's power. New theme key `circuit.heat` in every built-in (contrast
+  checked). Tests: packages/app/src/heat.test.ts and the Heat test in params.spec.ts.
+- The mouse-wheel browser test retries its first wheel step until the pointer is over the
+  resistor (it failed once in CI on a slow runner).
+- Phase 18, the VCO temperature-compensation kit (Gady picked "All three"; the reason for
+  temperature is VCO stability and learning about compensation). Sweeps measure each transient
+  run's frequency (`measureFrequency` in packages/app/src/analysis/sweep.ts: rising crossings of
+  the middle of the output's range, 10 % hysteresis, interpolated, after the first fifth of the
+  run) and the dialog lists it per run with a Frequency | Pitch toggle (packages/app/src/
+  analysis/pitch.ts: 12-TET, A4 = 440 Hz, middle C = C4). A temperature sweep references the
+  27 °C run and shows the drift in ppm/°C or cents/°C. Capacitors get a temperature
+  coefficient with dielectric presets (`tc`, like the resistor's), restamped as the temperature
+  moves; electrolytics have none. `EditInfo.derived` marks a preset picker that only restates
+  the number next to it, so the parts list reads the number.
+- This port's own examples: packages/app/examples/{setuplist.txt,circuits/} are served and built
+  by vite-plugin-examples.ts (`mergeSetupLists` puts them after upstream's last menu), with a
+  thermostat icon for the new Temperature Compensation category. Three expo converter VCOs
+  (one transistor, matched pair, pair with a +3300 ppm/°C tempco resistor), each about 1 kHz at
+  27 °C with a scope on the ramp and a note saying what to sweep. Tests:
+  packages/app/src/examples.test.ts (the merge, the files, the frequencies and the drifts),
+  packages/app/src/analysis/pitch.test.ts, measureFrequency tests in sweep.test.ts.
+
+### Next
+
+- Gady (2026-10-07) asked to keep temperature in scope: thermal realism (package presets, shared
+  heatsinks, two-stage warm-up, burning parts) and more temperature-dependent components are
+  parked, not planned. Small follow-ups if wanted: a scope plot of a part's temperature, the
+  thermistor following the ambient temperature.
+- Possible follow-ups: per-model EG/XTI/XTB (vendor models), temperature-dependent junction
+  potentials and capacitances, a slider on a circuit parameter.
+
+### Open issues
+
+- The NTC thermistor keeps its own temperature setting; it does not follow the circuit's.
+- A slider moving a bound field leaves the binding in place, so the next parameter change sets
+  the field back.
+
 ## 2026-10-06: Phases 11 and 12, parameter sweeps and Monte Carlo (branch claude/sweeps-monte-carlo-x2fno2)
 
 ### Done

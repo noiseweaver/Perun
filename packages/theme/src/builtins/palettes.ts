@@ -73,6 +73,7 @@ function paletteTheme(p: Palette): Theme {
       electricField: p.blue,
       magneticField: p.purple,
       energy: p.energy ?? p.orange,
+      heat: mix(p.red, p.orange, 0.6),
     },
     scope: {
       background: p.scopeBg,

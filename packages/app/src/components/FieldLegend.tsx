@@ -71,6 +71,20 @@ function Swatch({ kind, theme }: { kind: keyof FieldOptions; theme: Theme }): Re
           strokeWidth="1.4"
         />,
       );
+    case 'heat':
+      return svg(
+        <>
+          <defs>
+            <radialGradient id="field-legend-heat">
+              <stop offset="0" stopColor={c.heat} stopOpacity="0.7" />
+              <stop offset="1" stopColor={c.heat} stopOpacity="0" />
+            </radialGradient>
+          </defs>
+          <circle cx="8" cy="7" r="7" fill="url(#field-legend-heat)" />
+          <path d="M18 3.5v5.2" stroke={c.heat} strokeWidth="1.6" strokeLinecap="round" />
+          <circle cx="18" cy="10" r="2.2" fill={c.heat} />
+        </>,
+      );
     case 'semiconductors':
       return svg(
         <>
