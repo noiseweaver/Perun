@@ -105,6 +105,14 @@ const FRAME_BUDGET_MS = 50;
 const MAX_CHUNK = 500;
 const STATUS_INTERVAL_MS = 100;
 
+/** The circuit's temperature settings (PLAN.md Phases 15 and 17). */
+export interface ThermalSettings {
+  /** Ambient temperature in °C, where a ramp starts. */
+  temperature: number;
+  ramp: { to: number; duration: number } | null;
+  selfHeating: boolean;
+}
+
 /**
  * Owns the loaded circuit, the renderer and the animation loop. React components drive it through
  * the store and these methods; the per-frame work never goes through React.
@@ -532,7 +540,9 @@ export class SimController {
       status: {
         t: sim.t,
         timeStep: sim.timeStep,
-        temperature: sim.temperature,
+        temperature: sim.ambientTemperature(),
+        thermal: sim.selfHeating || sim.temperatureRamp !== null,
+        selfHeating: sim.selfHeating,
         stopMessage: sim.stopMessage,
         badConnections: this.renderer?.badConnectionCount ?? 0,
       },
@@ -1561,6 +1571,21 @@ export class SimController {
     this.circuitChanged();
   }
 
+  /** A part's heat path for self-heating (PLAN.md Phase 17), undoably. */
+  applyThermal(e: CircuitElm, v: { resistance?: number; timeConstant?: number }): void {
+    const th = e.thermal;
+    if (th === null) return;
+    this.editor.history.record('Edit', () => {
+      const r = v.resistance ?? th.resistance;
+      const tc = v.timeConstant ?? th.timeConstant;
+      if (r === th.resistance && tc === th.timeConstant) return false;
+      th.resistance = r;
+      th.timeConstant = tc;
+      return true;
+    });
+    this.circuitChanged();
+  }
+
   // ---- parameters (PLAN.md Phase 16) ---------------------------------------------------------
 
   /** The open circuit's parameters as values for expressions. */
@@ -2048,22 +2073,32 @@ export class SimController {
     maxTimeStep: number,
     adjust: boolean,
     minTimeStep: number,
-    temperature = this.circuit.sim.temperature,
+    thermal: ThermalSettings = {
+      temperature: this.circuit.sim.temperature,
+      ramp: this.circuit.sim.temperatureRamp,
+      selfHeating: this.circuit.sim.selfHeating,
+    },
   ): void {
     const sim = this.circuit.sim;
+    const { temperature, ramp, selfHeating } = thermal;
     this.editor.history.record('Simulation settings', () => {
       if (
         sim.maxTimeStep === maxTimeStep &&
         sim.adjustTimeStep === adjust &&
         sim.minTimeStep === minTimeStep &&
-        sim.temperature === temperature
+        sim.temperature === temperature &&
+        sim.temperatureRamp?.to === ramp?.to &&
+        sim.temperatureRamp?.duration === ramp?.duration &&
+        sim.selfHeating === selfHeating
       )
         return false;
       sim.maxTimeStep = maxTimeStep;
       sim.adjustTimeStep = adjust;
       sim.minTimeStep = minTimeStep;
-      // not in upstream (PLAN.md Phase 15): parts pick it up when the circuit is analyzed again
+      // not in upstream (PLAN.md Phases 15 and 17): parts pick these up at the next analysis
       sim.temperature = temperature;
+      sim.temperatureRamp = ramp;
+      sim.selfHeating = selfHeating;
       return true;
     });
     this.circuitChanged();

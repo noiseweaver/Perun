@@ -90,6 +90,15 @@ export interface Hint {
 
 const clamp = (v: number, min: number, max: number): number => Math.min(Math.max(v, min), max);
 
+/** `tramp`: "to duration", the ambient ramp's end temperature in °C and its length in seconds. */
+function parseRamp(s: string | null): { to: number; duration: number } | null {
+  if (s === null) return null;
+  const [to, duration] = s.trim().split(/\s+/).map(Number);
+  if (to === undefined || duration === undefined) return null;
+  if (!Number.isFinite(to) || !Number.isFinite(duration) || duration < 0) return null;
+  return { to, duration };
+}
+
 /** A loaded circuit: its simulation, elements and saved settings. */
 export class Circuit {
   readonly sim = new Simulation();
@@ -189,6 +198,8 @@ export class Circuit {
     sim.resetTime();
     sim.solverType = 0;
     sim.temperature = NOMINAL_TEMPERATURE;
+    sim.temperatureRamp = null;
+    sim.selfHeating = false;
     this.params = [];
     this.elements = [];
     this.hint = { type: -1, item1: 0, item2: 0 };
@@ -477,6 +488,9 @@ export class Circuit {
       sim.solverType = r.parseIntAttr('st', sim.solverType) as typeof sim.solverType;
       // not in upstream (DEVIATIONS.md): the circuit temperature, saved only when not 27 °C
       sim.temperature = r.parseDoubleAttr('temp', NOMINAL_TEMPERATURE);
+      // also not in upstream: the ambient ramp ("to duration") and self-heating, saved when set
+      sim.temperatureRamp = parseRamp(r.parseStringAttr('tramp', null));
+      sim.selfHeating = r.parseIntAttr('heat', 0) !== 0;
       this.params = parseParamList(r.parseStringAttr('prm', null));
       this.setGrid();
     }
@@ -648,6 +662,9 @@ export class Circuit {
     w.dumpAttr('mts', sim.minTimeStep);
     if (sim.solverType !== 0) w.dumpAttr('st', sim.solverType);
     if (sim.temperature !== NOMINAL_TEMPERATURE) w.dumpAttr('temp', sim.temperature);
+    const ramp = sim.temperatureRamp;
+    if (ramp !== null) w.dumpAttr('tramp', `${String(ramp.to)} ${String(ramp.duration)}`);
+    if (sim.selfHeating) w.dumpAttr('heat', 1);
     if (this.params.length > 0) w.dumpAttr('prm', formatParamList(this.params));
 
     modelsFor(sim).clearDumpedFlags();

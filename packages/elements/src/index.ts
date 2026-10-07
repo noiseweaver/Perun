@@ -65,6 +65,13 @@ export {
   saturationCurrentLogFactor,
   thermalVoltage,
 } from './temperature.ts';
+export {
+  DEFAULT_THERMAL_TIME_CONSTANT,
+  MAX_PART_TEMPERATURE,
+  Thermal,
+  heatStep,
+  temperatureOf,
+} from './thermal.ts';
 export type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from './xml.ts';
 export { ELEMENT_TYPES, classNameForXmlTag, constructElement, createCe } from './registry.ts';
 

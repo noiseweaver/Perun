@@ -333,6 +333,15 @@ Added 2026-10-07 by owner, with Phase 15.
 
 Acceptance: two copies of a divider subcircuit with different values of its lower resistor give the right voltages; parameters, bindings and copy values survive save, load and undo; a circuit without parameters saves exactly as before. Golden tests unchanged.
 
+### Phase 17: Self-heating and ambient ramp
+Added 2026-10-07 by owner (picked "Self-heating" on the card asking for temperature that changes while the circuit runs; it includes the ambient ramp).
+- [x] Simulation settings can ramp the ambient temperature linearly to a set temperature over a set simulated time, then hold it. The bottom bar readout follows it live.
+- [x] Self-heating (off by default): diodes, BJTs, MOSFETs and resistors each get their own temperature, heated by the power they dissipate and cooled to ambient through a thermal resistance with one time constant (an RC pole, integrated exactly per step). Their models run at that temperature, so a BJT at a fixed base voltage runs away and an emitter resistor stops it. A resistor with a temperature coefficient is stamped again once it moves 0.01 °C.
+- [x] Each heating part's property panel shows its temperature live (fixed width) and its thermal resistance (°C/W, lower for a heatsink) and time constant. Defaults: 300 °C/W diode, 200 BJT, 62 MOSFET, 250 resistor, 10 ms (short, so heating shows within a short run).
+- [x] Saved as extra XML attributes, only when set: `tramp` and `heat` on `<cir>`, `rth` and `tth` on a part (DEVIATIONS.md).
+
+Acceptance: with neither on, every example and golden simulates bit for bit as before. A resistor reaches ambient + P·Rth with its time constant; the BJT runaway and its emitter-resistor fix behave as above; a reset starts every part from ambient again.
+
 ## 8. Java to TypeScript porting pitfalls
 
 - **Integer math.** Java `int` division truncates and overflows at 32 bits. JS does neither. Use `Math.trunc` or `| 0` wherever upstream relies on int behaviour. Check `(int)` casts, `%` on negatives, `>>` vs `>>>`, `char` arithmetic.

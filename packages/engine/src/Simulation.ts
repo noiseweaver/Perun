@@ -113,9 +113,24 @@ export class Simulation {
   /**
    * Circuit temperature in °C (not in upstream, DEVIATIONS.md). Upstream's semiconductor models
    * are all at SPICE's nominal 27 °C, and at 27 °C the elements run upstream's code unchanged.
-   * Elements read it when they stamp, so a change takes effect at the next analysis.
+   * With a ramp it is the starting ambient temperature; see `ambientTemperature()`.
    */
   temperature = 27;
+  /**
+   * Not in upstream (DEVIATIONS.md): the ambient temperature moves linearly from `temperature`
+   * to `to` °C over `duration` seconds of simulated time, then stays there. Null for none.
+   */
+  temperatureRamp: { to: number; duration: number } | null = null;
+  /**
+   * Not in upstream (DEVIATIONS.md): parts heat from their own power and cool towards the
+   * ambient temperature (elements' `thermal`). Off by default.
+   */
+  selfHeating = false;
+  /**
+   * Set by an element whose stamped values went stale (a resistor whose temperature moved): the
+   * matrices are stamped again before the next timestep. Never set at the default temperature.
+   */
+  restampRequested = false;
 
   converged = false;
   subIterations = 0;
@@ -167,6 +182,14 @@ export class Simulation {
     e.sim = this;
     const children = e.getChildElmList();
     if (children) for (const c of children) this.attach(c);
+  }
+
+  /** The ambient temperature in °C at the current simulated time. */
+  ambientTemperature(): number {
+    const ramp = this.temperatureRamp;
+    if (ramp === null) return this.temperature;
+    const f = ramp.duration > 0 ? Math.min(this.t / ramp.duration, 1) : 1;
+    return this.temperature + (ramp.to - this.temperature) * f;
   }
 
   resetTime(): void {
@@ -926,6 +949,12 @@ export class Simulation {
         this.timeStep = Math.min(this.timeStep * 2, this.maxTimeStep);
         this.stampCircuit();
         goodIterations = 0;
+      }
+
+      if (this.restampRequested) {
+        this.restampRequested = false;
+        this.stampCircuit();
+        if (this.stopMessage !== null) return done;
       }
 
       const elmArr = this.elmArr;

@@ -218,6 +218,7 @@ export function ControlBar() {
     t: simTime,
     timeStep,
     temperature,
+    thermal,
     stopMessage,
     badConnections,
   } = useApp((s) => s.status);
@@ -298,7 +299,7 @@ export function ControlBar() {
           {t('time step = ')}
           {getUnitText(timeStep, 's')}
         </button>
-        {temperature !== NOMINAL_TEMPERATURE && (
+        {(thermal || temperature !== NOMINAL_TEMPERATURE) && (
           <button
             type="button"
             className="readout readout-temp readout-button"

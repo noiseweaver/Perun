@@ -10,11 +10,9 @@
 import type { CircuitNode, SimElement } from '@circuitjs-next/engine';
 import type { DiodeModel } from '../models/DiodeModel.ts';
 import { NOMINAL_TEMPERATURE, saturationCurrentLogFactor, thermalVoltage } from '../temperature.ts';
+import { temperatureOf } from '../thermal.ts';
 
-/** The circuit temperature, or the nominal one for an element not in a simulation yet. */
-export function temperatureOf(e: SimElement): number {
-  return (e.sim as SimElement['sim'] | undefined)?.temperature ?? NOMINAL_TEMPERATURE;
-}
+export { temperatureOf };
 
 /** Electron thermal voltage at SPICE's default temperature of 27 C (300.15 K). */
 const VT_NOMINAL = 0.025865;
@@ -137,17 +135,23 @@ export class Diode {
   }
 
   stamp(n0: CircuitNode, n1: CircuitNode): void {
-    // the circuit temperature changed since setup
-    if (this.model !== null && this.owner.sim.temperature !== this.temperature)
-      this.setup(this.model);
+    this.followTemperature();
     this.nodes[0] = n0;
     this.nodes[1] = n1;
     this.owner.sim.stampNonLinear(this.nodes[0]);
     this.owner.sim.stampNonLinear(this.nodes[1]);
   }
 
+  /** Set up again if the temperature moved since setup (not in upstream, see setup). */
+  private followTemperature(): void {
+    if (this.model !== null && temperatureOf(this.owner) !== this.temperature)
+      this.setup(this.model);
+  }
+
   doStep(voltdiff: number): void {
     const sim = this.owner.sim;
+    // a ramp or self-heating moves the temperature between steps
+    this.followTemperature();
     // used to have .1 here, but needed .01 for peak detector
     if (Math.abs(voltdiff - this.lastvoltdiff) > 0.01) sim.converged = false;
     voltdiff = this.limitStep(voltdiff, this.lastvoltdiff);

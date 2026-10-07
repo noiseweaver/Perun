@@ -18,14 +18,14 @@
   compared exactly (500 steps each) against main and are bit for bit identical; at 85 °C 154
   differ and none produce NaN. Resistors get a Temperature coefficient (ppm/°C) property, `tc`.
 - Parameters (packages/elements/src/params.ts): a small expression evaluator (SI prefixes,
-  - - - / ^, functions, pi). `Circuit.params` (`prm` on `<cir>`), File > Parameters… and a
-        Parameters button on the subcircuit bar. `CircuitElm.paramExprs` (`px`, edit item to
-        expression): typing `{R*2}` in a property panel number field binds it, a plain number unbinds
-        it. Create Subcircuit and Save copy the circuit's parameters into the model (`prm` on `<ccm>`);
-        Edit Model loads them back. A placed subcircuit lists them after its other properties
-        (`paramValues`, `pv`, only values that differ from the default; no sliders, since upstream
-        would not find the item). `CompositeElm.loadCompositeXml` applies the bindings with the copy's
-        values, so nested copies can bind their values to the outer model's parameters.
+  `+ - * / ^`, functions, pi). `Circuit.params` (`prm` on `<cir>`), File > Parameters… and a
+  Parameters button on the subcircuit bar. `CircuitElm.paramExprs` (`px`, edit item to
+  expression): typing `{R*2}` in a property panel number field binds it, a plain number unbinds
+  it. Create Subcircuit and Save copy the circuit's parameters into the model (`prm` on `<ccm>`);
+  Edit Model loads them back. A placed subcircuit lists them after its other properties
+  (`paramValues`, `pv`, only values that differ from the default; no sliders, since upstream
+  would not find the item). `CompositeElm.loadCompositeXml` applies the bindings with the copy's
+  values, so nested copies can bind their values to the outer model's parameters.
 - Tests: packages/format/src/params.test.ts (two copies of a divider, nested copies, round trip,
   nothing saved by default, diode drift, resistor coefficient), packages/elements/src/params.test.ts
   (expressions), packages/app/e2e/params.spec.ts.
@@ -35,10 +35,27 @@
   seeded with -20, 27 and 85 °C. sweep.test.ts checks the diode drop falls about 2 mV/°C across
   the runs.
 
+- Phase 17, self-heating and the ambient ramp (Gady picked "Self-heating" on the card, which
+  includes the ramp). Engine: `Simulation.temperatureRamp`, `ambientTemperature()`,
+  `selfHeating`, and `restampRequested` (checked before each step; only resistors with a
+  coefficient set it). packages/elements/src/thermal.ts: `Thermal` (thermal resistance and time
+  constant, one RC pole integrated exactly), `temperatureOf(e)` (the part's own temperature with
+  self-heating on, else the ambient one) and `heatStep` (called from the stepFinished of
+  DiodeElm, TransistorElm, MosfetElm and ResistorElm). Diode re-runs setup in doStep when its
+  owner's temperature moved, BJTs and MOSFETs in startIteration. JFETs and varactors don't heat.
+  Settings dialog: ramp to/over and a Self-heating box; the property panel shows a live T
+  readout and the part's heat path fields. With both off, all 373 examples were compared
+  exactly against the previous commit: identical. Tests: packages/format/src/thermal.test.ts
+  (resistor RC response, a resistor with a coefficient at equilibrium, BJT runaway and the
+  emitter-resistor fix, reset, the ramp, saving) and the self-heating test in params.spec.ts.
+- The mouse-wheel browser test retries its first wheel step until the pointer is over the
+  resistor (it failed once in CI on a slow runner).
+
 ### Next
 
-- Gady is choosing on a card whether temperature should also change while the circuit runs
-  (self-heating with thermal runaway, or an ambient ramp).
+- Possible follow-ups for self-heating: a scope plot of a part's temperature, tinting hot parts
+  on the canvas, coupling parts on one heatsink, the thermistor following the ambient
+  temperature.
 - Possible follow-ups: per-model EG/XTI/XTB (vendor models), temperature-dependent junction
   potentials and capacitances, a slider on a circuit parameter.
 

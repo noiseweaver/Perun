@@ -57,8 +57,12 @@ export interface CircuitDisplay {
 export interface SimStatus {
   t: number;
   timeStep: number;
-  /** Circuit temperature in °C (27 is the default). */
+  /** Ambient temperature in °C now (27 is the default; a ramp moves it). */
   temperature: number;
+  /** A ramp or self-heating is on, so the temperature readout shows even at 27 °C. */
+  thermal: boolean;
+  /** Self-heating is on (parts have their own temperatures). */
+  selfHeating: boolean;
   stopMessage: string | null;
   badConnections: number;
 }
@@ -333,7 +337,15 @@ export const useApp = create<AppState>(() => ({
   currentSpeed: 50,
   display: { showDots: true, voltageColors: true, showValues: true, smallGrid: false },
   settings: initialSettings,
-  status: { t: 0, timeStep: 5e-6, temperature: 27, stopMessage: null, badConnections: 0 },
+  status: {
+    t: 0,
+    timeStep: 5e-6,
+    temperature: 27,
+    thermal: false,
+    selfHeating: false,
+    stopMessage: null,
+    badConnections: 0,
+  },
   warnings: [],
   error: null,
   examples: null,

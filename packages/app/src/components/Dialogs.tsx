@@ -238,10 +238,21 @@ function SimSettingsDialog() {
   const [adjust, setAdjust] = useState(sim.adjustTimeStep);
   const [min, setMin] = useState(() => shortTime(sim.minTimeStep));
   const [temp, setTemp] = useState(() => String(sim.temperature));
+  const [ramp, setRamp] = useState(sim.temperatureRamp !== null);
+  const [rampTo, setRampTo] = useState(() => String(sim.temperatureRamp?.to ?? 85));
+  const [rampOver, setRampOver] = useState(() => shortTime(sim.temperatureRamp?.duration ?? 0.1));
+  const [heating, setHeating] = useState(sim.selfHeating);
   const stepValue = readTime(step);
   const minValue = adjust ? readTime(min) : sim.minTimeStep;
   const tempValue = readTemperature(temp);
-  const ok = stepValue !== null && minValue !== null && tempValue !== null;
+  const rampToValue = ramp ? readTemperature(rampTo) : 0;
+  const rampOverValue = ramp ? readTime(rampOver) : 0;
+  const ok =
+    stepValue !== null &&
+    minValue !== null &&
+    tempValue !== null &&
+    rampToValue !== null &&
+    rampOverValue !== null;
   return (
     <Shell
       title={t('Simulation settings')}
@@ -252,7 +263,11 @@ function SimSettingsDialog() {
         onSubmit={(e) => {
           e.preventDefault();
           if (!ok) return;
-          controller.setTimeStep(stepValue, adjust, minValue, tempValue);
+          controller.setTimeStep(stepValue, adjust, minValue, {
+            temperature: tempValue,
+            ramp: ramp ? { to: rampToValue, duration: rampOverValue } : null,
+            selfHeating: heating,
+          });
           openDialog(null);
         }}
       >
@@ -324,6 +339,70 @@ function SimSettingsDialog() {
             </span>
           )}
         </div>
+        <label className="field field-check">
+          <input
+            type="checkbox"
+            className="checkbox"
+            checked={ramp}
+            onChange={(e) => setRamp(e.target.checked)}
+            data-testid="sim-ramp"
+          />
+          <span>{t('Ramp the temperature while it runs')}</span>
+        </label>
+        {ramp && (
+          <div className="field-row">
+            <div className="field">
+              <label className="field-label" htmlFor="sim-ramp-to">
+                {t('Ramp to (°C)')}
+              </label>
+              <input
+                id="sim-ramp-to"
+                className="text-input field-input"
+                value={rampTo}
+                inputMode="decimal"
+                spellCheck={false}
+                onChange={(e) => setRampTo(e.target.value)}
+                data-testid="sim-ramp-to"
+              />
+              {rampToValue === null && (
+                <span className="field-error">{t('Enter a temperature, like 85.')}</span>
+              )}
+            </div>
+            <div className="field">
+              <label className="field-label" htmlFor="sim-ramp-over">
+                {t('Over (s)')}
+              </label>
+              <input
+                id="sim-ramp-over"
+                className="text-input field-input"
+                value={rampOver}
+                spellCheck={false}
+                onChange={(e) => setRampOver(e.target.value)}
+                data-testid="sim-ramp-over"
+              />
+              {rampOverValue === null && (
+                <span className="field-error">{t('Enter a time, like 100m.')}</span>
+              )}
+            </div>
+          </div>
+        )}
+        <label className="field field-check">
+          <input
+            type="checkbox"
+            className="checkbox"
+            checked={heating}
+            onChange={(e) => setHeating(e.target.checked)}
+            data-testid="sim-self-heating"
+          />
+          <span>{t('Self-heating')}</span>
+        </label>
+        {heating && (
+          <span className="field-hint">
+            {t(
+              'Diodes, transistors, MOSFETs and resistors heat from their own power and cool to the ambient temperature. Set how fast in each part’s properties.',
+            )}
+          </span>
+        )}
         <div className="dialog-buttons">
           <Dialog.Close asChild>
             <button type="button" className="button">

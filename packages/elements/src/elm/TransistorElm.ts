@@ -15,7 +15,7 @@ import { EditInfo } from '../edit/EditInfo.ts';
 import { unescapeToken } from '../escape.ts';
 import { parseJavaDouble, parseJavaInt } from '../java.ts';
 import { NOMINAL_TEMPERATURE, saturationCurrentLogFactor, thermalVoltage } from '../temperature.ts';
-import { temperatureOf } from './Diode.ts';
+import { heatStep, Thermal, temperatureOf } from '../thermal.ts';
 import { modelsFor } from '../models/ModelLibrary.ts';
 import { modelEditor } from '../edit/modelEditor.ts';
 import { TransistorModel } from '../models/TransistorModel.ts';
@@ -72,6 +72,8 @@ export class TransistorElm extends CircuitElm {
 
   pnp = 1;
   beta = 100;
+  /** Self-heating (thermal.ts): a small-signal part in free air. */
+  override thermal: Thermal | null = new Thermal(200);
   gmin = 0;
   modelName = '';
   model: TransistorModel | null = null;
@@ -281,6 +283,8 @@ export class TransistorElm extends CircuitElm {
    * Total capacitance is depletion (CJE/CJC) plus diffusion (TF*gm, TR*gm).
    */
   override startIteration(): void {
+    // a ramp or self-heating moves the temperature between steps (not in upstream)
+    if (temperatureOf(this) !== this.temperature) this.applyTemperature();
     const model = this.getModel();
     const sim = this.sim;
     const vt = this.vt;
@@ -325,7 +329,7 @@ export class TransistorElm extends CircuitElm {
 
   override stamp(): void {
     // the circuit temperature or the model changed since setup
-    if (this.sim.temperature !== this.temperature) this.applyTemperature();
+    if (temperatureOf(this) !== this.temperature) this.applyTemperature();
     this.sim.stampNonLinear(this.nodes[0]);
     this.sim.stampNonLinear(this.nodes[1]);
     this.sim.stampNonLinear(this.nodes[2]);
@@ -531,6 +535,7 @@ export class TransistorElm extends CircuitElm {
       this.ic -= icapBC;
     }
     this.localSubIters = 0;
+    heatStep(this, this.getPower());
   }
 
   override getCurrentIntoNode(n: number): number {

@@ -7,6 +7,7 @@
 
 import {
   CircuitElm,
+  EditInfo,
   VoltageElm,
   bindingText,
   hasTolerance,
@@ -15,7 +16,6 @@ import {
   toleranceEditInfo,
   toleranceFromEditInfo,
   unitString,
-  type EditInfo,
 } from '@circuitjs-next/elements';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { controller } from '../SimController.ts';
@@ -41,6 +41,9 @@ function readValue(elm: CircuitElm, text: string): number {
   }
   return parseUnits(s);
 }
+
+/** Test ids of the self-heating fields (`field-100`, `field-101`), clear of the element's own. */
+const THERMAL_FIELD = 100;
 
 function labelText(name: string): string {
   // upstream translates the name (EditDialog), and allows HTML in names starting with "<"
@@ -95,6 +98,11 @@ function NumberField(props: FieldProps) {
   }, [elm, ei, props.n]);
   const commit = (s: string): void => {
     const expr = bindingText(s);
+    // fields outside the element's own list (onApply) can't follow a parameter
+    if (expr !== null && props.onApply) {
+      setBad(true);
+      return;
+    }
     if (expr !== null) {
       setBad(false);
       if (expr === bound) return;
@@ -590,6 +598,7 @@ export function Inspector() {
   const revision = useApp((s) => s.editor.revision);
   const moving = useApp((s) => s.editor.moving);
   const focus = useApp((s) => s.inspectorFocus);
+  const heating = useApp((s) => s.status.selfHeating);
   const [error, setError] = useState<string | null>(null);
   const [rebuild, setRebuild] = useState(0);
   const panel = useRef<HTMLElement>(null);
@@ -705,6 +714,40 @@ export function Inspector() {
               onError={onError}
               onApply={(ei) => controller.applyTolerance(selected, toleranceFromEditInfo(ei))}
             />
+          )}
+          {heating && selected.thermal !== null && (
+            // not in upstream (DEVIATIONS.md): the part's heat path for self-heating
+            <>
+              <NumberField
+                key={`rth:${revision}:${rebuild}`}
+                elm={selected}
+                n={THERMAL_FIELD}
+                ei={new EditInfo(
+                  'Thermal resistance (°C/W)',
+                  selected.thermal.resistance,
+                ).setPositive()}
+                autoFocus={false}
+                onError={onError}
+                onApply={(ei) => controller.applyThermal(selected, { resistance: ei.value })}
+              />
+              <NumberField
+                key={`tth:${revision}:${rebuild}`}
+                elm={selected}
+                n={THERMAL_FIELD + 1}
+                ei={new EditInfo(
+                  'Thermal time constant (s)',
+                  selected.thermal.timeConstant,
+                ).setPositive()}
+                autoFocus={false}
+                onError={onError}
+                onApply={(ei) => controller.applyThermal(selected, { timeConstant: ei.value })}
+              />
+              <p className="field-hint">
+                {t(
+                  'Lower the thermal resistance for a heatsink. Real parts take seconds to minutes to warm up; the short default shows it within a short run.',
+                )}
+              </p>
+            </>
           )}
           {error !== null && (
             <p className="field-error" role="alert">

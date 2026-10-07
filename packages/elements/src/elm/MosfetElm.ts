@@ -13,6 +13,7 @@ import { CircuitElm, elementType, type ElementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaDouble } from '../java.ts';
 import { mosfetAtTemperature } from '../temperature.ts';
+import { heatStep, Thermal, temperatureOf } from '../thermal.ts';
 import { modelsFor } from '../models/ModelLibrary.ts';
 import { modelEditor } from '../edit/modelEditor.ts';
 import { MosfetModel } from '../models/MosfetModel.ts';
@@ -66,6 +67,10 @@ export class MosfetElm extends CircuitElm {
    */
   simVt = 0;
   simBeta = 0;
+  /** The temperature simVt and simBeta are for (NaN: not worked out yet). */
+  private simTemperature = Number.NaN;
+  /** Self-heating (thermal.ts): a power part in free air, no heatsink. JFETs don't heat. */
+  override thermal: Thermal | null = this.isJfet() ? null : new Thermal(62);
 
   // gate capacitance companion model state
   capVoltGS = 0;
@@ -300,8 +305,24 @@ export class MosfetElm extends CircuitElm {
     this.body = this.showBulk() ? [this.interpPoint(s0, d0, 0.5)] : [];
   }
 
+  /** simVt and simBeta at the part's temperature (not in upstream; see simVt). */
+  private applyTemperature(): void {
+    if (this.isJfet()) {
+      this.simVt = this.vt;
+      this.simBeta = this.beta;
+      return;
+    }
+    const temp = temperatureOf(this);
+    const at = mosfetAtTemperature(this.vt, this.beta, this.pnp === -1, temp);
+    this.simVt = at.threshold;
+    this.simBeta = at.beta;
+    this.simTemperature = temp;
+  }
+
   override startIteration(): void {
     const sim = this.sim;
+    // a ramp or self-heating moves the temperature between steps
+    if (!this.isJfet() && temperatureOf(this) !== this.simTemperature) this.applyTemperature();
     const model = this.getModel();
     if (sim.timeStep <= 0) return;
     if (model.capGS > 0) {
@@ -317,14 +338,7 @@ export class MosfetElm extends CircuitElm {
   override stamp(): void {
     const sim = this.sim;
     const nodes = this.nodes;
-    if (this.isJfet()) {
-      this.simVt = this.vt;
-      this.simBeta = this.beta;
-    } else {
-      const at = mosfetAtTemperature(this.vt, this.beta, this.pnp === -1, sim.temperature);
-      this.simVt = at.threshold;
-      this.simBeta = at.beta;
-    }
+    this.applyTemperature();
     sim.stampNonLinear(nodes[1]);
     sim.stampNonLinear(nodes[2]);
     if (this.hasGateCaps()) sim.stampNonLinear(nodes[0]);
@@ -380,6 +394,7 @@ export class MosfetElm extends CircuitElm {
       this.capVoltGD = volts[0] - volts[2];
       this.capCurGD = this.geqGD * this.capVoltGD + this.ceqGD;
     }
+    heatStep(this, this.getPower());
   }
 
   override doStep(): void {

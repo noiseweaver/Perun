@@ -14,6 +14,7 @@ import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { OHM, getUnitText } from '../view/units.ts';
 import { resistanceAtTemperature } from '../temperature.ts';
+import { heatStep, Thermal, temperatureOf } from '../thermal.ts';
 import type { WireRouter } from '../WireRouter.ts';
 import type { Point } from '@circuitjs-next/engine';
 
@@ -38,10 +39,15 @@ export class ResistorElm extends CircuitElm {
    * resistance is its value at 27 °C. Saved as the extra XML attribute `tc` only when set.
    */
   tempco = 0;
+  /** Self-heating (thermal.ts): a quarter-watt resistor in free air. */
+  override thermal: Thermal | null = new Thermal(250);
+  /** The temperature of the last stamp; NaN before one. */
+  private stampedTemperature = Number.NaN;
 
-  /** The resistance at the circuit temperature: `resistance` unless a coefficient is set. */
+  /** The resistance at its temperature: `resistance` unless a coefficient is set. */
   simResistance(): number {
-    return resistanceAtTemperature(this.resistance, this.tempco, this.sim.temperature);
+    const t = Number.isNaN(this.stampedTemperature) ? temperatureOf(this) : this.stampedTemperature;
+    return resistanceAtTemperature(this.resistance, this.tempco, t);
   }
 
   override getClassName(): string {
@@ -78,7 +84,15 @@ export class ResistorElm extends CircuitElm {
   }
 
   override stamp(): void {
+    this.stampedTemperature = temperatureOf(this);
     this.sim.stampResistor(this.nodes[0], this.nodes[1], this.simResistance());
+  }
+
+  override stepFinished(): void {
+    heatStep(this, this.getPower());
+    // a resistance that moves with temperature is stamped again once it is 0.01 °C off
+    if (this.tempco !== 0 && Math.abs(temperatureOf(this) - this.stampedTemperature) > 0.01)
+      this.sim.restampRequested = true;
   }
 
   override getInfo(arr: string[]): void {

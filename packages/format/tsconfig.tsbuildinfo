@@ -1,0 +1,1 @@
+{"root":["./src/attrs.ts","./src/circuit.ts","./src/composite.test.ts","./src/format.test.ts","./src/index.ts","./src/params.test.ts","./src/runner.ts","./src/scopes.test.ts","./src/stop.test.ts","./src/textfont.test.ts","./src/url.test.ts","./src/url.ts","./src/views.test.ts","./src/xml.ts","./src/testdata/galleries.ts"],"version":"6.0.3"}

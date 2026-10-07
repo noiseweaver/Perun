@@ -197,3 +197,52 @@ test('the sweep dialog steps the circuit temperature', async ({ page }) => {
     27,
   );
 });
+
+/** 10 V across 100 Ω: 1 W. */
+const HEATER =
+  '$ 1 0.000005 10.2 50 5 50 5e-11\n' +
+  'v 96 320 96 96 0 0 40.0 10.0 0.0 0.0 0.5\n' +
+  'r 96 96 256 96 0 100\n' +
+  'w 256 96 256 320 0\n' +
+  'w 256 320 96 320 0\n' +
+  'g 96 320 96 352 0\n';
+
+test('self-heating warms a resistor live, with its heat path in its properties', async ({
+  page,
+}) => {
+  await open(page, HEATER);
+  await page.getByTestId('time-step').click();
+  await page.getByTestId('sim-ramp').check();
+  await page.getByTestId('sim-ramp-to').fill('40');
+  await page.getByTestId('sim-ramp-over').fill('1');
+  await page.getByTestId('sim-self-heating').check();
+  await page.getByTestId('sim-settings-ok').click();
+  // the ambient readout shows even while it is still near 27 °C
+  await expect(page.getByTestId('sim-temperature-readout')).toHaveText(/^T = {2}\s?\d\d\.\d °C$/);
+  const saved = await page.evaluate(() => window.circuitjsNext?.controller.saveText() ?? '');
+  expect(saved).toContain('heat="1"');
+  expect(saved).toContain('tramp="40 1"');
+
+  const r = await at(page, 176, 96);
+  await page.mouse.click(r.x, r.y);
+  await expect(page.getByTestId('inspector-title')).toHaveText('Resistor');
+  // a fixed-width readout: sign, four digits and a decimal
+  const temp = page.getByTestId('live-t');
+  await expect(temp).toHaveText(/^ {0,3}-?\d+\.\d °C$/);
+  expect(((await temp.textContent()) ?? '').length).toBe(9);
+  await expect.poll(async () => parseFloat((await temp.textContent()) ?? '0')).toBeGreaterThan(30);
+
+  // a big heatsink: the resistor cools back to near ambient
+  const rth = page.getByTestId('field-100');
+  await expect(rth).toHaveValue('250');
+  await rth.fill('1');
+  await rth.press('Enter');
+  await expect.poll(async () => parseFloat((await temp.textContent()) ?? '99')).toBeLessThan(30);
+  expect(await page.evaluate(() => window.circuitjsNext?.controller.saveText())).toContain(
+    'rth="1"',
+  );
+  // a parameter can't drive it
+  await rth.fill('{R}');
+  await rth.press('Enter');
+  await expect(page.getByText('Not a number. Try 4.7k, 100n or 2k2.')).toBeVisible();
+});
