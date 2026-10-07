@@ -15,8 +15,24 @@ import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { getUnitText } from '../view/units.ts';
 import { UNITS_C, VAL_CHARGE } from '../scope/constants.ts';
+import { valueAtTemperature } from '../temperature.ts';
+import { temperatureOf } from '../thermal.ts';
 import type { WireRouter } from '../WireRouter.ts';
 import type { Point } from '@circuitjs-next/engine';
+
+/**
+ * Dielectric presets for the temperature coefficient, in ppm/°C (typical values; class 1
+ * ceramics are named by theirs). The last item, Custom, keeps whatever number is typed.
+ */
+export const CAPACITOR_DIELECTRICS: readonly (readonly [string, number])[] = [
+  ['C0G / NP0 ceramic (0)', 0],
+  ['P100 ceramic (+100)', 100],
+  ['Polyester / Mylar (+400)', 400],
+  ['Polystyrene (−150)', -150],
+  ['Polypropylene (−200)', -200],
+  ['N750 ceramic (−750)', -750],
+  ['N1500 ceramic (−1500)', -1500],
+];
 
 export class CapacitorElm extends CircuitElm {
   /** Upstream setPoints: the plates 4 either side of the middle. */
@@ -51,8 +67,22 @@ export class CapacitorElm extends CircuitElm {
    * as the extra XML attribute `tol` only when set; upstream ignores it.
    */
   tolerance = 0;
+  /**
+   * Not in upstream (DEVIATIONS.md): temperature coefficient in ppm/°C, 0 for none. The
+   * capacitance is its value at 27 °C. Saved as the extra XML attribute `tc` only when set.
+   */
+  tempco = 0;
+  /** The temperature of the last stamp; NaN before one. */
+  private stampedTemperature = Number.NaN;
   capNode2 = 0;
   curSourceValue = 0;
+
+  /** The capacitance at its temperature: `capacitance` unless a coefficient is set. */
+  simCapacitance(): number {
+    if (this.tempco === 0) return this.capacitance;
+    const t = Number.isNaN(this.stampedTemperature) ? temperatureOf(this) : this.stampedTemperature;
+    return valueAtTemperature(this.capacitance, this.tempco, t);
+  }
 
   override getClassName(): string {
     return 'CapacitorElm';
@@ -85,6 +115,7 @@ export class CapacitorElm extends CircuitElm {
     w.dumpAttr('iv', this.initialVoltage);
     w.dumpAttr('sr', this.seriesResistance);
     if (this.tolerance !== 0) w.dumpAttr('tol', this.tolerance);
+    if (this.tempco !== 0) w.dumpAttr('tc', this.tempco);
   }
 
   override dumpXmlState(w: XmlAttrWriter): void {
@@ -97,6 +128,7 @@ export class CapacitorElm extends CircuitElm {
     this.initialVoltage = r.parseDoubleAttr('iv', this.initialVoltage);
     this.seriesResistance = r.parseDoubleAttr('sr', this.seriesResistance);
     this.tolerance = Math.max(0, r.parseDoubleAttr('tol', 0));
+    this.tempco = r.parseDoubleAttr('tc', 0);
     this.voltdiff = r.parseDoubleAttr('vd', this.voltdiff);
   }
 
@@ -129,12 +161,14 @@ export class CapacitorElm extends CircuitElm {
     // The capacitor model is between nodes 0 and capNode2. For an ideal capacitor, capNode2 is
     // node 1. With series resistance, capNode2 is internal node 2 and a resistor joins 2 and 1.
     this.capNode2 = this.seriesResistance > 0 ? 2 : 1;
+    this.stampedTemperature = temperatureOf(this);
+    const capacitance = this.simCapacitance();
 
     // companion model (Norton equivalent): a current source in parallel with a resistor.
     // Trapezoidal is more accurate than backward Euler but can oscillate if RC is small
     // relative to the timestep.
-    if (this.isTrapezoidal()) this.compResistance = sim.timeStep / (2 * this.capacitance);
-    else this.compResistance = sim.timeStep / this.capacitance;
+    if (this.isTrapezoidal()) this.compResistance = sim.timeStep / (2 * capacitance);
+    else this.compResistance = sim.timeStep / capacitance;
     sim.stampResistor(this.nodes[0], this.nodes[this.capNode2], this.compResistance);
     sim.stampRightSide(this.nodes[0]);
     sim.stampRightSide(this.nodes[this.capNode2]);
@@ -151,6 +185,13 @@ export class CapacitorElm extends CircuitElm {
   override stepFinished(): void {
     this.voltdiff = this.volts[0] - this.volts[this.capNode2];
     this.calculateCurrent();
+    // a capacitance that moves with temperature is stamped again once it is 0.01 °C off
+    if (
+      this.tempco !== 0 &&
+      !this.doDcAnalysis() &&
+      Math.abs(temperatureOf(this) - this.stampedTemperature) > 0.01
+    )
+      this.sim.restampRequested = true;
   }
 
   /**
@@ -209,9 +250,9 @@ export class CapacitorElm extends CircuitElm {
   override getInfo(arr: string[]): void {
     arr[0] = 'capacitor';
     this.getBasicInfo(arr);
-    arr[3] = 'C = ' + getUnitText(this.capacitance, 'F');
+    arr[3] = 'C = ' + getUnitText(this.simCapacitance(), 'F');
     arr[4] = 'P = ' + getUnitText(this.getPower(), 'W');
-    arr[5] = 'Q = ' + getUnitText(this.capacitance * this.voltdiff, 'C');
+    arr[5] = 'Q = ' + getUnitText(this.simCapacitance() * this.voltdiff, 'C');
   }
 
   override getScopeText(_v: number): string {
@@ -219,7 +260,7 @@ export class CapacitorElm extends CircuitElm {
   }
 
   override getScopeValue(x: number): number {
-    if (x === VAL_CHARGE) return this.capacitance * this.voltdiff;
+    if (x === VAL_CHARGE) return this.simCapacitance() * this.voltdiff;
     return super.getScopeValue(x);
   }
 
@@ -238,7 +279,26 @@ export class CapacitorElm extends CircuitElm {
     if (n === 2) return new EditInfo('Initial Voltage (on Reset)', this.initialVoltage);
     if (n === 3) return new EditInfo('Series Resistance', this.seriesResistance);
     // if you add more things here, check PolarCapacitorElm
+    const k = this.tempcoField();
+    if (n === k) {
+      const i = CAPACITOR_DIELECTRICS.findIndex(([, ppm]) => ppm === this.tempco);
+      return EditInfo.createChoice(
+        'Dielectric (temperature coefficient)',
+        [...CAPACITOR_DIELECTRICS.map(([name]) => name), 'Custom'],
+        i < 0 ? CAPACITOR_DIELECTRICS.length : i,
+      ).setDerived();
+    }
+    if (n === k + 1) {
+      return new EditInfo('Temperature coefficient (ppm/°C)', this.tempco, 0, 0)
+        .setDimensionless()
+        .setUnitStep();
+    }
     return null;
+  }
+
+  /** The edit field index of the dielectric choice; the coefficient follows it. */
+  protected tempcoField(): number {
+    return 4;
   }
 
   override setEditValue(n: number, ei: EditInfo): void {
@@ -251,6 +311,17 @@ export class CapacitorElm extends CircuitElm {
     if (n === 3) {
       this.seriesResistance = ei.value;
       this.allocNodes();
+    }
+    const k = this.tempcoField();
+    if (n === k) {
+      const preset = CAPACITOR_DIELECTRICS[ei.choice?.selected ?? -1];
+      // Custom keeps the number; a preset sets it, and the number field shows it
+      if (preset !== undefined) this.tempco = preset[1];
+      ei.newDialog = true;
+    }
+    if (n === k + 1) {
+      this.tempco = ei.value;
+      ei.newDialog = true;
     }
   }
 

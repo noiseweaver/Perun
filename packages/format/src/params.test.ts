@@ -4,6 +4,7 @@
 // the simulation, and that files without them save exactly as before.
 
 import {
+  CapacitorElm,
   constructElement,
   CustomCompositeElm,
   DiodeElm,
@@ -212,5 +213,56 @@ describe('circuit temperature', () => {
     expect(xml).toContain('tc="4000"');
     c.sim.temperature = 27;
     expect(r.simResistance()).toBe(1000);
+  });
+
+  it('moves a capacitor by its coefficient and dielectric', () => {
+    // 5 V into 1k and 1u: the voltage after one nominal time constant
+    const rc = (temp: number, tempco: number): { v: number; xml: string } => {
+      const c = readCircuit(
+        '$ 1 0.000001 10.2 50 5 50 5e-11\n' +
+          'v 96 320 96 96 0 0 40.0 5.0 0.0 0.0 0.5\n' +
+          'r 96 96 256 96 0 1000\n' +
+          'c 256 96 256 320 0 1e-6 0 0\n' +
+          'w 96 320 256 320 0\n',
+      );
+      const cap = c.elements.find((e) => e instanceof CapacitorElm) as CapacitorElm;
+      cap.tempco = tempco;
+      c.sim.temperature = temp;
+      const xml = c.dumpXml();
+      const run = readCircuit(xml);
+      run.sim.setElements(run.elements);
+      run.sim.step(1000);
+      const k = run.elements.find((e) => e instanceof CapacitorElm) as CapacitorElm;
+      return { v: k.volts[0] - k.volts[1], xml };
+    };
+    const nominal = rc(27, 0);
+    expect(nominal.xml).not.toContain('tc=');
+    expect(Math.abs(nominal.v)).toBeCloseTo(5 * (1 - Math.exp(-1)), 2);
+    // N1500 at 87 °C: 9% less capacitance, so it charges further in the same time
+    const warm = rc(87, -1500);
+    expect(warm.xml).toContain('tc="-1500"');
+    const c87 = 1 - 1500e-6 * 60;
+    expect(Math.abs(warm.v)).toBeCloseTo(5 * (1 - Math.exp(-1 / c87)), 2);
+    // a coefficient alone changes nothing at 27 °C
+    expect(rc(27, -1500).v).toBe(nominal.v);
+  });
+
+  it('offers dielectric presets that set the coefficient', () => {
+    const cap = constructElement('CapacitorElm', 0, 0) as CapacitorElm;
+    const choice = cap.getEditInfo(4);
+    expect(choice?.choice?.items).toContain('Polystyrene (−150)');
+    const items = choice?.choice?.items ?? [];
+    expect(choice?.choice?.selected).toBe(0);
+    if (choice?.choice) choice.choice.selected = items.indexOf('Polystyrene (−150)');
+    if (choice) cap.setEditValue(4, choice);
+    expect(cap.tempco).toBe(-150);
+    expect(cap.getEditInfo(5)?.value).toBe(-150);
+    const custom = cap.getEditInfo(5);
+    if (custom) {
+      custom.value = -33;
+      cap.setEditValue(5, custom);
+    }
+    expect(cap.getEditInfo(4)?.choice?.selected).toBe(items.indexOf('Custom'));
+    expect(cap.getEditInfo(6)).toBeNull();
   });
 });

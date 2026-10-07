@@ -88,6 +88,14 @@ export function mosfetAtTemperature(
 
 /** A resistance with a first-order temperature coefficient in ppm/°C. */
 export function resistanceAtTemperature(r: number, ppm: number, celsius: number): number {
-  if (ppm === 0 || celsius === NOMINAL_TEMPERATURE) return r;
-  return r * (1 + ppm * 1e-6 * (celsius - NOMINAL_TEMPERATURE));
+  return valueAtTemperature(r, ppm, celsius);
+}
+
+/**
+ * A value (a resistance or capacitance) given at 27 °C, with a first-order temperature
+ * coefficient in ppm/°C. Exactly `v` when the coefficient is 0 or the temperature is 27 °C.
+ */
+export function valueAtTemperature(v: number, ppm: number, celsius: number): number {
+  if (ppm === 0 || celsius === NOMINAL_TEMPERATURE) return v;
+  return v * (1 + ppm * 1e-6 * (celsius - NOMINAL_TEMPERATURE));
 }
