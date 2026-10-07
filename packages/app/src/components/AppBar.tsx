@@ -24,6 +24,7 @@ import {
   setPaletteOpen,
 } from '../store.ts';
 import { openBode } from './BodeDialog.tsx';
+import { openDcPanel } from './DcPanel.tsx';
 import { openSweep } from './SweepDialog.tsx';
 import { CategoryIcon } from './CategoryIcon.tsx';
 import { CircuitsSheet } from './CircuitsSheet.tsx';
@@ -167,6 +168,16 @@ export function AppBar() {
           />
           <Item label="Export as text…" onSelect={() => openDialog('exportText')} />
           <Item
+            label="Export image…"
+            testId="menu-export-image"
+            onSelect={() => openDialog('exportImage')}
+          />
+          <Item
+            label="Parts list…"
+            testId="menu-parts-list"
+            onSelect={() => openDialog('partsList')}
+          />
+          <Item
             label="Create Subcircuit…"
             testId="menu-create-subcircuit"
             onSelect={() => controller.createSubcircuit()}
@@ -296,6 +307,15 @@ export function AppBar() {
             data-testid="menu-wheel-edit"
           >
             <Check on={settings.wheelEdit} /> {t('Edit Values With Mouse Wheel')}
+          </Menu.CheckboxItem>
+          <Menu.CheckboxItem
+            className="menu-item"
+            checked={settings.wiresFollow}
+            onCheckedChange={(v) => updateSettings({ wiresFollow: v })}
+            title={t('Hold Alt while dragging to leave the wires behind')}
+            data-testid="menu-wires-follow"
+          >
+            <Check on={settings.wiresFollow} /> {t('Wires follow dragged parts')}
           </Menu.CheckboxItem>
           <Menu.CheckboxItem
             className="menu-item"
@@ -703,6 +723,7 @@ function ScopesMenuItems() {
       />
       <Menu.Separator className="menu-separator" />
       <Item label="AC Analysis (Bode Plot)…" testId="scopes-bode" onSelect={() => openBode()} />
+      <Item label="DC Operating Point" testId="scopes-dc" onSelect={() => openDcPanel()} />
       <Item label="Parameter Sweep…" testId="scopes-sweep" onSelect={() => openSweep('values')} />
       <Item
         label="Monte Carlo…"

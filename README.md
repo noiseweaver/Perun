@@ -12,6 +12,8 @@ opens upstream's links and files, and what it saves opens in upstream.
 - All 373 bundled upstream example circuits run and match upstream's results (`pnpm
 golden:examples`, report in [docs/EXAMPLES.md](docs/EXAMPLES.md)).
 - Scopes (docked, undocked, X-Y, FFT, triggers), live sliders, hover info with fixed-width values.
+- Editing extras: wires follow a dragged part (Options > Wires follow dragged parts, Alt to
+  detach), schematic export as SVG or PNG, a parts list as CSV, and full-resolution scope CSV.
 - Teaching tools: draw on the circuit with a pencil, point with a fading laser, erase; drawings are
   an overlay and never saved in the circuit file.
 - Themes: Dark (default), Light, Classic, Classic Dots, High Contrast, Colorblind Safe and community

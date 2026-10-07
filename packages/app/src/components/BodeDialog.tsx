@@ -19,12 +19,13 @@ import {
   type BodeSettings,
 } from '../analysis/bode.ts';
 import { bodeLayout, drawBode, freqAtX } from '../analysis/bodePlot.ts';
-import { elementNames, outputRank } from '../analysis/names.ts';
+import { outputRank } from '../analysis/names.ts';
 import { download, openDialog } from '../commands.ts';
 import { t } from '../i18n.ts';
 import { controller } from '../SimController.ts';
 import { shownTheme, useApp } from '../store.ts';
 import { Shell } from './DialogShell.tsx';
+import { elementNames } from './elementNames.ts';
 import { Icon } from './Icon.tsx';
 
 /** The last sweep, kept while the dialog is closed so reopening shows it again. */

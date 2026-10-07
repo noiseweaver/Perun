@@ -11,7 +11,7 @@ import {
 import { useEffect, useReducer, useRef, useState, type CSSProperties } from 'react';
 import { defaultAmplitude, isBodeOutput, isBodeSource } from '../analysis/bode.ts';
 import { bodeLayout, freqAtX } from '../analysis/bodePlot.ts';
-import { elementNames, outputRank } from '../analysis/names.ts';
+import { outputRank } from '../analysis/names.ts';
 import {
   MultiRun,
   acAt,
@@ -43,6 +43,7 @@ import { controller } from '../SimController.ts';
 import { shownTheme, useApp } from '../store.ts';
 import { NumberField, readPositive, shortNum } from './BodeDialog.tsx';
 import { Shell } from './DialogShell.tsx';
+import { elementNames } from './elementNames.ts';
 import { Icon } from './Icon.tsx';
 
 type Mode = 'values' | 'montecarlo';

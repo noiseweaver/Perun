@@ -304,15 +304,15 @@ Acceptance: the same seed gives the same runs; every drawn value stays within it
 
 ### Phase 13: DC operating point table
 Added 2026-10-06 by owner.
-- [ ] A command that runs the engine's existing DC solve (capacitors open) on a copy of the circuit, and a table of node voltages (labeled nodes by name, others by a generated name) and each part's current and power, sortable, with fixed-width monospace values. Selecting a row highlights the node or part on the canvas.
+- [x] A command that runs the engine's existing DC solve (capacitors open) on a copy of the circuit, and a table of node voltages (labeled nodes by name, others by a generated name) and each part's current and power, sortable, with fixed-width monospace values. Selecting a row highlights the node or part on the canvas.
 
 Acceptance: a resistor divider and a transistor bias circuit match hand calculation; capacitors carry no DC current. Golden tests unchanged.
 
 ### Phase 14: Editor and export quick wins
 Added 2026-10-06 by owner. No simulation or file format change.
-- [ ] Wires that stay attached: moving a part moves the wire ends on its posts (routed wires reroute), with an option to turn it off and a modifier to detach while dragging.
-- [ ] Export the schematic as SVG or PNG in the current theme, and a parts list (BOM) as CSV.
-- [ ] Full-resolution scope CSV export (every timestep in a window), with columns named after the parts' labels.
+- [x] Wires that stay attached: moving a part moves the wire ends on its posts (routed wires reroute), with an option to turn it off and a modifier to detach while dragging.
+- [x] Export the schematic as SVG or PNG in the current theme, and a parts list (BOM) as CSV.
+- [x] Full-resolution scope CSV export (every timestep in a window), with columns named after the parts' labels.
 
 Acceptance: dragging a part in an example circuit keeps every attached wire connected, and undo restores it in one step; exported SVG opens in a browser and matches the canvas; the CSV has one row per timestep.
 

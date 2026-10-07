@@ -71,6 +71,7 @@ import {
   type EditorHost,
   type Modifiers,
 } from './editor/Editor.ts';
+import { ScopeRecorder } from './analysis/scopeRecord.ts';
 import { download } from './download.ts';
 import { arrangeCards } from './scopeLayout.ts';
 import { sliderEntries, type SliderEntry } from './sliders.ts';
@@ -143,6 +144,8 @@ export class SimController {
   private scopeHoverElm: CircuitElm | null = null;
   /** The element of the slider under the pointer (upstream Scrollbar.onMouseOver). */
   private sliderHoverElm: CircuitElm | null = null;
+  /** Bumped whenever the circuit or a part's value changes (the DC table solves again). */
+  circuitVersion = 0;
   /** Undocked scope whose card is under the mouse (card look), or null. */
   private hoverUndocked: ScopeElm | null = null;
   /** Play feedback animations (not when the user prefers reduced motion). */
@@ -184,6 +187,7 @@ export class SimController {
     });
     this.circuit.read('');
     this.editor = new Editor(this.circuit, this.makeHost());
+    this.editor.wiresFollow = useApp.getState().settings.wiresFollow;
     this.annotations.onChange = () => this.publishTeach();
     this.editor.history.onChange = () => this.publishEditor();
     const stored = readClipboard();
@@ -221,6 +225,42 @@ export class SimController {
    * Load circuit text (either upstream format) and show it. Returns false on a parse error.
    * `undoable` records it as an edit, as upstream does for files and examples opened from menus.
    */
+  /** The scope the Export CSV dialog is for. */
+  csvScope: Scope | null = null;
+  /** A full-resolution recording of a scope, while one runs or until the next starts. */
+  scopeRecorder: ScopeRecorder | null = null;
+  private recordingHook: { prev: (() => void) | null; hook: () => void } | null = null;
+
+  /** Record every timestep of a scope's visible plots for `duration` seconds of simulated time. */
+  startScopeRecording(scope: Scope, duration: number): ScopeRecorder {
+    this.stopScopeRecording();
+    const sim = this.circuit.sim;
+    const rec = new ScopeRecorder(scope, sim, duration);
+    const prev = sim.onTimeStep;
+    const hook = (): void => {
+      prev?.();
+      // undo, a load or removing the scope replaced what it records
+      const mgr = this.circuit.scopes;
+      if (!mgr.scopes.includes(scope) && !this.circuit.undockedScopes().includes(scope)) rec.stop();
+      else rec.sample();
+      if (rec.done) this.stopScopeRecording();
+    };
+    sim.onTimeStep = hook;
+    this.recordingHook = { prev, hook };
+    this.scopeRecorder = rec;
+    return rec;
+  }
+
+  /** End the recording (its rows stay for export). */
+  stopScopeRecording(): void {
+    this.scopeRecorder?.stop();
+    const h = this.recordingHook;
+    if (h === null) return;
+    this.recordingHook = null;
+    const sim = this.circuit.sim;
+    if (sim.onTimeStep === h.hook) sim.onTimeStep = h.prev;
+  }
+
   load(text: string, title: string, running = true, undoable = false): boolean {
     const history = this.editor.history;
     // a new circuit ends any model editing (upstream resetEditingContext)
@@ -254,6 +294,7 @@ export class SimController {
   }
 
   private afterLoad(title: string, running: boolean, fit = true): void {
+    this.circuitVersion++;
     this.viewStack = [];
     const o = this.circuit.options;
     useApp.setState({
@@ -372,6 +413,8 @@ export class SimController {
       // X-Y plot images are drawn in theme colors as the simulation runs
       this.circuit.scopes.resetGraphs();
     }
+    if (s.settings.wiresFollow !== prev.settings.wiresFollow)
+      this.editor.wiresFollow = s.settings.wiresFollow;
     const o = this.circuit.options;
     // only changes made through the UI; a load sets the store from the circuit, not the reverse
     if (s.speed !== prev.speed) o.speed = s.speed;
@@ -519,6 +562,7 @@ export class SimController {
 
   /** The element list or an element changed: analyze again (upstream `needAnalyze`). */
   circuitChanged(): void {
+    this.circuitVersion++;
     this.circuit.removeUnusedScopeElms();
     this.circuit.pruneAdjustables();
     this.slidersChanged();
@@ -1069,8 +1113,8 @@ export class SimController {
       return;
     }
     if (item === 'exportcsv') {
-      const csv = s.exportCSV();
-      if (csv !== null) downloadText('circuitjs-scope.csv', csv, 'text/csv');
+      this.csvScope = s;
+      useApp.setState({ dialog: 'scopeCsv' });
       return;
     }
     this.scopeCommand('Scope', () => {
@@ -1555,6 +1599,7 @@ export class SimController {
   sliders(): SliderEntry[] {
     return sliderEntries(this.circuit.elements, this.circuit.adjustables, () => {
       this.circuit.sim.analyzeFlag = true;
+      this.circuitVersion++;
       this.unsavedChanges = true;
     });
   }
@@ -1583,6 +1628,16 @@ export class SimController {
   }
 
   /** Hovering a slider highlights its element and shows its info (upstream). */
+  /** Highlight the elements a DC table row points at (empty: none). */
+  setAnalysisHighlights(elms: Iterable<CircuitElm>): void {
+    if (this.renderer) this.renderer.analysisHighlights = new Set(elms);
+  }
+
+  /** The elements a DC table row highlights now. */
+  analysisHighlights(): CircuitElm[] {
+    return [...(this.renderer?.analysisHighlights ?? [])];
+  }
+
   setSliderHover(elm: CircuitElm | null): void {
     this.sliderHoverElm = elm;
     if (this.renderer) this.renderer.hovered = this.editor.mouseElm ?? this.scopeHoverElm ?? elm;
@@ -2857,17 +2912,6 @@ const scopeDefaultsStore: ScopeDefaultsStore = {
     }
   },
 };
-
-function downloadText(name: string, text: string, type: string): void {
-  const url = URL.createObjectURL(new Blob([text], { type }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 10000);
-}
 
 /** Upstream keeps the clipboard in local storage so it survives reloads and other tabs. */
 const CLIPBOARD_KEY = 'circuitClipboard';

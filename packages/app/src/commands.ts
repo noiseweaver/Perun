@@ -31,6 +31,9 @@ export type DialogKind =
   | 'themeEditor'
   | 'bode'
   | 'sweep'
+  | 'exportImage'
+  | 'partsList'
+  | 'scopeCsv'
   | null;
 
 export function openDialog(kind: DialogKind): void {

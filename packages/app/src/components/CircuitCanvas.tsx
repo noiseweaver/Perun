@@ -356,7 +356,12 @@ function ScopeMenuItems({ index, undocked }: { index: number; undocked: ScopeElm
       />
       <Item label="Reset" icon="replay" onSelect={run('reset')} />
       <Ctx.Separator className="menu-separator" />
-      <Item label="Export CSV…" icon="download" onSelect={run('exportcsv')} />
+      <Item
+        label="Export CSV…"
+        icon="download"
+        testId="scope-export-csv"
+        onSelect={run('exportcsv')}
+      />
       <Item
         label="Properties…"
         icon="settings"
