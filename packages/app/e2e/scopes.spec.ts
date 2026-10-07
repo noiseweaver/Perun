@@ -165,13 +165,19 @@ test('Scopes menu stacks and separates every scope', async ({ page }) => {
   const positions = () =>
     page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes.map((s) => s.position));
   expect(await positions()).toEqual([0, 1, 2]);
-  await page.getByTestId('scopes-menu').click();
+  // let the last menu finish closing first: a click while it fades out can leave it shut
+  const openScopes = async (): Promise<void> => {
+    await expect(page.getByRole('menu')).toHaveCount(0);
+    await page.getByTestId('scopes-menu').click();
+    await expect(page.getByRole('menu')).toBeVisible();
+  };
+  await openScopes();
   await page.getByRole('menuitem', { name: 'Stack All', exact: true }).click();
   expect(await positions()).toEqual([0, 0, 0]);
-  await page.getByTestId('scopes-menu').click();
+  await openScopes();
   await page.getByRole('menuitem', { name: 'Combine All', exact: true }).click();
   expect(await scopeCount(page)).toBe(1);
-  await page.getByTestId('scopes-menu').click();
+  await openScopes();
   await page.getByTestId('scopes-separate-all').click();
   expect(await scopeCount(page)).toBe(3);
 });

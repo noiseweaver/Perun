@@ -40,6 +40,40 @@
 
 - An L bend picks the corner by the wire's direction only; it can run the new leg through another
   part. A routed wire avoids that if it matters.
+## 2026-10-06: Phase 13, DC operating point table (branch claude/dc-bias-table-l9npgo)
+
+### Done
+
+- Scopes > DC Operating Point opens a card over the top right of the canvas (under the sliders,
+  if any) with two tables: node voltages (GND, labeled nodes by name, the rest N1, N2 ... in the
+  order the circuit meets them) and each part's voltage, current and power. Parts with more than
+  two posts list each post (B/C/E, G/S/D, op-amp pins, chip pin names) with its voltage and the
+  current into the part. Columns sort by clicking the header. Values use `getFixedUnitText` in
+  the monospace font, so nothing shifts. Pointing at a row lights the node's wires (or the part)
+  on the canvas; tapping pins it. CSV export of both tables.
+- Two modes. DC solve (packages/app/src/analysis/dcop.ts, `solveOperatingPoint`) reads a copy of
+  the circuit and runs the engine's DC analysis (`dcAnalysisFlag`: sources at their DC bias) step
+  after step until no node moves by more than 1 nV (5 steps in a row), up to 20000 steps or 3 s.
+  On the copy only, inductors become 1 pH backward-Euler shorts and capacitors are true opens
+  (`CapacitorElm.dcOpen`, new, default off) instead of upstream's 100 MΩ, so a capacitor shows
+  0 A and nothing leaks through it. It solves again after every edit or slider move
+  (`SimController.circuitVersion`). Live reads the running simulation four times a second.
+- Tests: dcop.test.ts (divider, voltage-divider NPN bias against the Thevenin hand calculation,
+  capacitors carry no current, inductors short, AC source keeps only its offset, a node between
+  two capacitors, CSV); e2e packages/app/e2e/dcop.spec.ts. All 32 golden circuits solve; only
+  dc-motor does not settle (it spins up) and the two convergence-failure fixtures report the
+  engine's error. Golden compare unchanged (44/44).
+
+### Next
+
+- Possible follow-ups: show a node's voltage next to it on the canvas, a reference node other
+  than ground, a power column total.
+
+### Open issues
+
+- Big circuits with many transistors take the engine's own DC convergence time per solve (the
+  op-amp-real fixture: about 0.6 s, mostly the first step's Newton iterations), and Solve mode
+  repeats it after each edit.
 
 ## 2026-10-06: coil field arrows
 

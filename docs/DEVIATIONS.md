@@ -21,6 +21,11 @@ test that shows it (PLAN.md section 2).
 
 Not deviations, for the record:
 
+- `CapacitorElm.dcOpen` (not upstream, off by default) makes a capacitor a true open circuit
+  during DC analysis instead of a 100 MΩ resistor. Only the DC operating point table sets it, on
+  its own copy of the circuit (packages/app/src/analysis/dcop.ts); the simulation and the golden
+  tests never do.
+
 - The scope card look (`style.scopeLook: cards`) changes only how scopes are drawn: the data,
   auto scales and saved records are upstream's. Classic keeps upstream's look. A 2D (X-Y or V vs
   I) plot also redraws its trail image when its height changes; upstream does this for X/Y plots

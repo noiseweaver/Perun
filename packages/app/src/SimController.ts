@@ -143,6 +143,8 @@ export class SimController {
   private scopeHoverElm: CircuitElm | null = null;
   /** The element of the slider under the pointer (upstream Scrollbar.onMouseOver). */
   private sliderHoverElm: CircuitElm | null = null;
+  /** Bumped whenever the circuit or a part's value changes (the DC table solves again). */
+  circuitVersion = 0;
   /** Undocked scope whose card is under the mouse (card look), or null. */
   private hoverUndocked: ScopeElm | null = null;
   /** Play feedback animations (not when the user prefers reduced motion). */
@@ -291,6 +293,7 @@ export class SimController {
   }
 
   private afterLoad(title: string, running: boolean, fit = true): void {
+    this.circuitVersion++;
     this.viewStack = [];
     const o = this.circuit.options;
     useApp.setState({
@@ -558,6 +561,7 @@ export class SimController {
 
   /** The element list or an element changed: analyze again (upstream `needAnalyze`). */
   circuitChanged(): void {
+    this.circuitVersion++;
     this.circuit.removeUnusedScopeElms();
     this.circuit.pruneAdjustables();
     this.slidersChanged();
@@ -1584,6 +1588,7 @@ export class SimController {
   sliders(): SliderEntry[] {
     return sliderEntries(this.circuit.elements, this.circuit.adjustables, () => {
       this.circuit.sim.analyzeFlag = true;
+      this.circuitVersion++;
       this.unsavedChanges = true;
     });
   }
@@ -1612,6 +1617,16 @@ export class SimController {
   }
 
   /** Hovering a slider highlights its element and shows its info (upstream). */
+  /** Highlight the elements a DC table row points at (empty: none). */
+  setAnalysisHighlights(elms: Iterable<CircuitElm>): void {
+    if (this.renderer) this.renderer.analysisHighlights = new Set(elms);
+  }
+
+  /** The elements a DC table row highlights now. */
+  analysisHighlights(): CircuitElm[] {
+    return [...(this.renderer?.analysisHighlights ?? [])];
+  }
+
   setSliderHover(elm: CircuitElm | null): void {
     this.sliderHoverElm = elm;
     if (this.renderer) this.renderer.hovered = this.editor.mouseElm ?? this.scopeHoverElm ?? elm;

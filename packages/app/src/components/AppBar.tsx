@@ -24,6 +24,7 @@ import {
   setPaletteOpen,
 } from '../store.ts';
 import { openBode } from './BodeDialog.tsx';
+import { openDcPanel } from './DcPanel.tsx';
 import { CategoryIcon } from './CategoryIcon.tsx';
 import { CircuitsSheet } from './CircuitsSheet.tsx';
 import { Icon } from './Icon.tsx';
@@ -721,6 +722,7 @@ function ScopesMenuItems() {
       />
       <Menu.Separator className="menu-separator" />
       <Item label="AC Analysis (Bode Plot)…" testId="scopes-bode" onSelect={() => openBode()} />
+      <Item label="DC Operating Point" testId="scopes-dc" onSelect={() => openDcPanel()} />
     </>
   );
 }

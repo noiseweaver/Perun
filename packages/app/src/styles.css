@@ -724,15 +724,31 @@ textarea,
 
 /* ---- the circuit's sliders (upstream's side panel) ---------------------------------------- */
 
-.slider-panel {
+/* the cards over the top right of the canvas: sliders, then the DC table */
+.overlay-right {
   position: absolute;
   top: 12px;
   right: 12px;
   z-index: 5;
   display: flex;
   flex-direction: column;
-  width: 248px;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: calc(100% - 24px);
   max-height: calc(100% - 24px);
+  pointer-events: none;
+}
+
+.overlay-right > * {
+  pointer-events: auto;
+}
+
+.slider-panel {
+  display: flex;
+  flex: 0 1 auto;
+  min-height: 0;
+  flex-direction: column;
+  width: 248px;
   border-radius: var(--md-shape-m);
   background: color-mix(in srgb, var(--md-surface-container-high) 92%, transparent);
   box-shadow: var(--md-elevation-2);
@@ -740,6 +756,7 @@ textarea,
 }
 
 .slider-panel[data-folded] {
+  flex: none;
   width: auto;
 }
 
@@ -802,6 +819,250 @@ textarea,
 
 .slider-wide {
   width: 100%;
+}
+
+/* ---- DC operating point table ------------------------------------------------------------- */
+
+.dc-panel {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  width: 440px;
+  max-width: 100%;
+  border-radius: var(--md-shape-m);
+  background: color-mix(in srgb, var(--md-surface-container-high) 94%, transparent);
+  box-shadow: var(--md-elevation-2);
+  color: var(--ui-text);
+  animation: fade-in 150ms var(--md-motion);
+}
+
+.dc-panel[data-folded] {
+  flex: none;
+  width: auto;
+}
+
+.dc-panel-header {
+  display: flex;
+  align-items: center;
+}
+
+.dc-panel-title {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 4px 0 12px;
+  border: none;
+  border-radius: var(--md-shape-m);
+  background: none;
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dc-panel-title > span {
+  flex: 1;
+}
+
+.dc-panel-title:focus-visible,
+.dc-sort:focus-visible,
+.dc-tabs button:focus-visible,
+.dc-segmented button:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: -2px;
+}
+
+.dc-panel-close {
+  margin-right: 4px;
+}
+
+.dc-panel-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 8px;
+  padding: 0 12px 10px;
+}
+
+.dc-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dc-segmented {
+  display: inline-flex;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--md-shape-full);
+  overflow: hidden;
+}
+
+.dc-segmented button {
+  height: 30px;
+  padding: 0 14px;
+  border: none;
+  background: none;
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.dc-segmented button + button {
+  border-left: 1px solid var(--ui-border);
+}
+
+.dc-segmented button[aria-checked='true'] {
+  background: var(--md-secondary-container);
+}
+
+.dc-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.dc-tabs button {
+  flex: 1;
+  height: 34px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--ui-text-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.dc-tabs button[aria-selected='true'] {
+  border-bottom-color: var(--ui-accent);
+  color: var(--ui-accent);
+}
+
+.dc-count {
+  font-family: var(--mono-font);
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.dc-table-wrap {
+  min-height: 0;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.dc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  line-height: 22px;
+}
+
+.dc-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0;
+  background: var(--md-surface-container-high);
+  color: var(--ui-text-muted);
+  font-weight: 500;
+  text-align: left;
+}
+
+.dc-table th.dc-num {
+  text-align: right;
+}
+
+.dc-sort {
+  width: 100%;
+  padding: 2px 6px;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.dc-table td {
+  padding: 0 6px;
+  border-top: 1px solid color-mix(in srgb, var(--ui-border) 50%, transparent);
+}
+
+.dc-table tbody tr {
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .dc-table tbody tr:hover {
+    background: color-mix(in srgb, var(--ui-text) 8%, transparent);
+  }
+}
+
+.dc-table tbody tr[data-pinned] {
+  background: var(--md-secondary-container);
+}
+
+.dc-name {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dc-table td.dc-num {
+  font-family: var(--mono-font);
+  white-space: pre;
+  text-align: right;
+}
+
+.dc-table tr.dc-sub td {
+  border-top: none;
+}
+
+.dc-table tr.dc-sub .dc-name {
+  padding-left: 22px;
+  color: var(--ui-text-muted);
+}
+
+.dc-note {
+  margin: 0;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.dc-problem {
+  color: var(--ui-danger);
+}
+
+/* phones: four columns fit without scrolling sideways */
+@media (max-width: 480px) {
+  .dc-table {
+    font-size: 11px;
+  }
+
+  .dc-table td,
+  .dc-sort {
+    padding-left: 3px;
+    padding-right: 3px;
+  }
+
+  .dc-name {
+    max-width: 84px;
+  }
+
+  .dc-table tr.dc-sub .dc-name {
+    padding-left: 14px;
+  }
 }
 
 /* ---- dialog ------------------------------------------------------------------------------- */
