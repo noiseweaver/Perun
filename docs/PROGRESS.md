@@ -42,6 +42,47 @@
 - A slider moving a bound field leaves the binding in place, so the next parameter change sets
   the field back.
 
+## 2026-10-06: Phase 14, editor and export quick wins (branch claude/quick-wins-wires-export-wi0gpu)
+
+### Done
+
+- Wires follow a dragged part (packages/app/src/editor/wireFollow.ts). When a drag or an arrow key
+  moves a selection, every unselected wire with an end on one of its posts follows. A straight
+  wire with one end moving bends into an L: the wire keeps its fixed end and a new wire runs from
+  the corner to the part, so the leg at the part keeps the wire's direction. A wire in line with
+  the move just stretches, a slanted one stretches, a routed wire reroutes, and a wire that shrinks
+  to nothing is removed when the drag ends. The wires are placed from the total offset each move,
+  so holding Alt mid-drag puts them back and releasing it brings them along again. Options > Wires
+  follow dragged parts (user setting `wiresFollow`, on) turns it off. One undo step per drag.
+- File > Export image: SVG or PNG (1×, 2×, 4×, at most 8192 px a side) of the schematic or the
+  selection, without grid, dots or highlights. Colors: Light (default, for print), the current
+  theme or Classic, optionally by voltage, optionally transparent. A live preview shows the
+  result. packages/render/src/schematic.ts has `SvgPainter` (the `Painter` interface writing SVG
+  elements, gradients as `<linearGradient>`), `drawSchematic` shared with an off-screen canvas,
+  and the post lists moved to posts.ts so both use the renderer's rules. SVG text names the
+  theme's fonts but doesn't embed them.
+- File > Parts list (packages/app/src/export/partsList.ts): parts grouped by palette name, value
+  and settings with a count, sorted by name. The value is the first edit field with a unit (from
+  "(ohms)" style labels or words like Voltage); other non-zero fields, choices and text go in
+  Details; starting state ("Initial ...") is left out. Wires, ground, labels, meters, probes and
+  graphics are not parts. Table in the dialog, CSV download and copy.
+- Scope Export CSV opens a dialog (packages/app/src/analysis/scopeRecord.ts). "On screen only"
+  is upstream's file. Full resolution records every timestep of the visible plots from now for a
+  chosen simulated time (default: the scope's width), by hooking `sim.onTimeStep` after the
+  scopes. Columns are "part or scope label: plot (unit)". It stops at 1M rows, on a reset, or if
+  the scope goes (undo, load). Values are after AC coupling when that is on.
+- e2e: packages/app/e2e/export.spec.ts.
+
+### Next
+
+- Possible follow-ups: PDF (via print), a netlist export, embedding fonts in the SVG, export of
+  Bode and sweep results from the same dialog.
+
+### Open issues
+
+- An L bend picks the corner by the wire's direction only; it can run the new leg through another
+  part. A routed wire avoids that if it matters.
+
 ## 2026-10-06: Phase 13, DC operating point table (branch claude/dc-bias-table-l9npgo)
 
 ### Done

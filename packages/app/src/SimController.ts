@@ -75,6 +75,7 @@ import {
   type EditorHost,
   type Modifiers,
 } from './editor/Editor.ts';
+import { ScopeRecorder } from './analysis/scopeRecord.ts';
 import { download } from './download.ts';
 import { arrangeCards } from './scopeLayout.ts';
 import { sliderEntries, type SliderEntry } from './sliders.ts';
@@ -190,6 +191,7 @@ export class SimController {
     });
     this.circuit.read('');
     this.editor = new Editor(this.circuit, this.makeHost());
+    this.editor.wiresFollow = useApp.getState().settings.wiresFollow;
     this.annotations.onChange = () => this.publishTeach();
     this.editor.history.onChange = () => this.publishEditor();
     const stored = readClipboard();
@@ -227,6 +229,42 @@ export class SimController {
    * Load circuit text (either upstream format) and show it. Returns false on a parse error.
    * `undoable` records it as an edit, as upstream does for files and examples opened from menus.
    */
+  /** The scope the Export CSV dialog is for. */
+  csvScope: Scope | null = null;
+  /** A full-resolution recording of a scope, while one runs or until the next starts. */
+  scopeRecorder: ScopeRecorder | null = null;
+  private recordingHook: { prev: (() => void) | null; hook: () => void } | null = null;
+
+  /** Record every timestep of a scope's visible plots for `duration` seconds of simulated time. */
+  startScopeRecording(scope: Scope, duration: number): ScopeRecorder {
+    this.stopScopeRecording();
+    const sim = this.circuit.sim;
+    const rec = new ScopeRecorder(scope, sim, duration);
+    const prev = sim.onTimeStep;
+    const hook = (): void => {
+      prev?.();
+      // undo, a load or removing the scope replaced what it records
+      const mgr = this.circuit.scopes;
+      if (!mgr.scopes.includes(scope) && !this.circuit.undockedScopes().includes(scope)) rec.stop();
+      else rec.sample();
+      if (rec.done) this.stopScopeRecording();
+    };
+    sim.onTimeStep = hook;
+    this.recordingHook = { prev, hook };
+    this.scopeRecorder = rec;
+    return rec;
+  }
+
+  /** End the recording (its rows stay for export). */
+  stopScopeRecording(): void {
+    this.scopeRecorder?.stop();
+    const h = this.recordingHook;
+    if (h === null) return;
+    this.recordingHook = null;
+    const sim = this.circuit.sim;
+    if (sim.onTimeStep === h.hook) sim.onTimeStep = h.prev;
+  }
+
   load(text: string, title: string, running = true, undoable = false): boolean {
     const history = this.editor.history;
     // a new circuit ends any model editing (upstream resetEditingContext)
@@ -379,6 +417,8 @@ export class SimController {
       // X-Y plot images are drawn in theme colors as the simulation runs
       this.circuit.scopes.resetGraphs();
     }
+    if (s.settings.wiresFollow !== prev.settings.wiresFollow)
+      this.editor.wiresFollow = s.settings.wiresFollow;
     const o = this.circuit.options;
     // only changes made through the UI; a load sets the store from the circuit, not the reverse
     if (s.speed !== prev.speed) o.speed = s.speed;
@@ -1078,8 +1118,8 @@ export class SimController {
       return;
     }
     if (item === 'exportcsv') {
-      const csv = s.exportCSV();
-      if (csv !== null) downloadText('circuitjs-scope.csv', csv, 'text/csv');
+      this.csvScope = s;
+      useApp.setState({ dialog: 'scopeCsv' });
       return;
     }
     this.scopeCommand('Scope', () => {
@@ -2929,17 +2969,6 @@ const scopeDefaultsStore: ScopeDefaultsStore = {
     }
   },
 };
-
-function downloadText(name: string, text: string, type: string): void {
-  const url = URL.createObjectURL(new Blob([text], { type }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 10000);
-}
 
 /** Upstream keeps the clipboard in local storage so it survives reloads and other tabs. */
 const CLIPBOARD_KEY = 'circuitClipboard';

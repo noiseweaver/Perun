@@ -17,3 +17,15 @@ export {
   type BottomAreaState,
   type UndockedScopeItem,
 } from './ScopeRenderer.ts';
+export { findPosts, type PostInfo } from './posts.ts';
+export {
+  DEFAULT_SCHEMATIC,
+  SvgPainter,
+  drawSchematic,
+  estimateText,
+  schematicBounds,
+  schematicCanvas,
+  schematicSvg,
+  type MeasureText,
+  type SchematicOptions,
+} from './schematic.ts';

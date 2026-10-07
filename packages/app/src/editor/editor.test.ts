@@ -66,6 +66,7 @@ describe('Editor', () => {
       '$ 1 5.0E-6 10 50 5.0\nr 96 96 192 96 0 1000\nw 192 96 192 192 0\n',
     );
     const [r, w] = circuit.elements as [CircuitElm, CircuitElm];
+    ed.wiresFollow = false;
     ed.hover(144, 96);
     ed.pointerDown(144, 96, NO_MODIFIERS);
     ed.pointerUp(NO_MODIFIERS);
@@ -78,6 +79,74 @@ describe('Editor', () => {
     expect(pos(circuit.elements[0] as CircuitElm)).toEqual([96, 96, 192, 96]);
     ed.history.redo();
     expect(pos(circuit.elements[0] as CircuitElm)).toEqual([128, 144, 224, 144]);
+  });
+
+  describe('wires following a moved part', () => {
+    const RW = '$ 1 5.0E-6 10 50 5.0\nr 96 96 192 96 0 1000\nw 192 96 192 192 0\n';
+
+    it('bends a straight wire into an L, keeping its direction at the part', () => {
+      const { circuit, ed } = setup(RW);
+      drag(ed, 144, 96, 144 + 32, 96 + 48);
+      expect(circuit.elements).toHaveLength(3);
+      const [r, w, c] = circuit.elements as [CircuitElm, CircuitElm, CircuitElm];
+      expect(pos(r)).toEqual([128, 144, 224, 144]);
+      expect(pos(w)).toEqual([224, 192, 192, 192]);
+      expect(c).toBeInstanceOf(WireElm);
+      expect(pos(c)).toEqual([224, 192, 224, 144]);
+      ed.history.undo();
+      expect(circuit.elements.map(pos)).toEqual([
+        [96, 96, 192, 96],
+        [192, 96, 192, 192],
+      ]);
+    });
+
+    it('stretches a wire in line with the move, and drops one that shrinks to nothing', () => {
+      const { circuit, ed } = setup(
+        '$ 1 5.0E-6 10 50 5.0\nr 96 96 192 96 0 1000\nw 192 96 288 96 0\n',
+      );
+      drag(ed, 144, 96, 176, 96);
+      expect(circuit.elements.map(pos)).toEqual([
+        [128, 96, 224, 96],
+        [224, 96, 288, 96],
+      ]);
+      ed.select(circuit.elements[0] as CircuitElm);
+      drag(ed, 176, 96, 240, 96);
+      expect(circuit.elements.map(pos)).toEqual([[192, 96, 288, 96]]);
+    });
+
+    it('stays behind while Alt is held, or with the setting off', () => {
+      const alt = { ...NO_MODIFIERS, alt: true };
+      const a = setup(RW);
+      a.ed.hover(144, 96);
+      a.ed.pointerDown(144, 96, NO_MODIFIERS);
+      a.ed.pointerDrag(160, 120, NO_MODIFIERS);
+      expect(a.circuit.elements).toHaveLength(3);
+      a.ed.pointerDrag(176, 144, alt);
+      a.ed.pointerUp(alt);
+      expect(a.circuit.elements.map(pos)).toEqual([
+        [128, 144, 224, 144],
+        [192, 96, 192, 192],
+      ]);
+      const b = setup(RW);
+      b.ed.wiresFollow = false;
+      drag(b.ed, 144, 96, 176, 144);
+      expect(pos(b.circuit.elements[1] as CircuitElm)).toEqual([192, 96, 192, 192]);
+    });
+
+    it('moves both ends of a wire between two moved parts, and follows arrow keys', () => {
+      const { circuit, ed } = setup(
+        '$ 1 5.0E-6 10 50 5.0\nr 96 96 192 96 0 1000\nw 192 96 288 96 0\nr 288 96 384 96 0 1000\nw 384 96 384 192 0\n',
+      );
+      ed.select(circuit.elements[0] as CircuitElm);
+      ed.select(circuit.elements[2] as CircuitElm, true);
+      ed.moveSelected(0, 16);
+      expect(circuit.elements.map(pos)).toEqual([
+        [96, 112, 192, 112],
+        [192, 112, 288, 112],
+        [288, 112, 384, 112],
+        [384, 112, 384, 192],
+      ]);
+    });
   });
 
   it('selects an area with a rubber band and clears it with a click on empty space', () => {

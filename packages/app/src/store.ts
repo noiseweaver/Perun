@@ -38,6 +38,8 @@ export interface UserSettings {
   valueSize: number;
   /** The mouse wheel over a resistor, capacitor or inductor steps its value (upstream option). */
   wheelEdit: boolean;
+  /** Wire ends on a dragged part's posts move with it (not in upstream; Alt detaches). */
+  wiresFollow: boolean;
   /** Font for text boxes; a display choice, not saved with circuits. */
   textFont: TextFont;
   /** Interface language: `auto` (the browser's) or an upstream catalog code (i18n.ts). */
@@ -133,6 +135,9 @@ export interface AppState {
     | 'themes'
     | 'themeEditor'
     | 'bode'
+    | 'exportImage'
+    | 'partsList'
+    | 'scopeCsv'
     | null;
   /** Bumped to move keyboard focus to the property panel (double-click, Enter). */
   inspectorFocus: number;
@@ -204,6 +209,7 @@ function loadSettings(): UserSettings {
     junctionDots: false,
     fields: NO_FIELDS,
     wheelEdit: true,
+    wiresFollow: true,
     valueSize: 0.875,
     textFont: { family: 'default', bold: false, italic: false },
     language: 'auto',
@@ -235,6 +241,7 @@ function loadSettings(): UserSettings {
       junctionDots: typeof s.junctionDots === 'boolean' ? s.junctionDots : defaults.junctionDots,
       fields: readFields(s) ?? defaults.fields,
       wheelEdit: typeof s.wheelEdit === 'boolean' ? s.wheelEdit : defaults.wheelEdit,
+      wiresFollow: typeof s.wiresFollow === 'boolean' ? s.wiresFollow : defaults.wiresFollow,
       valueSize: VALUE_SIZES.some((v) => v.scale === s.valueSize)
         ? (s.valueSize as number)
         : defaults.valueSize,

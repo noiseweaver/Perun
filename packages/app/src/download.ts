@@ -3,7 +3,12 @@
 
 /** Offer text to the browser as a file download. */
 export function download(fileName: string, text: string, type: string): void {
-  const url = URL.createObjectURL(new Blob([text], { type }));
+  downloadBlob(fileName, new Blob([text], { type }));
+}
+
+/** Offer binary data (an image) as a file download. */
+export function downloadBlob(fileName: string, blob: Blob): void {
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = fileName;
