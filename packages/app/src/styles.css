@@ -199,12 +199,14 @@ textarea,
   gap: 4px;
 }
 
+/* a menu: its icon and name (the name drops out on phones, below) */
 .menu-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 8px;
   height: 40px;
-  padding: 0 8px 0 16px;
+  padding: 0 16px 0 12px;
   font: inherit;
   font-weight: 500;
   letter-spacing: 0.01em;
@@ -217,6 +219,18 @@ textarea,
 
 .menu-trigger[data-state='open'] {
   background: var(--md-secondary-container);
+}
+
+.menu-trigger-icon {
+  color: var(--ui-text-muted);
+}
+
+.menu-trigger[data-state='open'] .menu-trigger-icon {
+  color: var(--ui-accent);
+}
+
+.menu-trigger:disabled .menu-trigger-icon {
+  color: inherit;
 }
 
 .menu-trigger:disabled {
@@ -1769,53 +1783,123 @@ textarea.field-input {
 
 /* ---- compact width ------------------------------------------------------------------------ */
 
-@media (max-width: 600px) {
-  /* the menus don't fit beside the title on a phone: they get a row of their own */
+/* phones either way up: one slim bar, the menus as icons beside the title (each keeps its name
+   for screen readers and as a tooltip) */
+@media (max-width: 719px), (max-height: 559px) {
   .app-bar {
-    flex-wrap: wrap;
-    min-height: 0;
-    padding: 4px 4px 0;
-    gap: 0 4px;
+    min-height: 48px;
+    padding: 4px 8px;
+    gap: 2px;
   }
 
   .app-bar-brand {
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-  }
-
-  .app-bar-brand > svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .app-bar-title {
-    flex: 1;
-    max-width: none;
-    margin: 0 4px;
-    font-size: 18px;
-  }
-
-  .app-bar-menus {
-    order: 1;
-    flex: 1 0 100%;
-    min-width: 0;
-    justify-content: space-between;
-    gap: 0;
-    /* a very narrow phone scrolls the row sideways rather than widening the page */
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .menu-trigger {
-    flex: none;
-    padding: 0 10px;
-  }
-
-  .menu-trigger > .icon {
     display: none;
   }
 
+  .app-bar-title {
+    flex: 1 1 auto;
+    max-width: none;
+    margin: 0 4px;
+    font-size: 18px;
+    line-height: 24px;
+  }
+
+  .app-bar-menus {
+    gap: 0;
+  }
+
+  .menu-trigger {
+    width: 40px;
+    padding: 0;
+  }
+
+  .menu-trigger-label {
+    display: none;
+  }
+
+  .menu-trigger-icon {
+    color: var(--ui-text);
+  }
+}
+
+/* phones on their side: height is what runs short, so the bar's run controls become a rail
+   down the right of the canvas and the time readouts sit at the end of the app bar's row */
+@media (max-height: 559px) and (orientation: landscape) {
+  .app {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      'bar status'
+      'work rail';
+  }
+
+  .app-bar {
+    grid-area: bar;
+    min-width: 0;
+  }
+
+  .workspace {
+    grid-area: work;
+    padding: 0 0 8px 8px;
+    gap: 8px;
+  }
+
+  .control-bar {
+    display: contents;
+  }
+
+  .control-bar > .control-group {
+    grid-area: rail;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 8px 8px;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .control-bar > .control-group > .button-filled {
+    min-width: 0;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    margin-bottom: 4px;
+  }
+
+  .run-label {
+    display: none;
+  }
+
+  /* the readouts stack two to a column, so the row stays one slim bar */
+  .control-bar > .status {
+    grid-area: status;
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: auto auto;
+    align-content: center;
+    justify-items: start;
+    gap: 0 12px;
+    margin: 0;
+    padding: 4px 12px 4px 4px;
+  }
+
+  .control-bar > .status .readout {
+    line-height: 18px;
+  }
+
+  .control-bar > .status .readout-button {
+    padding: 0 4px;
+  }
+
+  .control-bar > .status .chip {
+    height: 20px;
+    padding: 0 8px 0 4px;
+    gap: 4px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 600px) {
   .control-bar {
     gap: 8px 16px;
   }
@@ -2439,29 +2523,76 @@ textarea.field-input {
 
 /* ---- Circuits sheet (phones) -------------------------------------------------------------- */
 
-.circuits-sheet {
+/* the dimmed page around the sheet: a tap there puts the sheet away */
+.circuits-sheet-scrim {
   position: fixed;
   inset: 0;
   z-index: 30;
+  background: color-mix(in srgb, var(--ui-shadow) 60%, transparent);
+  animation: scrim-in 200ms var(--md-motion);
+}
+
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* a bottom sheet with a little of the app showing above it; on its side, a column in the middle */
+.circuits-sheet {
+  position: fixed;
+  z-index: 31;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: calc(env(safe-area-inset-top) + 40px);
   display: flex;
   flex-direction: column;
+  margin: 0 auto;
+  max-width: 600px;
+  border-radius: var(--md-shape-xl) var(--md-shape-xl) 0 0;
   background: var(--md-surface-container-high);
   color: var(--ui-text);
+  box-shadow: var(--md-elevation-3);
+  padding-bottom: env(safe-area-inset-bottom);
+  transition: transform 180ms var(--md-motion);
   animation: sheet-up 240ms var(--md-motion);
+}
+
+@media (max-height: 559px) and (orientation: landscape) {
+  .circuits-sheet {
+    top: 8px;
+    width: min(560px, calc(100% - 32px));
+  }
 }
 
 @keyframes sheet-up {
   from {
-    transform: translateY(24px);
+    transform: translateY(48px);
     opacity: 0;
   }
+}
+
+.circuits-sheet-handle {
+  display: flex;
+  justify-content: center;
+  flex: none;
+  padding: 10px 0 2px;
+}
+
+.circuits-sheet-handle .sheet-handle-bar {
+  width: 32px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--ui-text-muted);
+  opacity: 0.5;
 }
 
 .circuits-sheet-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 8px 8px 20px;
+  padding: 0 8px 4px 20px;
 }
 
 .circuits-sheet-title {

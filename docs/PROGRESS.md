@@ -1,5 +1,36 @@
 # Progress
 
+## 2026-10-07: Mobile polish (branch claude/mobile-landscape-menu-polish-amx0hv)
+
+### Done
+
+- Top bar: each menu is an icon and its name on wide screens (File folder, Edit, Circuits
+  library, Scopes trace, Options gear) with no dropdown caret. On phones either way up (width
+  under 720 px or height under 560 px) the menus are icon buttons beside the title in one 48 px
+  row (names stay as aria-label and tooltip); portrait no longer spends a second row on them, and
+  the brand tile is hidden there.
+- Phone on its side (height under 560 px, landscape): `.app` becomes a grid. The bottom bar's
+  run controls form a rail down the right of the canvas (Run/Stop icon only, 48 px) and the
+  readouts stack two to a column at the end of the app bar's row, so the canvas gets almost the
+  full height.
+- Circuits sheet: now on phones either way up (it was portrait only), as a bottom sheet with a
+  dimmed scrim. A tap outside, a pull down (from the handle or header, or from the list once it
+  is scrolled to the top), the close button or Escape put it away.
+- Icons on every top bar menu item and submenu entry (Icon.tsx gained Material paths plus three
+  drawn here: European resistor, omega, junction). Options switches now show their icon first and
+  the tick at the end; radio choices inside submenus keep their leading tick. The context menu's
+  Max Scale and Freeze get icons too. `MenuIcon` moved to Icon.tsx and is shared.
+- e2e: sheet dismissal by tap and pull (viewer.spec.ts), landscape rail layout.
+
+### Next
+
+- Gady checks the landscape rail and the sheet on the iPhone.
+
+### Open issues
+
+- examples.test.ts "matched pair and tempco resistor" times out at 5 s in the cloud sandbox on
+  main too (slow machine); CI decides.
+
 ## 2026-10-07: Phases 15 and 16, temperature and subcircuit parameters (branch claude/temperature-subcircuit-params-nid9p9)
 
 ### Done

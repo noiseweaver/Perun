@@ -2,7 +2,7 @@
 // Copyright (C) 2026 circuitjs-next contributors
 
 import * as Dialog from '@radix-ui/react-dialog';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import type { ExampleItem, ExampleMenu } from '../examples.ts';
 import { openExample } from '../startup.ts';
 import { CategoryIcon } from './CategoryIcon.tsx';
@@ -64,9 +64,89 @@ function Items(props: { menu: ExampleMenu; depth: number; pick: (it: ExampleItem
   );
 }
 
+/** How far (px) a sheet must be pulled down, or how fast (px/ms), to let it go. */
+const DISMISS_DISTANCE = 96;
+const DISMISS_SPEED = 0.6;
+
 /**
- * The Circuits menu on a phone: a full-screen sheet with a search box and groups that open in
- * place, where the desktop dropdown's side-opening submenus have no room.
+ * Pull the sheet down to dismiss it: from its handle or header at any time, and from the list
+ * once the list is scrolled to its top (further down the list a downward swipe scrolls it).
+ */
+function useSwipeToDismiss(
+  // the element itself, not a ref: the dialog's portal mounts it after the first render
+  el: HTMLElement | null,
+  list: RefObject<HTMLElement | null>,
+  dismiss: () => void,
+): void {
+  const onDismiss = useRef(dismiss);
+  useEffect(() => {
+    onDismiss.current = dismiss;
+  });
+  useEffect(() => {
+    if (!el) return;
+    let startY = 0;
+    let startT = 0;
+    let dy = 0;
+    let state: 'idle' | 'pending' | 'drag' | 'scroll' = 'idle';
+    const inList = (t: EventTarget | null): boolean =>
+      t instanceof Node && (list.current?.contains(t) ?? false);
+    const start = (e: TouchEvent): void => {
+      const touch = e.touches[0];
+      if (e.touches.length !== 1 || !touch) {
+        state = 'idle';
+        return;
+      }
+      startY = touch.clientY;
+      startT = e.timeStamp;
+      dy = 0;
+      state = inList(e.target) && (list.current?.scrollTop ?? 0) > 0 ? 'scroll' : 'pending';
+    };
+    const move = (e: TouchEvent): void => {
+      const touch = e.touches[0];
+      if (!touch || state === 'idle' || state === 'scroll') return;
+      dy = touch.clientY - startY;
+      if (state === 'pending') {
+        if (Math.abs(dy) < 6) return;
+        // an upward swipe scrolls the list as usual
+        if (dy < 0) {
+          state = 'scroll';
+          return;
+        }
+        state = 'drag';
+        el.style.transition = 'none';
+      }
+      e.preventDefault();
+      el.style.transform = `translateY(${Math.max(0, dy)}px)`;
+    };
+    const end = (e: TouchEvent): void => {
+      if (state === 'drag') {
+        const speed = dy / Math.max(1, e.timeStamp - startT);
+        el.style.transition = '';
+        if (dy > DISMISS_DISTANCE || speed > DISMISS_SPEED) {
+          el.style.transform = 'translateY(100%)';
+          window.setTimeout(() => onDismiss.current(), 180);
+        } else el.style.transform = '';
+      }
+      state = 'idle';
+    };
+    el.addEventListener('touchstart', start, { passive: true });
+    // not passive: a pull that drags the sheet must not also scroll or bounce the page
+    el.addEventListener('touchmove', move, { passive: false });
+    el.addEventListener('touchend', end);
+    el.addEventListener('touchcancel', end);
+    return () => {
+      el.removeEventListener('touchstart', start);
+      el.removeEventListener('touchmove', move);
+      el.removeEventListener('touchend', end);
+      el.removeEventListener('touchcancel', end);
+    };
+  }, [el, list]);
+}
+
+/**
+ * The Circuits menu on a phone: a sheet with a search box and groups that open in place, where
+ * the desktop dropdown's side-opening submenus have no room. Tapping outside it, pulling it down,
+ * the close button or Escape put it away.
  */
 export function CircuitsSheet(props: { root: ExampleMenu; onClose: () => void }) {
   const [query, setQuery] = useState('');
@@ -80,6 +160,9 @@ export function CircuitsSheet(props: { root: ExampleMenu; onClose: () => void })
           (e) =>
             t(e.item.title).toLowerCase().includes(q) || e.item.title.toLowerCase().includes(q),
         );
+  const [sheet, setSheet] = useState<HTMLDivElement | null>(null);
+  const body = useRef<HTMLDivElement>(null);
+  useSwipeToDismiss(sheet, body, props.onClose);
   const pick = (it: ExampleItem): void => {
     props.onClose();
     void openExample(it.file, it.title, true, true);
@@ -87,7 +170,11 @@ export function CircuitsSheet(props: { root: ExampleMenu; onClose: () => void })
   return (
     <Dialog.Root open onOpenChange={(o) => !o && props.onClose()}>
       <Dialog.Portal>
-        <Dialog.Content className="circuits-sheet" data-testid="circuits-sheet">
+        <Dialog.Overlay className="circuits-sheet-scrim" data-testid="circuits-sheet-scrim" />
+        <Dialog.Content ref={setSheet} className="circuits-sheet" data-testid="circuits-sheet">
+          <div className="circuits-sheet-handle" aria-hidden>
+            <span className="sheet-handle-bar" />
+          </div>
           <header className="circuits-sheet-header">
             <Dialog.Title className="circuits-sheet-title">{t('Circuits')}</Dialog.Title>
             <Dialog.Description className="visually-hidden">
@@ -107,7 +194,7 @@ export function CircuitsSheet(props: { root: ExampleMenu; onClose: () => void })
               onChange={(e) => setQuery(e.target.value)}
             />
           </label>
-          <div className="circuits-sheet-body" key={q === '' ? 'tree' : 'search'}>
+          <div ref={body} className="circuits-sheet-body" key={q === '' ? 'tree' : 'search'}>
             {q === '' ? (
               <Items menu={props.root} depth={0} pick={pick} />
             ) : found.length === 0 ? (
