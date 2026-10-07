@@ -43,6 +43,8 @@ export function serviceWorker(): Plugin {
         hash.update(f);
         hash.update(readFileSync(join(outDir, f)));
       }
+      // the worker's own code too, so a fixed worker never shares a cache with the one it replaces
+      hash.update(workerSource('', precache));
       const version = hash.digest('hex').slice(0, 12);
       writeFileSync(join(outDir, 'sw.js'), workerSource(version, precache));
     },
@@ -58,9 +60,23 @@ function workerSource(version: string, files: string[]): string {
 const CACHE = 'circuitjs-next-${version}';
 const FILES = ${JSON.stringify(['./', ...files])};
 
+// Fetch past the browser's HTTP cache: GitHub Pages lets it keep index.html for 10 minutes, and a
+// worker that cached the old page with this build's files would load scripts the server no longer
+// has (a white screen). Then check the page names only files of this build; if not (a server or
+// CDN still serving the old page), fail the install, so the working version stays and the next
+// visit tries again.
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(FILES.map((f) => new URL(f, self.registration.scope)))),
+    caches.open(CACHE).then(async (cache) => {
+      await cache.addAll(FILES.map((f) => new Request(new URL(f, self.registration.scope), { cache: 'reload' })));
+      const shell = await cache.match(new URL('./', self.registration.scope));
+      const html = shell ? await shell.text() : '';
+      const refs = html.match(/assets[/][^"'?#)<> ]+/g) || [];
+      if (html === '' || refs.some((r) => !FILES.includes(r))) {
+        await caches.delete(CACHE);
+        throw new Error('the page does not match this build yet');
+      }
+    }),
   );
 });
 

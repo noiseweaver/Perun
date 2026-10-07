@@ -1,5 +1,16 @@
 # Progress
 
+## 2026-10-07: fix white screen after a deploy (branch claude/temperature-subcircuit-params-nid9p9)
+
+Done: after the Phase 15-18 deploy the installed app could open to a white screen. GitHub Pages sends
+`max-age=600`, so the new service worker's precache got the old index.html from the browser's HTTP
+cache, and that page points at hashed scripts the server no longer has. The worker now precaches with
+`cache: 'reload'`, fails the install when the cached page names `assets/` files outside this build (so
+the working version stays), and hashes its own code into the cache version. Reproduced in Chromium
+with a local server sending the same header; broken deploy then fixed deploy recovers.
+
+Next: none. Open: an app already stuck on the white screen may need removing and re-adding.
+
 ## 2026-10-07: Mobile polish (branch claude/mobile-landscape-menu-polish-amx0hv)
 
 ### Done
