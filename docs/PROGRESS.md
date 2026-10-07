@@ -40,6 +40,7 @@
 
 - An L bend picks the corner by the wire's direction only; it can run the new leg through another
   part. A routed wire avoids that if it matters.
+
 ## 2026-10-06: Phase 13, DC operating point table (branch claude/dc-bias-table-l9npgo)
 
 ### Done
