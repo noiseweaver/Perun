@@ -360,6 +360,13 @@ export function AppBar() {
             onCheckedChange={(v) => setDisplay({ showDots: v })}
           />
           <CheckItem
+            label="Show current when paused"
+            icon="pause"
+            checked={settings.pausedDots}
+            onCheckedChange={(v) => updateSettings({ pausedDots: v })}
+            testId="menu-paused-dots"
+          />
+          <CheckItem
             label="Show voltage"
             icon="gradient"
             checked={display.voltageColors}

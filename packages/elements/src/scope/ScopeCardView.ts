@@ -174,41 +174,55 @@ function tracePixels(
   return { trace: { plot, selected, n, top, bot, valid }, gridMid };
 }
 
-/** Horizontal grid lines of the plot the grid follows: pixel row and line number. */
-function horizontalLines(
+/**
+ * What the horizontal grid follows: a plot, where its zero sits, the step between lines and
+ * whether lines other than zero show. In auto scale with plots in different units, upstream draws
+ * only the zero line and no scale; the card follows one plot's units instead (the selected plot,
+ * else the first voltage), so the volts per division can be read as in manual scale.
+ */
+interface GridSpec {
+  plot: ScopePlot;
+  gridMid: number;
+  step: number;
+  show: boolean;
+}
+
+/** The grid of the plot drawn first (as upstream), or of the labelled plot in mixed units. */
+function gridSpec(
   scope: Scope,
-  plot: ScopePlot,
+  first: ScopePlot,
   gridMid: number,
   allPlotsSameUnits: boolean,
-  step = scope.gridStepY,
-): { y: number; ll: number }[] {
+): GridSpec {
+  const step = scope.gridStepY;
+  if (scope.isManualScale() || allPlotsSameUnits)
+    return { plot: first, gridMid, step, show: step !== 0 };
+  const vp = scope.visiblePlots;
+  const plot = vp[scope.selectedPlot] ?? vp.find((p) => p.units === UNITS_V) ?? first;
+  return { plot, gridMid: 0, step: scope.autoGridStep(scope.scale[plot.units]), show: true };
+}
+
+/** Horizontal grid lines: pixel row and line number. */
+function horizontalLines(scope: Scope, spec: GridSpec): { y: number; ll: number }[] {
   const rect = scope.rect;
   const maxy = Math.trunc((rect.height - 1) / 2);
-  const showH = step !== 0 && (scope.isManualScale() || allPlotsSameUnits);
   const lines: { y: number; ll: number }[] = [];
   for (let ll = -100; ll <= 100; ll++) {
-    if (ll !== 0 && !showH) continue;
-    const yl = maxy - Math.trunc((ll * step - gridMid) * plot.gridMult);
+    if (ll !== 0 && !spec.show) continue;
+    const yl = maxy - Math.trunc((ll * spec.step - spec.gridMid) * spec.plot.gridMult);
     if (yl < 0 || yl >= rect.height - 1) continue;
     lines.push({ y: yl, ll });
   }
   return lines;
 }
 
-/** Grid lines, from the first plot drawn (as upstream's grid). */
-function drawGrid(
-  scope: Scope,
-  g: ScopeGraphics,
-  plot: ScopePlot,
-  gridMid: number,
-  allPlotsSameUnits: boolean,
-  allSelected: boolean,
-): void {
+/** Grid lines. */
+function drawGrid(scope: Scope, g: ScopeGraphics, spec: GridSpec, allSelected: boolean): void {
   const rect = scope.rect;
   const sim = scope.sim;
   const manual = scope.isManualScale();
   const majorInk: ScopeInk = allSelected ? 'selection' : 'gridMajor';
-  const hLines = horizontalLines(scope, plot, gridMid, allPlotsSameUnits);
+  const hLines = horizontalLines(scope, spec);
 
   const ts = sim.maxTimeStep * scope.speed;
   const tRight = scope.isTriggered()
@@ -242,20 +256,21 @@ function drawGrid(
  * Values on the horizontal grid lines, thinned out when they would crowd. In manual scale each
  * plot has its own scale, so the labels follow the selected plot (or the first).
  */
-function drawAxisLabels(
-  scope: Scope,
-  g: ScopeGraphics,
-  plot: ScopePlot,
-  gridMid: number,
-  allPlotsSameUnits: boolean,
-): void {
+function drawAxisLabels(scope: Scope, g: ScopeGraphics, spec: GridSpec): void {
   const rect = scope.rect;
   const manual = scope.isManualScale();
-  if (scope.gridStepY === 0 || !(manual || allPlotsSameUnits) || rect.height < 60) return;
+  if (spec.step === 0 || !spec.show || rect.height < 60) return;
   const vp = scope.visiblePlots;
-  const lp = manual ? (vp[scope.selectedPlot >= 0 ? scope.selectedPlot : 0] ?? plot) : plot;
-  const step = manual ? lp.manScale : scope.gridStepY;
-  const hLines = horizontalLines(scope, lp, manual ? 0 : gridMid, allPlotsSameUnits, step);
+  const lp = manual
+    ? (vp[scope.selectedPlot >= 0 ? scope.selectedPlot : 0] ?? spec.plot)
+    : spec.plot;
+  const step = manual ? lp.manScale : spec.step;
+  const hLines = horizontalLines(scope, {
+    plot: lp,
+    gridMid: manual ? 0 : spec.gridMid,
+    step,
+    show: true,
+  });
   if (hLines.length === 0) return;
   const spacing = hLines.length > 1 ? Math.abs(hLines[0].y - hLines[1].y) : rect.height;
   const every = spacing >= 16 ? 1 : spacing >= 8 ? 2 : 4;
@@ -264,7 +279,7 @@ function drawAxisLabels(
   for (const h of hLines) {
     // labels sit just above their line; one too close to the top would cover the next
     if (h.ll % every !== 0 || h.y < 12) continue;
-    const v = manual ? h.ll * step - lp.plotOffset : h.ll * step - plot.plotOffset - gridMid;
+    const v = manual ? h.ll * step - lp.plotOffset : h.ll * step - lp.plotOffset - spec.gridMid;
     g.drawString(lp.getUnitText(Math.abs(v) < step * 1e-6 ? 0 : v), 4, h.y - 3);
   }
   g.setTextStyle('normal');
@@ -881,18 +896,15 @@ export function drawScopeCard(scope: Scope, g: ScopeGraphics): void {
   }
   scope.gridStepX = scope.calcGridStepX();
   const traces: Trace[] = [];
-  let gridPlot: { plot: ScopePlot; gridMid: number } | null = null;
+  let grid: GridSpec | null = null;
   for (const o of order) {
     const { trace, gridMid } = tracePixels(scope, o.plot, o.selected, allPlotsSameUnits);
-    if (gridPlot === null) {
-      gridPlot = { plot: o.plot, gridMid };
-      drawGrid(scope, g, o.plot, gridMid, allPlotsSameUnits, sel);
-    }
+    grid ??= gridSpec(scope, o.plot, gridMid, allPlotsSameUnits);
     traces.push(trace);
   }
+  if (grid !== null) drawGrid(scope, g, grid, sel);
   for (const t of traces) drawTrace(scope, g, t, sel);
-  if (gridPlot !== null)
-    drawAxisLabels(scope, g, gridPlot.plot, gridPlot.gridMid, allPlotsSameUnits);
+  if (grid !== null) drawAxisLabels(scope, g, grid);
   scope.trigger.drawIndicator(g, vp, r);
   if (scope.frozen !== null) drawFrozenBadge(g);
   drawFlash(scope, g);
