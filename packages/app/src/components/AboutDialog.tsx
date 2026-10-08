@@ -10,6 +10,8 @@ import { t } from '../i18n.ts';
 /** Where this app's source code is published (GPL-2.0 section 3). */
 export const SOURCE_URL = 'https://github.com/noiseweaver/circuitsjs-next';
 export const UPSTREAM_URL = 'https://github.com/pfalstad/circuitjs1';
+/** The author and maintainer of circuitjs-next. */
+export const AUTHOR_URL = 'https://github.com/noiseweaver';
 /** Voluntary tips. The app is free and never asks for them outside About and File > Support. */
 export const SPONSOR_URL = 'https://github.com/sponsors/noiseweaver';
 export const KOFI_URL = 'https://ko-fi.com/noiseweaver';
@@ -62,6 +64,10 @@ export function AboutDialog() {
           An electronic circuit simulator: a rebuild of CircuitJS1 in TypeScript with a new
           interface and themes. Circuit files and simulation results stay compatible with
           CircuitJS1.
+        </p>
+        <p data-testid="about-author">
+          circuitjs-next is made and maintained by Gadiel Zintu (
+          <Link href={AUTHOR_URL}>github.com/noiseweaver</Link>).
         </p>
         <p>
           CircuitJS1 is by Paul Falstad (<Link href="https://www.falstad.com/">falstad.com</Link>
