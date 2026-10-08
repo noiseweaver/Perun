@@ -310,6 +310,7 @@ const COLOR_GROUPS: { title: string; fields: [Path, string][] }[] = [
     fields: [
       ['scope.background', 'Plot'],
       ['scope.card', 'Card'],
+      ['scope.undockedCard', 'Undocked card'],
       ['scope.grid', 'Grid'],
       ['scope.gridMajor', 'Major grid'],
       ['scope.text', 'Text'],

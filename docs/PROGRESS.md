@@ -10,6 +10,11 @@ frame's steps and, while a recorded frame is shown, replays instead of stepping.
 (every example replays exactly and continues bit for bit), e2e rewind.spec.ts. Checked in Dark,
 Classic, phone portrait and landscape.
 
+Also (Gady, 2026-10-08): undocked scope cards were hard to tell from the canvas. New theme key
+`scope.undockedCard` (Theme editor > Scope > Undocked card), lighter than `scope.card` in the dark
+built-ins, and a soft shadow under each undocked card. The theme fuzz test then found font names
+let tabs and line breaks through; font lists now allow plain spaces only.
+
 Next: Gady tries the preview. Open: X-Y plots draw into an image as they run, so a rewound X-Y
 plot keeps its newest trace.
 

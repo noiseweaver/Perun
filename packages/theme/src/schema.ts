@@ -50,6 +50,8 @@ export interface Theme {
     background: string;
     /** Card around each scope, with its header and legend (card look only). */
     card: string;
+    /** Card of a scope undocked onto the circuit (card look only), drawn with a soft shadow. */
+    undockedCard: string;
     /** Grid lines. */
     grid: string;
     /** Zero line, every tenth time line, muted plots. */
@@ -137,7 +139,8 @@ const fontFamily = (description: string) =>
   z
     .string()
     .max(MAX_TEXT)
-    .regex(/^[\w\s,'"-]+$/, { message: 'font must be a family name list' })
+    // spaces only: \s would let tabs and line breaks through into the CSS variables
+    .regex(/^[\w ,'"-]+$/, { message: 'font must be a family name list' })
     .describe(description);
 
 /**
@@ -205,6 +208,9 @@ export const themeInputSchema = z
       .object({
         background: color('Plot area.'),
         card: color('Card around each scope, with its header and legend (card look only).'),
+        undockedCard: color(
+          'Card of a scope undocked onto the circuit (card look only), drawn with a soft shadow.',
+        ),
         grid: color('Grid lines.'),
         gridMajor: color('Zero line, every tenth time line, muted plots.'),
         text: color('Labels, readouts, cursor, power and other plots that are not V or I.'),

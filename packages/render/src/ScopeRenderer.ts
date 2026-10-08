@@ -15,12 +15,14 @@ import type {
   ScopeTextStyle,
 } from '@circuitjs-next/elements';
 import { CARD_GAP, drawLeader } from '@circuitjs-next/elements';
-import { fullRadius, shapeRadius, toCss, type Theme } from '@circuitjs-next/theme';
+import { fullRadius, luminance, rgba, shapeRadius, toCss, type Theme } from '@circuitjs-next/theme';
 
 /** Scope inks resolved to CSS colors for one theme. */
 export class ScopePalette {
   readonly theme: Theme;
   private readonly named: Record<Exclude<ScopeInk, object>, string>;
+  /** Drawing scopes undocked onto the circuit: their cards take the theme's undocked card color. */
+  undocked = false;
 
   constructor(theme: Theme) {
     this.theme = theme;
@@ -46,6 +48,7 @@ export class ScopePalette {
   }
 
   color(ink: ScopeInk): string {
+    if (ink === 'card' && this.undocked) return this.theme.scope.undockedCard;
     if (typeof ink === 'string') return this.named[ink];
     if ('trace' in ink) {
       // the first trace color is the voltage plot's; repeated plots cycle through the rest
@@ -483,7 +486,12 @@ export class ScopeRenderer {
       }
       g.flush();
     }
-    for (const it of items) if (!flying.includes(it)) it.scope.draw(g);
+    this.palette.undocked = true;
+    for (const it of items) {
+      if (flying.includes(it)) continue;
+      if (mgr.look === 'cards') this.cardShadow(it.scope);
+      it.scope.draw(g);
+    }
     g.flush();
     c.restore();
     // a card on its way in may come up from the docked area: not clipped to the circuit
@@ -495,7 +503,29 @@ export class ScopeRenderer {
       g.flush();
       c.restore();
     }
+    this.palette.undocked = false;
     g.setTextStyle('normal');
+  }
+
+  /**
+   * A soft shadow under an undocked card, so it lifts off the canvas whatever the theme's colors:
+   * the darker of the UI surface and its text, as the UI's own Material shadows.
+   */
+  private cardShadow(scope: Scope): void {
+    const c = this.ctx;
+    const theme = this.palette.theme;
+    const s = scope.slot;
+    const surface = rgba(theme.ui.surface);
+    const text = rgba(theme.ui.text);
+    const shade = luminance(surface) < luminance(text) ? surface : text;
+    c.save();
+    c.shadowColor = toCss({ ...shade, a: 0.55 });
+    c.shadowBlur = 14 * this.dpr;
+    c.shadowOffsetY = 3 * this.dpr;
+    c.fillStyle = theme.scope.undockedCard;
+    roundRect(c, s.x, s.y, s.width, s.height, 10, theme.style.roundness);
+    c.fill();
+    c.restore();
   }
 
   render(mgr: ScopeManager, state: BottomAreaState, dpr: number): void {

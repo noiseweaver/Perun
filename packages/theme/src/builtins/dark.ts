@@ -36,6 +36,7 @@ export const dark: Theme = {
   scope: {
     background: '#14171c',
     card: '#21252c',
+    undockedCard: '#2c313a',
     grid: '#343a46',
     gridMajor: '#4b5263',
     text: '#e2e2e9',

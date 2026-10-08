@@ -37,6 +37,7 @@ export const light: Theme = {
   scope: {
     background: '#ffffff',
     card: '#eef0f5',
+    undockedCard: '#e6e9f0',
     grid: '#e1e4ea',
     gridMajor: '#a9afba',
     text: '#191c20',

@@ -78,6 +78,7 @@ function paletteTheme(p: Palette): Theme {
     scope: {
       background: p.scopeBg,
       card: p.raised,
+      undockedCard: mix(p.raised, p.fg, 0.92),
       grid: p.grid,
       gridMajor: p.border,
       text: p.fg,

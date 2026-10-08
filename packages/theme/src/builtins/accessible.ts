@@ -33,6 +33,7 @@ export const highContrast: Theme = {
   scope: {
     background: '#000000',
     card: '#141414',
+    undockedCard: '#1f1f1f',
     grid: '#4d4d4d',
     gridMajor: '#9e9e9e',
     text: '#ffffff',
