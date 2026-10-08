@@ -469,6 +469,27 @@ test.describe('undocked scopes', () => {
     await page.keyboard.press('Escape');
   });
 
+  test('Undock All around a small circuit keeps the cards big enough for their titles', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    const scopes = [0, 1, 2, 1]
+      .map((i, k) => `o ${i} 64 0 ${k === 3 ? 4098 : 4099} 10 0.1 0 1\n`)
+      .join('');
+    await page.goto(`/?ctz=${compressCircuit(LOOP + scopes)}`);
+    await ready(page);
+    await page.getByTestId('scopes-menu').click();
+    await page.getByTestId('scopes-undock-all').click();
+    const cards = await undocked(page);
+    expect(cards).toHaveLength(4);
+    // each card shows at about its own size on screen (224 px wide), not shrunk by the fit
+    for (const c of cards) {
+      const a = await at(page, c.x1, c.y1);
+      const b = await at(page, c.x2, c.y2);
+      expect(b.x - a.x).toBeGreaterThan(215);
+    }
+  });
+
   test('an upstream file with undocked scopes loads them', async ({ page }) => {
     await page.goto('/?startCircuit=multivib-a.txt');
     await ready(page);

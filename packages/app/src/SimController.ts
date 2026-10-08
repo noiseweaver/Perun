@@ -44,6 +44,7 @@ import {
   findAdjustable,
   reorderAdjustables,
   switchRect,
+  unionRect,
   viewFor,
   type CardHit,
   type CircuitElm,
@@ -65,6 +66,7 @@ import {
   CircuitRenderer,
   ScopeRenderer,
   currentMultiplier,
+  fitScale,
   type FrameState,
   type UndockedScopeItem,
 } from '@circuitjs-next/render';
@@ -1489,13 +1491,31 @@ export class SimController {
         const elm = e.elmScope.getElm();
         return elm !== null ? scopeAnchor(elm, e.leaderPost) : { x: 0, y: 0 };
       });
-      const boxes = arrangeCards(bounds, targets, {
-        width: UNDOCKED_WIDTH,
-        height: UNDOCKED_HEIGHT,
-        margin: 48,
-        gap: 32,
-        grid: this.circuit.sim.gridSize,
-      });
+      // The view fits the circuit and its cards afterwards, so around a small circuit the cards
+      // decide the zoom and would come out too small for their titles. Grow them (in circuit
+      // units) until they show at their own size on screen, or as near as the canvas allows.
+      const height = this.circuitHeight();
+      const want = Math.min(UNDOCKED_WIDTH, this.cssWidth / 3.5);
+      const grid = this.circuit.sim.gridSize;
+      // whole grid steps, rounded up: the file stores whole coordinates
+      const size = (v: number): number => Math.max(grid, Math.ceil(v / grid - 1e-9) * grid);
+      const arrange = (k: number): Rect[] =>
+        arrangeCards(bounds, targets, {
+          width: size(UNDOCKED_WIDTH * k),
+          height: size(UNDOCKED_HEIGHT * k),
+          margin: 48 * k,
+          gap: 32 * k,
+          grid,
+        });
+      let k = 1;
+      let boxes = arrange(k);
+      for (let n = 0; n !== 4; n++) {
+        const all = boxes.reduce((u, b) => unionRect(u, b), bounds);
+        const shown = size(UNDOCKED_WIDTH * k) * fitScale(all, this.cssWidth, height);
+        if (shown >= want * 0.98 || k >= MAX_CARD_GROWTH) break;
+        k = Math.min(MAX_CARD_GROWTH, (k * want) / shown);
+        boxes = arrange(k);
+      }
       cards.forEach((e, i) => {
         const b = boxes[i];
         if (b === undefined) return;
@@ -1507,6 +1527,8 @@ export class SimController {
       });
     });
     this.circuitChanged();
+    // the docked scopes have left the bottom of the canvas: fit to the height they gave back
+    r.circuitHeight = this.circuitHeight();
     r.fit();
     for (const [s, slot] of from) this.animateCard(s, slot);
     this.publishEditor();
@@ -3065,6 +3087,8 @@ function teachCursor(tool: TeachTool | null): string {
 
 const UNDOCKED_WIDTH = 224;
 const UNDOCKED_HEIGHT = 144;
+/** Undock All grows the cards around a small circuit by at most this factor. */
+const MAX_CARD_GROWTH = 3;
 
 /**
  * The circuit point an undocked scope's leader line goes to: the post of a one-post element

@@ -8,6 +8,18 @@ import type { Rect } from '@circuitjs-next/elements';
 export const MIN_SCALE = 0.2;
 export const MAX_SCALE = 2.5;
 
+/** The scale `Viewport.fit` picks for `bounds` in a width x height area. */
+export function fitScale(bounds: Rect | null, width: number, height: number): number {
+  let scale = 1;
+  if (bounds !== null) {
+    const bw = bounds.x2 - bounds.x1;
+    const bh = bounds.y2 - bounds.y1;
+    scale = Math.min(width / (bw + 140), height / (bh + 100));
+  }
+  scale = Math.min(scale, 1.5);
+  return scale > 0 ? scale : 1;
+}
+
 /** Circuit-to-screen transform in CSS pixels: screen = circuit * scale + offset. */
 export class Viewport {
   scale = 1;
@@ -24,14 +36,7 @@ export class Viewport {
 
   /** Centre `bounds` in a width x height area with a margin, at most 1.5x (upstream centerCircuit). */
   fit(bounds: Rect | null, width: number, height: number): void {
-    let scale = 1;
-    if (bounds !== null) {
-      const bw = bounds.x2 - bounds.x1;
-      const bh = bounds.y2 - bounds.y1;
-      scale = Math.min(width / (bw + 140), height / (bh + 100));
-    }
-    scale = Math.min(scale, 1.5);
-    if (!(scale > 0)) scale = 1;
+    const scale = fitScale(bounds, width, height);
     this.scale = scale;
     this.offsetX = 0;
     this.offsetY = 0;
