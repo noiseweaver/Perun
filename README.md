@@ -22,6 +22,12 @@ Nothing to install, and it works offline once loaded.
 Your circuit is kept between visits. File > Save writes it to a file, and File > Send a suggestion
 reaches the maintainer.
 
+## In Obsidian
+
+The Perun plugin for [Obsidian](https://obsidian.md) runs ` ```circuit ` code blocks live in
+notes and opens `.circuit` files in the full editor, on desktop and mobile. See
+[packages/obsidian](packages/obsidian/README.md) for how to install it.
+
 ## What it does
 
 - Every element in upstream master (154 classes), including subcircuits, custom logic, routed wires
@@ -75,6 +81,7 @@ packages/format    circuit text/XML and link parsing and saving
 packages/theme     theme schema, validation and built-ins
 packages/render    Canvas 2D drawing, scene and hit testing
 packages/app       the interface (React, Radix, Zustand)
+packages/obsidian  the Obsidian plugin: circuit blocks, and the app in a tab for .circuit files
 tools/             reference build, golden harness, benchmarks, theme docs, i18n coverage
 fixtures/          recorded reference traces
 ```

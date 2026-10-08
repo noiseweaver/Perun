@@ -27,5 +27,11 @@ jobs:
       - run: pnpm lint
       - run: pnpm format:check
       - run: pnpm test
+      # the Obsidian plugin (packages/obsidian): main.js, manifest.json, styles.css
+      - run: pnpm --filter @perun/obsidian build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: perun-obsidian
+          path: packages/obsidian/dist
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e

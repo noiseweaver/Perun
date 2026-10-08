@@ -5,6 +5,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { Fragment, type ReactNode } from 'react';
 import { BASE } from '../startup.ts';
+import { embedConfig } from '../embedConfig.ts';
 import { Shell } from './DialogShell.tsx';
 import { t, tf } from '../i18n.ts';
 
@@ -13,6 +14,8 @@ export const SOURCE_URL = 'https://github.com/noiseweaver/perun';
 export const UPSTREAM_URL = 'https://github.com/pfalstad/circuitjs1';
 /** The author and maintainer of Perun. */
 export const AUTHOR_URL = 'https://github.com/noiseweaver';
+/** Where the license files are: next to the app, or on the web app inside the Obsidian plugin. */
+const FILES = embedConfig?.siteUrl ?? BASE;
 
 /** The app's version, with the commit it was built from when known. */
 export function versionText(): string {
@@ -115,12 +118,12 @@ export function AboutDialog() {
             </Link>
           </li>
           <li>
-            <Link href={`${BASE}LICENSE.txt`} testId="about-license">
+            <Link href={`${FILES}LICENSE.txt`} testId="about-license">
               {t('GNU General Public License, version 2')}
             </Link>
           </li>
           <li>
-            <Link href={`${BASE}third-party-licenses.txt`} testId="about-third-party">
+            <Link href={`${FILES}third-party-licenses.txt`} testId="about-third-party">
               {t('Third-party licenses (libraries and fonts)')}
             </Link>
           </li>
