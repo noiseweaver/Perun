@@ -13,8 +13,16 @@ import {
   debounce,
 } from 'obsidian';
 import type { Theme } from '@perun/theme';
-import { CircuitBlock } from './block.ts';
-import { BLANK_CIRCUIT, CircuitEditorView, EXTENSION, VIEW_TYPE } from './editorView.ts';
+import { CircuitBlock, CircuitEmbed } from './block.ts';
+import type { CircuitWidget } from './widget.ts';
+import {
+  BLANK_CIRCUIT,
+  BLOCK_VIEW_TYPE,
+  BlockEditorView,
+  CircuitEditorView,
+  EXTENSION,
+  VIEW_TYPE,
+} from './editorView.ts';
 import {
   DEFAULT_DATA,
   blockTheme,
@@ -25,6 +33,15 @@ import {
   type PluginData,
 } from './settings.ts';
 
+/** Obsidian's internal embed registry (not in its published API). */
+interface EmbedRegistry {
+  registerExtension(
+    extension: string,
+    create: (ctx: { containerEl: HTMLElement }, file: TFile, subpath: string) => CircuitEmbed,
+  ): void;
+  unregisterExtension(extension: string): void;
+}
+
 /** The code block language that shows a circuit. */
 const BLOCK_LANGUAGE = 'circuit';
 
@@ -34,19 +51,23 @@ const BLOCK_LANGUAGE = 'circuit';
  */
 export default class PerunPlugin extends Plugin {
   data: PluginData = { ...DEFAULT_DATA, storage: {} };
-  readonly blocks = new Set<CircuitBlock>();
-  readonly editors = new Set<CircuitEditorView>();
+  readonly widgets = new Set<CircuitWidget>();
+  readonly editors = new Set<{ restyle(): void }>();
   private saveSoon: Debouncer<[], Promise<void>> = debounce(() => this.saveData(this.data), 1000);
 
   override async onload(): Promise<void> {
     this.data = readData(await this.loadData());
 
     this.registerMarkdownCodeBlockProcessor(BLOCK_LANGUAGE, (source, el, ctx) => {
-      ctx.addChild(new CircuitBlock(el, source, this));
+      ctx.addChild(
+        new CircuitBlock(el, source, this, () => void this.editBlock(ctx.sourcePath, source)),
+      );
     });
 
     this.registerView(VIEW_TYPE, (leaf) => new CircuitEditorView(leaf, this));
     this.registerExtensions([EXTENSION], VIEW_TYPE);
+    this.registerView(BLOCK_VIEW_TYPE, (leaf) => new BlockEditorView(leaf, this));
+    this.registerEmbeds();
 
     this.addCommand({
       id: 'new-circuit',
@@ -69,6 +90,21 @@ export default class PerunPlugin extends Plugin {
     // Obsidian switched between light and dark
     this.registerEvent(this.app.workspace.on('css-change', () => this.restyle()));
     this.addSettingTab(new PerunSettingTab(this.app, this));
+  }
+
+  /**
+   * `![[name.circuit]]` shows the file running. Obsidian has no public API for embedding a file
+   * type yet; its embed registry is what plugins such as Excalidraw use. Without it, embeds show
+   * Obsidian's plain file link.
+   */
+  private registerEmbeds(): void {
+    const registry = (this.app as unknown as { embedRegistry?: EmbedRegistry }).embedRegistry;
+    if (registry === undefined) return;
+    registry.registerExtension(
+      EXTENSION,
+      (ctx, file) => new CircuitEmbed(this.app, ctx.containerEl, file, this),
+    );
+    this.register(() => registry.unregisterExtension(EXTENSION));
   }
 
   override onunload(): void {
@@ -108,8 +144,17 @@ export default class PerunPlugin extends Plugin {
   }
 
   restyle(): void {
-    for (const b of this.blocks) b.restyle();
+    for (const w of this.widgets) w.restyle();
     for (const e of this.editors) e.restyle();
+  }
+
+  /** Open a note's ```circuit block in the editor, in a new tab; edits go back into the note. */
+  async editBlock(path: string, text: string): Promise<void> {
+    await this.app.workspace.getLeaf('tab').setViewState({
+      type: BLOCK_VIEW_TYPE,
+      active: true,
+      state: { path, text },
+    });
   }
 
   /** Create an empty circuit file (in `folder`, else where new notes go) and open it. */

@@ -27,7 +27,7 @@ export function readData(raw: unknown): PluginData {
 }
 
 /** The public web app: "Open in Perun" links and the editor's exported links point here. */
-export const SITE_URL = 'https://noiseweaver.github.io/perun/';
+export const SITE_URL = 'https://noiseweaver.github.io/Perun/';
 
 // The editor's own storage keys (packages/app/src/store.ts), named before the rename to Perun.
 const SETTINGS_KEY = 'circuitjs-next.settings.v2';

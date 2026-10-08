@@ -18,6 +18,7 @@ export {
   type UndockedScopeItem,
 } from './ScopeRenderer.ts';
 export { findPosts, type PostInfo } from './posts.ts';
+export { scopeAnchor } from './scopeAnchor.ts';
 export {
   DEFAULT_SCHEMATIC,
   SvgPainter,

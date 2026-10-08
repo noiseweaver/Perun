@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 
-import type { ScopeDefaultsStore } from '@perun/elements';
+import { cardPlotRect, type ScopeDefaultsStore } from '@perun/elements';
+import { sliderEntries, type SliderEntry } from '@perun/app/sliders';
 import { Circuit, OptionFlag } from '@perun/format';
 import {
   CircuitRenderer,
@@ -9,8 +10,9 @@ import {
   DEFAULT_SCHEMATIC,
   ScopeRenderer,
   currentMultiplier,
-  schematicBounds,
   schematicSvg,
+  scopeAnchor,
+  type UndockedScopeItem,
 } from '@perun/render';
 import type { Theme } from '@perun/theme';
 import type { DrawSettings } from './settings.ts';
@@ -73,11 +75,33 @@ export class CircuitPlayer {
 
   /** The canvas height that shows the whole circuit at `width`, plus its scopes. */
   heightFor(width: number): number {
-    const b = schematicBounds(this.circuit.elements);
+    // the whole circuit, undocked scope cards included
+    const b = this.renderer.circuitBounds();
     let h = MIN_HEIGHT;
     if (b !== null && b.x2 > b.x1) h = Math.round((width * (b.y2 - b.y1)) / (b.x2 - b.x1));
     h = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, h));
     return h + (this.hasScopes ? SCOPE_HEIGHT : 0);
+  }
+
+  /** The circuit's sliders, as the editor's slider panel shows them. */
+  sliders(): SliderEntry[] {
+    return sliderEntries(this.circuit.elements, this.circuit.adjustables, () => {
+      this.circuit.sim.analyzeFlag = true;
+    });
+  }
+
+  /** Simulation speed (0 to 259) and current speed (1 to 99), as the circuit file stores them. */
+  get speed(): number {
+    return this.circuit.options.speed;
+  }
+  set speed(v: number) {
+    this.circuit.options.speed = v;
+  }
+  get currentSpeed(): number {
+    return this.circuit.options.currentBar;
+  }
+  set currentSpeed(v: number) {
+    this.circuit.options.currentBar = v;
   }
 
   setTheme(theme: Theme, draw: DrawSettings): void {
@@ -171,15 +195,43 @@ export class CircuitPlayer {
       voltageRange: o.voltageRange,
       gridSize: sim.gridSize,
     });
+    const mgr = this.circuit.scopes;
+    // nothing in a note can be clicked: no card buttons, and every column shown (no tabs)
+    mgr.compact = false;
+    mgr.cardButtons = false;
+    this.scopes.renderUndocked(mgr, this.layoutUndocked(), this.width, ch, this.dpr);
     if (this.hasScopes) {
-      const mgr = this.circuit.scopes;
       const area = { x: 0, y: ch, width: this.width, height: this.height - ch };
-      // nothing in a note can be clicked: no card buttons, and every column shown (no tabs)
-      mgr.compact = false;
-      mgr.cardButtons = false;
       mgr.setupScopes(area, 0);
       this.scopes.render(mgr, { area, info: [], splitterHot: false }, this.dpr);
     }
+  }
+
+  /** Undocked scopes: each card where its rectangle is on screen, with its leader line. */
+  private layoutUndocked(): UndockedScopeItem[] {
+    const vp = this.renderer.viewport;
+    const cards = this.circuit.scopes.look === 'cards';
+    return this.circuit.scopeElms().map((e) => {
+      const b = e.box();
+      const a = vp.toScreen(b.x1, b.y1);
+      const c = vp.toScreen(b.x2, b.y2);
+      const slot = {
+        x: Math.round(a.x),
+        y: Math.round(a.y),
+        width: Math.max(1, Math.round(c.x - a.x)),
+        height: Math.max(1, Math.round(c.y - a.y)),
+      };
+      const s = e.elmScope;
+      s.position = -1;
+      s.slot = slot;
+      const rect = cards ? cardPlotRect(slot, true) : slot;
+      const o = s.rect;
+      if (rect.x !== o.x || rect.y !== o.y || rect.width !== o.width || rect.height !== o.height)
+        s.setRect(rect);
+      const shown = s.getElm();
+      const t = shown !== null ? scopeAnchor(shown, e.leaderPost) : null;
+      return { scope: s, target: t !== null ? vp.toScreen(t.x, t.y) : null, active: false };
+    });
   }
 
   /** A still picture of the circuit as it is now, for printing and PDF export. */

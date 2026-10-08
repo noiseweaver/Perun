@@ -29,6 +29,47 @@
   font-size: var(--font-ui-small);
 }
 
+.perun-bar .clickable-icon.is-active {
+  color: var(--interactive-accent);
+}
+
+/* the circuit's sliders and the two speeds, under the bar */
+.perun-controls {
+  display: none;
+  padding: var(--size-4-2) var(--size-4-3);
+  border-top: var(--border-width) solid var(--background-modifier-border);
+  background: var(--background-secondary);
+}
+
+.perun-controls.is-open {
+  display: grid;
+  grid-template-columns: minmax(6em, max-content) 1fr auto;
+  align-items: center;
+  gap: var(--size-4-1) var(--size-4-3);
+}
+
+.perun-control {
+  display: contents;
+  font-size: var(--font-ui-small);
+}
+
+.perun-control .slider {
+  width: 100%;
+}
+
+/* fixed width so the slider doesn't shift as the value changes (owner's rule, CLAUDE.md) */
+.perun-control-value {
+  font-family: var(--font-monospace);
+  white-space: pre;
+  min-width: 11ch;
+  text-align: right;
+}
+
+/* an embedded .circuit file: no frame of Obsidian's around the circuit's own border */
+.internal-embed.perun-embed {
+  display: block;
+}
+
 .perun-picture {
   display: none;
   width: 100%;
@@ -43,9 +84,51 @@
 /* printing and PDF export: a sharp still picture instead of the canvas and its controls */
 @media print {
   .perun-canvas,
-  .perun-bar {
+  .perun-bar,
+  .perun-controls {
     display: none;
   }
+  .perun-bar .clickable-icon.is-active {
+    color: var(--interactive-accent);
+  }
+
+  /* the circuit's sliders and the two speeds, under the bar */
+  .perun-controls {
+    display: none;
+    padding: var(--size-4-2) var(--size-4-3);
+    border-top: var(--border-width) solid var(--background-modifier-border);
+    background: var(--background-secondary);
+  }
+
+  .perun-controls.is-open {
+    display: grid;
+    grid-template-columns: minmax(6em, max-content) 1fr auto;
+    align-items: center;
+    gap: var(--size-4-1) var(--size-4-3);
+  }
+
+  .perun-control {
+    display: contents;
+    font-size: var(--font-ui-small);
+  }
+
+  .perun-control .slider {
+    width: 100%;
+  }
+
+  /* fixed width so the slider doesn't shift as the value changes (owner's rule, CLAUDE.md) */
+  .perun-control-value {
+    font-family: var(--font-monospace);
+    white-space: pre;
+    min-width: 11ch;
+    text-align: right;
+  }
+
+  /* an embedded .circuit file: no frame of Obsidian's around the circuit's own border */
+  .internal-embed.perun-embed {
+    display: block;
+  }
+
   .perun-picture {
     display: block;
   }

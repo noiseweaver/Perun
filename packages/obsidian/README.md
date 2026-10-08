@@ -3,9 +3,8 @@
 Circuits in your notes, running live, and the full Perun editor for circuit files.
 
 - **Circuit blocks.** A code block whose language is `circuit` shows the circuit running, with its
-  scopes, in reading view and live preview. The bar under it has Pause/Run, Reset and Open in
-  Perun (the web app, with the circuit in the link). Paste any CircuitJS1 or Perun circuit, text
-  or XML:
+  scopes (docked and undocked), in reading view and live preview. Paste any CircuitJS1 or Perun
+  circuit, text or XML:
 
   ````md
   ```circuit
@@ -17,7 +16,14 @@ Circuits in your notes, running live, and the full Perun editor for circuit file
   ```
   ````
 
-  Blocks run only while they are on screen. Printing and Export to PDF show a sharp still picture.
+- **Embedded circuit files.** `![[name.circuit]]` shows that file running, and runs it again from
+  the new version whenever the file changes.
+
+  Under each circuit, in a block or embedded: Pause/Run, Reset, Controls, and Open in Perun, which
+  opens it in the editor in a tab (a block's edits are written back into the block, as XML).
+  Controls shows the circuit's own sliders (the ones set up in the editor; open at first when
+  there are any) and its simulation and current speed. Circuits run only while they are on
+  screen. Printing and Export to PDF show a sharp still picture.
 
 - **Circuit files.** A `.circuit` file opens the whole Perun app in a tab: palette, scopes,
   analysis, themes. Every edit is saved to the file (as XML, what Perun's File > Save writes), so
@@ -56,8 +62,10 @@ that page inside (`dist/main.js`, about 5 MB).
 
 ## How it works
 
-A circuit block runs the engine and renderer directly (`src/player.ts`), without the editor. A
-circuit file's tab is a `TextFileView` holding the app in a frame (`src/editorView.ts`); the app
+A circuit in a note runs the engine and renderer directly (`src/player.ts`, `src/widget.ts`),
+without the editor. File embeds use Obsidian's embed registry, which isn't in its published API
+(as other plugins do). A circuit file's tab is a `TextFileView` holding the app in a frame, and a
+block's tab an `ItemView` that writes edits back into the block (`src/editorView.ts`); the app
 knows it is embedded from `window.perunEmbed` (packages/app/src/embedConfig.ts) and talks to the
 plugin with `postMessage`: the plugin sends the circuit and theme, the app sends the circuit back
 after each edit and its settings when they change. The frame's local storage is a copy of the
