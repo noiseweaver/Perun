@@ -15,6 +15,19 @@ scopes.spec.ts. Goldens unchanged (display only).
 Next: Gady tries the preview and checks the live part header and scope dialog preview on a real
 phone (the last PR #20 follow-up).
 
+## 2026-10-08: iPhone bottom band after rotating or reopening (branch claude/ios-bottom-chin-qhisg1)
+
+Done: the installed iPhone app sometimes showed an empty band under the bottom bar again after a
+rotation or a return from the background. pwa.ts stretched the page to the screen only on `resize`,
+and only while the window read a status bar short; iOS reports stale sizes mid-rotation and on
+resume, then shrinks the window with no further resize, so a full-height reading removed the
+stretch for good. Now any window as wide as the screen gets the screen's height (orientation from
+the window's width), rechecked on resize, orientationchange, pageshow, focus and visibilitychange
+and again over the following second. Unit test for the rule, e2e test with an emulated installed
+iPhone (fails on the old code).
+
+Next: Gady to confirm on the phone. Open: none.
+
 ## 2026-10-07: Phase 20, rewind and scrub (branch claude/project-thread-xl3poa)
 
 Done: packages/app/src/rewind/history.ts records the last 10 s of the run frame by frame (key

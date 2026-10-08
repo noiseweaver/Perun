@@ -50,24 +50,52 @@ export function applyUpdate(): void {
 }
 
 /**
- * Installed on iPhone (iOS 26), the page's 100% height comes out short by the status bar while
- * the page still starts at the top of the screen, which left an empty band under the app. When
- * the window is full screen and only a status bar's worth short, stretch the page to the screen.
+ * The --app-height for an installed iPhone app, or null for plain 100%. Installed on iPhone
+ * (iOS 26), the page's 100% height comes out short by the status bar while the page still starts
+ * at the top of the screen, which left an empty band under the app. An installed app always fills
+ * the screen, so when the window is as wide as the screen the page is the screen's height. The
+ * orientation comes from the window's own width rather than a media query, so the two can't
+ * disagree halfway through a rotation. The window's height isn't used: iOS reports it short by
+ * varying amounts (and stale after a rotation or a return from the background).
+ */
+export function iosAppHeight(screenW: number, screenH: number, innerW: number): number | null {
+  // iOS reports the screen in portrait whatever the orientation; iPadOS may not
+  const short = Math.min(screenW, screenH);
+  const long = Math.max(screenW, screenH);
+  if (Math.abs(innerW - short) <= 1) return long;
+  if (Math.abs(innerW - long) <= 1) return short;
+  return null; // split view, slide over or a resized window
+}
+
+/**
+ * Keep --app-height in step with the window. iOS reports stale sizes during a rotation and when
+ * the app comes back from the background, and sends no resize once the sizes settle, so a single
+ * resize listener sometimes left the band under the app. Check again on every event that can
+ * change the window and a few times after it, until the sizes have settled.
  */
 function fitIosStandaloneHeight(): void {
   const fit = (): void => {
-    const portrait = window.matchMedia('(orientation: portrait)').matches;
-    // iOS reports the screen in portrait whatever the orientation
-    const w = portrait ? screen.width : screen.height;
-    const h = portrait ? screen.height : screen.width;
-    const short = h - window.innerHeight;
+    const h = iosAppHeight(screen.width, screen.height, window.innerWidth);
     const root = document.documentElement.style;
-    if (Math.abs(window.innerWidth - w) <= 1 && short > 0 && short <= 80)
+    if (h === null) root.removeProperty('--app-height');
+    else if (root.getPropertyValue('--app-height') !== `${h}px`)
       root.setProperty('--app-height', `${h}px`);
-    else root.removeProperty('--app-height');
+  };
+  let timers: number[] = [];
+  const refit = (): void => {
+    fit();
+    for (const t of timers) window.clearTimeout(t);
+    timers = [50, 150, 300, 600, 1000].map((ms) => window.setTimeout(fit, ms));
   };
   fit();
-  window.addEventListener('resize', fit);
+  window.addEventListener('resize', refit);
+  window.addEventListener('orientationchange', refit);
+  window.addEventListener('pageshow', refit);
+  window.addEventListener('focus', refit);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refit();
+  });
+  screen.orientation?.addEventListener('change', refit);
 }
 
 export function setupPwa(): void {
