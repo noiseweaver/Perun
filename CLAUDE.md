@@ -7,15 +7,19 @@ The full plan is [docs/PLAN.md](docs/PLAN.md); the owner is Gady.
 ## Working rules (condensed from PLAN.md section 2)
 
 - Read docs/PLAN.md before starting. Work phase by phase; a phase starts only when the previous
-  phase's acceptance criteria pass. Check docs/PROGRESS.md for where things stand.
+  phase's acceptance criteria pass. Check docs/progress/ (newest
+  files first) and docs/PROGRESS.md for where things stand.
 - `reference/circuitjs1/` is a read-only upstream submodule at the SHA in docs/UPSTREAM.md. Never edit
   it. Harness changes go in `tools/reference-patch/` and are applied at build time.
 - Port simulation logic faithfully first, refactor second. Any behaviour change needs a golden test
-  showing why and an entry in docs/DEVIATIONS.md.
+  showing why and an entry in docs/deviations/ (one file per deviation, see its README).
 - Do not port drawing or UI code line by line. Use upstream only to learn geometry and what is shown.
 - Every ported file starts with a header naming the upstream source file(s), the upstream commit SHA,
   and the GPL notice (template below).
-- Update docs/PROGRESS.md at the end of every session: done, next, open issues.
+- At the end of every session, add or update your branch's own file in docs/progress/
+  (`YYYY-MM-DD-slug.md`: done, next, open issues). Never edit docs/PROGRESS.md or the
+  docs/DEVIATIONS.md table (both frozen) or another branch's entry; that's what kept every open
+  pull request conflicting. CI fails a pull request that edits the two frozen files.
 - Commit at each milestone with conventional commit messages. `pnpm check` (typecheck, lint, format,
   unit tests) must pass before each commit.
 - If a fact in PLAN.md section 4 marked [I] or [G] turns out wrong, correct it there.
@@ -33,7 +37,7 @@ packages/app       UI shell. -> everything
 packages/obsidian  Obsidian plugin (blocks, and the app in a frame for .circuit files). -> elements, format, render, theme; app types only
 tools/             reference build and patch, golden harness, recon scripts, ESLint rules
 fixtures/golden/   recorded reference traces (JSON), one per tools/golden/manifest.json entry
-docs/              PLAN, PROGRESS, DEVIATIONS, UPSTREAM, ELEMENTS, ENGINE-NOTES, THEMES
+docs/              PLAN, progress/, deviations/, PROGRESS + DEVIATIONS (frozen), UPSTREAM, ELEMENTS, ENGINE-NOTES, THEMES
 ```
 
 ESLint enforces the dependency direction (`no-restricted-imports`, see eslint.config.js) and bans
