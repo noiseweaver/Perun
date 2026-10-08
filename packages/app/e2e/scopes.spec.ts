@@ -772,3 +772,41 @@ test('dragging a docked card by its title stacks it, and undo puts it back', asy
   await page.keyboard.press('Control+z');
   expect(await positions()).toEqual([0, 1, 2]);
 });
+
+test('auto scale labels the volts per division when a scope also shows current', async ({
+  page,
+}) => {
+  // canvas text drawn inside the docked scope, as [text, x, y] in canvas pixels
+  await page.addInitScript(() => {
+    const texts: [string, number, number][] = [];
+    (window as unknown as { scopeTexts: typeof texts }).scopeTexts = texts;
+    const fill = CanvasRenderingContext2D.prototype.fillText;
+    CanvasRenderingContext2D.prototype.fillText = function (s, x, y, w) {
+      const p = this.getTransform().transformPoint(new DOMPoint(x, y));
+      texts.push([s, p.x, p.y]);
+      if (texts.length > 5000) texts.splice(0, 2500);
+      return fill.call(this, s, x, y, w);
+    };
+  });
+  // the resistor's voltage and current on one scope, in auto scale
+  await page.goto(`/?ctz=${compressCircuit(LOOP + 'o 1 64 0 4099 5 0.05 0\n')}`);
+  await ready(page);
+  const voltLabels = () =>
+    page.getByTestId('circuit-canvas').evaluate((c: HTMLCanvasElement) => {
+      const s = window.perun?.controller.scopes.scopes[0];
+      if (!s) return [];
+      const dpr = c.width / c.clientWidth;
+      const r = s.rect;
+      return (window as unknown as { scopeTexts: [string, number, number][] }).scopeTexts
+        .filter(
+          ([t, x, y]) =>
+            /V$/.test(t) &&
+            x >= r.x * dpr &&
+            x < (r.x + r.width / 3) * dpr &&
+            y > r.y * dpr &&
+            y < (r.y + r.height) * dpr,
+        )
+        .map(([t]) => t);
+    });
+  await expect.poll(async () => new Set(await voltLabels()).size).toBeGreaterThan(1);
+});

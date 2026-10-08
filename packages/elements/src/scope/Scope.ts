@@ -757,6 +757,15 @@ export class Scope {
     return (this.manDivisions / 2 + 0.05) * plot.manScale;
   }
 
+  /** The auto-scale grid step for a scale reaching `gridMax`: a 1-2-5 step, 20 px or more apart. */
+  autoGridStep(gridMax: number): number {
+    const maxy = Math.trunc((this.rect.height - 1) / 2);
+    let step = 1e-8;
+    let multptr = 0;
+    while (step < (20 * gridMax) / maxy) step *= MULTA[multptr++ % 3];
+    return step;
+  }
+
   /**
    * Grid parameters for a plot. Sets plot.plotOffset, plot.gridMult and this.gridStepY; returns
    * gridMid.
@@ -787,9 +796,7 @@ export class Scope {
         // leave space at top and bottom
         gridMax = (mx - mn) * 0.55;
       }
-      this.gridStepY = 1e-8;
-      let multptr = 0;
-      while (this.gridStepY < (20 * gridMax) / maxy) this.gridStepY *= MULTA[multptr++ % 3];
+      this.gridStepY = this.autoGridStep(gridMax);
     } else {
       gridMid = 0;
       gridMax = this.getGridMaxFromManScale(plot);
