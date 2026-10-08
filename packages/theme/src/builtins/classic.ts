@@ -35,6 +35,7 @@ export const classic: Theme = {
   scope: {
     background: '#000000',
     card: '#000000',
+    undockedCard: '#000000',
     grid: '#404040',
     gridMajor: '#a0a0a0',
     text: '#ffffff',

@@ -73,7 +73,11 @@ const PAIRS: [string, string, number][] = [
 export function contrastWarnings(theme: Theme): ContrastWarning[] {
   const pairs = [...PAIRS];
   // in the card look scope text sits on the card as much as on the plot
-  if (theme.style.scopeLook === 'cards') pairs.push(['scope.text', 'scope.card', TEXT_CONTRAST]);
+  if (theme.style.scopeLook === 'cards')
+    pairs.push(
+      ['scope.text', 'scope.card', TEXT_CONTRAST],
+      ['scope.text', 'scope.undockedCard', TEXT_CONTRAST],
+    );
   const out: ContrastWarning[] = [];
   for (const [key, against, min] of pairs) {
     const fg = parseColor(get(theme, key) ?? '');

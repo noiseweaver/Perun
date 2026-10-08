@@ -160,6 +160,11 @@
           "maxLength": 64,
           "description": "Card around each scope, with its header and legend (card look only)."
         },
+        "undockedCard": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Card of a scope undocked onto the circuit (card look only), drawn with a soft shadow."
+        },
         "grid": {
           "type": "string",
           "maxLength": 64,
@@ -295,13 +300,13 @@
         "font": {
           "type": "string",
           "maxLength": 200,
-          "pattern": "^[\\w\\s,'\"-]+$",
+          "pattern": "^[\\w ,'\"-]+$",
           "description": "UI text and canvas labels: a CSS font family list."
         },
         "monoFont": {
           "type": "string",
           "maxLength": 200,
-          "pattern": "^[\\w\\s,'\"-]+$",
+          "pattern": "^[\\w ,'\"-]+$",
           "description": "Component values and numeric readouts: a CSS font family list."
         },
         "scopeLook": {

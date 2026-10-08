@@ -445,6 +445,35 @@ textarea,
   color: var(--ui-text-muted);
 }
 
+/* ---- rewind timeline (PLAN.md Phase 20) ---------------------------------------------------- */
+
+.timeline {
+  display: flex;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 8px 12px 0;
+  padding: 2px 8px;
+  border-radius: var(--md-shape-full);
+  background: var(--md-surface-container-high);
+  color: var(--ui-text-muted);
+}
+
+.timeline .timeline-slider {
+  flex: 1;
+  width: auto;
+  min-width: 64px;
+  margin: 0 6px;
+}
+
+.timeline .timeline-slider[data-disabled] {
+  opacity: 0.38;
+}
+
+/* a recorded frame is showing: the time readout takes the accent, as a reminder it is the past */
+.timeline[data-live='false'] .timeline-time {
+  color: var(--ui-accent);
+}
+
 .readout {
   display: inline-block;
   font-family: var(--mono-font);
@@ -1905,10 +1934,16 @@ textarea.field-input {
     display: grid;
     /* the rail is only as wide as its buttons: the readouts above it reach over the canvas */
     grid-template-columns: minmax(0, 1fr) auto 64px;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas:
       'bar status status'
-      'work work rail';
+      'work work rail'
+      'timeline timeline rail';
+  }
+
+  .timeline {
+    grid-area: timeline;
+    margin: 0 0 8px 8px;
   }
 
   .app-bar {
@@ -3628,4 +3663,26 @@ ul.theme-contrast {
 .sweep-frequency-head .segmented-button {
   min-height: 28px;
   padding: 0 10px;
+}
+
+@media (max-width: 600px) {
+  .timeline {
+    margin: 8px 8px 0;
+    padding: 2px 4px;
+    gap: 2px;
+  }
+}
+
+/* narrow phones: with Rewind the run controls only fit in one row when Run is an icon, as on the
+   landscape rail (its name stays as the tooltip) */
+@media (max-width: 440px) {
+  .control-bar > .control-group > .button-filled {
+    min-width: 0;
+    width: 48px;
+    padding: 0;
+  }
+
+  .run-label {
+    display: none;
+  }
 }

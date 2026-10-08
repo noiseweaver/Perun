@@ -68,6 +68,33 @@ function DrawButton() {
   );
 }
 
+/** Shows and hides the rewind timeline (PLAN.md Phase 20). */
+function RewindButton() {
+  const open = useApp((s) => s.rewind.open);
+  const label = open ? 'Hide the timeline' : 'Rewind';
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>
+        <button
+          type="button"
+          className="icon-button"
+          onClick={() => controller.setRewindOpen(!open)}
+          aria-label={t(label)}
+          aria-pressed={open}
+          data-testid="rewind-toggle"
+        >
+          <Icon name="history" />
+        </button>
+      </Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content className="tooltip" sideOffset={6}>
+          {t(label)}
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  );
+}
+
 /** Touch screens pan with one finger; this turns a one-finger drag into a selection box. */
 function BoxSelectButton() {
   const on = useApp((s) => s.boxSelect);
@@ -214,6 +241,8 @@ export function temperatureText(c: number): string {
  */
 export function ControlBar() {
   const running = useApp((s) => s.running);
+  const rewound = useApp((s) => !s.rewind.live);
+  const runLabel = running ? 'Stop' : rewound ? 'Replay' : 'Run';
   const {
     t: simTime,
     timeStep,
@@ -233,21 +262,22 @@ export function ControlBar() {
           type="button"
           className={`button button-filled ${running ? '' : 'button-paused'}`}
           onClick={() => controller.setRunning(!running)}
-          disabled={stopped && !running}
+          disabled={stopped && !running && !rewound}
           data-testid="run-stop"
           aria-pressed={running}
-          title={t(running ? 'Stop' : 'Run')}
+          title={t(runLabel)}
         >
           <Icon
             key={running ? 'pause' : 'play'}
             name={running ? 'pause' : 'play'}
             className="icon icon-swap"
           />
-          <span className="run-label">{t(running ? 'Stop' : 'Run')}</span>
+          <span className="run-label">{t(runLabel)}</span>
         </button>
         <IconButton label="Reset" onClick={() => controller.reset()} testId="reset">
           <Icon name="replay" />
         </IconButton>
+        <RewindButton />
         <IconButton label="Centre the circuit" onClick={() => controller.fit()}>
           <Icon name="fit" />
         </IconButton>
