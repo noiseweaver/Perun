@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { startup } from '../startup.ts';
 import { applyUpdate } from '../pwa.ts';
 import { setPaletteOpen, shownTheme, useApp } from '../store.ts';
-import { installShortcuts } from '../commands.ts';
+import { installShortcuts, openDialog } from '../commands.ts';
 import { paletteItem } from '../editor/catalog.ts';
 import { controller } from '../SimController.ts';
 import { AppBar } from './AppBar.tsx';
@@ -25,7 +25,7 @@ import { WheelValuePopup } from './WheelValuePopup.tsx';
 import { SubcircuitBar } from './SubcircuitBar.tsx';
 import { TeachBar } from './TeachBar.tsx';
 import { ThemeLinkBanner } from './ThemeDialogs.tsx';
-import { t, tItem } from '../i18n.ts';
+import { t, tf, tItem } from '../i18n.ts';
 
 let started = false;
 
@@ -89,6 +89,7 @@ export function App() {
             <ThemeLinkBanner />
             <Toast />
             <UpdateBanner />
+            <UpdatedBanner />
           </main>
           <Inspector />
         </div>
@@ -114,6 +115,38 @@ function ModeChip() {
       </span>
       <button type="button" className="button" onClick={() => controller.editor.setSelectMode()}>
         {t('Done')}
+      </button>
+    </div>
+  );
+}
+
+/** The first run after an update: point at what changed, once. */
+function UpdatedBanner() {
+  const version = useApp((s) => s.updatedTo);
+  const waiting = useApp((s) => s.updateReady);
+  if (version === null || waiting) return null;
+  const dismiss = (): void => useApp.setState({ updatedTo: null });
+  return (
+    <div className="update-banner" role="status" data-testid="updated-banner">
+      <span>{tf('Updated to version {version}.', { version })}</span>
+      <button
+        type="button"
+        className="button button-primary"
+        onClick={() => {
+          dismiss();
+          openDialog('whatsNew');
+        }}
+      >
+        {t("What's new")}
+      </button>
+      <button
+        type="button"
+        className="icon-button"
+        aria-label={t('Close')}
+        title={t('Close')}
+        onClick={dismiss}
+      >
+        <Icon name="close" size={20} />
       </button>
     </div>
   );

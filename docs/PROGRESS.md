@@ -1,5 +1,23 @@
 # Progress
 
+## 2026-10-08: release polish, version 1.0.0 (branch claude/release-polish-pf6oiv)
+
+Done: About and the README credit Gadiel Zintu (github.com/noiseweaver) as maker and maintainer.
+Version 1.0.0. The circuit on screen is kept in local storage (autosave.ts: every 3 s when it
+changed, and when the app goes to the background) and reopened when the URL names no circuit;
+a subcircuit's own circuit is never saved over it. A crash screen (CrashScreen.tsx) replaces the
+blank page after a render error, with Reload and Reload with a blank circuit (which also forgets
+the kept circuit). File > What's new (whatsNew.ts) and a one-time banner on the first run of a
+newer version. File > Send a suggestion (Gady picked the public issue form): email address
+(required) and text, then GitHub's new issue page opens with .github/ISSUE_TEMPLATE/suggestion.yml
+filled in; the sender posts it with a GitHub account, and the issue (email included) is public.
+About, the release notes, the form and the crash screen are translated into every catalog
+language (i18nExtra.ts, added under upstream's entries). Link previews (Open Graph tags,
+public/social.png), README live link, screenshots and install steps.
+
+Next: Gady tries the form on the installed app after the deploy. Open: the translations were
+written by Claude and not reviewed by native speakers.
+
 ## 2026-10-08: themed update prompt (branch claude/themed-update-prompt-7tcphm)
 
 Done: the "A new version is ready" bar (UpdateBanner in App.tsx, shown by pwa.ts when the

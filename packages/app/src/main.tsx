@@ -4,6 +4,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './components/App.tsx';
+import { CrashScreen } from './components/CrashScreen.tsx';
 import { controller } from './SimController.ts';
 import { setupPwa } from './pwa.ts';
 import { lockPageZoom } from './pageZoom.ts';
@@ -20,7 +21,9 @@ void setLanguage(resolveLanguage(useApp.getState().settings.language)).then(() =
   if (root) {
     createRoot(root).render(
       <StrictMode>
-        <App />
+        <CrashScreen>
+          <App />
+        </CrashScreen>
       </StrictMode>,
     );
   }

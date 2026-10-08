@@ -4,6 +4,8 @@
 import { parseQuery, queryBoolean, startCircuitFromQuery } from '@circuitjs-next/format';
 import { fetchExample, fetchExampleList, findExample, type ExampleList } from './examples.ts';
 import { controller } from './SimController.ts';
+import { installAutosave, readLastCircuit } from './autosave.ts';
+import { announceUpdate } from './whatsNew.ts';
 import { useApp } from './store.ts';
 import { loadLibrary, previewThemeFromQuery } from './themes.ts';
 
@@ -91,6 +93,7 @@ function applyQuerySettings(search: string): void {
 /** Page start: load the example list, then the circuit the URL names, else the default one. */
 export async function startup(): Promise<void> {
   const search = window.location.search;
+  announceUpdate();
   applyQuerySettings(search);
   void loadLibrary();
   const listPromise = fetchExampleList(BASE).then(
@@ -105,12 +108,19 @@ export async function startup(): Promise<void> {
   // a circuit in the URL itself needs no list; don't wait for it
   if (start.kind === 'text') {
     await openQuery(search, null);
+    installAutosave();
     return;
   }
   const examples = await listPromise;
   if (!(await openCircuitFromQuery(q, examples, false))) {
-    const def = examples?.defaultCircuit;
-    if (def) await openExample(def.file, def.title, queryBoolean(q, 'running', true));
+    // reopen what was on screen last time; a fresh install gets the default circuit
+    const last = readLastCircuit();
+    const running = queryBoolean(q, 'running', true);
+    if (!last || !controller.load(last.text, last.title, running)) {
+      const def = examples?.defaultCircuit;
+      if (def) await openExample(def.file, def.title, running);
+    }
   }
+  installAutosave();
   await previewThemeFromQuery(q);
 }

@@ -5,6 +5,23 @@ An electronic circuit simulator that runs in the browser: a TypeScript rebuild o
 and a JSON theme system. Simulation results and circuit files stay compatible with CircuitJS1: it
 opens upstream's links and files, and what it saves opens in upstream.
 
+**Open it: [noiseweaver.github.io/circuitsjs-next](https://noiseweaver.github.io/circuitsjs-next/)**.
+Nothing to install, and it works offline once loaded.
+
+<p>
+  <img src="docs/images/app-desktop.png" alt="The simulator on a desktop: component palette, an LRC circuit with sliders and three scopes" width="68%" />
+  <img src="docs/images/app-phone.png" alt="The same circuit on an iPhone, with one scope below it" width="28%" />
+</p>
+
+## Install it as an app
+
+- **iPhone and iPad:** open the link in Safari, tap Share, then Add to Home Screen. Open it once
+  while online; after that it works offline.
+- **Android, Chrome and Edge:** File > Install app, or the install button in the address bar.
+
+Your circuit is kept between visits. File > Save writes it to a file, and File > Send a suggestion
+reaches the maintainer.
+
 ## What it does
 
 - Every element in upstream master (154 classes), including subcircuits, custom logic, routed wires
@@ -12,6 +29,10 @@ opens upstream's links and files, and what it saves opens in upstream.
 - All 373 bundled upstream example circuits run and match upstream's results (`pnpm
 golden:examples`, report in [docs/EXAMPLES.md](docs/EXAMPLES.md)).
 - Scopes (docked, undocked, X-Y, FFT, triggers), live sliders, hover info with fixed-width values.
+- Analysis: AC analysis with Bode plots, parameter sweeps, Monte Carlo, a DC operating point
+  table, temperature and subcircuit parameters.
+- Seeing how it works: formula cards with live values, field views for coils and capacitors, a heat
+  view, and rewind to scrub through the last 10 seconds.
 - Editing extras: wires follow a dragged part (Options > Wires follow dragged parts, Alt to
   detach), schematic export as SVG or PNG, a parts list as CSV, and full-resolution scope CSV.
 - Teaching tools: draw on the circuit with a pencil, point with a fading laser, erase; drawings are
