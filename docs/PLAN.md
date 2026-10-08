@@ -1,6 +1,6 @@
 ---
 title: CircuitJS Rewrite, Plan of Approach
-tags: [project/circuitjs-next, plan]
+tags: [project/perun, plan]
 status: draft
 created: 2026-10-02
 owner: Gady
@@ -8,7 +8,7 @@ owner: Gady
 
 # CircuitJS Rewrite: Plan of Approach
 
-Working name: `circuitjs-next` (placeholder, rename freely)
+Name: Perun (renamed on 2026-10-08 from the working name `circuitjs-next`; the repository moved from `noiseweaver/circuitsjs-next` to `noiseweaver/perun`, so the site is now https://noiseweaver.github.io/perun/)
 Implementing agent: Claude Code. Owner and reviewer: Gady.
 
 ## 1. Goal
@@ -90,7 +90,7 @@ Phase 0 checked every item below against upstream at `5a707168` (2026-09-23). Fi
 ### Repo layout
 
 ```
-circuitjs-next/
+perun/
   reference/circuitjs1/        read-only upstream (git submodule, pinned SHA)
   packages/
     engine/      matrix, solver, sim loop, SimElement interface. No DOM (tsconfig lib without DOM)

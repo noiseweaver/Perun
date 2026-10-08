@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // The context menu follows CircuitJS1's element, scope and main popup menus (Menus.java
 // elmMenuBar, ScopePopupMenu.java, MouseManager.doPopupMenu, master at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032), minus sliders.
 
-import { WireElm, type CircuitElm, type ScopeElm } from '@circuitjs-next/elements';
+import { WireElm, type CircuitElm, type ScopeElm } from '@perun/elements';
 import * as Ctx from '@radix-ui/react-context-menu';
 import { useEffect, useRef, useState } from 'react';
 import { controller } from '../SimController.ts';

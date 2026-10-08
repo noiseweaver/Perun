@@ -1,13 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import {
-  viewFor,
-  type DrawContext,
-  type Ink,
-  type Painter,
-  type Pt,
-} from '@circuitjs-next/elements';
+import { viewFor, type DrawContext, type Ink, type Painter, type Pt } from '@perun/elements';
 import { describe, expect, it } from 'vitest';
 import { readCircuit } from './circuit.ts';
 import { GALLERIES } from './testdata/galleries.ts';

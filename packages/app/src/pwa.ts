@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Installable app and offline use (PLAN.md Phase 9): registers the service worker the build writes
 // (vite-plugin-sw.ts), offers a reload when a new version has been downloaded, keeps the browser's

@@ -1,5 +1,5 @@
 {
-  "name": "@circuitjs-next/app",
+  "name": "@perun/app",
   "version": "0.0.0",
   "private": true,
   "description": "UI shell, editor, panels, scopes, theme editor.",
@@ -9,11 +9,11 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@circuitjs-next/elements": "workspace:*",
-    "@circuitjs-next/engine": "workspace:*",
-    "@circuitjs-next/format": "workspace:*",
-    "@circuitjs-next/render": "workspace:*",
-    "@circuitjs-next/theme": "workspace:*",
+    "@perun/elements": "workspace:*",
+    "@perun/engine": "workspace:*",
+    "@perun/format": "workspace:*",
+    "@perun/render": "workspace:*",
+    "@perun/theme": "workspace:*",
     "@fontsource-variable/inter": "^5.3.0",
     "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@fontsource-variable/roboto": "^5.3.0",

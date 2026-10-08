@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 /** Material 3's corner radii in px at roundness 1: extra small to extra large. */
 export const SHAPE_SIZES = { xs: 4, s: 8, m: 12, l: 16, xl: 28 } as const;

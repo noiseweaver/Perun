@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import { luminance, rgba, themeCssVariables } from '@circuitjs-next/theme';
+import { luminance, rgba, themeCssVariables } from '@perun/theme';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { useEffect } from 'react';
 import { startup } from '../startup.ts';

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Groups, names and order follow CircuitJS1 Menus.composeMainMenu
 // (src/com/lushprojects/circuitjs1/client/Menus.java, master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032.
 
-import { Simulation, constructElement } from '@circuitjs-next/elements';
+import { Simulation, constructElement } from '@perun/elements';
 import { tItem } from '../i18n.ts';
 
 export interface PaletteItem {

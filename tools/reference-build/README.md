@@ -20,7 +20,7 @@ pnpm reference:serve   # serves http://localhost:8000/circuitjs.html (builds fir
 node tools/reference-build/smoke.mjs   # with the server running: checks that the sim runs
 ```
 
-`build.sh` tags the image `circuitjs-next/reference:<first 12 chars of the upstream SHA>-p<first 8
+`build.sh` tags the image `perun/reference:<first 12 chars of the upstream SHA>-p<first 8
 chars of the patch SHA-256>` and writes both SHAs to `.reference-site/reference-build.json`, which the
 golden recorder copies into every fixture. Gradle dependencies are kept in a BuildKit cache mount
 between builds, since Maven Central rate-limits repeated downloads.

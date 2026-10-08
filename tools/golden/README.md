@@ -80,7 +80,7 @@ worst value with its multiple of the tolerance. The exit code is 1 if any circui
 
 Engines live in [src/engines/](src/engines/) and implement `GoldenEngine`: given the circuit text,
 seed and sample settings, return an `EngineTrace` in the fixture's sample shape. `next` is the
-circuitjs-next engine (`runCircuit` from `@circuitjs-next/format`); `src/next.test.ts` runs it on
+Perun engine (`runCircuit` from `@perun/format`); `src/next.test.ts` runs it on
 every `linear` circuit in `pnpm check`. The `stub` engine returns zeros in the reference shape and
 fails every circuit. Only stubs may read `referenceTopology`.
 

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Rewind and scrub (PLAN.md Phase 20, not in upstream): the last seconds of a run, kept frame by
 // frame so the timeline can show any of them again. The engine is untouched: a frame is a copy
 // of the numbers the elements and scopes hold, written back into them to show it.
 
-import { CircuitNode, Point, Simulation, VoltageSource } from '@circuitjs-next/engine';
+import { CircuitNode, Point, Simulation, VoltageSource } from '@perun/engine';
 
 /** How a slot reads and writes its value. */
 const enum Kind {

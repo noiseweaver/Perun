@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Phase 13: the DC operating point table. The solve is checked against hand calculations in
 // packages/app/src/analysis/dcop.test.ts; this covers opening the panel, reading and pointing.
 
 import { expect, test, type Page } from '@playwright/test';
-import { compressCircuit } from '@circuitjs-next/format';
+import { compressCircuit } from '@perun/format';
 
 /** Voltage-divider bias of an NPN stage, with a capacitor that must carry no DC current. */
 const NPN_BIAS =
@@ -27,7 +27,7 @@ const NPN_BIAS =
 
 const ready = async (page: Page): Promise<void> => {
   await expect(page.getByTestId('circuit-canvas')).toBeVisible();
-  await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+  await page.waitForFunction(() => (window.perun?.controller.frames ?? 0) > 2);
 };
 
 test('the DC operating point of a transistor stage', async ({ page }) => {
@@ -50,7 +50,7 @@ test('the DC operating point of a transistor stage', async ({ page }) => {
   // pointing at a node lights its wires on the canvas
   await nodes.nth(1).hover();
   await expect
-    .poll(() => page.evaluate(() => window.circuitjsNext?.controller.analysisHighlights().length))
+    .poll(() => page.evaluate(() => window.perun?.controller.analysisHighlights().length))
     .toBeGreaterThan(0);
 
   await page.getByTestId('dc-tab-parts').click();
@@ -74,7 +74,5 @@ test('the DC operating point of a transistor stage', async ({ page }) => {
 
   await page.getByTestId('dc-panel-close').click();
   await expect(panel).toHaveCount(0);
-  expect(
-    await page.evaluate(() => window.circuitjsNext?.controller.analysisHighlights().length),
-  ).toBe(0);
+  expect(await page.evaluate(() => window.perun?.controller.analysisHighlights().length)).toBe(0);
 });

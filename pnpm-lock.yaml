@@ -8,10 +8,10 @@ importers:
 
   .:
     dependencies:
-      '@circuitjs-next/format':
+      '@perun/format':
         specifier: workspace:*
         version: link:packages/format
-      '@circuitjs-next/theme':
+      '@perun/theme':
         specifier: workspace:*
         version: link:packages/theme
     devDependencies:
@@ -57,21 +57,6 @@ importers:
 
   packages/app:
     dependencies:
-      '@circuitjs-next/elements':
-        specifier: workspace:*
-        version: link:../elements
-      '@circuitjs-next/engine':
-        specifier: workspace:*
-        version: link:../engine
-      '@circuitjs-next/format':
-        specifier: workspace:*
-        version: link:../format
-      '@circuitjs-next/render':
-        specifier: workspace:*
-        version: link:../render
-      '@circuitjs-next/theme':
-        specifier: workspace:*
-        version: link:../theme
       '@fontsource-variable/inter':
         specifier: ^5.3.0
         version: 5.3.0
@@ -81,6 +66,21 @@ importers:
       '@fontsource-variable/roboto':
         specifier: ^5.3.0
         version: 5.3.0
+      '@perun/elements':
+        specifier: workspace:*
+        version: link:../elements
+      '@perun/engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@perun/format':
+        specifier: workspace:*
+        version: link:../format
+      '@perun/render':
+        specifier: workspace:*
+        version: link:../render
+      '@perun/theme':
+        specifier: workspace:*
+        version: link:../theme
       '@radix-ui/react-context-menu':
         specifier: ^2.3.7
         version: 2.3.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -127,7 +127,7 @@ importers:
 
   packages/elements:
     dependencies:
-      '@circuitjs-next/engine':
+      '@perun/engine':
         specifier: workspace:*
         version: link:../engine
 
@@ -135,7 +135,7 @@ importers:
 
   packages/format:
     dependencies:
-      '@circuitjs-next/elements':
+      '@perun/elements':
         specifier: workspace:*
         version: link:../elements
       lz-string:
@@ -144,10 +144,10 @@ importers:
 
   packages/render:
     dependencies:
-      '@circuitjs-next/elements':
+      '@perun/elements':
         specifier: workspace:*
         version: link:../elements
-      '@circuitjs-next/theme':
+      '@perun/theme':
         specifier: workspace:*
         version: link:../theme
 

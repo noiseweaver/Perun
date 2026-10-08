@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Phase 15 (circuit temperature) and Phase 16 (parameters, and subcircuit copies with their own
 // values).
 
 import { expect, test, type Page } from '@playwright/test';
-import { compressCircuit } from '@circuitjs-next/format';
+import { compressCircuit } from '@perun/format';
 
 /** A divider between labels "top" and "bot", tapped by "mid". */
 const DIVIDER =
@@ -28,22 +28,22 @@ const DIODE =
 const open = async (page: Page, text: string): Promise<void> => {
   await page.goto(`/?ctz=${compressCircuit(text)}`);
   await expect(page.getByTestId('circuit-canvas')).toBeVisible();
-  await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+  await page.waitForFunction(() => (window.perun?.controller.frames ?? 0) > 2);
 };
 
 const at = async (page: Page, x: number, y: number): Promise<{ x: number; y: number }> => {
   const box = await page.getByTestId('circuit-canvas').boundingBox();
-  const p = await page.evaluate(
-    ([x, y]) => window.circuitjsNext?.controller.toScreen(x, y) ?? null,
-    [x, y] as const,
-  );
+  const p = await page.evaluate(([x, y]) => window.perun?.controller.toScreen(x, y) ?? null, [
+    x,
+    y,
+  ] as const);
   if (!box || !p) throw new Error('no canvas');
   return { x: box.x + p.x, y: box.y + p.y };
 };
 
 const diodeDrop = (page: Page): Promise<number> =>
   page.evaluate(() => {
-    const d = window.circuitjsNext?.controller.circuit.elements.find(
+    const d = window.perun?.controller.circuit.elements.find(
       (e) => e.getClassName() === 'DiodeElm',
     );
     return d ? Math.abs(d.volts[0] - d.volts[1]) : NaN;
@@ -69,9 +69,7 @@ test('the circuit temperature moves a diode drop, shows in the bottom bar, and u
   await expect(page.getByTestId('sim-temperature-readout')).toHaveText('T =  127.0 °C');
   // about 2 mV less per degree
   await expect.poll(() => diodeDrop(page)).toBeLessThan(cold - 0.15);
-  expect(await page.evaluate(() => window.circuitjsNext?.controller.saveText())).toContain(
-    'temp="127"',
-  );
+  expect(await page.evaluate(() => window.perun?.controller.saveText())).toContain('temp="127"');
 
   await page.keyboard.press('Control+z');
   await expect(page.getByTestId('sim-temperature-readout')).toHaveCount(0);
@@ -102,7 +100,7 @@ test('a parameter binds a part value, and each subcircuit copy sets its own', as
   await expect(page.getByTestId('field-0-bound')).toContainText('2');
   const lower = () =>
     page.evaluate(() => {
-      const rs = window.circuitjsNext?.controller.circuit.elements.filter(
+      const rs = window.perun?.controller.circuit.elements.filter(
         (e) => e.getClassName() === 'ResistorElm',
       );
       return (rs?.[1] as unknown as { resistance: number } | undefined)?.resistance ?? NaN;
@@ -136,14 +134,14 @@ test('a parameter binds a part value, and each subcircuit copy sets its own', as
 
   const inner = () =>
     page.evaluate(() => {
-      const cc = window.circuitjsNext?.controller.circuit.elements.find(
+      const cc = window.perun?.controller.circuit.elements.find(
         (e) => e.getClassName() === 'CustomCompositeElm',
       ) as unknown as { compElmList: { resistance?: number }[] } | undefined;
       return cc?.compElmList.map((e) => e.resistance ?? null).filter((v) => v !== null) ?? [];
     });
   await expect.poll(inner).toEqual([1000, 1000]);
   const mid = await page.evaluate(() => {
-    const e = window.circuitjsNext?.controller.circuit.elements.find(
+    const e = window.perun?.controller.circuit.elements.find(
       (x) => x.getClassName() === 'CustomCompositeElm',
     );
     if (!e) return null;
@@ -158,7 +156,7 @@ test('a parameter binds a part value, and each subcircuit copy sets its own', as
   await rb.fill('4.7k');
   await rb.press('Enter');
   await expect.poll(inner).toEqual([1000, 4700]);
-  const saved = await page.evaluate(() => window.circuitjsNext?.controller.saveText() ?? '');
+  const saved = await page.evaluate(() => window.perun?.controller.saveText() ?? '');
   expect(saved).toContain('pv="RB=4700"');
   expect(saved).toContain('prm="RB=1000"');
 
@@ -180,9 +178,8 @@ test('the sweep dialog steps the circuit temperature', async ({ page }) => {
   await expect(page.getByTestId('sweep-values')).toHaveValue('-20, 27, 85');
   const diode = await page.evaluate(
     () =>
-      window.circuitjsNext?.controller.circuit.elements.findIndex(
-        (e) => e.getClassName() === 'DiodeElm',
-      ) ?? -1,
+      window.perun?.controller.circuit.elements.findIndex((e) => e.getClassName() === 'DiodeElm') ??
+      -1,
   );
   await page.getByTestId('sweep-output').selectOption(String(diode));
   await page.getByTestId('sweep-duration').fill('1ms');
@@ -193,9 +190,7 @@ test('the sweep dialog steps the circuit temperature', async ({ page }) => {
   await expect(runs.nth(0)).toContainText('-20 °C');
   await expect(runs.nth(2)).toContainText('85 °C');
   // the circuit itself stays at 27 °C
-  expect(await page.evaluate(() => window.circuitjsNext?.controller.circuit.sim.temperature)).toBe(
-    27,
-  );
+  expect(await page.evaluate(() => window.perun?.controller.circuit.sim.temperature)).toBe(27);
 });
 
 /** 10 V across 100 Ω: 1 W. */
@@ -219,7 +214,7 @@ test('self-heating warms a resistor live, with its heat path in its properties',
   await page.getByTestId('sim-settings-ok').click();
   // the ambient readout shows even while it is still near 27 °C
   await expect(page.getByTestId('sim-temperature-readout')).toHaveText(/^T = {2}\s?\d\d\.\d °C$/);
-  const saved = await page.evaluate(() => window.circuitjsNext?.controller.saveText() ?? '');
+  const saved = await page.evaluate(() => window.perun?.controller.saveText() ?? '');
   expect(saved).toContain('heat="1"');
   expect(saved).toContain('tramp="40 1"');
 
@@ -238,9 +233,7 @@ test('self-heating warms a resistor live, with its heat path in its properties',
   await rth.fill('1');
   await rth.press('Enter');
   await expect.poll(async () => parseFloat((await temp.textContent()) ?? '99')).toBeLessThan(30);
-  expect(await page.evaluate(() => window.circuitjsNext?.controller.saveText())).toContain(
-    'rth="1"',
-  );
+  expect(await page.evaluate(() => window.perun?.controller.saveText())).toContain('rth="1"');
   // a parameter can't drive it
   await rth.fill('{R}');
   await rth.press('Enter');
@@ -249,7 +242,7 @@ test('self-heating warms a resistor live, with its heat path in its properties',
 
 test('Options > Visualizations > Heat shows a legend entry and saves nothing', async ({ page }) => {
   await open(page, HEATER);
-  const before = await page.evaluate(() => window.circuitjsNext?.controller.saveText() ?? '');
+  const before = await page.evaluate(() => window.perun?.controller.saveText() ?? '');
   await page.getByRole('button', { name: 'Options' }).click();
   await page.getByTestId('menu-visualizations').click();
   // a click moves the mouse across the parent menu, which can close the submenu on a slow runner
@@ -257,12 +250,12 @@ test('Options > Visualizations > Heat shows a legend entry and saves nothing', a
   await expect(item).toBeVisible();
   await item.dispatchEvent('click');
   await expect
-    .poll(() => page.evaluate(() => window.circuitjsNext?.controller.lastFrameState?.fields.heat))
+    .poll(() => page.evaluate(() => window.perun?.controller.lastFrameState?.fields.heat))
     .toBe(true);
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('field-legend')).toContainText('Warmer than ambient');
   // display only: the circuit is unchanged
-  expect(await page.evaluate(() => window.circuitjsNext?.controller.saveText())).toBe(before);
+  expect(await page.evaluate(() => window.perun?.controller.saveText())).toBe(before);
 });
 
 test('a temperature sweep of the matched-pair VCO reads its frequency and pitch', async ({
@@ -271,14 +264,14 @@ test('a temperature sweep of the matched-pair VCO reads its frequency and pitch'
   // Phase 18: one of this port's own examples, swept over temperature
   await page.goto('/?startCircuit=vco-expo-pair.txt');
   await expect(page.getByTestId('circuit-canvas')).toBeVisible();
-  await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+  await page.waitForFunction(() => (window.perun?.controller.frames ?? 0) > 2);
   await page.getByTestId('scopes-menu').click();
   await page.getByTestId('scopes-sweep').click();
   await page.getByTestId('sweep-part').selectOption('-2');
   await page.getByTestId('sweep-values').fill('27, 60');
   const cap = await page.evaluate(
     () =>
-      window.circuitjsNext?.controller.circuit.elements.findIndex(
+      window.perun?.controller.circuit.elements.findIndex(
         (e) => e.getClassName() === 'CapacitorElm',
       ) ?? -1,
   );

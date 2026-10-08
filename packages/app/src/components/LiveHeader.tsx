@@ -1,14 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import {
-  getFixedUnitText,
-  temperatureOf,
-  viewFor,
-  type CircuitElm,
-} from '@circuitjs-next/elements';
-import { CircuitRenderer, type FrameState } from '@circuitjs-next/render';
-import type { Theme } from '@circuitjs-next/theme';
+import { getFixedUnitText, temperatureOf, viewFor, type CircuitElm } from '@perun/elements';
+import { CircuitRenderer, type FrameState } from '@perun/render';
+import type { Theme } from '@perun/theme';
 import { useEffect, useRef } from 'react';
 import { controller } from '../SimController.ts';
 import { shownTheme, useApp } from '../store.ts';

@@ -1,12 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import {
-  VoltageElm,
-  getFixedUnitText,
-  parseUnits,
-  type CircuitElm,
-} from '@circuitjs-next/elements';
+import { VoltageElm, getFixedUnitText, parseUnits, type CircuitElm } from '@perun/elements';
 import { useEffect, useReducer, useRef, useState } from 'react';
 import {
   BodeSweep,

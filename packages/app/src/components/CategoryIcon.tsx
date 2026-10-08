@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Icons for the example circuit categories (upstream setuplist.txt group titles): a component
 // from the category drawn like the palette's, or a plain icon where the component would be a chip

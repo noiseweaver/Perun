@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // What upstream's side panel shows under the buttons (CircuitJS1 Adjustable.java, PotElm.java,
 // LDRElm.java, ThermistorNTCElm.java and VarRailElm.java createSlider/execute, master at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032): one slider per adjustable that owns one, and one
@@ -17,7 +17,7 @@ import {
   clampPosition,
   getUnitText,
   unitString,
-} from '@circuitjs-next/elements';
+} from '@perun/elements';
 
 /** One slider in the panel. Positions are upstream's Scrollbar values, 0 to 100. */
 export interface SliderEntry {

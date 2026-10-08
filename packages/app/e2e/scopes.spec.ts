@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Phase 6: scopes restored from upstream files draw below the circuit, and the scope menus and
 // properties dialog change them. tools/golden/src/scopes.test.ts checks the restored scopes
 // against upstream's own save of every bundled example.
 
 import { expect, test, type Page } from '@playwright/test';
-import { compressCircuit } from '@circuitjs-next/format';
+import { compressCircuit } from '@perun/format';
 
 /** A 10 V source driving a resistor, drawn on a 16 px grid. */
 const LOOP =
@@ -18,16 +18,16 @@ const LOOP =
 
 const ready = async (page: Page): Promise<void> => {
   await expect(page.getByTestId('circuit-canvas')).toBeVisible();
-  await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+  await page.waitForFunction(() => (window.perun?.controller.frames ?? 0) > 2);
 };
 
 /** Page coordinates of a circuit point. */
 const at = async (page: Page, x: number, y: number): Promise<{ x: number; y: number }> => {
   const box = await page.getByTestId('circuit-canvas').boundingBox();
-  const p = await page.evaluate(
-    ([x, y]) => window.circuitjsNext?.controller.toScreen(x, y) ?? null,
-    [x, y] as const,
-  );
+  const p = await page.evaluate(([x, y]) => window.perun?.controller.toScreen(x, y) ?? null, [
+    x,
+    y,
+  ] as const);
   if (!box || !p) throw new Error('no canvas');
   return { x: box.x + p.x, y: box.y + p.y };
 };
@@ -35,20 +35,17 @@ const at = async (page: Page, x: number, y: number): Promise<{ x: number; y: num
 /** Page coordinates of a point in scope `i`'s rectangle, as a fraction of its size. */
 const inScope = async (page: Page, i: number, fx = 0.5, fy = 0.5) => {
   const box = await page.getByTestId('circuit-canvas').boundingBox();
-  const r = await page.evaluate(
-    (i) => window.circuitjsNext?.controller.scopes.scopes[i]?.rect ?? null,
-    i,
-  );
+  const r = await page.evaluate((i) => window.perun?.controller.scopes.scopes[i]?.rect ?? null, i);
   if (!box || !r) throw new Error('no scope');
   return { x: box.x + r.x + r.width * fx, y: box.y + r.y + r.height * fy };
 };
 
 const scopeCount = (page: Page): Promise<number> =>
-  page.evaluate(() => window.circuitjsNext?.controller.scopes.scopeCount ?? -1);
+  page.evaluate(() => window.perun?.controller.scopes.scopeCount ?? -1);
 
 const savedScopes = (page: Page): Promise<string[]> =>
   page.evaluate(() =>
-    (window.circuitjsNext?.controller.circuit.dumpXml() ?? '')
+    (window.perun?.controller.circuit.dumpXml() ?? '')
       .split('\n')
       .filter((l) => l.startsWith('  <o ')),
   );
@@ -73,12 +70,12 @@ test('scope lines of an upstream example restore its scopes and draw them', asyn
   expect(await scopeCount(page)).toBe(3);
   // the circuit gives up the bottom of the canvas to the scopes
   const heights = await page.evaluate(() => {
-    const c = window.circuitjsNext?.controller;
+    const c = window.perun?.controller;
     return c ? [c.circuitHeight(), c.scopeArea().height] : [];
   });
   expect(heights[1]).toBeGreaterThan(50);
   // traces are drawn
-  const r = await page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes[0]?.rect);
+  const r = await page.evaluate(() => window.perun?.controller.scopes.scopes[0]?.rect);
   if (!r) throw new Error('no scope rect');
   await expect.poll(() => colorsIn(page, r)).toBeGreaterThan(4);
   // and saved back as upstream would
@@ -93,12 +90,12 @@ test('reset clears the scope traces, as upstream resetAction does', async ({ pag
   // largest |value| the first scope's first plot holds
   const peak = () =>
     page.evaluate(() => {
-      const p = window.circuitjsNext?.controller.scopes.scopes[0]?.plots[0];
+      const p = window.perun?.controller.scopes.scopes[0]?.plots[0];
       return p ? Math.max(0, ...Array.from(p.maxValues, Math.abs)) : -1;
     });
   await expect.poll(peak).toBeGreaterThan(0.5);
   const after = await page.evaluate(() => {
-    const c = window.circuitjsNext?.controller;
+    const c = window.perun?.controller;
     c?.reset();
     const p = c?.scopes.scopes[0]?.plots[0];
     return p ? Math.max(0, ...Array.from(p.maxValues, Math.abs)) : -1;
@@ -141,7 +138,7 @@ test('the properties dialog changes what a scope plots and is saved', async ({ p
   await page.getByTestId('scope-properties').click();
   const dialog = page.getByTestId('scope-dialog');
   await expect(dialog).toBeVisible();
-  const dump = () => page.evaluate(() => window.circuitjsNext?.controller.circuit.dumpXml());
+  const dump = () => page.evaluate(() => window.perun?.controller.circuit.dumpXml());
   const before = await dump();
   await page.getByTestId('scope-show-power').click();
   await expect(page.getByTestId('scope-show-power')).toBeChecked();
@@ -149,7 +146,7 @@ test('the properties dialog changes what a scope plots and is saved', async ({ p
   await expect(dialog).toBeHidden();
   expect(
     await page.evaluate(() =>
-      window.circuitjsNext?.controller.scopes.scopes[0]?.plots.map((pl) => pl.value),
+      window.perun?.controller.scopes.scopes[0]?.plots.map((pl) => pl.value),
     ),
   ).toContain(7);
   expect(await dump()).not.toBe(before);
@@ -163,7 +160,7 @@ test('Scopes menu stacks and separates every scope', async ({ page }) => {
   await page.goto('/?startCircuit=lrc.txt');
   await ready(page);
   const positions = () =>
-    page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes.map((s) => s.position));
+    page.evaluate(() => window.perun?.controller.scopes.scopes.map((s) => s.position));
   expect(await positions()).toEqual([0, 1, 2]);
   // let the last menu finish closing first: a click while it fades out can leave it shut
   const openScopes = async (): Promise<void> => {
@@ -188,7 +185,7 @@ test('hovering an element shows its info', async ({ page }) => {
   const p = await at(page, 176, 96);
   await page.mouse.move(p.x, p.y);
   await expect
-    .poll(() => page.evaluate(() => window.circuitjsNext?.controller.infoLines() ?? []))
+    .poll(() => page.evaluate(() => window.perun?.controller.infoLines() ?? []))
     .toEqual(
       expect.arrayContaining([
         expect.stringMatching(/^resistor/),
@@ -205,7 +202,7 @@ const cardPart = async (page: Page, i: number, kind: string, index = 0) => {
   const box = await page.getByTestId('circuit-canvas').boundingBox();
   const h = await page.evaluate(
     ([i, kind, index]) => {
-      const c = window.circuitjsNext?.controller;
+      const c = window.perun?.controller;
       const n = i as number;
       const s = n >= 0 ? c?.scopes.scopes[n] : c?.circuit.scopeElms()[-n - 1]?.elmScope;
       if (!c || !s) return null;
@@ -242,11 +239,10 @@ test.describe('the card look', () => {
   }) => {
     await page.goto('/?startCircuit=lrc.txt');
     await ready(page);
-    expect(await page.evaluate(() => window.circuitjsNext?.controller.scopes.look)).toBe('cards');
+    expect(await page.evaluate(() => window.perun?.controller.scopes.look)).toBe('cards');
 
     // the current chip hides the current trace and shows it again
-    const showI = () =>
-      page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes[0]?.showI);
+    const showI = () => page.evaluate(() => window.perun?.controller.scopes.scopes[0]?.showI);
     expect(await showI()).toBe(true);
     const chip = await cardPart(page, 0, 'chip', 1);
     await page.mouse.click(chip.x, chip.y);
@@ -276,7 +272,7 @@ test.describe('the card look', () => {
     await page.getByTestId('menu-theme').click();
     await page.getByTestId('theme-classic').click();
     await expect
-      .poll(() => page.evaluate(() => window.circuitjsNext?.controller.scopes.look))
+      .poll(() => page.evaluate(() => window.perun?.controller.scopes.look))
       .toBe('classic');
     await page.getByTestId('options-menu').click();
     await page.getByTestId('menu-theme').click();
@@ -292,9 +288,8 @@ test.describe('on a phone', () => {
   }) => {
     await page.goto('/?startCircuit=lrc.txt');
     await ready(page);
-    const active = () =>
-      page.evaluate(() => window.circuitjsNext?.controller.scopes.activeColumn ?? -1);
-    expect(await page.evaluate(() => window.circuitjsNext?.controller.scopes.compact)).toBe(true);
+    const active = () => page.evaluate(() => window.perun?.controller.scopes.activeColumn ?? -1);
+    expect(await page.evaluate(() => window.perun?.controller.scopes.compact)).toBe(true);
     expect(await active()).toBe(0);
     const tab = await cardPart(page, 0, 'tab', 2);
     await page.touchscreen.tap(tab.x, tab.y);
@@ -319,7 +314,7 @@ test.describe('on a phone', () => {
 
     // swipe right over the header (the title): back one column
     const box = await page.getByTestId('circuit-canvas').boundingBox();
-    const slot = await page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes[2]?.slot);
+    const slot = await page.evaluate(() => window.perun?.controller.scopes.scopes[2]?.slot);
     if (!box || !slot) throw new Error('no scope');
     await swipe(box.x + slot.x + 120, box.y + slot.y + 12);
     await expect.poll(active).toBe(1);
@@ -328,9 +323,7 @@ test.describe('on a phone', () => {
 
 test.describe('undocked scopes', () => {
   const undocked = (page: Page) =>
-    page.evaluate(() =>
-      (window.circuitjsNext?.controller.circuit.scopeElms() ?? []).map((e) => e.box()),
-    );
+    page.evaluate(() => (window.perun?.controller.circuit.scopeElms() ?? []).map((e) => e.box()));
 
   test('a scope undocks onto the circuit, moves by its handle, resizes and docks again', async ({
     page,
@@ -342,11 +335,11 @@ test.describe('undocked scopes', () => {
     await page.getByTestId('scope-undock').click();
     expect(await scopeCount(page)).toBe(2);
     expect(await undocked(page)).toHaveLength(1);
-    const saved = await page.evaluate(() => window.circuitjsNext?.controller.circuit.dumpXml());
+    const saved = await page.evaluate(() => window.perun?.controller.circuit.dumpXml());
     expect(saved).toMatch(/<Scope x="[-\d ]+" f="0">\n {4}<o en="3"/);
     // the card's leader line and plot are drawn
     const slot = await page.evaluate(
-      () => window.circuitjsNext?.controller.circuit.scopeElms()[0]?.elmScope.slot,
+      () => window.perun?.controller.circuit.scopeElms()[0]?.elmScope.slot,
     );
     if (!slot) throw new Error('no undocked scope');
     await expect.poll(() => colorsIn(page, slot)).toBeGreaterThan(4);
@@ -381,7 +374,7 @@ test.describe('undocked scopes', () => {
 
     // its menu docks it again, in a new column
     const plot = await page.evaluate(
-      () => window.circuitjsNext?.controller.circuit.scopeElms()[0]?.elmScope.rect,
+      () => window.perun?.controller.circuit.scopeElms()[0]?.elmScope.rect,
     );
     const box = await page.getByTestId('circuit-canvas').boundingBox();
     if (!plot || !box) throw new Error('no plot');
@@ -430,7 +423,7 @@ test.describe('undocked scopes', () => {
     const cards = await undocked(page);
     expect(cards).toHaveLength(3);
     const parts = await page.evaluate(() => {
-      const c = window.circuitjsNext?.controller.circuit;
+      const c = window.perun?.controller.circuit;
       return (c?.elements ?? [])
         .filter((e) => e.getClassName() !== 'ScopeElm')
         .map((e) => ({
@@ -503,11 +496,11 @@ test('the speed sliders open from a button', async ({ page }) => {
   await expect(page.getByTestId('speed-slider')).toHaveCount(0);
   await page.getByTestId('speed-button').click();
   await expect(page.getByTestId('speed-popover')).toBeVisible();
-  const before = await page.evaluate(() => window.circuitjsNext?.controller.circuit.options.speed);
+  const before = await page.evaluate(() => window.perun?.controller.circuit.options.speed);
   await page.getByTestId('speed-slider').getByRole('slider').focus();
   await page.keyboard.press('ArrowRight');
   await expect
-    .poll(() => page.evaluate(() => window.circuitjsNext?.controller.circuit.options.speed))
+    .poll(() => page.evaluate(() => window.perun?.controller.circuit.options.speed))
     .toBe((before ?? 0) + 1);
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('speed-popover')).toBeHidden();
@@ -516,28 +509,28 @@ test('the speed sliders open from a button', async ({ page }) => {
 test('a spectrum finds its peak, and the cursor snaps to it', async ({ page }) => {
   await page.goto('/?startCircuit=lrc.txt');
   await ready(page);
-  await page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes[0]?.fftPlot.show(true));
+  await page.evaluate(() => window.perun?.controller.scopes.scopes[0]?.fftPlot.show(true));
   // the LC circuit rings at 1 / (2π √(1 H × 15 μF)) ≈ 41 Hz, less a little for its resistance
   await expect
     .poll(
       async () => {
         const f = await page.evaluate(
-          () => window.circuitjsNext?.controller.scopes.scopes[0]?.fftPlot.strongestPeak()?.freq,
+          () => window.perun?.controller.scopes.scopes[0]?.fftPlot.strongestPeak()?.freq,
         );
         return f !== undefined && f > 35 && f < 48;
       },
       { timeout: 20000 },
     )
     .toBe(true);
-  await page.evaluate(() => window.circuitjsNext?.controller.setRunning(false));
+  await page.evaluate(() => window.perun?.controller.setRunning(false));
   const peak = await page.evaluate(() => {
-    const f = window.circuitjsNext?.controller.scopes.scopes[0]?.fftPlot;
+    const f = window.perun?.controller.scopes.scopes[0]?.fftPlot;
     const pk = f?.strongestPeak();
     return pk && f ? { freq: pk.freq, x: f.frequencyToX(pk.freq) } : null;
   });
   if (!peak) throw new Error('no peak');
   const snapped = await page.evaluate(
-    (x) => window.circuitjsNext?.controller.scopes.scopes[0]?.fftPlot.cursorFrequency(x + 4),
+    (x) => window.perun?.controller.scopes.scopes[0]?.fftPlot.cursorFrequency(x + 4),
     peak.x,
   );
   expect(snapped).toBeCloseTo(peak.freq, 3);
@@ -549,9 +542,7 @@ test('the header button undocks a docked scope and docks it back', async ({ page
   const undock = await cardPart(page, 0, 'dock');
   await page.mouse.click(undock.x, undock.y);
   await expect.poll(() => scopeCount(page)).toBe(2);
-  expect(
-    await page.evaluate(() => window.circuitjsNext?.controller.circuit.scopeElms().length),
-  ).toBe(1);
+  expect(await page.evaluate(() => window.perun?.controller.circuit.scopeElms().length)).toBe(1);
   await page.mouse.move(5, 5);
   const dock = await cardPart(page, -1, 'dock');
   await page.mouse.click(dock.x, dock.y);
@@ -564,7 +555,7 @@ test.describe('last round', () => {
     await ready(page);
     const trace = () =>
       page.evaluate(() => {
-        const s = window.circuitjsNext?.controller.scopes.scopes[0];
+        const s = window.perun?.controller.scopes.scopes[0];
         return s ? Array.from(s.plots[0]?.maxValues ?? []).join(',') : '';
       });
     const freeze = await cardPart(page, 0, 'freeze');
@@ -573,20 +564,17 @@ test.describe('last round', () => {
     await page.waitForTimeout(300);
     expect(await trace()).toBe(held);
     expect(
-      await page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes[0]?.frozen),
+      await page.evaluate(() => window.perun?.controller.scopes.scopes[0]?.frozen),
     ).not.toBeNull();
     await page.mouse.click(freeze.x, freeze.y);
-    expect(
-      await page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes[0]?.frozen),
-    ).toBeNull();
+    expect(await page.evaluate(() => window.perun?.controller.scopes.scopes[0]?.frozen)).toBeNull();
     await expect.poll(trace).not.toBe(held);
   });
 
   test('Ctrl+wheel over a scope changes its time scale', async ({ page }) => {
     await page.goto('/?startCircuit=lrc.txt');
     await ready(page);
-    const speed = () =>
-      page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes[0]?.speed ?? 0);
+    const speed = () => page.evaluate(() => window.perun?.controller.scopes.scopes[0]?.speed ?? 0);
     const before = await speed();
     const s = await inScope(page, 0);
     await page.mouse.move(s.x, s.y);
@@ -601,23 +589,23 @@ test.describe('last round', () => {
     await ready(page);
     // let the LC ring for a few periods (at full speed), then hold it still
     await page.evaluate(() => {
-      const c = window.circuitjsNext?.controller;
+      const c = window.perun?.controller;
       if (c) c.circuit.options.speed = 259;
     });
     await expect
-      .poll(() => page.evaluate(() => window.circuitjsNext?.controller.circuit.sim.t ?? 0), {
+      .poll(() => page.evaluate(() => window.perun?.controller.circuit.sim.t ?? 0), {
         timeout: 20000,
       })
       .toBeGreaterThan(0.1);
-    await page.evaluate(() => window.circuitjsNext?.controller.setRunning(false));
+    await page.evaluate(() => window.perun?.controller.setRunning(false));
     const snaps: { kind: string; period: number }[] = [];
-    const r = await page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes[0]?.rect);
+    const r = await page.evaluate(() => window.perun?.controller.scopes.scopes[0]?.rect);
     const box = await page.getByTestId('circuit-canvas').boundingBox();
     if (!r || !box) throw new Error('no scope');
     for (let x = r.x + 20; x < r.x + r.width - 20; x += 6) {
       await page.mouse.move(box.x + x, box.y + r.y + r.height / 2);
       const s = await page.evaluate(() => {
-        const m = window.circuitjsNext?.controller.scopes;
+        const m = window.perun?.controller.scopes;
         return m?.cursorSnap ? { ...m.cursorSnap } : null;
       });
       if (s !== null) snaps.push(s);
@@ -644,7 +632,7 @@ test.describe('last round', () => {
     const handle = await settledCardPart(page, -1, 'handle');
     await page.mouse.click(handle.x, handle.y);
     expect(
-      await page.evaluate(() => window.circuitjsNext?.controller.circuit.scopeElms()[0]?.selected),
+      await page.evaluate(() => window.perun?.controller.circuit.scopeElms()[0]?.selected),
     ).toBe(true);
     // drag that end onto the resistor's right post
     const post = await at(page, 256, 96);
@@ -653,9 +641,9 @@ test.describe('last round', () => {
     await page.mouse.move(post.x - 4, post.y + 3, { steps: 6 });
     await page.mouse.up();
     const lp = () =>
-      page.evaluate(() => window.circuitjsNext?.controller.circuit.scopeElms()[0]?.leaderPost);
+      page.evaluate(() => window.perun?.controller.circuit.scopeElms()[0]?.leaderPost);
     expect(await lp()).toBe(1);
-    expect(await page.evaluate(() => window.circuitjsNext?.controller.circuit.dumpXml())).toMatch(
+    expect(await page.evaluate(() => window.perun?.controller.circuit.dumpXml())).toMatch(
       /<Scope [^>]*lp="1"/,
     );
     await page.keyboard.press('Control+z');
@@ -672,12 +660,12 @@ test.describe('pinch on a phone', () => {
     await ready(page);
     const speed = () =>
       page.evaluate(() => {
-        const m = window.circuitjsNext?.controller.scopes;
+        const m = window.perun?.controller.scopes;
         return m?.scopes.find((s) => m.isShown(s))?.speed ?? 0;
       });
     const before = await speed();
     const r = await page.evaluate(() => {
-      const m = window.circuitjsNext?.controller.scopes;
+      const m = window.perun?.controller.scopes;
       return m?.scopes.find((s) => m.isShown(s))?.rect ?? null;
     });
     const box = await page.getByTestId('circuit-canvas').boundingBox();
@@ -712,7 +700,7 @@ test('the property panel adds the element to a new docked or undocked scope', as
   await expect.poll(() => scopeCount(page)).toBe(1);
   await page.getByTestId('action-view-in-undocked-scope').click();
   await expect
-    .poll(() => page.evaluate(() => window.circuitjsNext?.controller.circuit.scopeElms().length))
+    .poll(() => page.evaluate(() => window.perun?.controller.circuit.scopeElms().length))
     .toBe(1);
 });
 
@@ -739,7 +727,7 @@ test.describe('moving an undocked card on a phone', () => {
     await page.goto(`/?ctz=${compressCircuit(LOOP)}`);
     await ready(page);
     await page.evaluate(() => {
-      const c = window.circuitjsNext?.controller;
+      const c = window.perun?.controller;
       const r = c?.circuit.elements.find((e) => e.getClassName() === 'ResistorElm');
       if (c && r) c.viewInUndockedScope(r);
     });
@@ -755,7 +743,7 @@ test.describe('moving an undocked card on a phone', () => {
     for (let d = 5; d <= 40; d += 5) await touch('touchMove', d);
     await touch('touchEnd', 0);
     expect(
-      await page.evaluate(() => window.circuitjsNext?.controller.circuit.scopeElms()[0]?.selected),
+      await page.evaluate(() => window.perun?.controller.circuit.scopeElms()[0]?.selected),
     ).toBe(true);
     await expect(page.getByTestId('inspector')).toHaveCount(0);
   });
@@ -767,9 +755,9 @@ test('dragging a docked card by its title stacks it, and undo puts it back', asy
   const box = await page.getByTestId('circuit-canvas').boundingBox();
   if (!box) throw new Error('no canvas');
   const slot = (i: number) =>
-    page.evaluate((i) => window.circuitjsNext?.controller.scopes.scopes[i]?.slot ?? null, i);
+    page.evaluate((i) => window.perun?.controller.scopes.scopes[i]?.slot ?? null, i);
   const positions = () =>
-    page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes.map((s) => s.position));
+    page.evaluate(() => window.perun?.controller.scopes.scopes.map((s) => s.position));
   const s0 = await slot(0);
   const s2 = await slot(2);
   if (!s0 || !s2) throw new Error('no scopes');

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import {
   CustomTransformerElm,
@@ -10,8 +10,8 @@ import {
   VaractorElm,
   constructElement,
   type CircuitElm,
-} from '@circuitjs-next/elements';
-import { BUILTIN_THEMES } from '@circuitjs-next/theme';
+} from '@perun/elements';
+import { BUILTIN_THEMES } from '@perun/theme';
 import { describe, expect, it } from 'vitest';
 import { ALL_FIELDS, FieldOverlay, fadeIn, polarPlateBow } from './fields.ts';
 import { Palette } from './palette.ts';

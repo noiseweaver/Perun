@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import type { Theme } from '../schema.ts';
 
@@ -12,7 +12,7 @@ export const dark: Theme = {
   schemaVersion: 1,
   meta: {
     name: 'Dark',
-    author: 'circuitjs-next',
+    author: 'Perun',
     description: 'Low glare dark theme with muted voltage colors',
     base: 'dark',
   },

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Fields follow CircuitJS1 SliderDialog (src/com/lushprojects/circuitjs1/client/SliderDialog.java,
 // master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032: a checkbox per numeric value, then for
 // each slider a choice to share another slider, min, max, step, logarithmic and its label. Here
@@ -12,7 +12,7 @@ import {
   sliderBeingShared,
   unitString,
   type EditInfo,
-} from '@circuitjs-next/elements';
+} from '@perun/elements';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useState } from 'react';
 import { openDialog } from '../commands.ts';

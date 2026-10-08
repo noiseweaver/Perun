@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Ported from CircuitJS1 src/com/lushprojects/circuitjs1/client/ScopePlot.java and
 // ScopeDataIterator.java (master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032.
-// Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) circuitjs-next contributors.
+// Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) Perun contributors.
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
-import type { Simulation } from '@circuitjs-next/engine';
+import type { Simulation } from '@perun/engine';
 import type { CircuitElm } from '../CircuitElm.ts';
 import { OHM, getCurrentText, getUnitText, getVoltageText } from '../view/units.ts';
 import { UNITS_A, UNITS_C, UNITS_OHMS, UNITS_V, UNITS_W } from './constants.ts';

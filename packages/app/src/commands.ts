@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Keyboard handling after CircuitJS1 UIManager.onPreviewNativeEvent
 // (src/com/lushprojects/circuitjs1/client/UIManager.java, master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032: Delete, Escape, arrows, Ctrl/Cmd + Z Y X C V D A S O,
 // element keys from each element's getShortcut(), switch key shortcuts and space for select mode.
 
-import { SwitchElm } from '@circuitjs-next/elements';
-import { compressCircuit } from '@circuitjs-next/format';
+import { SwitchElm } from '@perun/elements';
+import { compressCircuit } from '@perun/format';
 import { shortcutMap } from './editor/catalog.ts';
 import { download } from './download.ts';
 import { controller } from './SimController.ts';

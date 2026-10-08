@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import {
   unionRect,
@@ -13,8 +13,8 @@ import {
   type StrokeStyle,
   type TextFont,
   type TextStyle,
-} from '@circuitjs-next/elements';
-import { parseColor, toCss, type Theme } from '@circuitjs-next/theme';
+} from '@perun/elements';
+import { parseColor, toCss, type Theme } from '@perun/theme';
 import { CanvasPainter, heatColor } from './CanvasPainter.ts';
 import { Palette } from './palette.ts';
 import { findPosts } from './posts.ts';

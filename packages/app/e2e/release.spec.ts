@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Release polish: the circuit kept between visits, the notes after an update, the suggestion
 // form, and the About box in another language.
@@ -9,7 +9,7 @@ import { expect, test } from '@playwright/test';
 test('reopening the app brings back the last circuit', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByTestId('circuit-title')).toHaveText('LRC Circuit');
-  await page.evaluate(() => window.circuitjsNext?.controller.newCircuit());
+  await page.evaluate(() => window.perun?.controller.newCircuit());
   await expect(page.getByTestId('circuit-title')).toHaveText('Untitled');
   // the app going to the background saves at once
   await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
@@ -72,9 +72,7 @@ test('a suggestion opens GitHub with the issue form filled in', async ({ page })
   const opened = new URL(
     await page.evaluate(() => (window as unknown as { opened: string }).opened),
   );
-  expect(opened.origin + opened.pathname).toBe(
-    'https://github.com/noiseweaver/circuitsjs-next/issues/new',
-  );
+  expect(opened.origin + opened.pathname).toBe('https://github.com/noiseweaver/perun/issues/new');
   expect(opened.searchParams.get('template')).toBe('suggestion.yml');
   expect(opened.searchParams.get('title')).toBe('Suggestion: More themes, please');
   expect(opened.searchParams.get('email')).toBe('someone@example.com');
@@ -85,8 +83,8 @@ test('About follows the interface language', async ({ page }) => {
   await page.goto('/?lang=de');
   await page.getByTestId('file-menu').click();
   await page.getByTestId('menu-about').click();
-  await expect(page.getByRole('dialog')).toContainText('Über circuitjs-next');
+  await expect(page.getByRole('dialog')).toContainText('Über Perun');
   await expect(page.getByTestId('about-author')).toHaveText(
-    'circuitjs-next wird von Gadiel Zintu (github.com/noiseweaver) entwickelt und gepflegt.',
+    'Perun wird von Gadiel Zintu (github.com/noiseweaver) entwickelt und gepflegt.',
   );
 });

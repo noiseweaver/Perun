@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Icon paths from Google's Material Icons (Apache License 2.0), 24 px grid; `laser`, `eraser`,
 // `euroResistor`, `omega` and `junction` are drawn here.
 

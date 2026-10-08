@@ -31,13 +31,13 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'pnpm --filter @circuitjs-next/app dev',
+      command: 'pnpm --filter @perun/app dev',
       url: 'http://localhost:5173',
       reuseExistingServer: !process.env['CI'],
     },
     {
       command:
-        'pnpm --filter @circuitjs-next/app build && pnpm --filter @circuitjs-next/app preview --port 4173 --strictPort',
+        'pnpm --filter @perun/app build && pnpm --filter @perun/app preview --port 4173 --strictPort',
       url: 'http://localhost:4173',
       reuseExistingServer: !process.env['CI'],
       timeout: 180_000,

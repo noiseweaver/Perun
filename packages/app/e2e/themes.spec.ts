@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Phase 7 acceptance (success criterion 3): a theme shared as a file or a single URL applies for
 // another user with no code changes. Also the editor, library and combined circuit links.
@@ -12,7 +12,7 @@ import {
   resolveTheme,
   themeToJson,
   type Theme,
-} from '@circuitjs-next/theme';
+} from '@perun/theme';
 
 const RC =
   '$ 1 0.000005 10.20027730826997 50 5 50 5e-11\n' +
@@ -159,7 +159,7 @@ test('Export link can carry the theme with the circuit', async ({ page, context 
   await expect(other.getByTestId('theme-banner')).toContainText('High Contrast');
   await expect.poll(() => pixel(other, 2, 2)).toEqual([0, 0, 0]);
   await expect
-    .poll(() => other.evaluate(() => window.circuitjsNext?.controller.circuit.elements.length))
+    .poll(() => other.evaluate(() => window.perun?.controller.circuit.elements.length))
     .toBe(4);
 });
 

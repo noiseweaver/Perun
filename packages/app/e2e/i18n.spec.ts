@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Translations: the interface follows ?lang=, Options > Language and the browser, using upstream's
 // string catalogs, and the choice is remembered.

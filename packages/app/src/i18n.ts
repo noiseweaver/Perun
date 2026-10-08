@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Translations (PLAN.md Phase 9, i18n hooks). The interface looks up its English text in
 // upstream's string catalogs (locale_xx.txt, served next to the app by vite-plugin-examples.ts)
@@ -7,7 +7,7 @@
 // saved choice (Options > Language), then the browser. Text this interface has and upstream
 // lacks stays English until a catalog adds it (`pnpm i18n` lists those strings).
 
-import { LS, catalogLanguage, parseLocale, setLocalization } from '@circuitjs-next/elements';
+import { LS, catalogLanguage, parseLocale, setLocalization } from '@perun/elements';
 import { BASE } from './startup.ts';
 import { useApp } from './store.ts';
 import { extraCatalog } from './i18nExtra.ts';

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 /*
  * Theme UI (PLAN.md section 6): the library dialog, the editor with a live preview and contrast
@@ -13,7 +13,7 @@ import {
   toCss,
   type ContrastWarning,
   type Theme,
-} from '@circuitjs-next/theme';
+} from '@perun/theme';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { openDialog, pageBase } from '../commands.ts';

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later AND Apache-2.0
 // Ported from CircuitJS1 ts/matrix/DGrowArray.ts (dev-ts) at 7ec858d662d8be1d76d54241ba3a5c1d1c524f51,
 // itself derived from EJML (Apache-2.0, notice below) via sharpie7/circuitjs1 PR #920.
-// Port Copyright (C) circuitjs-next contributors. See LICENSE.
+// Port Copyright (C) Perun contributors. See LICENSE.
 
 /*
  * Derived from EJML (Efficient Java Matrix Library)

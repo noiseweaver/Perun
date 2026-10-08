@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 /** Every tier-1 element in several orientations and modes, for view tests. */
 export const GALLERIES: readonly string[] = [

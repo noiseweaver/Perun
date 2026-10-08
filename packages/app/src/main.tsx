@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -32,10 +32,10 @@ void setLanguage(resolveLanguage(useApp.getState().settings.language)).then(() =
 // for end-to-end tests and debugging from the console
 declare global {
   interface Window {
-    circuitjsNext?: { controller: typeof controller };
+    perun?: { controller: typeof controller };
   }
 }
-window.circuitjsNext = { controller };
+window.perun = { controller };
 
 setupPwa();
 lockPageZoom();

@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import {
-  ResistorElm,
-  SwitchElm,
-  viewFor,
-  WireElm,
-  type CircuitElm,
-} from '@circuitjs-next/elements';
-import { Circuit } from '@circuitjs-next/format';
+import { ResistorElm, SwitchElm, viewFor, WireElm, type CircuitElm } from '@perun/elements';
+import { Circuit } from '@perun/format';
 import { describe, expect, it } from 'vitest';
 import { Editor, MouseMode, NO_MODIFIERS, type EditorHost } from './Editor.ts';
 

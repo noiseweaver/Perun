@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // This port's own example circuits (packages/app/examples/) and how they join upstream's list.
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { CapacitorElm } from '@circuitjs-next/elements';
-import { readCircuit } from '@circuitjs-next/format';
+import { CapacitorElm } from '@perun/elements';
+import { readCircuit } from '@perun/format';
 import { describe, expect, it } from 'vitest';
 import { mergeSetupLists } from '../vite-plugin-examples.ts';
 import { measureFrequency } from './analysis/sweep.ts';

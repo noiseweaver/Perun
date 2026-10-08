@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import type { Theme } from '../schema.ts';
 import { dark } from './dark.ts';
@@ -15,7 +15,7 @@ export const nord: Theme = {
   schemaVersion: 1,
   meta: {
     name: 'Nord',
-    author: 'circuitjs-next',
+    author: 'Perun',
     description: 'Arctic blue-grey, after the Nord palette',
     base: 'dark',
   },
@@ -66,7 +66,7 @@ export const solarizedDark: Theme = {
   schemaVersion: 1,
   meta: {
     name: 'Solarized Dark',
-    author: 'circuitjs-next',
+    author: 'Perun',
     description: 'Deep teal with warm accents, after Solarized',
     base: 'dark',
   },
@@ -117,7 +117,7 @@ export const gruvboxDark: Theme = {
   schemaVersion: 1,
   meta: {
     name: 'Gruvbox Dark',
-    author: 'circuitjs-next',
+    author: 'Perun',
     description: 'Warm retro browns and pastels, after Gruvbox',
     base: 'dark',
   },
@@ -168,7 +168,7 @@ export const adwaitaDark: Theme = {
   schemaVersion: 1,
   meta: {
     name: 'Adwaita Dark',
-    author: 'circuitjs-next',
+    author: 'Perun',
     description: 'Neutral greys with GNOME blue, after libadwaita',
     base: 'dark',
   },

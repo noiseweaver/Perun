@@ -1,13 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import {
-  hasTolerance,
-  toleranceItem,
-  type CircuitElm,
-  type EditInfo,
-} from '@circuitjs-next/elements';
-import { readCircuit, type Circuit } from '@circuitjs-next/format';
+import { hasTolerance, toleranceItem, type CircuitElm, type EditInfo } from '@perun/elements';
+import { readCircuit, type Circuit } from '@perun/format';
 import { BodeSweep, interpolate, isBodeOutput, outputVoltage, type BodePoint } from './bode.ts';
 import type { BodeSettings } from './bode.ts';
 

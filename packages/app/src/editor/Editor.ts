@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Mouse editing follows CircuitJS1 MouseManager.java, and the edit commands CommandManager.java
 // (src/com/lushprojects/circuitjs1/client/, master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032.
 // Differences in the UI on purpose: a click selects the element under the mouse (shift-click
@@ -17,8 +17,8 @@ import {
   distanceSq,
   switchRect,
   type Rect,
-} from '@circuitjs-next/elements';
-import type { Circuit } from '@circuitjs-next/format';
+} from '@perun/elements';
+import type { Circuit } from '@perun/format';
 import { History } from './History.ts';
 import { WireFollow } from './wireFollow.ts';
 

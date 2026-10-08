@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Phases 11 and 12: parameter sweeps and Monte Carlo. The runs are checked against analytic
 // answers in packages/app/src/analysis/sweep.test.ts; this covers the dialog and the tolerance
 // field.
 
 import { expect, test, type Page } from '@playwright/test';
-import { compressCircuit } from '@circuitjs-next/format';
+import { compressCircuit } from '@perun/format';
 
 /** A 5 V step into 1k and 1u (tau = 1 ms). */
 const RC_STEP =
@@ -18,15 +18,15 @@ const RC_STEP =
 
 const ready = async (page: Page): Promise<void> => {
   await expect(page.getByTestId('circuit-canvas')).toBeVisible();
-  await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+  await page.waitForFunction(() => (window.perun?.controller.frames ?? 0) > 2);
 };
 
 const at = async (page: Page, x: number, y: number): Promise<{ x: number; y: number }> => {
   const box = await page.getByTestId('circuit-canvas').boundingBox();
-  const p = await page.evaluate(
-    ([x, y]) => window.circuitjsNext?.controller.toScreen(x, y) ?? null,
-    [x, y] as const,
-  );
+  const p = await page.evaluate(([x, y]) => window.perun?.controller.toScreen(x, y) ?? null, [
+    x,
+    y,
+  ] as const);
   if (!box || !p) throw new Error('no canvas');
   return { x: box.x + p.x, y: box.y + p.y };
 };
@@ -67,7 +67,7 @@ test('sweeping a resistor from its context menu overlays one run per value', asy
     .toBeCloseTo(5 * (1 - Math.exp(-1)), 1);
 
   // the running circuit was not touched
-  const saved = await page.evaluate(() => window.circuitjsNext?.controller.saveText() ?? '');
+  const saved = await page.evaluate(() => window.perun?.controller.saveText() ?? '');
   expect(saved).toContain('r="1000"');
 });
 
@@ -87,7 +87,7 @@ test('Monte Carlo needs a tolerance, and spreads the runs once a part has one', 
   await page.mouse.click(r.x, r.y);
   await expect(page.getByTestId('inspector-title')).toHaveText('Resistor');
   await page.getByLabel('Tolerance').selectOption({ label: '±10%' });
-  const saved = await page.evaluate(() => window.circuitjsNext?.controller.saveText() ?? '');
+  const saved = await page.evaluate(() => window.perun?.controller.saveText() ?? '');
   expect(saved).toContain('tol="10"');
 
   await page.getByTestId('scopes-menu').click();
@@ -110,6 +110,6 @@ test('Monte Carlo needs a tolerance, and spreads the runs once a part has one', 
   // undo takes the tolerance back off
   await page.keyboard.press('Escape');
   await page.keyboard.press('Control+z');
-  const after = await page.evaluate(() => window.circuitjsNext?.controller.saveText() ?? '');
+  const after = await page.evaluate(() => window.perun?.controller.saveText() ?? '');
   expect(after).not.toContain('tol=');
 });

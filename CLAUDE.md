@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-circuitjs-next rebuilds Paul Falstad's CircuitJS1 as a TypeScript web app with a new UI and a JSON
+Perun rebuilds Paul Falstad's CircuitJS1 as a TypeScript web app with a new UI and a JSON
 theme system. Simulation behaviour and the circuit file formats stay compatible with upstream.
 The full plan is [docs/PLAN.md](docs/PLAN.md); the owner is Gady.
 
@@ -68,7 +68,7 @@ pnpm golden:scopes      # record how upstream restores the scopes of every bundl
 ```ts
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Ported from CircuitJS1 <path/to/File.java> at <upstream SHA>.
-// Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) circuitjs-next contributors.
+// Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) Perun contributors.
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.

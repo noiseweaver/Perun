@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Phase 9: the production build installs as an app and works offline. Runs against `vite preview`
 // of the build (playwright.config.ts, project "build").
@@ -16,7 +16,7 @@ test('the build is installable and works offline once loaded', async ({ page, co
     return link ? ((await (await fetch(link.href)).json()) as { icons: unknown[] }) : null;
   });
   expect(manifest?.icons.length).toBeGreaterThan(2);
-  await page.waitForFunction(() => window.circuitjsNext !== undefined);
+  await page.waitForFunction(() => window.perun !== undefined);
   await expect
     .poll(() => page.evaluate(() => navigator.serviceWorker.controller !== null), {
       timeout: 30_000,

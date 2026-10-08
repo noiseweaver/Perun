@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Phase 14: wires that follow a dragged part, schematic image and parts list export.
 
 import { expect, test, type Page } from '@playwright/test';
-import { compressCircuit } from '@circuitjs-next/format';
+import { compressCircuit } from '@perun/format';
 
 const RC =
   '$ 1 0.000005 10.20027730826997 50 5 50 5e-11\n' +
@@ -16,15 +16,15 @@ const RC =
 
 const ready = async (page: Page): Promise<void> => {
   await expect(page.getByTestId('circuit-canvas')).toBeVisible();
-  await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+  await page.waitForFunction(() => (window.perun?.controller.frames ?? 0) > 2);
 };
 
 const at = async (page: Page, x: number, y: number): Promise<{ x: number; y: number }> => {
   const box = await page.getByTestId('circuit-canvas').boundingBox();
-  const p = await page.evaluate(
-    ([x, y]) => window.circuitjsNext?.controller.toScreen(x, y) ?? null,
-    [x, y] as const,
-  );
+  const p = await page.evaluate(([x, y]) => window.perun?.controller.toScreen(x, y) ?? null, [
+    x,
+    y,
+  ] as const);
   if (!box || !p) throw new Error('no canvas');
   return { x: box.x + p.x, y: box.y + p.y };
 };
@@ -32,7 +32,7 @@ const at = async (page: Page, x: number, y: number): Promise<{ x: number; y: num
 const wires = (page: Page): Promise<number[][]> =>
   page.evaluate(
     () =>
-      window.circuitjsNext?.controller.circuit.elements
+      window.perun?.controller.circuit.elements
         .filter((e) => e.getClassName() === 'WireElm')
         .map((e) => [e.x, e.y, e.x2, e.y2]) ?? [],
   );
@@ -97,9 +97,7 @@ test('records a scope at full resolution and downloads the CSV', async ({ page }
   await page.mouse.click(r.x, r.y, { button: 'right' });
   await page.getByTestId('ctx-view-in-scope').click();
   const box = await page.getByTestId('circuit-canvas').boundingBox();
-  const rect = await page.evaluate(
-    () => window.circuitjsNext?.controller.scopes.scopes[0]?.rect ?? null,
-  );
+  const rect = await page.evaluate(() => window.perun?.controller.scopes.scopes[0]?.rect ?? null);
   if (!box || !rect) throw new Error('no scope');
   await page.mouse.click(box.x + rect.x + rect.width / 2, box.y + rect.y + rect.height / 2, {
     button: 'right',

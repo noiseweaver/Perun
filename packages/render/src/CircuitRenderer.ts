@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // What is drawn and in which order follows CircuitJS1 UIManager.updateCircuit and
 // SimulationManager (post and bad-connection lists) (src/com/lushprojects/circuitjs1/client/,
 // master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032.
@@ -12,8 +12,8 @@ import {
   type DrawContext,
   type Rect,
   type TextFont,
-} from '@circuitjs-next/elements';
-import type { Theme } from '@circuitjs-next/theme';
+} from '@perun/elements';
+import type { Theme } from '@perun/theme';
 import { CanvasPainter } from './CanvasPainter.ts';
 import { DotCounters } from './dots.ts';
 import { anyFields, FieldOverlay, NO_FIELDS, type FieldOptions } from './fields.ts';

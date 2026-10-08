@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import { describe, expect, it } from 'vitest';
 import { SIDE_E, SIDE_N, SIDE_W } from '../elm/ChipElm.ts';

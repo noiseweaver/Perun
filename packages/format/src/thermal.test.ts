@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Self-heating and the ambient ramp (PLAN.md Phase 17): parts heat by their own power and cool
 // to ambient, and circuits without either save and run exactly as before.
 
-import { DiodeElm, ResistorElm, TransistorElm, temperatureOf } from '@circuitjs-next/elements';
+import { DiodeElm, ResistorElm, TransistorElm, temperatureOf } from '@perun/elements';
 import { describe, expect, it } from 'vitest';
 import { readCircuit, type Circuit } from './circuit.ts';
 

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import { CapacitorElm, ResistorElm } from '@circuitjs-next/elements';
-import { readCircuit } from '@circuitjs-next/format';
+import { CapacitorElm, ResistorElm } from '@perun/elements';
+import { readCircuit } from '@perun/format';
 import { describe, expect, it } from 'vitest';
 import { cutoffFrequencies } from './bode.ts';
 import {

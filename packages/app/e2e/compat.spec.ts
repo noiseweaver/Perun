@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Phase 5 acceptance: a circuit built here opens in upstream CircuitJS1, and one built in upstream
 // opens here. Upstream is the reference build in .reference-site (pnpm reference:build); the
@@ -12,7 +12,7 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
-import { compressCircuit } from '@circuitjs-next/format';
+import { compressCircuit } from '@perun/format';
 
 const SITE = resolve(import.meta.dirname, '../../../.reference-site');
 const TYPES: Record<string, string> = {
@@ -73,18 +73,18 @@ const upstreamTypes = (page: Page): Promise<string[]> =>
 
 const openHere = async (page: Page, query: string): Promise<void> => {
   await page.goto(`/${query}`);
-  await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+  await page.waitForFunction(() => (window.perun?.controller.frames ?? 0) > 2);
 };
 const saveHere = async (page: Page): Promise<string> =>
-  (await page.evaluate(() => window.circuitjsNext?.controller.saveText())) ?? '';
+  (await page.evaluate(() => window.perun?.controller.saveText())) ?? '';
 
 /** Page coordinates of a circuit point in this app. */
 const at = async (page: Page, x: number, y: number): Promise<{ x: number; y: number }> => {
   const box = await page.getByTestId('circuit-canvas').boundingBox();
-  const p = await page.evaluate(
-    ([x, y]) => window.circuitjsNext?.controller.toScreen(x, y) ?? null,
-    [x, y] as const,
-  );
+  const p = await page.evaluate(([x, y]) => window.perun?.controller.toScreen(x, y) ?? null, [
+    x,
+    y,
+  ] as const);
   if (!box || !p) throw new Error('no canvas');
   return { x: box.x + p.x, y: box.y + p.y };
 };
@@ -169,7 +169,7 @@ test('a circuit built in upstream opens here', async ({ page }) => {
   // open upstream's XML save here; saving it again gives the same file
   await openHere(page, `?ctz=${compressCircuit(exported)}`);
   const elements = await page.evaluate(() =>
-    (window.circuitjsNext?.controller.circuit.elements ?? []).map((e) => e.getClassName()),
+    (window.perun?.controller.circuit.elements ?? []).map((e) => e.getClassName()),
   );
   // upstream names a 'v' it reads VoltageElm; this app names the DC one by its menu class
   expect(elements.map((c) => (c === 'DCVoltageElm' ? 'VoltageElm' : c))).toEqual(types);
@@ -183,7 +183,7 @@ test('every golden circuit saves the same here as in upstream', async ({ page })
   const here: Record<string, string> = {};
   for (const n of names)
     here[n] = await page.evaluate((t) => {
-      const c = window.circuitjsNext?.controller;
+      const c = window.perun?.controller;
       c?.load(t, 'x', false, false);
       return c?.saveText() ?? '';
     }, golden(n));

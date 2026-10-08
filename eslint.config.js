@@ -36,14 +36,14 @@ function boundaries() {
               ...(forbidden.length
                 ? [
                     {
-                      group: forbidden.map((p) => `@circuitjs-next/${p}`),
-                      message: `@circuitjs-next/${pkg} may only depend on: ${allowed.join(', ') || 'nothing'}.`,
+                      group: forbidden.map((p) => `@perun/${p}`),
+                      message: `@perun/${pkg} may only depend on: ${allowed.join(', ') || 'nothing'}.`,
                     },
                   ]
                 : []),
               {
                 group: ['../../*', '**/packages/*'],
-                message: 'Import other packages by name (@circuitjs-next/...), not by path.',
+                message: 'Import other packages by name (@perun/...), not by path.',
               },
               {
                 group: ['**/reference/**'],

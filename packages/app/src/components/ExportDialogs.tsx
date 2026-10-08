@@ -1,13 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Not in upstream: a schematic image (SVG or PNG) and a parts list (CSV).
 
-import {
-  getFixedUnitText,
-  getUnitText,
-  parseUnits,
-  type CircuitElm,
-} from '@circuitjs-next/elements';
+import { getFixedUnitText, getUnitText, parseUnits, type CircuitElm } from '@perun/elements';
 import {
   DEFAULT_SCHEMATIC,
   schematicBounds,
@@ -15,8 +10,8 @@ import {
   schematicSvg,
   type MeasureText,
   type SchematicOptions,
-} from '@circuitjs-next/render';
-import { builtinTheme, type Theme } from '@circuitjs-next/theme';
+} from '@perun/render';
+import { builtinTheme, type Theme } from '@perun/theme';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { copyText, defaultFileName, showToast } from '../commands.ts';

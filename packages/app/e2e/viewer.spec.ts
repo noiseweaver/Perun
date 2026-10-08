@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Phase 4 acceptance: upstream links using tier-1 elements load and animate, and switching Classic
 // and Dark at runtime restyles everything without a reload.
 
 import { expect, test, type Page } from '@playwright/test';
-import { compressCircuit } from '@circuitjs-next/format';
+import { compressCircuit } from '@perun/format';
 
 const RC =
   '$ 1 0.000005 10.20027730826997 50 5 50 5e-11\n' +
@@ -74,9 +74,9 @@ test('cct and ctz links load', async ({ page }) => {
     page.evaluate(() =>
       (
         window as unknown as {
-          circuitjsNext: { controller: { circuit: { elements: object[] } } };
+          perun: { controller: { circuit: { elements: object[] } } };
         }
-      ).circuitjsNext.controller.circuit.elements.map((e) => e.constructor.name),
+      ).perun.controller.circuit.elements.map((e) => e.constructor.name),
     );
   await expect.poll(kinds).toEqual(['VoltageElm', 'ResistorElm', 'CapacitorElm', 'WireElm']);
   await expect.poll(() => simTime(page)).not.toBe('t = 0.000 s');
@@ -166,8 +166,7 @@ test('clicking a switch toggles it', async ({ page }) => {
   };
   const state = () =>
     page.evaluate(() => {
-      const c = (window as unknown as { circuitjsNext: { controller: Ctl } }).circuitjsNext
-        .controller;
+      const c = (window as unknown as { perun: { controller: Ctl } }).perun.controller;
       const sw = c.circuit.elements[1];
       return sw ? { position: sw.position, at: c.elementCenter(sw) } : null;
     });
@@ -193,9 +192,9 @@ test('open link dialog loads a circuit', async ({ page }) => {
         () =>
           (
             window as unknown as {
-              circuitjsNext: { controller: { circuit: { elements: object[] } } };
+              perun: { controller: { circuit: { elements: object[] } } };
             }
-          ).circuitjsNext.controller.circuit.elements.length,
+          ).perun.controller.circuit.elements.length,
       ),
     )
     .toBe(4);
@@ -352,7 +351,7 @@ test.describe('Circuits on a phone', () => {
       .tap();
     await expect(sheet).toBeHidden();
     await expect
-      .poll(() => page.evaluate(() => window.circuitjsNext?.controller.circuit.scopes.scopeCount))
+      .poll(() => page.evaluate(() => window.perun?.controller.circuit.scopes.scopeCount))
       .toBe(3);
   });
 
@@ -433,7 +432,7 @@ test.describe('Circuits on a phone', () => {
     expect(bar?.y).toBe(0);
     // the property sheet is up while a dialog opens: the dialog is on top
     await page.evaluate(() => {
-      const c = window.circuitjsNext?.controller;
+      const c = window.perun?.controller;
       const e = c?.circuit.elements[1];
       if (c && e) c.editor.select(e);
     });

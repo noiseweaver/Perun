@@ -26,7 +26,7 @@ RUN cd / && git apply --directory=src /tmp/harness.patch
 # Gradle does not read HTTPS_PROXY, so translate it into JVM flags when set.
 # The cache mount keeps downloaded dependencies across builds (Maven Central rate-limits repeat
 # downloads); it never ends up in the image.
-RUN --mount=type=cache,target=/root/.gradle,id=circuitjs-next-gradle \
+RUN --mount=type=cache,target=/root/.gradle,id=perun-gradle \
     set -eu; \
     if [ -n "${HTTPS_PROXY:-}" ]; then \
       hp="${HTTPS_PROXY#*://}"; hp="${hp%/}"; \

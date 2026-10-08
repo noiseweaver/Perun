@@ -1,15 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import type { ScopeDefaultsStore } from '@circuitjs-next/elements';
-import { Circuit } from '@circuitjs-next/format';
-import {
-  CircuitRenderer,
-  DEFAULT_FRAME,
-  ScopeRenderer,
-  currentMultiplier,
-} from '@circuitjs-next/render';
-import type { Theme } from '@circuitjs-next/theme';
+import type { ScopeDefaultsStore } from '@perun/elements';
+import { Circuit } from '@perun/format';
+import { CircuitRenderer, DEFAULT_FRAME, ScopeRenderer, currentMultiplier } from '@perun/render';
+import type { Theme } from '@perun/theme';
 
 /**
  * The fixed circuit the theme editor previews themes on (PLAN.md section 6): an AC source

@@ -2,7 +2,7 @@
 // Ported from CircuitJS1 src/com/lushprojects/circuitjs1/client/ProbeElm.java (master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032, with ts/ProbeElm.ts (dev-ts) at
 // 7ec858d662d8be1d76d54241ba3a5c1d1c524f51 for the node-voltage model.
-// Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) circuitjs-next contributors.
+// Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) Perun contributors.
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
@@ -14,7 +14,7 @@ import { parseJavaDouble, parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { getUnitText, getUnitTextWithScale, getVoltageText, showFormat } from '../view/units.ts';
-import type { Point } from '@circuitjs-next/engine';
+import type { Point } from '@perun/engine';
 
 /**
  * Voltmeter between two posts, optionally with a finite input resistance. The measurement
