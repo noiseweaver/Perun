@@ -8,7 +8,7 @@ owner: Gady
 
 # CircuitJS Rewrite: Plan of Approach
 
-Name: Perun (renamed on 2026-10-08 from the working name `circuitjs-next`; the repository moved from `noiseweaver/circuitsjs-next` to `noiseweaver/perun`, so the site is now https://noiseweaver.github.io/perun/)
+Name: Perun (renamed on 2026-10-08 from the working name `circuitjs-next`; the repository moved from `noiseweaver/circuitsjs-next` to `noiseweaver/perun`, so the site is now https://noiseweaver.github.io/Perun/)
 Implementing agent: Claude Code. Owner and reviewer: Gady.
 
 ## 1. Goal
