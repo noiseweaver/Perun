@@ -195,6 +195,7 @@ export { MonostableElm, PhaseCompElm, TimerElm, VCOElm } from './elm/TimerElm.ts
 export { ADCElm, DACElm } from './elm/ConverterElm.ts';
 export { TransformerElm } from './elm/TransformerElm.ts';
 export { TappedTransformerElm } from './elm/TappedTransformerElm.ts';
+export { CustomTransformerElm } from './elm/CustomTransformerElm.ts';
 export { TransLineElm } from './elm/TransLineElm.ts';
 export { RelayElm } from './elm/RelayElm.ts';
 export { DCMotorElm } from './elm/DCMotorElm.ts';

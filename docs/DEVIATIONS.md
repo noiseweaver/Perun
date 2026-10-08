@@ -56,7 +56,8 @@ Not deviations, for the record:
   system asks for reduced motion.
 - Drawing additions from the 2026-10-06 pass (owner's requests), none saved or simulated:
   Options > Visualizations overlays (charge and E field, B field, Lenz EMF, stored energy,
-  energy flow, diode and MOSFET regions; off by default; they read engine state only); Scopes >
+  energy flow, diode, LED, varactor and MOSFET regions, light leaving a lit LED; off by default;
+  they read engine state only); Scopes >
   Undock All and Dock All; X-Y trails drawn at fractional points (upstream truncates to whole
   pixels) with round caps; a circle-less probe's empty middle (upstream draws nothing there)
   drawn as a faint dashed join with a small V badge, and scope leaders on it ending at its +

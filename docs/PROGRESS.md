@@ -1,5 +1,20 @@
 # Progress
 
+## 2026-10-08: field follow-ups (branch claude/field-follow-ups-badkkd)
+
+Done (Gady picked "Field follow-ups", the open items from PR #20): Options > Visualizations now
+covers center-tapped and custom transformers (core flux, leakage loops, stored energy; custom
+windings keep their polarity), LEDs (depletion region under reverse voltage, rays of light on the
+brightness scale of ledView), varactors (depletion region whose width follows C0 / C) and the
+polarized capacitor's curved plate (field lines and charge marks follow it). Undock All around a
+small circuit no longer shrinks the cards until their titles are cut off: the fit used the
+height the docked scopes had held, and the cards now grow (whole grid steps, at most 3x) until
+they show at about their own size. Tests: packages/render/src/fields.test.ts, an e2e test in
+scopes.spec.ts. Goldens unchanged (display only).
+
+Next: Gady tries the preview and checks the live part header and scope dialog preview on a real
+phone (the last PR #20 follow-up).
+
 ## 2026-10-07: Phase 20, rewind and scrub (branch claude/project-thread-xl3poa)
 
 Done: packages/app/src/rewind/history.ts records the last 10 s of the run frame by frame (key
