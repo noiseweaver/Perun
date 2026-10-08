@@ -17,6 +17,18 @@ jobs:
         with:
           # the viewer serves upstream's example circuits from the reference submodule
           submodules: true
+      - name: Frozen notes are not edited
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          # bases from before the per-change folders existed are not checked
+          git cat-file -e "$BASE_SHA:docs/progress/README.md" 2>/dev/null || exit 0
+          if git diff --name-only "$BASE_SHA" HEAD -- docs/PROGRESS.md docs/DEVIATIONS.md | grep .; then
+            echo "::error::docs/PROGRESS.md and docs/DEVIATIONS.md are frozen. Put the entry in docs/progress/ or docs/deviations/ (see their README)."
+            exit 1
+          fi
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
@@ -27,5 +39,11 @@ jobs:
       - run: pnpm lint
       - run: pnpm format:check
       - run: pnpm test
+      # the Obsidian plugin (packages/obsidian): main.js, manifest.json, styles.css
+      - run: pnpm --filter @perun/obsidian build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: perun-obsidian
+          path: packages/obsidian/dist
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e

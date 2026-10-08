@@ -1,0 +1,155 @@
+/* Perun for Obsidian. Colors come from Obsidian's own variables, so the controls follow its theme;
+   the circuits themselves are drawn in a Perun theme (plugin settings). */
+
+.perun-block {
+  position: relative;
+  margin: var(--size-4-2) 0;
+  border: var(--border-width) solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  overflow: hidden;
+}
+
+.perun-canvas {
+  display: block;
+  width: 100%;
+  touch-action: pan-y;
+}
+
+.perun-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-1);
+  padding: var(--size-4-1) var(--size-4-2);
+  border-top: var(--border-width) solid var(--background-modifier-border);
+  background: var(--background-secondary);
+}
+
+.perun-open {
+  margin-left: auto;
+  font-size: var(--font-ui-small);
+}
+
+.perun-bar .clickable-icon.is-active {
+  color: var(--interactive-accent);
+}
+
+/* the circuit's sliders and the two speeds, under the bar */
+.perun-controls {
+  display: none;
+  padding: var(--size-4-2) var(--size-4-3);
+  border-top: var(--border-width) solid var(--background-modifier-border);
+  background: var(--background-secondary);
+}
+
+.perun-controls.is-open {
+  display: grid;
+  grid-template-columns: minmax(6em, max-content) 1fr auto;
+  align-items: center;
+  gap: var(--size-4-1) var(--size-4-3);
+}
+
+.perun-control {
+  display: contents;
+  font-size: var(--font-ui-small);
+}
+
+.perun-control .slider {
+  width: 100%;
+}
+
+/* fixed width so the slider doesn't shift as the value changes (owner's rule, CLAUDE.md) */
+.perun-control-value {
+  font-family: var(--font-monospace);
+  white-space: pre;
+  min-width: 11ch;
+  text-align: right;
+}
+
+/* an embedded .circuit file: no frame of Obsidian's around the circuit's own border */
+.internal-embed.perun-embed {
+  display: block;
+}
+
+.perun-picture {
+  display: none;
+  width: 100%;
+}
+
+.perun-error {
+  padding: var(--size-4-2) var(--size-4-3);
+  color: var(--text-error);
+  font-size: var(--font-ui-small);
+}
+
+/* printing and PDF export: a sharp still picture instead of the canvas and its controls */
+@media print {
+  .perun-canvas,
+  .perun-bar,
+  .perun-controls {
+    display: none;
+  }
+  .perun-bar .clickable-icon.is-active {
+    color: var(--interactive-accent);
+  }
+
+  /* the circuit's sliders and the two speeds, under the bar */
+  .perun-controls {
+    display: none;
+    padding: var(--size-4-2) var(--size-4-3);
+    border-top: var(--border-width) solid var(--background-modifier-border);
+    background: var(--background-secondary);
+  }
+
+  .perun-controls.is-open {
+    display: grid;
+    grid-template-columns: minmax(6em, max-content) 1fr auto;
+    align-items: center;
+    gap: var(--size-4-1) var(--size-4-3);
+  }
+
+  .perun-control {
+    display: contents;
+    font-size: var(--font-ui-small);
+  }
+
+  .perun-control .slider {
+    width: 100%;
+  }
+
+  /* fixed width so the slider doesn't shift as the value changes (owner's rule, CLAUDE.md) */
+  .perun-control-value {
+    font-family: var(--font-monospace);
+    white-space: pre;
+    min-width: 11ch;
+    text-align: right;
+  }
+
+  /* an embedded .circuit file: no frame of Obsidian's around the circuit's own border */
+  .internal-embed.perun-embed {
+    display: block;
+  }
+
+  .perun-picture {
+    display: block;
+  }
+}
+
+/* a .circuit file: the editor fills the tab */
+.workspace-leaf-content[data-type='perun-circuit'] .view-content.perun-editor {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* phones and tablets: keep the editor's controls clear of Obsidian's floating navigation bar */
+.is-mobile.is-floating-nav
+  .workspace-leaf-content[data-type='perun-circuit']
+  .view-content.perun-editor {
+  padding-bottom: calc(var(--navbar-height) + var(--navbar-bottom-offset));
+}
+
+.perun-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
