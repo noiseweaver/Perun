@@ -23,7 +23,6 @@ import {
   type CircuitDisplay,
   setPaletteOpen,
 } from '../store.ts';
-import { SPONSOR_URL } from './AboutDialog.tsx';
 import { openBode } from './BodeDialog.tsx';
 import { openDcPanel } from './DcPanel.tsx';
 import { openSweep } from './SweepDialog.tsx';
@@ -247,12 +246,6 @@ export function AppBar() {
             icon="feedback"
             testId="menu-feedback"
             onSelect={() => openDialog('feedback')}
-          />
-          <Item
-            label="Support the project"
-            icon="favorite"
-            testId="menu-support"
-            onSelect={() => window.open(SPONSOR_URL, '_blank', 'noopener,noreferrer')}
           />
           <Item
             label="About…"

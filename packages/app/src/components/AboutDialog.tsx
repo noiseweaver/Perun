@@ -13,7 +13,7 @@ export const SOURCE_URL = 'https://github.com/noiseweaver/circuitsjs-next';
 export const UPSTREAM_URL = 'https://github.com/pfalstad/circuitjs1';
 /** The author and maintainer of circuitjs-next. */
 export const AUTHOR_URL = 'https://github.com/noiseweaver';
-/** Voluntary tips. The app is free and never asks for them outside About and File > Support. */
+/** Voluntary tips. The app is free and only mentions them in About. */
 export const SPONSOR_URL = 'https://github.com/sponsors/noiseweaver';
 export const KOFI_URL = 'https://ko-fi.com/noiseweaver';
 
