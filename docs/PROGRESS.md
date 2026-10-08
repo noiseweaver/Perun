@@ -1,5 +1,8 @@
 # Progress
 
+This file is frozen. New entries go in [docs/progress/](progress/README.md), one file per
+change, so parallel pull requests don't conflict here.
+
 ## 2026-10-08: renamed to Perun (branch claude/rename-to-perun-0ajv88)
 
 Done: the project is called Perun everywhere it names itself: page title, home screen name (was
