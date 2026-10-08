@@ -1,5 +1,5 @@
 {
-  "name": "@circuitjs-next/format",
+  "name": "@perun/format",
   "version": "0.0.0",
   "private": true,
   "description": "Upstream circuit text and URL parse/serialize.",
@@ -9,7 +9,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@circuitjs-next/elements": "workspace:*",
+    "@perun/elements": "workspace:*",
     "lz-string": "^1.5.0"
   },
   "scripts": {

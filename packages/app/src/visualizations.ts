@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import type { FieldOptions } from '@circuitjs-next/render';
+import type { FieldOptions } from '@perun/render';
 
 /** Options > Visualizations, in menu order: the switch label and what the legend says it shows. */
 export const VISUALIZATIONS: readonly {

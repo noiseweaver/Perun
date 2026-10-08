@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 export { AttrReader, AttrWriter } from './attrs.ts';
-export { JavaRandom } from '@circuitjs-next/elements';
+export { JavaRandom } from '@perun/elements';
 export {
   Circuit,
   OptionFlag,

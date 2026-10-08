@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Phase 9 teaching tools: pencil, laser pointer and eraser over the circuit, never saved.
 
 import { expect, test, type Page } from '@playwright/test';
-import { compressCircuit } from '@circuitjs-next/format';
+import { compressCircuit } from '@perun/format';
 
 const LOOP =
   '$ 1 0.000005 10.20027730826997 50 5 50 5e-11\n' +
@@ -16,15 +16,15 @@ const LOOP =
 const open = async (page: Page): Promise<void> => {
   await page.goto(`/?ctz=${compressCircuit(LOOP)}`);
   await expect(page.getByTestId('circuit-canvas')).toBeVisible();
-  await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+  await page.waitForFunction(() => (window.perun?.controller.frames ?? 0) > 2);
 };
 
 const at = async (page: Page, x: number, y: number): Promise<{ x: number; y: number }> => {
   const box = await page.getByTestId('circuit-canvas').boundingBox();
-  const p = await page.evaluate(
-    ([x, y]) => window.circuitjsNext?.controller.toScreen(x, y) ?? null,
-    [x, y] as const,
-  );
+  const p = await page.evaluate(([x, y]) => window.perun?.controller.toScreen(x, y) ?? null, [
+    x,
+    y,
+  ] as const);
   if (!box || !p) throw new Error('no canvas');
   return { x: box.x + p.x, y: box.y + p.y };
 };
@@ -42,9 +42,9 @@ const drag = async (page: Page, pts: [number, number][]): Promise<void> => {
 };
 
 const strokes = (page: Page): Promise<number> =>
-  page.evaluate(() => window.circuitjsNext?.controller.annotations.strokes.length ?? -1);
+  page.evaluate(() => window.perun?.controller.annotations.strokes.length ?? -1);
 const dump = (page: Page): Promise<string> =>
-  page.evaluate(() => window.circuitjsNext?.controller.circuit.dumpXml() ?? '');
+  page.evaluate(() => window.perun?.controller.circuit.dumpXml() ?? '');
 
 test('the pencil draws over the circuit without editing it, and is never saved', async ({
   page,
@@ -72,9 +72,7 @@ test('the pencil draws over the circuit without editing it, and is never saved',
     [232, 160],
   ]);
   await expect.poll(() => strokes(page)).toBe(2);
-  expect(
-    await page.evaluate(() => window.circuitjsNext?.controller.annotations.strokes[1]?.pen),
-  ).toBe(1);
+  expect(await page.evaluate(() => window.perun?.controller.annotations.strokes[1]?.pen)).toBe(1);
   await page.getByTestId('teach-undo').click();
   await expect.poll(() => strokes(page)).toBe(1);
   await page.keyboard.press('Control+z');
@@ -123,7 +121,7 @@ test('the laser pointer leaves a trail that fades', async ({ page }) => {
   const a = await at(page, 120, 160);
   const b = await at(page, 232, 160);
   const active = (): Promise<boolean> =>
-    page.evaluate(() => window.circuitjsNext?.controller.annotations.active ?? false);
+    page.evaluate(() => window.perun?.controller.annotations.active ?? false);
   // moving the mouse alone doesn't point
   await page.mouse.move(a.x, a.y);
   await page.mouse.move(b.x, b.y, { steps: 10 });
@@ -136,7 +134,5 @@ test('the laser pointer leaves a trail that fades', async ({ page }) => {
   await page.mouse.up();
   await expect.poll(active, { timeout: 3000 }).toBe(false);
   // pointing never draws a stroke
-  expect(
-    await page.evaluate(() => window.circuitjsNext?.controller.annotations.strokes.length),
-  ).toBe(0);
+  expect(await page.evaluate(() => window.perun?.controller.annotations.strokes.length)).toBe(0);
 });

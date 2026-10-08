@@ -1,6 +1,6 @@
 name: Deploy to GitHub Pages
 
-# Publishes the app build to https://noiseweaver.github.io/circuitsjs-next/ on every push to main,
+# Publishes the app build to https://noiseweaver.github.io/perun/ on every push to main,
 # so it can be installed as a PWA (Safari > Share > Add to Home Screen on iPhone and iPad). Needs
 # Settings > Pages > Source set to "GitHub Actions" once.
 on:
@@ -34,7 +34,7 @@ jobs:
       - id: pages
         uses: actions/configure-pages@v5
       # the site lives under /<repo>/, and the app, manifest and service worker follow BASE_URL
-      - run: pnpm --filter @circuitjs-next/app exec vite build --base="${{ steps.pages.outputs.base_path }}/"
+      - run: pnpm --filter @perun/app exec vite build --base="${{ steps.pages.outputs.base_path }}/"
       - uses: actions/upload-pages-artifact@v4
         with:
           path: packages/app/dist

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -76,7 +76,7 @@ export function bundledLicenses(licenseFile: string): Plugin {
           version?: string;
           license?: string;
         };
-        if (!p.name || p.name.startsWith('@circuitjs-next/')) continue;
+        if (!p.name || p.name.startsWith('@perun/')) continue;
         // a package can be reached by more than one path (pnpm links)
         const key = `${p.name}@${p.version ?? ''}`;
         if (seen.has(key)) continue;
@@ -91,7 +91,7 @@ export function bundledLicenses(licenseFile: string): Plugin {
       pkgs.sort((a, b) => a.name.localeCompare(b.name));
       const sep = '\n\n' + '-'.repeat(78) + '\n\n';
       const head =
-        'circuitjs-next bundles the following packages. Each is listed with its license.\n' +
+        'Perun bundles the following packages. Each is listed with its license.\n' +
         'The example circuits come from CircuitJS1 (GPL-2.0-or-later), like the simulator.';
       const body = pkgs
         .map((p) => `${p.name} ${p.version} (${p.license})\n\n${p.text || '(no license file)'}`)

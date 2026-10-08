@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Installed on iPhone, iOS 26 reports the window a status bar short of the screen. The app must
 // still fill the screen after every rotation, or an empty band shows under the bottom bar.

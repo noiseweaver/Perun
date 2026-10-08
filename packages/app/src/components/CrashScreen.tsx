@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import { themeCssVariables } from '@circuitjs-next/theme';
+import { themeCssVariables } from '@perun/theme';
 import { Component, type CSSProperties, type ReactNode } from 'react';
 import { LAST_CIRCUIT_KEY } from '../autosave.ts';
 import { t } from '../i18n.ts';

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Runs one bundled example in this port the way record-examples.ts runs it in the reference.
 
-import { JavaRandom, readCircuit } from '@circuitjs-next/format';
+import { JavaRandom, readCircuit } from '@perun/format';
 import {
   EXAMPLE_SCHEDULE,
   EXAMPLE_SEED,

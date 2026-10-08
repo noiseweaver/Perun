@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // After CircuitJS1 ScopePropertiesDialog (src/com/lushprojects/circuitjs1/client/
 // ScopePropertiesDialog.java, master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032: the same
 // settings and commands, laid out as one scrolling form.
@@ -34,7 +34,7 @@ import {
   parseUnits,
   unitString,
   type Scope,
-} from '@circuitjs-next/elements';
+} from '@perun/elements';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useEffect, useReducer, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { openDialog } from '../commands.ts';

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import {
   GraphicElm,
@@ -8,8 +8,8 @@ import {
   VoltageElm,
   WireElm,
   type CircuitElm,
-} from '@circuitjs-next/elements';
-import { readCircuit, type Circuit } from '@circuitjs-next/format';
+} from '@perun/elements';
+import { readCircuit, type Circuit } from '@perun/format';
 
 /**
  * AC analysis by transient simulation (PLAN.md Phase 10). For each test frequency the input

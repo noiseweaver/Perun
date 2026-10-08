@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { Scope, ScopeManager, SwitchElm, type CircuitElm } from '@circuitjs-next/elements';
-import { JavaRandom, readCircuit, type Circuit } from '@circuitjs-next/format';
+import { Scope, ScopeManager, SwitchElm, type CircuitElm } from '@perun/elements';
+import { JavaRandom, readCircuit, type Circuit } from '@perun/format';
 import { describe, expect, it } from 'vitest';
 import { History, type StateRoots } from './history.ts';
 

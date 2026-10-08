@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import { ALL_FIELDS, NO_FIELDS } from '@circuitjs-next/render';
-import { BUILTIN_THEMES, DEFAULT_THEME_ID } from '@circuitjs-next/theme';
+import { ALL_FIELDS, NO_FIELDS } from '@perun/render';
+import { BUILTIN_THEMES, DEFAULT_THEME_ID } from '@perun/theme';
 import {
   activeLibraryId,
   editTheme,
@@ -34,7 +34,7 @@ import { OpenLinkDialog } from './OpenLinkDialog.tsx';
 import { promptInstall } from '../pwa.ts';
 import { t, resolveLanguage, setLanguage } from '../i18n.ts';
 import { VISUALIZATIONS } from '../visualizations.ts';
-import { LANGUAGES } from '@circuitjs-next/elements';
+import { LANGUAGES } from '@perun/elements';
 
 const FIRST_PALETTE_THEME = 'nord';
 

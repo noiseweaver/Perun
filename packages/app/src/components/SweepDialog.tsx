@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import {
   EditInfo,
@@ -9,8 +9,8 @@ import {
   parseUnits,
   unitString,
   type CircuitElm,
-} from '@circuitjs-next/elements';
-import type { Theme } from '@circuitjs-next/theme';
+} from '@perun/elements';
+import type { Theme } from '@perun/theme';
 import { useEffect, useReducer, useRef, useState, type CSSProperties } from 'react';
 import { defaultAmplitude, isBodeOutput, isBodeSource } from '../analysis/bode.ts';
 import { bodeLayout, freqAtX } from '../analysis/bodePlot.ts';

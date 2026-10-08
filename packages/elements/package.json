@@ -1,5 +1,5 @@
 {
-  "name": "@circuitjs-next/elements",
+  "name": "@perun/elements",
   "version": "0.0.0",
   "private": true,
   "description": "Element definitions: sim classes, property schemas, views. Defines the Painter interface.",
@@ -9,7 +9,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@circuitjs-next/engine": "workspace:*"
+    "@perun/engine": "workspace:*"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"

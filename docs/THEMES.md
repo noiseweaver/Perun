@@ -16,7 +16,7 @@ in `meta.base` (Dark when there is none), so a theme only needs what it changes:
 
 ```json
 {
-  "$schema": "https://github.com/noiseweaver/circuitsjs-next/blob/main/docs/theme.schema.json",
+  "$schema": "https://github.com/noiseweaver/perun/blob/main/docs/theme.schema.json",
   "schemaVersion": 1,
   "meta": { "name": "Night Bench", "author": "gady", "base": "dark" },
   "canvas": { "background": "#1e222a" },
@@ -159,7 +159,7 @@ throw.
 | `schemaVersion`            | `1`                     | `1`                                                | Always 1.                                                                                                                                                                            |
 | **meta**                   |                         |                                                    | About the theme.                                                                                                                                                                     |
 | `meta.name`                | text                    | `"Dark"`                                           | Name shown in the theme menu.                                                                                                                                                        |
-| `meta.author`              | text                    | `"circuitjs-next"`                                 | Who made the theme.                                                                                                                                                                  |
+| `meta.author`              | text                    | `"Perun"`                                          | Who made the theme.                                                                                                                                                                  |
 | `meta.description`         | text                    | `"Low glare dark theme with muted voltage colors"` | One line about the theme.                                                                                                                                                            |
 | `meta.base`                | built-in id             | `"dark"`                                           | Id of the built-in theme the missing keys come from, such as dark (the default), light or classic. Any id in the built-in themes table works.                                        |
 | **canvas**                 |                         |                                                    | The circuit area.                                                                                                                                                                    |

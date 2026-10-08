@@ -2,12 +2,12 @@
 // Ported from CircuitJS1 src/com/lushprojects/circuitjs1/client/ScopeManager.java (master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032, with the scope statics of Scope.java (cursor and drag
 // state) and the scope parts of CirSim (getElm, locateElm). Menus are the app's.
-// Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) circuitjs-next contributors.
+// Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) Perun contributors.
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
-import type { Simulation } from '@circuitjs-next/engine';
+import type { Simulation } from '@perun/engine';
 import type { CircuitElm } from '../CircuitElm.ts';
 import { Scope, type ScopeElementKinds, type ScopeRect } from './Scope.ts';
 import { cardPlotRect, CARD_GAP } from './ScopeCardView.ts';

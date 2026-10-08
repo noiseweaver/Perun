@@ -1,6 +1,6 @@
 {
-  "name": "circuitjs-next circuit simulator",
-  "short_name": "Circuits",
+  "name": "Perun circuit simulator",
+  "short_name": "Perun",
   "description": "Electronic circuit simulator: a TypeScript rebuild of CircuitJS1",
   "id": "./",
   "start_url": "./",

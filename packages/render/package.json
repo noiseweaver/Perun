@@ -1,5 +1,5 @@
 {
-  "name": "@circuitjs-next/render",
+  "name": "@perun/render",
   "version": "0.0.0",
   "private": true,
   "description": "Canvas 2D implementation of Painter, scene drawing, hit testing.",
@@ -9,8 +9,8 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@circuitjs-next/elements": "workspace:*",
-    "@circuitjs-next/theme": "workspace:*"
+    "@perun/elements": "workspace:*",
+    "@perun/theme": "workspace:*"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"

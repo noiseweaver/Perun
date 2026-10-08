@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Phase 10: AC analysis. The sweep itself is checked against analytic answers in
 // packages/app/src/analysis/bode.test.ts; this covers opening, running and reading the dialog.
 
 import { expect, test, type Page } from '@playwright/test';
-import { compressCircuit } from '@circuitjs-next/format';
+import { compressCircuit } from '@perun/format';
 
 /** 1k into 100n, a low-pass with its -3 dB point at 1.59 kHz. */
 const RC =
@@ -17,15 +17,15 @@ const RC =
 
 const ready = async (page: Page): Promise<void> => {
   await expect(page.getByTestId('circuit-canvas')).toBeVisible();
-  await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+  await page.waitForFunction(() => (window.perun?.controller.frames ?? 0) > 2);
 };
 
 const at = async (page: Page, x: number, y: number): Promise<{ x: number; y: number }> => {
   const box = await page.getByTestId('circuit-canvas').boundingBox();
-  const p = await page.evaluate(
-    ([x, y]) => window.circuitjsNext?.controller.toScreen(x, y) ?? null,
-    [x, y] as const,
-  );
+  const p = await page.evaluate(([x, y]) => window.perun?.controller.toScreen(x, y) ?? null, [
+    x,
+    y,
+  ] as const);
   if (!box || !p) throw new Error('no canvas');
   return { x: box.x + p.x, y: box.y + p.y };
 };
@@ -68,7 +68,7 @@ test('a Bode plot of an RC filter from the capacitor context menu', async ({ pag
   await expect(readout).toContainText('Cursor');
 
   // the running circuit was not touched
-  const saved = await page.evaluate(() => window.circuitjsNext?.controller.saveText() ?? '');
+  const saved = await page.evaluate(() => window.perun?.controller.saveText() ?? '');
   expect(saved).toContain('fr="1000"');
 });
 

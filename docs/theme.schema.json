@@ -324,7 +324,7 @@
     }
   },
   "required": ["schemaVersion"],
-  "description": "A circuitjs-next theme. Every key but schemaVersion is optional.",
-  "$id": "https://github.com/noiseweaver/circuitsjs-next/blob/main/docs/theme.schema.json",
-  "title": "circuitjs-next theme"
+  "description": "A Perun theme. Every key but schemaVersion is optional.",
+  "$id": "https://github.com/noiseweaver/perun/blob/main/docs/theme.schema.json",
+  "title": "Perun theme"
 }

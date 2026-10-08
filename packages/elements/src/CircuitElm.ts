@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Ported from CircuitJS1 src/com/lushprojects/circuitjs1/client/CircuitElm.java (master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032: construction, positioning and XML dump. The
-// simulation half is SimElement in @circuitjs-next/engine.
-// Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) circuitjs-next contributors.
+// simulation half is SimElement in @perun/engine.
+// Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) Perun contributors.
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
-import { FindPathInfo, PathType, Point, SimElement, type Simulation } from '@circuitjs-next/engine';
+import { FindPathInfo, PathType, Point, SimElement, type Simulation } from '@perun/engine';
 import type { EditInfo } from './edit/EditInfo.ts';
 import { UNITS_A, UNITS_V, UNITS_W, VAL_CURRENT, VAL_POWER } from './scope/constants.ts';
 import { getCurrentDText, getVoltageDText } from './view/units.ts';

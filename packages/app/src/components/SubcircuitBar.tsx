@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Follows CircuitJS1 SubcircuitBar (src/com/lushprojects/circuitjs1/client/SubcircuitBar.java,
 // master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032: which subcircuit's parts are shown, or
 // which model's circuit is being edited, with Back, and Save / Save Copy while editing.

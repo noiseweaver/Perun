@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // The property panel's live header, mouse wheel value stepping, and the scope dialog's preview.
 
 import { expect, test, type Page } from '@playwright/test';
-import { compressCircuit } from '@circuitjs-next/format';
+import { compressCircuit } from '@perun/format';
 
 /** A 10 V source driving a 1k resistor, drawn on a 16 px grid. */
 const LOOP =
@@ -17,16 +17,16 @@ const LOOP =
 const open = async (page: Page, text: string): Promise<void> => {
   await page.goto(`/?ctz=${compressCircuit(text)}`);
   await expect(page.getByTestId('circuit-canvas')).toBeVisible();
-  await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+  await page.waitForFunction(() => (window.perun?.controller.frames ?? 0) > 2);
 };
 
 /** Page coordinates of a circuit point. */
 const at = async (page: Page, x: number, y: number): Promise<{ x: number; y: number }> => {
   const box = await page.getByTestId('circuit-canvas').boundingBox();
-  const p = await page.evaluate(
-    ([x, y]) => window.circuitjsNext?.controller.toScreen(x, y) ?? null,
-    [x, y] as const,
-  );
+  const p = await page.evaluate(([x, y]) => window.perun?.controller.toScreen(x, y) ?? null, [
+    x,
+    y,
+  ] as const);
   if (!box || !p) throw new Error('no canvas');
   return { x: box.x + p.x, y: box.y + p.y };
 };
@@ -34,7 +34,7 @@ const at = async (page: Page, x: number, y: number): Promise<{ x: number; y: num
 const resistance = (page: Page): Promise<number> =>
   page.evaluate(
     () =>
-      window.circuitjsNext?.controller.circuit.elements
+      window.perun?.controller.circuit.elements
         .find((e) => e.getClassName() === 'ResistorElm')
         ?.getEditInfo(0)?.value ?? NaN,
   );
@@ -74,7 +74,7 @@ test("the formula card shows the selected resistor's law with live numbers", asy
   await card.getByRole('button').click();
   await expect(card.getByTestId('formula-law')).toHaveCount(0);
   await page.reload();
-  await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+  await page.waitForFunction(() => (window.perun?.controller.frames ?? 0) > 2);
   const q = await at(page, 176, 96);
   await page.mouse.click(q.x, q.y);
   await expect(page.getByTestId('formula-card')).toBeVisible();
@@ -140,9 +140,9 @@ test('Options > Edit Values With Mouse Wheel off: the wheel zooms instead', asyn
 
 test('the scope dialog shows the scope live, and its plot chips switch plots', async ({ page }) => {
   await page.goto('/?startCircuit=lrc.txt');
-  await page.waitForFunction(() => (window.circuitjsNext?.controller.scopes.scopeCount ?? 0) > 0);
+  await page.waitForFunction(() => (window.perun?.controller.scopes.scopeCount ?? 0) > 0);
   await page.evaluate(() => {
-    const c = window.circuitjsNext?.controller;
+    const c = window.perun?.controller;
     const s = c?.scopes.scopes[0];
     if (c && s) c.openScopeProperties(s);
   });
@@ -156,15 +156,12 @@ test('the scope dialog shows the scope live, and its plot chips switch plots', a
   await expect.poll(shot).not.toBe(a);
   await page.getByTestId('scope-show-current').click();
   await expect(page.getByTestId('scope-show-current')).not.toBeChecked();
-  expect(await page.evaluate(() => window.circuitjsNext?.controller.scopes.scopes[0]?.showI)).toBe(
-    false,
-  );
+  expect(await page.evaluate(() => window.perun?.controller.scopes.scopes[0]?.showI)).toBe(false);
 });
 
 test('Options > Value text size changes how big component values are drawn', async ({ page }) => {
   await open(page, LOOP);
-  const size = () =>
-    page.evaluate(() => window.circuitjsNext?.controller.lastFrameState?.valueScale);
+  const size = () => page.evaluate(() => window.perun?.controller.lastFrameState?.valueScale);
   expect(await size()).toBe(0.875);
   await page.getByRole('button', { name: 'Options' }).click();
   await page.getByTestId('menu-value-size').click();

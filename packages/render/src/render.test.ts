@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import { CURRENT_TOO_FAST } from '@circuitjs-next/elements';
-import { BUILTIN_THEMES } from '@circuitjs-next/theme';
+import { CURRENT_TOO_FAST } from '@perun/elements';
+import { BUILTIN_THEMES } from '@perun/theme';
 import { describe, expect, it } from 'vitest';
 import { DotCounters, currentMultiplier, updateDotCount } from './dots.ts';
 import { COLOR_SCALE_COUNT, Palette } from './palette.ts';

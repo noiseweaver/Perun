@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Frame pacing follows CircuitJS1 SimulationManager.runCircuit and UIManager.updateCircuit
 // (src/com/lushprojects/circuitjs1/client/, master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032:
 // 160 * iterCount steps per second, at most about 50 ms of simulation per frame.
@@ -59,8 +59,8 @@ import {
   paramEnv,
   type ParamDef,
   type ParamEnv,
-} from '@circuitjs-next/elements';
-import { Circuit, OptionFlag, getCircuitAsComposite } from '@circuitjs-next/format';
+} from '@perun/elements';
+import { Circuit, OptionFlag, getCircuitAsComposite } from '@perun/format';
 import {
   AnnotationLayer,
   CircuitRenderer,
@@ -69,8 +69,8 @@ import {
   fitScale,
   type FrameState,
   type UndockedScopeItem,
-} from '@circuitjs-next/render';
-import type { Theme } from '@circuitjs-next/theme';
+} from '@perun/render';
+import type { Theme } from '@perun/theme';
 import {
   Editor,
   MouseMode,

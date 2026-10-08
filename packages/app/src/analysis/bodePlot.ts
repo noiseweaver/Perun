@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import type { Theme } from '@circuitjs-next/theme';
+import type { Theme } from '@perun/theme';
 import { interpolate, type BodePoint } from './bode.ts';
 
 /** Where the plot puts things, so the pointer can be mapped back to a frequency. */

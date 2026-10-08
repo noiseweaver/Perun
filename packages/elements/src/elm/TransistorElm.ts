@@ -4,12 +4,12 @@
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032, with ts/TransistorElm.ts (dev-ts) at
 // 7ec858d662d8be1d76d54241ba3a5c1d1c524f51 for the node-voltage model. dev-ts swaps the saved
 // junction voltages to their electrical meaning; this keeps master's naming and file values.
-// Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) circuitjs-next contributors.
+// Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) Perun contributors.
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
-import type { Point } from '@circuitjs-next/engine';
+import type { Point } from '@perun/engine';
 import { CircuitElm, elementType, type ElementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { unescapeToken } from '../escape.ts';

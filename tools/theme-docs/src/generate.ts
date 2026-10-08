@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 /*
  * Writes docs/theme.schema.json and the key reference in docs/THEMES.md from the theme package's

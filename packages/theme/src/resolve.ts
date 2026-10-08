@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import { BUILTIN_THEMES, DEFAULT_THEME_ID, builtinTheme } from './builtins/index.ts';
 import { luminance, rgba } from './color.ts';

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import type { FieldOptions } from '@circuitjs-next/render';
-import type { Theme } from '@circuitjs-next/theme';
+import type { FieldOptions } from '@perun/render';
+import type { Theme } from '@perun/theme';
 import { useState, type ReactNode } from 'react';
 import { t } from '../i18n.ts';
 import { shownTheme, useApp } from '../store.ts';

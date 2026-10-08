@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Live formula cards (PLAN.md Phase 19): each law's numbers agree with the engine, and every
 // value keeps its width as the circuit runs.
 
@@ -18,7 +18,7 @@ import {
   TransistorElm,
   type CircuitElm,
   type FormulaLaw,
-} from '@circuitjs-next/elements';
+} from '@perun/elements';
 import { describe, expect, it } from 'vitest';
 import { readCircuit } from './circuit.ts';
 

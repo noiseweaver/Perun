@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Colors from CircuitJS1 src/com/lushprojects/circuitjs1/client/Color.java and UIManager.java
 // (master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032: the upstream look.
 
@@ -9,7 +9,7 @@ export const classic: Theme = {
   schemaVersion: 1,
   meta: {
     name: 'Classic',
-    author: 'circuitjs-next',
+    author: 'Perun',
     description: 'The CircuitJS1 look: black background, green and red voltages, yellow current',
     base: 'classic',
   },

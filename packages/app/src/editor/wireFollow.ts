@@ -1,12 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import {
-  RoutedWireElm,
-  WireElm,
-  constructElement,
-  type CircuitElm,
-} from '@circuitjs-next/elements';
+import { RoutedWireElm, WireElm, constructElement, type CircuitElm } from '@perun/elements';
 
 /** Not in upstream: wire ends on a moved part's posts move with it ("rubber-banding"). */
 interface Attached {

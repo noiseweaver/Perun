@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Credits after CircuitJS1 war/about.html (master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032.
 
 import * as Dialog from '@radix-ui/react-dialog';
@@ -9,9 +9,9 @@ import { Shell } from './DialogShell.tsx';
 import { t, tf } from '../i18n.ts';
 
 /** Where this app's source code is published (GPL-2.0 section 3). */
-export const SOURCE_URL = 'https://github.com/noiseweaver/circuitsjs-next';
+export const SOURCE_URL = 'https://github.com/noiseweaver/perun';
 export const UPSTREAM_URL = 'https://github.com/pfalstad/circuitjs1';
-/** The author and maintainer of circuitjs-next. */
+/** The author and maintainer of Perun. */
 export const AUTHOR_URL = 'https://github.com/noiseweaver';
 /** Voluntary tips. The app is free and only mentions them in About. */
 export const SPONSOR_URL = 'https://github.com/sponsors/noiseweaver';
@@ -65,7 +65,7 @@ function Link(props: { href: string; children: string; testId?: string }) {
 
 export function AboutDialog() {
   return (
-    <Shell title={t('About circuitjs-next')} className="about-dialog">
+    <Shell title={t('About Perun')} className="about-dialog">
       <div className="about">
         <p className="about-version" data-testid="about-version">
           {tf('Version {version}', { version: versionText() })}
@@ -76,7 +76,7 @@ export function AboutDialog() {
           )}
         </p>
         <p data-testid="about-author">
-          {withLinks(t('circuitjs-next is made and maintained by {author} ({link}).'), {
+          {withLinks(t('Perun is made and maintained by {author} ({link}).'), {
             author: 'Gadiel Zintu',
             link: <Link href={AUTHOR_URL}>github.com/noiseweaver</Link>,
           })}

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Follows CircuitJS1 EditCompositeModelDialog (src/com/lushprojects/circuitjs1/client/
 // EditCompositeModelDialog.java, master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032: the chip
 // drawn with its pins, which drag along the outline (several at once after a shift-click or a
@@ -17,8 +17,8 @@ import {
   viewFor,
   type CustomCompositeModel,
   type DrawContext,
-} from '@circuitjs-next/elements';
-import { CanvasPainter, Palette } from '@circuitjs-next/render';
+} from '@perun/elements';
+import { CanvasPainter, Palette } from '@perun/render';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useEffect, useRef, useState } from 'react';
 import { openDialog } from '../commands.ts';

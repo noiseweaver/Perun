@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 /**
  * What an element sees of the XML format: attributes in, attributes out. The XML parser and
- * printer live in @circuitjs-next/format; these mirror upstream's `XMLSerializer.dumpAttr` and the
+ * printer live in @perun/format; these mirror upstream's `XMLSerializer.dumpAttr` and the
  * `XMLDeserializer.parse*Attr` helpers so element code ports line by line.
  */
 export interface XmlAttrWriter {

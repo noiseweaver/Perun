@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // The heat visualization (Options > Visualizations > Heat): which parts it labels, and with what.
 
-import { readCircuit } from '@circuitjs-next/format';
-import { FieldOverlay, NO_FIELDS, Palette } from '@circuitjs-next/render';
-import { BUILTIN_THEMES } from '@circuitjs-next/theme';
+import { readCircuit } from '@perun/format';
+import { FieldOverlay, NO_FIELDS, Palette } from '@perun/render';
+import { BUILTIN_THEMES } from '@perun/theme';
 import { describe, expect, it } from 'vitest';
 
 /** 10 V across 100 Ω (1 W) and 10 V across 10 kΩ (10 mW). */

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Not in upstream (PLAN.md Phase 16, DEVIATIONS.md): the open circuit's parameters. Number fields
 // bind to them with {name} in the property panel; a subcircuit made from the circuit lets each
 // copy set them.
 
-import { getUnitText, isParamName, parseUnits, type ParamDef } from '@circuitjs-next/elements';
+import { getUnitText, isParamName, parseUnits, type ParamDef } from '@perun/elements';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useState } from 'react';
 import { openDialog } from '../commands.ts';

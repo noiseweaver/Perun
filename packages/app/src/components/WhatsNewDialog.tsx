@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import * as Dialog from '@radix-ui/react-dialog';
 import { t, tf } from '../i18n.ts';

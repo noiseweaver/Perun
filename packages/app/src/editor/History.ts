@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Undo and redo after CircuitJS1 UndoManager (src/com/lushprojects/circuitjs1/client/, master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032: like upstream, a step restores a saved copy of the
 // whole circuit, so every edit, present and future, undoes the same way.

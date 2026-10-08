@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import { viewFor, type CircuitElm, type DrawContext } from '@circuitjs-next/elements';
-import type { Theme } from '@circuitjs-next/theme';
+import { viewFor, type CircuitElm, type DrawContext } from '@perun/elements';
+import type { Theme } from '@perun/theme';
 import { CanvasPainter } from './CanvasPainter.ts';
 import { Palette } from './palette.ts';
 

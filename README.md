@@ -1,11 +1,11 @@
-# circuitjs-next
+# Perun
 
 An electronic circuit simulator that runs in the browser: a TypeScript rebuild of
 [CircuitJS1](https://github.com/pfalstad/circuitjs1), Paul Falstad's simulator, with a new interface
 and a JSON theme system. Simulation results and circuit files stay compatible with CircuitJS1: it
 opens upstream's links and files, and what it saves opens in upstream.
 
-**Open it: [noiseweaver.github.io/circuitsjs-next](https://noiseweaver.github.io/circuitsjs-next/)**.
+**Open it: [noiseweaver.github.io/perun](https://noiseweaver.github.io/perun/)**.
 Nothing to install, and it works offline once loaded.
 
 <p>
@@ -54,11 +54,11 @@ selecting one shows its properties on the right.
 Requires Node 22.13 or later and pnpm 10. Docker is needed only for the upstream reference build.
 
 ```sh
-git clone --recurse-submodules https://github.com/noiseweaver/circuitsjs-next
-cd circuitsjs-next
+git clone --recurse-submodules https://github.com/noiseweaver/perun
+cd perun
 pnpm install
-pnpm --filter @circuitjs-next/app dev     # http://localhost:5173
-pnpm --filter @circuitjs-next/app build   # static site in packages/app/dist
+pnpm --filter @perun/app dev     # http://localhost:5173
+pnpm --filter @perun/app build   # static site in packages/app/dist
 pnpm check                                # typecheck, lint, format check, unit tests
 pnpm test:e2e                             # Playwright browser tests
 ```
@@ -94,7 +94,7 @@ upstream is listed in [docs/DEVIATIONS.md](docs/DEVIATIONS.md).
 
 ## Supporting the project
 
-circuitjs-next is free and stays free: no ads, no accounts, every feature open. If it helps you,
+Perun is free and stays free: no ads, no accounts, every feature open. If it helps you,
 you can support its development on [GitHub Sponsors](https://github.com/sponsors/noiseweaver) or
 [Ko-fi](https://ko-fi.com/noiseweaver). The simulator underneath is Paul Falstad's and Iain
 Sharp's CircuitJS1; see the credits below.
@@ -106,7 +106,7 @@ and/or modify it under the terms of the GNU General Public License as published 
 Software Foundation, either version 2 of the License, or (at your option) any later version. It is
 distributed in the hope that it will be useful, but without any warranty.
 
-circuitjs-next is made and maintained by Gadiel Zintu ([github.com/noiseweaver](https://github.com/noiseweaver)).
+Perun is made and maintained by Gadiel Zintu ([github.com/noiseweaver](https://github.com/noiseweaver)).
 
 CircuitJS1 is Copyright (C) Paul Falstad and Iain Sharp ([falstad.com](https://www.falstad.com/),
 [lushprojects.com](http://lushprojects.com/)), with the contributors its README and About box

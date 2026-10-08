@@ -1,15 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Which posts are drawn follows CircuitJS1 SimulationManager (post and bad-connection lists)
 // (src/com/lushprojects/circuitjs1/client/, master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032.
 
-import {
-  GraphicElm,
-  RoutedWireElm,
-  rectContains,
-  viewFor,
-  type CircuitElm,
-} from '@circuitjs-next/elements';
+import { GraphicElm, RoutedWireElm, rectContains, viewFor, type CircuitElm } from '@perun/elements';
 
 export interface PostInfo {
   /** Posts drawn as dots: those not joining exactly two element ends. */

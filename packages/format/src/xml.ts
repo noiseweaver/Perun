@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-// The XML document model lives in @circuitjs-next/elements (subcircuit models need it there).
+// The XML document model lives in @perun/elements (subcircuit models need it there).
 export {
   XmlElement,
   XmlParseError,
@@ -9,4 +9,4 @@ export {
   parseXml,
   prettyPrint,
   type XmlText,
-} from '@circuitjs-next/elements';
+} from '@perun/elements';

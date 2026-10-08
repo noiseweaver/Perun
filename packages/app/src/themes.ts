@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 /*
  * The theme library and theme sharing (PLAN.md section 6): saved themes live in IndexedDB, theme
@@ -18,7 +18,7 @@ import {
   themeFileName,
   themeToJson,
   type Theme,
-} from '@circuitjs-next/theme';
+} from '@perun/theme';
 import { copyText, download, openDialog } from './commands.ts';
 import {
   ACTIVE_THEME_KEY,
@@ -30,6 +30,7 @@ import {
   type SavedTheme,
 } from './store.ts';
 
+// Named before the rename to Perun; kept so saved themes are still found.
 const DB_NAME = 'circuitjs-next';
 const DB_VERSION = 1;
 const STORE = 'themes';

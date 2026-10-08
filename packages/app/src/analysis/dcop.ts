@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import {
   CapacitorElm,
@@ -17,9 +17,9 @@ import {
   TransistorElm,
   WireElm,
   type CircuitElm,
-} from '@circuitjs-next/elements';
-import type { CircuitNode, SimElement } from '@circuitjs-next/engine';
-import { readCircuit, type Circuit } from '@circuitjs-next/format';
+} from '@perun/elements';
+import type { CircuitNode, SimElement } from '@perun/engine';
+import { readCircuit, type Circuit } from '@perun/format';
 
 /**
  * The DC operating point (PLAN.md Phase 13): every node voltage and every part's current and

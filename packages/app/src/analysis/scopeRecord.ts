@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Not in upstream, whose scope CSV holds only what is on screen (one min/max per pixel column).
 
-import { plotName, type Scope, type ScopePlot, type Simulation } from '@circuitjs-next/elements';
+import { plotName, type Scope, type ScopePlot, type Simulation } from '@perun/elements';
 
 /** Most rows a recording keeps (about 40 MB of numbers with four plots). */
 export const MAX_ROWS = 1_000_000;

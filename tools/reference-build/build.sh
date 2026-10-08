@@ -7,7 +7,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 UPSTREAM="$(git -C "$ROOT/reference/circuitjs1" rev-parse --short=12 HEAD)"
 PATCH="$(sha256sum "$ROOT/tools/reference-patch/harness.patch" | cut -c1-8)"
-IMAGE="${REFERENCE_IMAGE:-circuitjs-next/reference:$UPSTREAM-p$PATCH}"
+IMAGE="${REFERENCE_IMAGE:-perun/reference:$UPSTREAM-p$PATCH}"
 
 args=(build -f "$ROOT/tools/reference-build/Dockerfile" -t "$IMAGE")
 if [ -n "${EXTRA_CA_CERT:-}" ]; then args+=(--secret "id=extra_ca,src=$EXTRA_CA_CERT"); fi

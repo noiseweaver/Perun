@@ -1,6 +1,6 @@
 ---
 title: CircuitJS Rewrite, Plan of Approach
-tags: [project/circuitjs-next, plan]
+tags: [project/perun, plan]
 status: draft
 created: 2026-10-02
 owner: Gady
@@ -8,7 +8,7 @@ owner: Gady
 
 # CircuitJS Rewrite: Plan of Approach
 
-Working name: `circuitjs-next` (placeholder, rename freely)
+Name: Perun (renamed on 2026-10-08 from the working name `circuitjs-next`; the repository moved from `noiseweaver/circuitsjs-next` to `noiseweaver/perun`, so the site is now https://noiseweaver.github.io/perun/)
 Implementing agent: Claude Code. Owner and reviewer: Gady.
 
 ## 1. Goal
@@ -37,10 +37,10 @@ Rebuild Paul Falstad's CircuitJS1 as a modern TypeScript web app with a new UI a
 
 - Read this whole file before starting. Work phase by phase. Do not start a phase until the previous phase's acceptance criteria pass.
 - `reference/circuitjs1/` is a read-only clone of upstream at a pinned commit. Never edit it. The only exception is the harness patch from Phase 1, which lives in `tools/reference-patch/` and is applied at build time.
-- Port simulation logic faithfully first, refactor second. Any behaviour change needs a golden test showing why, plus an entry in `docs/DEVIATIONS.md`.
+- Port simulation logic faithfully first, refactor second. Any behaviour change needs a golden test showing why, plus an entry in `docs/deviations/` (one file per deviation; see its README).
 - Do not port drawing or UI code line by line. Use upstream only to learn geometry and what information is shown.
 - Every ported file starts with a header naming the upstream source file(s), the upstream commit SHA, and the GPL notice.
-- Update `docs/PROGRESS.md` at the end of every session: done, next, open issues.
+- At the end of every session, add or update your own file in `docs/progress/` (done, next, open issues; see its README). Never edit `docs/PROGRESS.md` or `docs/DEVIATIONS.md`, which are frozen, or another branch's entry: parallel pull requests then never conflict on these notes.
 - Commit at each milestone using conventional commit messages. Typecheck, lint and unit tests must pass before each commit.
 - If a fact in section 4 marked [I] or [G] turns out wrong, correct it in this file.
 - Ask the owner before changing any decision in section 3.
@@ -90,7 +90,7 @@ Phase 0 checked every item below against upstream at `5a707168` (2026-09-23). Fi
 ### Repo layout
 
 ```
-circuitjs-next/
+perun/
   reference/circuitjs1/        read-only upstream (git submodule, pinned SHA)
   packages/
     engine/      matrix, solver, sim loop, SimElement interface. No DOM (tsconfig lib without DOM)
