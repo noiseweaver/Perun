@@ -16,7 +16,7 @@ in `meta.base` (Dark when there is none), so a theme only needs what it changes:
 
 ```json
 {
-  "$schema": "https://github.com/noiseweaver/circuitsjs-next/blob/main/docs/theme.schema.json",
+  "$schema": "https://github.com/noiseweaver/perun/blob/main/docs/theme.schema.json",
   "schemaVersion": 1,
   "meta": { "name": "Night Bench", "author": "gady", "base": "dark" },
   "canvas": { "background": "#1e222a" },

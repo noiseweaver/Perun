@@ -72,9 +72,7 @@ test('a suggestion opens GitHub with the issue form filled in', async ({ page })
   const opened = new URL(
     await page.evaluate(() => (window as unknown as { opened: string }).opened),
   );
-  expect(opened.origin + opened.pathname).toBe(
-    'https://github.com/noiseweaver/circuitsjs-next/issues/new',
-  );
+  expect(opened.origin + opened.pathname).toBe('https://github.com/noiseweaver/perun/issues/new');
   expect(opened.searchParams.get('template')).toBe('suggestion.yml');
   expect(opened.searchParams.get('title')).toBe('Suggestion: More themes, please');
   expect(opened.searchParams.get('email')).toBe('someone@example.com');

@@ -5,7 +5,7 @@ An electronic circuit simulator that runs in the browser: a TypeScript rebuild o
 and a JSON theme system. Simulation results and circuit files stay compatible with CircuitJS1: it
 opens upstream's links and files, and what it saves opens in upstream.
 
-**Open it: [noiseweaver.github.io/circuitsjs-next](https://noiseweaver.github.io/circuitsjs-next/)**.
+**Open it: [noiseweaver.github.io/perun](https://noiseweaver.github.io/perun/)**.
 Nothing to install, and it works offline once loaded.
 
 <p>
@@ -54,8 +54,8 @@ selecting one shows its properties on the right.
 Requires Node 22.13 or later and pnpm 10. Docker is needed only for the upstream reference build.
 
 ```sh
-git clone --recurse-submodules https://github.com/noiseweaver/circuitsjs-next
-cd circuitsjs-next
+git clone --recurse-submodules https://github.com/noiseweaver/perun
+cd perun
 pnpm install
 pnpm --filter @perun/app dev     # http://localhost:5173
 pnpm --filter @perun/app build   # static site in packages/app/dist

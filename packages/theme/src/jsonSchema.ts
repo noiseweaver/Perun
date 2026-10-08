@@ -6,7 +6,7 @@ import { themeInputSchema } from './schema.ts';
 
 /** Where the published JSON Schema lives (docs/theme.schema.json in the repository). */
 export const THEME_SCHEMA_ID =
-  'https://github.com/noiseweaver/circuitsjs-next/blob/main/docs/theme.schema.json';
+  'https://github.com/noiseweaver/perun/blob/main/docs/theme.schema.json';
 
 /** JSON Schema for theme files, generated from the zod schema (PLAN.md section 6). */
 export function themeJsonSchema(): Record<string, unknown> {

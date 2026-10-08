@@ -9,7 +9,7 @@ import { Shell } from './DialogShell.tsx';
 import { t, tf } from '../i18n.ts';
 
 /** Where this app's source code is published (GPL-2.0 section 3). */
-export const SOURCE_URL = 'https://github.com/noiseweaver/circuitsjs-next';
+export const SOURCE_URL = 'https://github.com/noiseweaver/perun';
 export const UPSTREAM_URL = 'https://github.com/pfalstad/circuitjs1';
 /** The author and maintainer of Perun. */
 export const AUTHOR_URL = 'https://github.com/noiseweaver';

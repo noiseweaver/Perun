@@ -1,6 +1,6 @@
 name: Deploy to GitHub Pages
 
-# Publishes the app build to https://noiseweaver.github.io/circuitsjs-next/ on every push to main,
+# Publishes the app build to https://noiseweaver.github.io/perun/ on every push to main,
 # so it can be installed as a PWA (Safari > Share > Add to Home Screen on iPhone and iPad). Needs
 # Settings > Pages > Source set to "GitHub Actions" once.
 on:
