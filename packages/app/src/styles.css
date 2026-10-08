@@ -3306,16 +3306,24 @@ ul.theme-contrast {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 4px 4px 16px;
-  border-radius: var(--md-shape-xs);
-  background: var(--ui-text);
-  color: var(--ui-surface);
+  padding: 6px 6px 6px 16px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--md-shape-m);
+  background: var(--md-surface-container-high);
+  color: var(--ui-text);
   box-shadow: var(--md-elevation-3);
   white-space: nowrap;
+  animation: toast-in 240ms var(--md-motion);
+}
+
+.update-banner .button {
+  min-width: 0;
+  height: 36px;
+  padding: 0 16px;
 }
 
 .update-banner .icon-button {
-  color: inherit;
+  color: var(--ui-text-muted);
 }
 
 .install-steps {

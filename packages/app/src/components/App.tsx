@@ -126,7 +126,7 @@ function UpdateBanner() {
   return (
     <div className="update-banner" role="status" data-testid="update-banner">
       <span>{t('A new version is ready.')}</span>
-      <button type="button" className="button" onClick={applyUpdate}>
+      <button type="button" className="button button-primary" onClick={applyUpdate}>
         {t('Reload')}
       </button>
       <button
