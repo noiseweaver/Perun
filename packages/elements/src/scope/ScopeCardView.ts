@@ -490,57 +490,60 @@ function drawHeader(
     mx >= h.x && mx < h.x + h.width && my >= h.y && my < h.y + h.height;
   let right = slot.x + slot.width - PAD;
 
-  // close and settings buttons
-  const close: CardHit = {
-    kind: 'close',
-    index: 0,
-    x: right - ICON,
-    y: iconY,
-    width: ICON,
-    height: ICON,
-  };
-  g.setColor(over(close) ? 'text' : 'textMuted');
-  cross(g, close.x + ICON / 2, close.y + ICON / 2);
-  right -= ICON + 6;
-  const settings: CardHit = {
-    kind: 'settings',
-    index: 0,
-    x: right - ICON,
-    y: iconY,
-    width: ICON,
-    height: ICON,
-  };
-  g.setColor(over(settings) ? 'selection' : 'textMuted');
-  gear(g, settings.x + ICON / 2, settings.y + ICON / 2);
-  right -= ICON + 6;
-  // undock a docked card onto the circuit, or dock an undocked one
-  const dock: CardHit = {
-    kind: 'dock',
-    index: 0,
-    x: right - ICON,
-    y: iconY,
-    width: ICON,
-    height: ICON,
-  };
-  g.setColor(over(dock) ? 'selection' : 'textMuted');
-  if (scope.position < 0) dockIcon(g, dock.x + ICON / 2, dock.y + ICON / 2);
-  else undockIcon(g, dock.x + ICON / 2, dock.y + ICON / 2);
-  right -= ICON + 6;
-  // hold the trace (play resumes it)
-  const freeze: CardHit = {
-    kind: 'freeze',
-    index: 0,
-    x: right - ICON,
-    y: iconY,
-    width: ICON,
-    height: ICON,
-  };
-  const frozen = scope.frozen !== null;
-  g.setColor(frozen || over(freeze) ? 'selection' : 'textMuted');
-  if (frozen) playIcon(g, freeze.x + ICON / 2, freeze.y + ICON / 2);
-  else pauseIcon(g, freeze.x + ICON / 2, freeze.y + ICON / 2);
-  right -= ICON + 10;
-  hits.push(close, settings, dock, freeze);
+  // the buttons; a view that can't be clicked (an Obsidian circuit block) leaves them out
+  if (mgr.cardButtons) {
+    // close and settings buttons
+    const close: CardHit = {
+      kind: 'close',
+      index: 0,
+      x: right - ICON,
+      y: iconY,
+      width: ICON,
+      height: ICON,
+    };
+    g.setColor(over(close) ? 'text' : 'textMuted');
+    cross(g, close.x + ICON / 2, close.y + ICON / 2);
+    right -= ICON + 6;
+    const settings: CardHit = {
+      kind: 'settings',
+      index: 0,
+      x: right - ICON,
+      y: iconY,
+      width: ICON,
+      height: ICON,
+    };
+    g.setColor(over(settings) ? 'selection' : 'textMuted');
+    gear(g, settings.x + ICON / 2, settings.y + ICON / 2);
+    right -= ICON + 6;
+    // undock a docked card onto the circuit, or dock an undocked one
+    const dock: CardHit = {
+      kind: 'dock',
+      index: 0,
+      x: right - ICON,
+      y: iconY,
+      width: ICON,
+      height: ICON,
+    };
+    g.setColor(over(dock) ? 'selection' : 'textMuted');
+    if (scope.position < 0) dockIcon(g, dock.x + ICON / 2, dock.y + ICON / 2);
+    else undockIcon(g, dock.x + ICON / 2, dock.y + ICON / 2);
+    right -= ICON + 6;
+    // hold the trace (play resumes it)
+    const freeze: CardHit = {
+      kind: 'freeze',
+      index: 0,
+      x: right - ICON,
+      y: iconY,
+      width: ICON,
+      height: ICON,
+    };
+    const frozen = scope.frozen !== null;
+    g.setColor(frozen || over(freeze) ? 'selection' : 'textMuted');
+    if (frozen) playIcon(g, freeze.x + ICON / 2, freeze.y + ICON / 2);
+    else pauseIcon(g, freeze.x + ICON / 2, freeze.y + ICON / 2);
+    right -= ICON + 10;
+    hits.push(close, settings, dock, freeze);
+  }
 
   // compact: tabs for the columns, on the top card of the shown column
   const cols = mgr.columnCount();

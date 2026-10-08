@@ -46,6 +46,8 @@ export const EXTRA_KEYS = [
   'Close',
   'A new version is ready.',
   'Later',
+  'Steps per second',
+  'steps/s',
 ] as const;
 
 export const EXTRA: Record<string, readonly string[]> = {
@@ -90,6 +92,8 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Tanca',
     'Hi ha una versió nova a punt.',
     'Més tard',
+    'Passos per segon',
+    'passos/s',
   ],
   csx: [
     'O aplikaci Perun',
@@ -132,6 +136,8 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Zavřít',
     'Je připravena nová verze.',
     'Později',
+    'Kroky za sekundu',
+    'kroků/s',
   ],
   da: [
     'Om Perun',
@@ -174,6 +180,8 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Luk',
     'En ny version er klar.',
     'Senere',
+    'Trin pr. sekund',
+    'trin/s',
   ],
   de: [
     'Über Perun',
@@ -216,6 +224,8 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Schließen',
     'Eine neue Version ist bereit.',
     'Später',
+    'Schritte pro Sekunde',
+    'Schritte/s',
   ],
   es: [
     'Acerca de Perun',
@@ -258,6 +268,8 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Cerrar',
     'Hay una versión nueva lista.',
     'Más tarde',
+    'Pasos por segundo',
+    'pasos/s',
   ],
   fi: [
     'Tietoja Perunista',
@@ -300,6 +312,8 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Sulje',
     'Uusi versio on valmis.',
     'Myöhemmin',
+    'Askelta sekunnissa',
+    'askelta/s',
   ],
   fr: [
     'À propos de Perun',
@@ -342,6 +356,8 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Fermer',
     'Une nouvelle version est prête.',
     'Plus tard',
+    'Pas par seconde',
+    'pas/s',
   ],
   it: [
     'Informazioni su Perun',
@@ -384,6 +400,8 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Chiudi',
     'È pronta una nuova versione.',
     'Più tardi',
+    'Passi al secondo',
+    'passi/s',
   ],
   ja: [
     'Perun について',
@@ -426,6 +444,8 @@ export const EXTRA: Record<string, readonly string[]> = {
     '閉じる',
     '新しいバージョンの準備ができました。',
     '後で',
+    '1秒あたりのステップ数',
+    'ステップ/秒',
   ],
   kr: [
     'Perun 정보',
@@ -468,6 +488,8 @@ export const EXTRA: Record<string, readonly string[]> = {
     '닫기',
     '새 버전이 준비되었습니다.',
     '나중에',
+    '초당 스텝 수',
+    '스텝/초',
   ],
   nb: [
     'Om Perun',
@@ -510,6 +532,8 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Lukk',
     'En ny versjon er klar.',
     'Senere',
+    'Steg per sekund',
+    'steg/s',
   ],
   pl: [
     'O aplikacji Perun',
@@ -552,6 +576,8 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Zamknij',
     'Nowa wersja jest gotowa.',
     'Później',
+    'Kroki na sekundę',
+    'kroków/s',
   ],
   pt: [
     'Sobre o Perun',
@@ -594,6 +620,8 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Fechar',
     'Uma nova versão está pronta.',
     'Mais tarde',
+    'Passos por segundo',
+    'passos/s',
   ],
   ru: [
     'О Perun',
@@ -636,6 +664,8 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Закрыть',
     'Новая версия готова.',
     'Позже',
+    'Шагов в секунду',
+    'шагов/с',
   ],
   zh: [
     '关于 Perun',
@@ -678,6 +708,8 @@ export const EXTRA: Record<string, readonly string[]> = {
     '关闭',
     '新版本已就绪。',
     '稍后',
+    '每秒步数',
+    '步/秒',
   ],
   'zh-tw': [
     '關於 Perun',
@@ -720,6 +752,8 @@ export const EXTRA: Record<string, readonly string[]> = {
     '關閉',
     '新版本已準備就緒。',
     '稍後',
+    '每秒步數',
+    '步/秒',
   ],
 };
 

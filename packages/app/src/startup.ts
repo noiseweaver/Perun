@@ -8,6 +8,8 @@ import { installAutosave, readLastCircuit } from './autosave.ts';
 import { announceUpdate } from './whatsNew.ts';
 import { useApp } from './store.ts';
 import { loadLibrary, previewThemeFromQuery } from './themes.ts';
+import { embedConfig } from './embedConfig.ts';
+import { startEmbedded } from './embed.ts';
 
 export const BASE = import.meta.env.BASE_URL;
 
@@ -92,6 +94,16 @@ function applyQuerySettings(search: string): void {
 
 /** Page start: load the example list, then the circuit the URL names, else the default one. */
 export async function startup(): Promise<void> {
+  if (embedConfig !== null) {
+    // in a host page's frame (the Obsidian plugin): the host gives the circuit and keeps it
+    void loadLibrary();
+    void fetchExampleList(BASE).then(
+      (list) => useApp.setState({ examples: list }),
+      () => undefined,
+    );
+    startEmbedded(embedConfig);
+    return;
+  }
   const search = window.location.search;
   announceUpdate();
   applyQuerySettings(search);

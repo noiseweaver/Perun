@@ -16,6 +16,7 @@ import {
   doDots,
   draw2Leads,
   drawCenteredText,
+  drawLabeledNode,
   elementBox,
   LABEL,
   MUTED,
@@ -28,6 +29,7 @@ import {
 } from './common.ts';
 import { calcArrow, calcLeads, interp, interp2, pt, rectOf, sign, unionRect } from './geometry.ts';
 import type { DrawContext, Pt } from './Painter.ts';
+import { getShortUnitText } from './units.ts';
 import { addCurCount } from './passive.ts';
 
 const DIODE_HS = 8;
@@ -384,7 +386,29 @@ function opAmpGeometry(e: OpAmpElm) {
   const [in1, in2] = interp2(lead1, lead2, 0, hs);
   const [t1, t2] = interp2(lead1, lead2, 0.2, hs);
   const [tri0, tri1] = interp2(lead1, lead2, 0, hs * 2);
-  return { lead1, lead2, in1, in2, text1: t1, text2: t2, triangle: [tri0, tri1, lead2] };
+  // supply rail stubs (not upstream): from the middle of each slanted side out to the height of
+  // the triangle's back, V+ on the side the real op-amp puts it (unswapped -), whatever the swap
+  const hr = e.opheight * e.dsign;
+  const [posEdge, negEdge] = interp2(lead1, lead2, 0.5, hr);
+  const [posEnd, negEnd] = interp2(lead1, lead2, 0.5, hr * 2);
+  return {
+    lead1,
+    lead2,
+    in1,
+    in2,
+    text1: t1,
+    text2: t2,
+    triangle: [tri0, tri1, lead2],
+    rails: [
+      [posEdge, posEnd],
+      [negEdge, negEnd],
+    ] as const,
+  };
+}
+
+/** `+15V` style rail label: always signed, so either rail reads as a supply. */
+function railText(v: number): string {
+  return (v < 0 ? '-' : '+') + getShortUnitText(Math.abs(v), 'V');
 }
 
 export const opAmpView: ElementView<OpAmpElm> = {
@@ -398,7 +422,18 @@ export const opAmpView: ElementView<OpAmpElm> = {
     const font = { size: e.opsize === 2 ? 14 : 10 };
     drawCenteredText(ctx, '-', g.text1.x, g.text1.y - 2, true, LABEL, font);
     drawCenteredText(ctx, '+', g.text2.x, g.text2.y, true, LABEL, font);
+    if (e.showRails) {
+      const [pos, neg] = g.rails;
+      p.line(pos[0], pos[1], vInk(e.maxOut));
+      p.line(neg[0], neg[1], vInk(e.minOut));
+      drawLabeledNode(ctx, railText(e.maxOut), pos[0], pos[1], COMPONENT);
+      drawLabeledNode(ctx, railText(e.minOut), neg[0], neg[1], COMPONENT);
+    }
     p.dots(e.point2, g.lead2, ctx.dotCount(0, e.current));
   },
-  bbox: (e) => unionRect(elementBox(e, e.opheight * 2), rectOf(opAmpGeometry(e).triangle)),
+  bbox: (e) => {
+    const g = opAmpGeometry(e);
+    const body = unionRect(elementBox(e, e.opheight * 2), rectOf(g.triangle));
+    return e.showRails ? unionRect(body, rectOf([g.rails[0][1], g.rails[1][1]])) : body;
+  },
 };

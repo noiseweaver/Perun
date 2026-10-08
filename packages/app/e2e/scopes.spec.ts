@@ -501,9 +501,29 @@ test('the speed sliders open from a button', async ({ page }) => {
   await page.keyboard.press('ArrowRight');
   await expect
     .poll(() => page.evaluate(() => window.perun?.controller.circuit.options.speed))
-    .toBe((before ?? 0) + 1);
+    .toBe((before ?? 0) + 0.25);
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('speed-popover')).toBeHidden();
+});
+
+test('the simulation speed can be typed in steps per second', async ({ page }) => {
+  await page.goto('/?startCircuit=lrc.txt');
+  await ready(page);
+  await page.getByTestId('speed-button').click();
+  const input = page.getByTestId('speed-input');
+  const speed = () => page.evaluate(() => window.perun?.controller.circuit.options.speed);
+  // 1k steps per second: notch log(1000 / 16) * 24 + 61
+  await input.fill('1k');
+  await input.press('Enter');
+  await expect.poll(speed).toBeCloseTo(Math.log(1000 / 16) * 24 + 61, 2);
+  await expect(input).toHaveValue('1000');
+  // text that is not a number, or Escape, leaves the speed alone
+  await input.fill('fast');
+  await input.press('Enter');
+  await input.fill('20');
+  await input.press('Escape');
+  await expect(input).toHaveValue('1000');
+  await expect.poll(speed).toBeCloseTo(Math.log(1000 / 16) * 24 + 61, 2);
 });
 
 test('a spectrum finds its peak, and the cursor snaps to it', async ({ page }) => {

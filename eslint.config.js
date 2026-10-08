@@ -19,6 +19,8 @@ const ALLOWED_DEPS = {
   theme: [],
   render: ['elements', 'theme'],
   app: ['engine', 'elements', 'format', 'theme', 'render'],
+  // the Obsidian plugin runs the app in a frame; it imports only the app's message types
+  obsidian: ['elements', 'format', 'theme', 'render', 'app'],
 };
 const ALL = Object.keys(ALLOWED_DEPS);
 
@@ -63,6 +65,8 @@ export default tseslint.config(
       'reference/**',
       '**/node_modules/**',
       '**/dist/**',
+      '**/dist-embed/**',
+      'packages/obsidian/generated/**',
       '.reference-site/**',
       'fixtures/**',
       'test-results/**',
@@ -84,7 +88,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/{render,app}/**/*.{ts,tsx}'],
+    files: ['packages/{render,app,obsidian}/**/*.{ts,tsx}'],
     languageOptions: { globals: { ...globals.browser } },
   },
   {
