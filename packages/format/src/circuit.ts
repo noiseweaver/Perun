@@ -74,7 +74,7 @@ export interface CircuitOptions {
   flags: number;
   /**
    * Simulation speed slider, 0..259. Upstream only has whole notches; the app's finer slider and
-   * typed speed can leave it between two (saved as `sp`, DEVIATIONS.md).
+   * typed speed can leave it between two (saved as `sp`, docs/deviations/speed-between-notches.md).
    */
   speed: number;
   /** Current speed slider, 1..99. */
@@ -484,7 +484,7 @@ export class Circuit {
       this.readCircuitFlags(r.parseIntAttr('f', 0));
       sim.maxTimeStep = sim.timeStep = r.parseDoubleAttr('ts', sim.maxTimeStep);
       this.setSpeedFromIterCount(r.parseDoubleAttr('ic', this.getIterCount()));
-      // not in upstream (DEVIATIONS.md): the exact speed when it falls between two notches
+      // not in upstream (docs/deviations/speed-between-notches.md): the exact speed when it falls between two notches
       const sp = Number(r.parseStringAttr('sp', null) ?? NaN);
       if (Number.isFinite(sp)) this.options.speed = clamp(sp, 0, 259);
       this.options.currentBar = clamp(r.parseIntAttr('cb', this.options.currentBar), 1, 99);
