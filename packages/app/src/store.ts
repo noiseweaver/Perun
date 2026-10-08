@@ -108,7 +108,7 @@ export type TeachTool = 'pencil' | 'laser' | 'eraser';
 export interface AppState {
   title: string;
   running: boolean;
-  /** Simulation speed slider, 0..259 (upstream scale). */
+  /** Simulation speed slider, 0..259 (upstream scale, in quarter notches or finer). */
   speed: number;
   /** Current speed slider, 1..99. */
   currentSpeed: number;

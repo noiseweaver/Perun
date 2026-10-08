@@ -678,6 +678,49 @@ textarea,
   box-shadow: 0 0 0 10px color-mix(in srgb, var(--ui-accent) 12%, transparent);
 }
 
+/* the simulation speed: a wider slider, and the speed in steps per second to read or type */
+.speed-popover .slider {
+  width: 240px;
+}
+
+.slider-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.speed-entry {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+/* a fixed width and right-aligned digits, so the field never shifts as the speed changes */
+.speed-input {
+  width: 7ch;
+  height: 26px;
+  padding: 0 6px;
+  font-family: var(--mono-font);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--ui-text);
+  background: transparent;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--md-shape-xs);
+}
+
+.speed-input:focus {
+  outline: none;
+  border-color: var(--ui-accent);
+  box-shadow: inset 0 0 0 1px var(--ui-accent);
+}
+
+.speed-unit {
+  font-size: 12px;
+}
+
 /* ---- key to the field visualizations (Options > Visualizations) ------------------------- */
 
 /* the values around a part's one while the mouse wheel steps it (WheelValuePopup.tsx) */
