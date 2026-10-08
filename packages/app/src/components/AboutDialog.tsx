@@ -3,9 +3,10 @@
 // Credits after CircuitJS1 war/about.html (master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032.
 
 import * as Dialog from '@radix-ui/react-dialog';
+import { Fragment, type ReactNode } from 'react';
 import { BASE } from '../startup.ts';
 import { Shell } from './DialogShell.tsx';
-import { t } from '../i18n.ts';
+import { t, tf } from '../i18n.ts';
 
 /** Where this app's source code is published (GPL-2.0 section 3). */
 export const SOURCE_URL = 'https://github.com/noiseweaver/circuitsjs-next';
@@ -42,6 +43,15 @@ const THANKS = [
   'LZString (c) 2013 pieroxy',
 ];
 
+/** Fill `{name}` placeholders in translated text with elements (links) or plain text. */
+export function withLinks(text: string, values: Record<string, ReactNode>): ReactNode[] {
+  return text.split(/(\{\w+\})/).map((part, i) => {
+    const m = /^\{(\w+)\}$/.exec(part);
+    const v = m?.[1] !== undefined ? values[m[1]] : undefined;
+    return <Fragment key={i}>{v === undefined ? part : v}</Fragment>;
+  });
+}
+
 function Link(props: { href: string; children: string; testId?: string }) {
   return (
     <a href={props.href} target="_blank" rel="noopener noreferrer" data-testid={props.testId}>
@@ -55,22 +65,30 @@ export function AboutDialog() {
     <Shell title={t('About circuitjs-next')} className="about-dialog">
       <div className="about">
         <p className="about-version" data-testid="about-version">
-          Version {versionText()}
+          {tf('Version {version}', { version: versionText() })}
         </p>
         <p>
-          An electronic circuit simulator: a rebuild of CircuitJS1 in TypeScript with a new
-          interface and themes. Circuit files and simulation results stay compatible with
-          CircuitJS1.
+          {t(
+            'An electronic circuit simulator: a rebuild of CircuitJS1 in TypeScript with a new interface and themes. Circuit files and simulation results stay compatible with CircuitJS1.',
+          )}
         </p>
         <p data-testid="about-author">
-          circuitjs-next is made and maintained by Gadiel Zintu (
-          <Link href={AUTHOR_URL}>github.com/noiseweaver</Link>).
+          {withLinks(t('circuitjs-next is made and maintained by {author} ({link}).'), {
+            author: 'Gadiel Zintu',
+            link: <Link href={AUTHOR_URL}>github.com/noiseweaver</Link>,
+          })}
         </p>
         <p>
-          CircuitJS1 is by Paul Falstad (<Link href="https://www.falstad.com/">falstad.com</Link>
-          ), with the JavaScript conversion by Iain Sharp (
-          <Link href="http://lushprojects.com/">lushprojects.com</Link>). Its source code is at{' '}
-          <Link href={UPSTREAM_URL}>github.com/pfalstad/circuitjs1</Link>.
+          {withLinks(
+            t(
+              'CircuitJS1 is by Paul Falstad ({falstad}), with the JavaScript conversion by Iain Sharp ({lush}). Its source code is at {source}.',
+            ),
+            {
+              falstad: <Link href="https://www.falstad.com/">falstad.com</Link>,
+              lush: <Link href="http://lushprojects.com/">lushprojects.com</Link>,
+              source: <Link href={UPSTREAM_URL}>github.com/pfalstad/circuitjs1</Link>,
+            },
+          )}
         </p>
         <details className="about-thanks">
           <summary>{t('CircuitJS1 thanks')}</summary>
@@ -81,14 +99,14 @@ export function AboutDialog() {
           </ul>
         </details>
         <p>
-          This program is free software: you can redistribute it and/or modify it under the terms of
-          the GNU General Public License as published by the Free Software Foundation, either
-          version 2 of the License, or (at your option) any later version.
+          {t(
+            'This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or (at your option) any later version.',
+          )}
         </p>
         <p>
-          This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-          without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-          See the GNU General Public License for more details.
+          {t(
+            'This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.',
+          )}
         </p>
         <ul className="about-links">
           <li>

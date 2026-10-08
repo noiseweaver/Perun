@@ -21,6 +21,8 @@ import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
 import { themeLink } from '../themes.ts';
 import { AboutDialog } from './AboutDialog.tsx';
+import { FeedbackDialog } from './FeedbackDialog.tsx';
+import { WhatsNewDialog } from './WhatsNewDialog.tsx';
 import { BodeDialog } from './BodeDialog.tsx';
 import { SweepDialog } from './SweepDialog.tsx';
 import { ExportImageDialog, PartsListDialog, ScopeCsvDialog } from './ExportDialogs.tsx';
@@ -570,6 +572,10 @@ export function Dialogs() {
       return <PartsListDialog />;
     case 'scopeCsv':
       return <ScopeCsvDialog />;
+    case 'whatsNew':
+      return <WhatsNewDialog />;
+    case 'feedback':
+      return <FeedbackDialog />;
     default:
       return null;
   }

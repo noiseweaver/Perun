@@ -35,6 +35,8 @@ export type DialogKind =
   | 'exportImage'
   | 'partsList'
   | 'scopeCsv'
+  | 'whatsNew'
+  | 'feedback'
   | null;
 
 export function openDialog(kind: DialogKind): void {

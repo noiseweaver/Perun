@@ -10,6 +10,7 @@
 import { LS, catalogLanguage, parseLocale, setLocalization } from '@circuitjs-next/elements';
 import { BASE } from './startup.ts';
 import { useApp } from './store.ts';
+import { extraCatalog } from './i18nExtra.ts';
 
 /** The catalog again with lower-case keys: this interface capitalises fewer words than upstream. */
 let folded = new Map<string, string>();
@@ -61,6 +62,8 @@ export async function setLanguage(code: string): Promise<void> {
       code = 'en';
     }
   }
+  // this app's own text, where upstream's catalog has no entry for it
+  for (const [k, v] of extraCatalog(code)) if (!map.has(k)) map.set(k, v);
   setLocalization(map);
   addWord = findAddWord(map);
   folded = new Map();

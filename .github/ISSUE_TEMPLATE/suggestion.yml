@@ -1,0 +1,23 @@
+name: Suggestion
+description: An idea, a problem, or anything you'd like changed in the app.
+title: 'Suggestion: '
+labels: [suggestion]
+body:
+  - type: input
+    id: email
+    attributes:
+      label: Email
+      description: So we can reply to you. This issue is public, and so is this address.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggestion
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: File > About shows it. Filled in when you come from the app.
