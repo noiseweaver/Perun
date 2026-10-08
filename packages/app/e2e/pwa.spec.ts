@@ -41,7 +41,9 @@ test('About shows the version and links the licenses', async ({ page }) => {
   await page.getByTestId('file-menu').click();
   await page.getByTestId('menu-about').click();
   await expect(page.getByTestId('about-version')).toContainText(/Version \d+\.\d+\.\d+/);
-  await expect(page.getByTestId('about-author')).toContainText('Gady (github.com/critical-roll)');
+  await expect(page.getByTestId('about-author')).toContainText(
+    'Gadiel Zintu (github.com/noiseweaver)',
+  );
   const href = await page.getByTestId('about-third-party').getAttribute('href');
   const text = await page.evaluate(async (h) => (await fetch(h ?? '')).text(), href);
   expect(text).toContain('react-dom');

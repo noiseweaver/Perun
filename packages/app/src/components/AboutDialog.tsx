@@ -11,7 +11,7 @@ import { t } from '../i18n.ts';
 export const SOURCE_URL = 'https://github.com/noiseweaver/circuitsjs-next';
 export const UPSTREAM_URL = 'https://github.com/pfalstad/circuitjs1';
 /** The author and maintainer of circuitjs-next. */
-export const AUTHOR_URL = 'https://github.com/critical-roll';
+export const AUTHOR_URL = 'https://github.com/noiseweaver';
 
 /** The app's version, with the commit it was built from when known. */
 export function versionText(): string {
@@ -63,8 +63,8 @@ export function AboutDialog() {
           CircuitJS1.
         </p>
         <p data-testid="about-author">
-          circuitjs-next is made and maintained by Gady (
-          <Link href={AUTHOR_URL}>github.com/critical-roll</Link>).
+          circuitjs-next is made and maintained by Gadiel Zintu (
+          <Link href={AUTHOR_URL}>github.com/noiseweaver</Link>).
         </p>
         <p>
           CircuitJS1 is by Paul Falstad (<Link href="https://www.falstad.com/">falstad.com</Link>
