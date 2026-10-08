@@ -9,6 +9,7 @@ import { SwitchElm } from '@perun/elements';
 import { compressCircuit } from '@perun/format';
 import { shortcutMap } from './editor/catalog.ts';
 import { download } from './download.ts';
+import { embedConfig } from './embedConfig.ts';
 import { controller } from './SimController.ts';
 import { showToast, useApp } from './store.ts';
 
@@ -70,6 +71,8 @@ export { download };
 
 /** This page's address without its query, the base of exported links. */
 export function pageBase(): string {
+  // a frame in the Obsidian plugin has no address of its own: links open the web app
+  if (embedConfig !== null) return embedConfig.siteUrl;
   return window.location.href.split(/[?#]/)[0] ?? '';
 }
 

@@ -6,7 +6,9 @@
   "license": "GPL-2.0-or-later",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./embedConfig": "./src/embedConfig.ts",
+    "./sliders": "./src/sliders.ts"
   },
   "dependencies": {
     "@perun/elements": "workspace:*",

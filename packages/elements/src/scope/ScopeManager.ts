@@ -82,6 +82,8 @@ export class ScopeManager {
   mouseCursorY = -1;
   mouseElm: CircuitElm | null = null;
   dialogShowing = false;
+  /** Card look: draw the header's buttons (close, settings, dock, freeze). */
+  cardButtons = true;
   wheelSensitivity = 1;
   cursorScope: Scope | null = null;
   cursorTime = -1;

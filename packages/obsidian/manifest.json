@@ -1,0 +1,10 @@
+{
+  "id": "perun",
+  "name": "Perun",
+  "version": "1.0.0",
+  "minAppVersion": "1.5.7",
+  "description": "Live circuit simulations in your notes, and a full circuit editor for .circuit files. Based on Paul Falstad's CircuitJS.",
+  "author": "Gadiel Zintu",
+  "authorUrl": "https://github.com/noiseweaver",
+  "isDesktopOnly": false
+}

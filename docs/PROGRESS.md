@@ -1,13 +1,7 @@
 # Progress
 
-## 2026-10-08: op-amp supply rails (branch claude/opamp-supply-rails-02bdzt)
-
-Done: the ideal op-amp (OpAmpElm, both input orders) has a Show supply rails checkbox, off by
-default. When on, the symbol gets a short V+ and V- stub from the middle of each slanted side,
-where the transistor-level op-amp has its rail pins, coloured by and labelled with Max Output
-and Min Output (`+15V`, `-15V`, monospace). Drawing only; saved as the XML attribute `rl`
-(DEVIATIONS.md). The transistor-level op-amps already have real rail pins and are unchanged.
-Next: nothing for this feature. The new dialog label is English only in every language.
+This file is frozen. New entries go in [docs/progress/](progress/README.md), one file per
+change, so parallel pull requests don't conflict here.
 
 ## 2026-10-08: renamed to Perun (branch claude/rename-to-perun-0ajv88)
 
@@ -23,7 +17,8 @@ themes and the last circuit survive. The service worker cache is now `perun-<has
 
 Next: Gady renames the repository on GitHub (Settings > General > Repository name: perun). The old
 github.io address stops working then (Pages doesn't redirect), so the installed iPhone app must be
-reinstalled from the new address after the first deploy there.
+reinstalled from the new address after the first deploy there. Gady named the repository `Perun` (capital P); github.io paths are case-sensitive, so the site is
+https://noiseweaver.github.io/Perun/ and the links say so.
 Open: the self-heating e2e test (params.spec.ts) fails locally on main too, not caused by this.
 
 ## 2026-10-08: release polish, version 1.0.0 (branch claude/release-polish-pf6oiv)
