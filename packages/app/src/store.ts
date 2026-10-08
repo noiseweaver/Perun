@@ -32,6 +32,8 @@ export interface UserSettings {
   conventionalCurrent: boolean;
   /** Mark every connection: a dot where two ends meet, a larger one where three or more do. */
   junctionDots: boolean;
+  /** Keep current dots on screen, standing still, while the simulation is paused (upstream hides them). */
+  pausedDots: boolean;
   /** Options > Visualizations: field, charge and energy overlays. */
   fields: FieldOptions;
   /** Size of component value text on the canvas, as a fraction of 12 px (VALUE_SIZES). */
@@ -234,6 +236,7 @@ function loadSettings(): UserSettings {
     showOhm: false,
     conventionalCurrent: true,
     junctionDots: false,
+    pausedDots: true,
     fields: NO_FIELDS,
     wheelEdit: true,
     wiresFollow: true,
@@ -266,6 +269,7 @@ function loadSettings(): UserSettings {
           ? s.conventionalCurrent
           : defaults.conventionalCurrent,
       junctionDots: typeof s.junctionDots === 'boolean' ? s.junctionDots : defaults.junctionDots,
+      pausedDots: typeof s.pausedDots === 'boolean' ? s.pausedDots : defaults.pausedDots,
       fields: readFields(s) ?? defaults.fields,
       wheelEdit: typeof s.wheelEdit === 'boolean' ? s.wheelEdit : defaults.wheelEdit,
       wiresFollow: typeof s.wiresFollow === 'boolean' ? s.wiresFollow : defaults.wiresFollow,

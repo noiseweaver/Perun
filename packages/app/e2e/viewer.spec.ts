@@ -257,6 +257,23 @@ test('Junction dots marks every point where ends meet', async ({ page }) => {
   await expect.poll(() => canvasHash(page)).toBe(off);
 });
 
+test('Show current when paused keeps the dots on screen, standing still', async ({ page }) => {
+  await page.goto(`/?cct=${cct(TEE)}`);
+  await expect(page.getByTestId('circuit-title')).toBeVisible();
+  await expect.poll(() => simTime(page)).not.toBe('t = 0.000 s');
+  await page.getByTestId('run-stop').click();
+  await expect(page.getByTestId('run-stop')).toHaveText(/Run/);
+  // paused dots stand still: the picture holds
+  const shown = await canvasHash(page);
+  await expect.poll(() => canvasHash(page)).toBe(shown);
+  await page.getByTestId('options-menu').click();
+  await page.getByTestId('menu-paused-dots').click();
+  await expect.poll(() => canvasHash(page)).not.toBe(shown);
+  await page.getByTestId('options-menu').click();
+  await page.getByTestId('menu-paused-dots').click();
+  await expect.poll(() => canvasHash(page)).toBe(shown);
+});
+
 test('the community dark themes apply', async ({ page }) => {
   await page.goto(`/?cct=${cct(RC)}`);
   for (const id of ['nord', 'solarized-dark', 'gruvbox-dark', 'adwaita-dark']) {

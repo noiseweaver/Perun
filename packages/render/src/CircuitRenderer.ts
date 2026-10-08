@@ -28,6 +28,8 @@ export interface FrameState {
   currentMult: number;
   /** Circuit options. */
   showDots: boolean;
+  /** User setting: draw the dots, standing still, while the simulation is paused. */
+  pausedDots: boolean;
   voltageColors: boolean;
   showValues: boolean;
   voltageRange: number;
@@ -50,6 +52,7 @@ export const DEFAULT_FRAME: FrameState = {
   running: true,
   currentMult: 0,
   showDots: true,
+  pausedDots: true,
   voltageColors: true,
   showValues: true,
   voltageRange: 5,
@@ -301,7 +304,8 @@ export class CircuitRenderer {
     painter.settings = {
       voltageColors: frame.voltageColors,
       voltageRange: frame.voltageRange,
-      dots: frame.showDots && frame.running,
+      dots: frame.showDots && (frame.running || frame.pausedDots),
+      running: frame.running,
       valueScale: frame.valueScale,
     };
 

@@ -18,8 +18,10 @@ export interface PaintSettings {
   voltageColors: boolean;
   /** Full-scale voltage of the color scale. */
   voltageRange: number;
-  /** Draw current dots (circuit option and simulation running). */
+  /** Draw current dots (circuit option, and the simulation running or the paused-dots setting). */
   dots: boolean;
+  /** The simulation is running; paused dots stand still, so too-fast ones get a fixed phase. */
+  running?: boolean;
   /** Size of component value text, as a fraction of the 12 px default (user setting). */
   valueScale?: number;
 }
@@ -211,7 +213,7 @@ export class CanvasPainter implements Painter {
       c.lineTo(b.x, b.y);
       c.stroke();
       c.restore();
-      pos = this.random() * DOT_SPACING;
+      pos = this.settings.running === false ? DOT_SPACING / 2 : this.random() * DOT_SPACING;
     }
     pos %= DOT_SPACING;
     if (pos < 0) pos += DOT_SPACING;

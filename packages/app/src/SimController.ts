@@ -541,6 +541,7 @@ export class SimController {
           state.settings.conventionalCurrent,
         ),
         showDots: state.display.showDots,
+        pausedDots: state.settings.pausedDots,
         voltageColors: state.display.voltageColors,
         showValues: state.display.showValues,
         voltageRange: o.voltageRange,
