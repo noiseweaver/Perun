@@ -44,6 +44,11 @@ export class OpAmpElm extends CircuitElm {
   /** Gain-bandwidth product; has no effect, kept so the text format stays the same. */
   gbw = 1e6;
   lastvd = 0;
+  /**
+   * Draw the supply rails (Max and Min Output) as stubs on the symbol with their voltages. Not
+   * upstream: drawing only, saved as the extra XML attribute `rl` when set (docs/DEVIATIONS.md).
+   */
+  showRails = false;
 
   in1p: Point[] = [];
   in2p: Point[] = [];
@@ -96,6 +101,7 @@ export class OpAmpElm extends CircuitElm {
     w.dumpAttr('ma', this.maxOut);
     w.dumpAttr('mi', this.minOut);
     w.dumpAttr('ga', this.gain);
+    if (this.showRails) w.dumpAttr('rl', 1);
   }
 
   override undumpXml(r: XmlAttrReader): void {
@@ -104,6 +110,7 @@ export class OpAmpElm extends CircuitElm {
     this.maxOut = r.parseDoubleAttr('ma', this.maxOut);
     this.minOut = r.parseDoubleAttr('mi', this.minOut);
     this.gain = r.parseDoubleAttr('ga', this.gain);
+    this.showRails = r.parseIntAttr('rl', 0) !== 0;
     this.setSize((this.flags & OpAmpElm.FLAG_SMALL) !== 0 ? 1 : 2);
   }
 
@@ -236,6 +243,7 @@ export class OpAmpElm extends CircuitElm {
     if (n === 0) return new EditInfo('Max Output (V)', this.maxOut, 1, 20);
     if (n === 1) return new EditInfo('Min Output (V)', this.minOut, -20, 0);
     if (n === 2) return new EditInfo('Gain', this.gain, 10, 1000000).setPositive();
+    if (n === 3) return EditInfo.createCheckbox('Show supply rails', this.showRails);
     return null;
   }
 
@@ -243,6 +251,7 @@ export class OpAmpElm extends CircuitElm {
     if (n === 0) this.maxOut = ei.value;
     if (n === 1) this.minOut = ei.value;
     if (n === 2) this.gain = ei.value;
+    if (n === 3) this.showRails = ei.checkbox?.state === true;
   }
 
   override getShortcut(): number {
