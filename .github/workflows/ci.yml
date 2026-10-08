@@ -18,17 +18,16 @@ jobs:
           # the viewer serves upstream's example circuits from the reference submodule
           submodules: true
       - name: Frozen notes are not edited
-        if: github.event_name == 'pull_request'
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        # The frozen files must keep exactly this content (git hash-object). A pull request
+        # that merges main and resolves a conflict in them by keeping its own side fails here.
         run: |
-          git fetch --no-tags --depth=1 origin "$BASE_SHA"
-          # bases from before the per-change folders existed are not checked
-          git cat-file -e "$BASE_SHA:docs/progress/README.md" 2>/dev/null || exit 0
-          if git diff --name-only "$BASE_SHA" HEAD -- docs/PROGRESS.md docs/DEVIATIONS.md | grep .; then
-            echo "::error::docs/PROGRESS.md and docs/DEVIATIONS.md are frozen. Put the entry in docs/progress/ or docs/deviations/ (see their README)."
-            exit 1
-          fi
+          echo "26aeceaefd52762ecf5e083dd7a4bad784d7479b  docs/PROGRESS.md
+          51416cc645c8d074a34e5f4cd3ea8e71e3c3f52f  docs/DEVIATIONS.md" | while read -r want file; do
+            if [ "$(git hash-object "$file")" != "$want" ]; then
+              echo "::error file=$file::$file is frozen. Restore it from main and put the entry in docs/progress/ or docs/deviations/ (see their README)."
+              exit 1
+            fi
+          done
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
