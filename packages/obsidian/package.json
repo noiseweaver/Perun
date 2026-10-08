@@ -1,0 +1,22 @@
+{
+  "name": "@perun/obsidian",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Obsidian plugin: live circuit blocks in notes and the full editor for .circuit files.",
+  "license": "GPL-2.0-or-later",
+  "type": "module",
+  "dependencies": {
+    "@perun/elements": "workspace:*",
+    "@perun/format": "workspace:*",
+    "@perun/render": "workspace:*",
+    "@perun/theme": "workspace:*"
+  },
+  "scripts": {
+    "build": "node build.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@perun/app": "workspace:*",
+    "obsidian": "^1.13.1"
+  }
+}

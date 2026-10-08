@@ -1,5 +1,7 @@
 node_modules/
 dist/
+dist-embed/
+packages/obsidian/generated/
 coverage/
 .reference-site/
 test-results/

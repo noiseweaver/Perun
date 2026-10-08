@@ -20,17 +20,22 @@ function commit(): string {
   }
 }
 
-export default defineConfig({
+// `vite build --mode embed` builds the copy the Obsidian plugin runs in a frame (packages/obsidian):
+// relative paths, fonts inlined into the stylesheet, no service worker.
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     upstreamExamples(UPSTREAM_PUBLIC),
     bundledLicenses(root('LICENSE')),
-    serviceWorker(),
+    ...(mode === 'embed' ? [] : [serviceWorker()]),
   ],
+  ...(mode === 'embed'
+    ? { base: './', build: { outDir: 'dist-embed', assetsInlineLimit: 1 << 24 } }
+    : {}),
   server: { port: 5173, strictPort: true },
   define: {
     'import.meta.env.APP_VERSION': JSON.stringify(version),
     'import.meta.env.APP_COMMIT': JSON.stringify(commit()),
     'import.meta.env.APP_BUILD_DATE': JSON.stringify(new Date().toISOString().slice(0, 10)),
   },
-});
+}));

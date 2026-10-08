@@ -34,6 +34,7 @@ packages/format    circuit text/XML and URL parse/serialize. -> elements
 packages/theme     theme schema, validation, built-ins. Depends on nothing.
 packages/render    Canvas 2D Painter, scene, hit testing. -> elements, theme
 packages/app       UI shell. -> everything
+packages/obsidian  Obsidian plugin (blocks, and the app in a frame for .circuit files). -> elements, format, render, theme; app types only
 tools/             reference build and patch, golden harness, recon scripts, ESLint rules
 fixtures/golden/   recorded reference traces (JSON), one per tools/golden/manifest.json entry
 docs/              PLAN, progress/, deviations/, PROGRESS + DEVIATIONS (frozen), UPSTREAM, ELEMENTS, ENGINE-NOTES, THEMES
