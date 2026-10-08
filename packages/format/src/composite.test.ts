@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import {
   constructElement,
@@ -9,7 +9,7 @@ import {
   SIDE_E,
   SIDE_W,
   type CustomCompositeModel,
-} from '@circuitjs-next/elements';
+} from '@perun/elements';
 import { describe, expect, it } from 'vitest';
 import { Circuit, getCircuitAsComposite, readCircuit } from './circuit.ts';
 

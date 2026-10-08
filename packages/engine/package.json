@@ -1,5 +1,5 @@
 {
-  "name": "@circuitjs-next/engine",
+  "name": "@perun/engine",
   "version": "0.0.0",
   "private": true,
   "description": "MNA simulation engine. No DOM.",

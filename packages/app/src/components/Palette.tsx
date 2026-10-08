@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import { Simulation, constructElement } from '@circuitjs-next/elements';
-import { drawPreview } from '@circuitjs-next/render';
+import { Simulation, constructElement } from '@perun/elements';
+import { drawPreview } from '@perun/render';
 import { useEffect, useRef, useState } from 'react';
 import { searchPalette, type PaletteGroup, type PaletteItem } from '../editor/catalog.ts';
 import { controller } from '../SimController.ts';

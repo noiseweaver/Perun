@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // The bottom area follows CircuitJS1 UIManager.drawBottomArea
 // (src/com/lushprojects/circuitjs1/client/UIManager.java, master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032: scopes on the left, the info text right of them.
@@ -13,9 +13,9 @@ import type {
   ScopeDrop,
   ScopeRect,
   ScopeTextStyle,
-} from '@circuitjs-next/elements';
-import { CARD_GAP, drawLeader } from '@circuitjs-next/elements';
-import { fullRadius, luminance, rgba, shapeRadius, toCss, type Theme } from '@circuitjs-next/theme';
+} from '@perun/elements';
+import { CARD_GAP, drawLeader } from '@perun/elements';
+import { fullRadius, luminance, rgba, shapeRadius, toCss, type Theme } from '@perun/theme';
 
 /** Scope inks resolved to CSS colors for one theme. */
 export class ScopePalette {

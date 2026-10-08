@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import {
   CapacitorElm,
@@ -20,8 +20,8 @@ import {
   mosfetGeometry,
   temperatureOf,
   type CircuitElm,
-} from '@circuitjs-next/elements';
-import { parseColor, toCss } from '@circuitjs-next/theme';
+} from '@perun/elements';
+import { parseColor, toCss } from '@perun/theme';
 import type { Palette } from './palette.ts';
 
 /**

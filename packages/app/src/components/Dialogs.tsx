@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Save and export dialogs after CircuitJS1 ExportAsLocalFileDialog, ExportAsUrlDialog,
 // ExportAsTextDialog, ImportFromTextDialog, ShortcutsDialog and the time step fields of EditOptions
 // (src/com/lushprojects/circuitjs1/client/, master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032.
 
-import { getUnitText, parseUnits } from '@circuitjs-next/elements';
+import { getUnitText, parseUnits } from '@perun/elements';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useEffect, useState } from 'react';
 import {

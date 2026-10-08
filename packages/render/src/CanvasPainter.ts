@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import {
   CURRENT_TOO_FAST,
@@ -8,8 +8,8 @@ import {
   type Pt,
   type StrokeStyle,
   type TextStyle,
-} from '@circuitjs-next/elements';
-import { parseColor, toCss, type Rgba } from '@circuitjs-next/theme';
+} from '@perun/elements';
+import { parseColor, toCss, type Rgba } from '@perun/theme';
 import type { Palette } from './palette.ts';
 
 /** Drawing settings for one frame. */

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import type { Theme } from '../schema.ts';
 import { dark } from './dark.ts';
@@ -13,7 +13,7 @@ export const light: Theme = {
   schemaVersion: 1,
   meta: {
     name: 'Light',
-    author: 'circuitjs-next',
+    author: 'Perun',
     description: 'Paper white background with deep voltage colors',
     base: 'light',
   },

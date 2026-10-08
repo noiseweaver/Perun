@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 /*
  * Fuzz test of the theme decoders (PLAN.md Phase 7 acceptance): malformed input of every kind

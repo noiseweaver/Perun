@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Live formula cards (PLAN.md Phase 19, not in upstream): the law a part follows, with the
 // numbers the engine has for it right now. Display only: it reads element state and changes

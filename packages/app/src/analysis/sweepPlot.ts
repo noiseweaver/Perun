@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import { getShortUnitText } from '@circuitjs-next/elements';
-import type { Theme } from '@circuitjs-next/theme';
+import { getShortUnitText } from '@perun/elements';
+import type { Theme } from '@perun/theme';
 import { interpolate, type BodePoint } from './bode.ts';
 import { bodeLayout, drawBodeGrid, xAtFreq, type BodeLayout } from './bodePlot.ts';
 import { valueAt, type RunResult } from './sweep.ts';

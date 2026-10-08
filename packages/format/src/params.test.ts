@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Subcircuit parameters (PLAN.md Phase 16) and circuit temperature (Phase 15): what they do to
 // the simulation, and that files without them save exactly as before.
 
@@ -12,7 +12,7 @@ import {
   modelsFor,
   ResistorElm,
   type CustomCompositeModel,
-} from '@circuitjs-next/elements';
+} from '@perun/elements';
 import { describe, expect, it } from 'vitest';
 import { Circuit, getCircuitAsComposite, readCircuit } from './circuit.ts';
 

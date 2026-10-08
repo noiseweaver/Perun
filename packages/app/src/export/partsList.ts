@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import { GraphicElm, getUnitText, type CircuitElm, type EditInfo } from '@circuitjs-next/elements';
+import { GraphicElm, getUnitText, type CircuitElm, type EditInfo } from '@perun/elements';
 import { paletteItem } from '../editor/catalog.ts';
 
 /** One line of a parts list (bill of materials): identical parts are counted together. */

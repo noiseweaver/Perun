@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import type { Theme } from '../schema.ts';
 import { dark } from './dark.ts';
@@ -57,7 +57,7 @@ function mix(a: string, b: string, w: number): string {
 function paletteTheme(p: Palette): Theme {
   return {
     schemaVersion: 1,
-    meta: { name: p.name, author: 'circuitjs-next', description: p.description, base: p.base },
+    meta: { name: p.name, author: 'Perun', description: p.description, base: p.base },
     canvas: { background: p.bg, grid: p.grid, gridMajor: p.gridMajor },
     circuit: {
       voltage: { negative: p.red, zero: p.zero, positive: p.green },

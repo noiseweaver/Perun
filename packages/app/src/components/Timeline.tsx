@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Rewind and scrub (PLAN.md Phase 20, not in upstream): a timeline over the last seconds of the
 // run. Dragging it shows a recorded frame (the run pauses); Play replays from there at the pace it

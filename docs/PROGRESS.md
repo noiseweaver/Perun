@@ -1,5 +1,20 @@
 # Progress
 
+## 2026-10-08: renamed to Perun (branch claude/rename-to-perun-0ajv88)
+
+Done: the project is called Perun everywhere it names itself: page title, home screen name (was
+"Circuits"), PWA manifest, link previews, About (all 16 languages), README, theme schema and
+built-in theme author, the licenses page, file headers ("Perun contributors"), package names
+(`perun`, `@perun/*`) and docs. The test hook is `window.perun`. Kept on purpose: the repository
+and GitHub Pages address (`circuitsjs-next`), and the local storage keys and IndexedDB database
+(`circuitjs-next...`), so settings, saved themes and the last circuit survive. The service worker
+cache is now `perun-<hash>` and clears old `circuitjs-next-` caches. The upstream credit to Paul
+Falstad and Iain Sharp is unchanged.
+
+Next: Gady decides whether to rename the repository and address too (the installed app would
+need reinstalling). An installed iPhone app keeps its old home screen name until reinstalled.
+Open: the self-heating e2e test (params.spec.ts) fails locally on main too, not caused by this.
+
 ## 2026-10-08: release polish, version 1.0.0 (branch claude/release-polish-pf6oiv)
 
 Done: About and the README credit Gadiel Zintu (github.com/noiseweaver) as maker and maintainer.

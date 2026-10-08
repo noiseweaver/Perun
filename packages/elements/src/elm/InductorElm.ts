@@ -2,19 +2,19 @@
 // Ported from CircuitJS1 src/com/lushprojects/circuitjs1/client/InductorElm.java and Inductor.java (master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032, with ts/InductorElm.ts (dev-ts) at
 // 7ec858d662d8be1d76d54241ba3a5c1d1c524f51 for the node-voltage model.
-// Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) circuitjs-next contributors.
+// Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) Perun contributors.
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
-import { FindPathInfo, PathType, type CircuitNode, type SimElement } from '@circuitjs-next/engine';
+import { FindPathInfo, PathType, type CircuitNode, type SimElement } from '@perun/engine';
 import { CircuitElm, elementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { parseJavaDouble } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { getUnitText } from '../view/units.ts';
-import type { Point } from '@circuitjs-next/engine';
+import type { Point } from '@perun/engine';
 
 /** Inductor companion model, shared with transformers and relays (upstream `Inductor`). */
 export class Inductor {

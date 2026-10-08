@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // pnpm i18n [--missing]
 // How much of the interface each upstream string catalog translates. It collects the English

@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import type { CircuitElm, TextFont } from '@circuitjs-next/elements';
+import type { CircuitElm, TextFont } from '@perun/elements';
 import {
   BUILTIN_THEMES,
   DEFAULT_THEME_ID,
   builtinTheme,
   parseTheme,
   type Theme,
-} from '@circuitjs-next/theme';
-import { ALL_FIELDS, NO_FIELDS, type FieldOptions } from '@circuitjs-next/render';
+} from '@perun/theme';
+import { ALL_FIELDS, NO_FIELDS, type FieldOptions } from '@perun/render';
 import { create } from 'zustand';
 import type { ExampleList } from './examples.ts';
 
@@ -217,6 +217,8 @@ export function shownTheme(s: Pick<AppState, 'theme' | 'preview'>): Theme {
   return s.preview?.theme ?? s.theme;
 }
 
+// Storage keys (here and elsewhere) keep the project's old name, circuitjs-next, so settings,
+// themes and the last circuit saved before the rename to Perun are still found.
 const SETTINGS_KEY = 'circuitjs-next.settings.v2';
 /**
  * Version 1 saved the default theme (Classic) along with any other setting, so its theme is not

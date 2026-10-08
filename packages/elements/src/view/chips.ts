@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Geometry learned from CircuitJS1 ChipElm.drawChip, SevenSegElm.draw, DecimalDisplayElm.draw,
 // LEDArrayElm.draw and VCOElm.draw (src/com/lushprojects/circuitjs1/client/, master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032; the drawing code is new.

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Phase 9: making a subcircuit from the circuit, placing it, and editing its model's circuit.
 
 import { expect, test, type Page } from '@playwright/test';
-import { compressCircuit } from '@circuitjs-next/format';
+import { compressCircuit } from '@perun/format';
 
 /** A divider between labels "top" and "bot", tapped by "mid". */
 const DIVIDER =
@@ -19,23 +19,21 @@ const DIVIDER =
 const open = async (page: Page, text: string): Promise<void> => {
   await page.goto(`/?ctz=${compressCircuit(text)}`);
   await expect(page.getByTestId('circuit-canvas')).toBeVisible();
-  await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+  await page.waitForFunction(() => (window.perun?.controller.frames ?? 0) > 2);
 };
 
 const at = async (page: Page, x: number, y: number): Promise<{ x: number; y: number }> => {
   const box = await page.getByTestId('circuit-canvas').boundingBox();
-  const p = await page.evaluate(
-    ([x, y]) => window.circuitjsNext?.controller.toScreen(x, y) ?? null,
-    [x, y] as const,
-  );
+  const p = await page.evaluate(([x, y]) => window.perun?.controller.toScreen(x, y) ?? null, [
+    x,
+    y,
+  ] as const);
   if (!box || !p) throw new Error('no canvas');
   return { x: box.x + p.x, y: box.y + p.y };
 };
 
 const classes = (page: Page): Promise<string[]> =>
-  page.evaluate(
-    () => window.circuitjsNext?.controller.circuit.elements.map((e) => e.getClassName()) ?? [],
-  );
+  page.evaluate(() => window.perun?.controller.circuit.elements.map((e) => e.getClassName()) ?? []);
 
 test('File > Create Subcircuit makes a model that can be placed and edited', async ({ page }) => {
   await open(page, DIVIDER);
@@ -65,7 +63,7 @@ test('File > Create Subcircuit makes a model that can be placed and edited', asy
   await page.mouse.up();
   await expect.poll(() => classes(page)).toContain('CustomCompositeElm');
   const size = await page.evaluate(() => {
-    const e = window.circuitjsNext?.controller.circuit.elements.find(
+    const e = window.perun?.controller.circuit.elements.find(
       (x) => x.getClassName() === 'CustomCompositeElm',
     ) as unknown as { model: { sizeX: number; sizeY: number; showLabel(): boolean } } | undefined;
     return e ? [e.model.sizeX, e.model.sizeY, e.model.showLabel()] : null;
@@ -76,7 +74,7 @@ test('File > Create Subcircuit makes a model that can be placed and edited', asy
   await page.keyboard.press('Escape');
   const middle = () =>
     page.evaluate(() => {
-      const e = window.circuitjsNext?.controller.circuit.elements.find(
+      const e = window.perun?.controller.circuit.elements.find(
         (x) => x.getClassName() === 'CustomCompositeElm',
       );
       if (!e) return null;

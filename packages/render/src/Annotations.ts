@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Teaching tools (PLAN.md Phase 9): pencil strokes drawn over the circuit and a laser pointer
 // whose trail fades out. Not in upstream. Strokes live in circuit coordinates, so they move and
 // zoom with the circuit; they are an overlay only and never saved in the circuit file.
 
-import type { Theme } from '@circuitjs-next/theme';
+import type { Theme } from '@perun/theme';
 import type { Viewport } from './Viewport.ts';
 
 export interface Pt {

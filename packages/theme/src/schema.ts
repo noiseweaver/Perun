@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
 import { z } from 'zod';
 import { parseColor } from './color.ts';
@@ -289,4 +289,4 @@ export const themeInputSchema = z
       .optional()
       .describe('Line widths, grid and fonts.'),
   })
-  .describe('A circuitjs-next theme. Every key but schemaVersion is optional.');
+  .describe('A Perun theme. Every key but schemaVersion is optional.');

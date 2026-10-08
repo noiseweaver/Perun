@@ -1699,7 +1699,7 @@
 "A new version is ready."="Hi ha una versió nova a punt."
 "A smaller time step is more accurate but makes the simulation run slower."="Un pas de temps més petit és més precís, però fa que la simulació vagi més lenta."
 "About"="Quant a"
-"About circuitjs-next"="Quant a circuitjs-next"
+"About Perun"="Quant a Perun"
 "Add"="Afegeix"
 "Add it to your themes and keep your current one"="Afegeix-lo als vostres temes i mantén l'actual"
 "Add it to your themes and use it"="Afegeix-lo als vostres temes i fes-lo servir"

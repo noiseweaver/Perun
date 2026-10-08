@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import { formulasFor, type CircuitElm, type FormulaLaw } from '@circuitjs-next/elements';
+import { formulasFor, type CircuitElm, type FormulaLaw } from '@perun/elements';
 import { useEffect, useState } from 'react';
 import { controller } from '../SimController.ts';
 import { t } from '../i18n.ts';

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // The card look for scopes, this port's own: each scope sits in a card with a header (title,
 // time scale, settings and close buttons), legend chips with live values, the readouts upstream

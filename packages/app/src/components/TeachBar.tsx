@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // The teaching toolbar (PLAN.md Phase 9, not in upstream): pencil, laser pointer and eraser, the
 // theme's pen colors, Undo and Clear. Drawings are an overlay and never saved with the circuit.

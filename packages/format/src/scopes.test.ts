@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import { ScopeElm, plotName } from '@circuitjs-next/elements';
+import { ScopeElm, plotName } from '@perun/elements';
 import { describe, expect, it } from 'vitest';
 import { Circuit, readCircuit } from './circuit.ts';
 

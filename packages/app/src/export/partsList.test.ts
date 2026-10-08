@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import { Circuit } from '@circuitjs-next/format';
+import { Circuit } from '@perun/format';
 import { describe, expect, it } from 'vitest';
 import { partsCsv, partsList } from './partsList.ts';
 

@@ -1,4 +1,4 @@
-# circuitjs-next
+# Perun
 
 An electronic circuit simulator that runs in the browser: a TypeScript rebuild of
 [CircuitJS1](https://github.com/pfalstad/circuitjs1), Paul Falstad's simulator, with a new interface
@@ -57,8 +57,8 @@ Requires Node 22.13 or later and pnpm 10. Docker is needed only for the upstream
 git clone --recurse-submodules https://github.com/noiseweaver/circuitsjs-next
 cd circuitsjs-next
 pnpm install
-pnpm --filter @circuitjs-next/app dev     # http://localhost:5173
-pnpm --filter @circuitjs-next/app build   # static site in packages/app/dist
+pnpm --filter @perun/app dev     # http://localhost:5173
+pnpm --filter @perun/app build   # static site in packages/app/dist
 pnpm check                                # typecheck, lint, format check, unit tests
 pnpm test:e2e                             # Playwright browser tests
 ```
@@ -99,7 +99,7 @@ and/or modify it under the terms of the GNU General Public License as published 
 Software Foundation, either version 2 of the License, or (at your option) any later version. It is
 distributed in the hope that it will be useful, but without any warranty.
 
-circuitjs-next is made and maintained by Gadiel Zintu ([github.com/noiseweaver](https://github.com/noiseweaver)).
+Perun is made and maintained by Gadiel Zintu ([github.com/noiseweaver](https://github.com/noiseweaver)).
 
 CircuitJS1 is Copyright (C) Paul Falstad and Iain Sharp ([falstad.com](https://www.falstad.com/),
 [lushprojects.com](http://lushprojects.com/)), with the contributors its README and About box

@@ -2,12 +2,12 @@
 // Ported from CircuitJS1 src/com/lushprojects/circuitjs1/client/WireElm.java (master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032, with ts/WireElm.ts (dev-ts) at
 // 7ec858d662d8be1d76d54241ba3a5c1d1c524f51 for the node-voltage model.
-// Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) circuitjs-next contributors.
+// Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) Perun contributors.
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
-import { Point, type BusWidthMaps } from '@circuitjs-next/engine';
+import { Point, type BusWidthMaps } from '@perun/engine';
 import { CircuitElm, elementType, lineDistanceSq } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { getCurrentDText, getVoltageText } from '../view/units.ts';

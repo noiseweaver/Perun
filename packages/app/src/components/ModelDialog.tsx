@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Follows CircuitJS1 EditDialog (src/com/lushprojects/circuitjs1/client/EditDialog.java, master)
 // at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032, as upstream opens it on a model: the values apply
 // together with OK (or Apply), while checkboxes and choices apply as soon as they change.
 
-import { parseUnits, unitString, type EditInfo } from '@circuitjs-next/elements';
+import { parseUnits, unitString, type EditInfo } from '@perun/elements';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useState } from 'react';
 import { openDialog } from '../commands.ts';

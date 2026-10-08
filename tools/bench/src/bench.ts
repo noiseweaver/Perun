@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // pnpm bench [--alloc] [--json out.json] [file.txt ...]
 // Profiles the engine on every bundled upstream example (PLAN.md Phase 9): matrix sizes, steps
@@ -8,7 +8,7 @@
 
 import { Session } from 'node:inspector/promises';
 import { writeFileSync } from 'node:fs';
-import { JavaRandom, readCircuit } from '@circuitjs-next/format';
+import { JavaRandom, readCircuit } from '@perun/format';
 import { exampleFiles, readExample } from '../../golden/src/examples.ts';
 
 export interface BenchResult {

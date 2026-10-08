@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // The card look's waveform ruler, this port's own: the cursor snaps to peaks, troughs and
 // crossings of the trace's mid level, and reads the period between like events.

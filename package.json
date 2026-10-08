@@ -1,5 +1,5 @@
 {
-  "name": "circuitjs-next",
+  "name": "perun",
   "private": true,
   "version": "1.0.0",
   "description": "TypeScript rebuild of CircuitJS1 with a new UI and a JSON theme system",
@@ -30,8 +30,8 @@
     "theme:docs": "node tools/theme-docs/src/generate.ts"
   },
   "dependencies": {
-    "@circuitjs-next/format": "workspace:*",
-    "@circuitjs-next/theme": "workspace:*"
+    "@perun/format": "workspace:*",
+    "@perun/theme": "workspace:*"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

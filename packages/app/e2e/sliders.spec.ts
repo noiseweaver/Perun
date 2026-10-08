@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Live sliders: a pot's slider and an added ("Sliders…") slider move their values, undo puts them
 // back, and the Sliders dialog adds a slider that is saved with the circuit.
 
 import { expect, test, type Page } from '@playwright/test';
-import { compressCircuit } from '@circuitjs-next/format';
+import { compressCircuit } from '@perun/format';
 
 /** A pot between two 5 V sources (upstream pot.txt). */
 const POT =
@@ -29,11 +29,11 @@ const ADJ =
 const open = async (page: Page, text: string): Promise<void> => {
   await page.goto(`/?ctz=${compressCircuit(text)}`);
   await expect(page.getByTestId('circuit-canvas')).toBeVisible();
-  await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+  await page.waitForFunction(() => (window.perun?.controller.frames ?? 0) > 2);
 };
 
 const save = (page: Page): Promise<string> =>
-  page.evaluate(() => window.circuitjsNext?.controller.saveText() ?? '');
+  page.evaluate(() => window.perun?.controller.saveText() ?? '');
 
 test('a pot slider moves the wiper, and undo puts it back', async ({ page }) => {
   await open(page, POT);
@@ -41,7 +41,7 @@ test('a pot slider moves the wiper, and undo puts it back', async ({ page }) => 
   await expect(panel).toContainText('Resistance');
   const position = () =>
     page.evaluate(() => {
-      const e = window.circuitjsNext?.controller.circuit.elements[5] as unknown as {
+      const e = window.perun?.controller.circuit.elements[5] as unknown as {
         position: number;
       };
       return e.position;
@@ -62,9 +62,7 @@ test('an added slider sets its value and keeps a fixed-width readout', async ({ 
   const panel = page.getByTestId('slider-panel');
   await expect(panel).toContainText('Load');
   const resistance = () =>
-    page.evaluate(
-      () => window.circuitjsNext?.controller.circuit.elements[1]?.getEditInfo(0)?.value ?? 0,
-    );
+    page.evaluate(() => window.perun?.controller.circuit.elements[1]?.getEditInfo(0)?.value ?? 0);
   const value = panel.getByTestId('slider-value');
   const width = (await value.textContent())?.length;
   await panel.getByRole('slider', { name: 'Load' }).focus();
@@ -81,7 +79,7 @@ test('the Sliders dialog adds a slider to a value', async ({ page }) => {
   await open(page, ADJ);
   // the resistor already has one; add one to the source's DC offset (or any other value)
   await page.evaluate(() => {
-    const c = window.circuitjsNext?.controller;
+    const c = window.perun?.controller;
     const v = c?.circuit.elements[0];
     if (c && v) c.openSliderDialog(v);
   });
@@ -104,7 +102,7 @@ test('deleting an element removes its slider', async ({ page }) => {
   await open(page, ADJ);
   await expect(page.getByTestId('slider-panel')).toBeVisible();
   await page.evaluate(() => {
-    const c = window.circuitjsNext?.controller;
+    const c = window.perun?.controller;
     const r = c?.circuit.elements[1];
     if (c && r) c.editor.deleteSelected(r);
   });

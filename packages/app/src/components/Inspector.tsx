@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // Fields follow CircuitJS1 EditDialog (src/com/lushprojects/circuitjs1/client/EditDialog.java,
 // master) at 5a707168778216bb6ed01bfdd62e8bbf7ae0a032: the element lists its fields with
 // getEditInfo and takes values back with setEditValue. Unlike upstream's dialog, each field
@@ -16,7 +16,7 @@ import {
   toleranceEditInfo,
   toleranceFromEditInfo,
   unitString,
-} from '@circuitjs-next/elements';
+} from '@perun/elements';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';

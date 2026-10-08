@@ -3,12 +3,12 @@
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032, with ScopePropertiesDialog.nextHighestScale. Drawing
 // goes through ScopeGraphics with semantic inks instead of upstream's colors; the card look
 // (ScopeCardView.ts) is this port's own.
-// Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) circuitjs-next contributors.
+// Copyright (C) Paul Falstad and Iain Sharp; port Copyright (C) Perun contributors.
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
-import type { Simulation } from '@circuitjs-next/engine';
+import type { Simulation } from '@perun/engine';
 import type { CircuitElm } from '../CircuitElm.ts';
 import { OHM, getTimeText } from '../view/units.ts';
 import {

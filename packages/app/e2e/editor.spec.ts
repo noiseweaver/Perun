@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Phase 5 acceptance: the core editing flows, driven with the mouse and keyboard as a user would.
 
 import { expect, test, type Page } from '@playwright/test';
-import { compressCircuit } from '@circuitjs-next/format';
+import { compressCircuit } from '@perun/format';
 
 const BLANK = '$ 1 5.0E-6 10 50 5.0\n';
 
@@ -19,16 +19,16 @@ const LOOP =
 const open = async (page: Page, text: string): Promise<void> => {
   await page.goto(`/?ctz=${compressCircuit(text)}`);
   await expect(page.getByTestId('circuit-canvas')).toBeVisible();
-  await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+  await page.waitForFunction(() => (window.perun?.controller.frames ?? 0) > 2);
 };
 
 /** Page coordinates of a circuit point. */
 const at = async (page: Page, x: number, y: number): Promise<{ x: number; y: number }> => {
   const box = await page.getByTestId('circuit-canvas').boundingBox();
-  const p = await page.evaluate(
-    ([x, y]) => window.circuitjsNext?.controller.toScreen(x, y) ?? null,
-    [x, y] as const,
-  );
+  const p = await page.evaluate(([x, y]) => window.perun?.controller.toScreen(x, y) ?? null, [
+    x,
+    y,
+  ] as const);
   if (!box || !p) throw new Error('no canvas');
   return { x: box.x + p.x, y: box.y + p.y };
 };
@@ -55,7 +55,7 @@ const clickCircuit = async (page: Page, x: number, y: number): Promise<void> => 
 type ElmInfo = { cls: string; pos: number[]; selected: boolean };
 const elements = (page: Page): Promise<ElmInfo[]> =>
   page.evaluate(() =>
-    (window.circuitjsNext?.controller.circuit.elements ?? []).map((e) => ({
+    (window.perun?.controller.circuit.elements ?? []).map((e) => ({
       cls: e.getClassName(),
       pos: [e.x, e.y, e.x2, e.y2],
       selected: e.selected,
@@ -65,9 +65,8 @@ const elements = (page: Page): Promise<ElmInfo[]> =>
 const resistorCurrent = (page: Page): Promise<number> =>
   page.evaluate(
     () =>
-      window.circuitjsNext?.controller.circuit.elements.find(
-        (e) => e.getClassName() === 'ResistorElm',
-      )?.current ?? NaN,
+      window.perun?.controller.circuit.elements.find((e) => e.getClassName() === 'ResistorElm')
+        ?.current ?? NaN,
   );
 
 test('clicking an element selects it and dragging moves it', async ({ page }) => {
@@ -139,7 +138,7 @@ test('the property panel edits values while the circuit runs', async ({ page }) 
   await field.fill('2k2');
   await field.press('Enter');
   await expect.poll(() => resistorCurrent(page)).toBeCloseTo(10 / 2200, 6);
-  const t = await page.evaluate(() => window.circuitjsNext?.controller.circuit.sim.t ?? 0);
+  const t = await page.evaluate(() => window.perun?.controller.circuit.sim.t ?? 0);
   expect(t).toBeGreaterThan(0);
   // undo restores the old value
   await page.getByTestId('circuit-canvas').focus();
@@ -185,7 +184,7 @@ test('save downloads the circuit and export link reopens it', async ({ page }) =
   await page.getByTestId('save-ok').click();
   const file = await download;
   expect(file.suggestedFilename()).toBe('loop.txt');
-  const saved = (await page.evaluate(() => window.circuitjsNext?.controller.saveText())) ?? '';
+  const saved = (await page.evaluate(() => window.perun?.controller.saveText())) ?? '';
   expect(saved.startsWith('<cir ')).toBe(true);
   expect(saved).toContain('<r x="96 96 256 96"');
 
@@ -196,8 +195,8 @@ test('save downloads the circuit and export link reopens it', async ({ page }) =
   expect(upstream.startsWith('https://www.falstad.com/circuit/circuitjs.html?ctz=')).toBe(true);
   expect(here.split('?ctz=')[1]).toBe(upstream.split('?ctz=')[1]);
   await page.goto(here);
-  await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
-  const again = await page.evaluate(() => window.circuitjsNext?.controller.saveText());
+  await page.waitForFunction(() => (window.perun?.controller.frames ?? 0) > 2);
+  const again = await page.evaluate(() => window.perun?.controller.saveText());
   expect(again).toBe(saved);
 });
 
@@ -207,7 +206,7 @@ test('a trackpad swipe pans, a pinch zooms, a mouse wheel zooms and shift+wheel 
   await open(page, LOOP);
   const view = () =>
     page.evaluate(() => {
-      const c = window.circuitjsNext?.controller;
+      const c = window.perun?.controller;
       const a = c?.toScreen(0, 0);
       const b = c?.toScreen(100, 0);
       return a && b ? { x: a.x, y: a.y, scale: (b.x - a.x) / 100 } : null;
@@ -322,7 +321,7 @@ test.describe('on a touch screen', () => {
     );
     const view = () =>
       page.evaluate(() => {
-        const c = window.circuitjsNext?.controller;
+        const c = window.perun?.controller;
         const a = c?.toScreen(0, 0);
         const b = c?.toScreen(100, 0);
         return a && b ? { x: a.x, y: a.y, scale: (b.x - a.x) / 100 } : null;
@@ -454,12 +453,12 @@ test('a text box has its own font, saved with the circuit', async ({ page }) => 
   await expect(font).toHaveValue('0');
   await font.selectOption({ label: 'Serif' });
   await page.getByRole('combobox', { name: 'Style' }).selectOption({ label: 'Bold' });
-  const xml = await page.evaluate(() => window.circuitjsNext?.controller.saveText() ?? '');
+  const xml = await page.evaluate(() => window.perun?.controller.saveText() ?? '');
   expect(xml).toContain('ff="serif"');
   expect(xml).toContain('fs="bold"');
   await page.getByTestId('undo').click();
   await expect
-    .poll(() => page.evaluate(() => window.circuitjsNext?.controller.saveText() ?? ''))
+    .poll(() => page.evaluate(() => window.perun?.controller.saveText() ?? ''))
     .not.toContain('fs="bold"');
 });
 
@@ -472,7 +471,7 @@ test('a routed wire goes around an element in its way, and its middle drags a ne
   await dragCircuit(page, [160, 160], [352, 160]);
   const route = (): Promise<number[][]> =>
     page.evaluate(() => {
-      const w = window.circuitjsNext?.controller.circuit.elements.find(
+      const w = window.perun?.controller.circuit.elements.find(
         (e) => e.getClassName() === 'RoutedWireElm',
       ) as unknown as { route(): { x: number; y: number }[] } | undefined;
       return (w?.route() ?? []).map((p) => [p.x, p.y]);
@@ -518,7 +517,7 @@ test('a diode gets a new model from the model dialog', async ({ page }) => {
   const modelName = await page.evaluate(
     () =>
       (
-        window.circuitjsNext?.controller.circuit.elements.find(
+        window.perun?.controller.circuit.elements.find(
           (e) => e.getClassName() === 'DiodeElm',
         ) as unknown as { modelName: string } | undefined
       )?.modelName,
@@ -534,10 +533,10 @@ test.describe('drag to select on a touch screen', () => {
 
   test('one finger draws a selection box once the toggle is on', async ({ page }) => {
     await page.goto('/');
-    await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+    await page.waitForFunction(() => (window.perun?.controller.frames ?? 0) > 2);
     const selected = () =>
       page.evaluate(
-        () => window.circuitjsNext?.controller.circuit.elements.filter((e) => e.selected).length,
+        () => window.perun?.controller.circuit.elements.filter((e) => e.selected).length,
       );
     const box = await page.getByTestId('circuit-canvas').boundingBox();
     if (box === null) throw new Error('no canvas');
@@ -558,7 +557,7 @@ test.describe('drag to select on a touch screen', () => {
     await toggle.click();
     await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     // the first drag panned the circuit away: bring it back under the box
-    await page.evaluate(() => window.circuitjsNext?.controller.fit());
+    await page.evaluate(() => window.perun?.controller.fit());
     await drag();
     await expect.poll(selected).toBeGreaterThan(0);
   });

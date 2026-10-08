@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 // The voltage color scale follows CircuitJS1 CircuitElm.setColorScale/getVoltageColor
 // (src/com/lushprojects/circuitjs1/client/CircuitElm.java, master) at
 // 5a707168778216bb6ed01bfdd62e8bbf7ae0a032: 201 steps, linear in RGB from zero to each end.
 
-import type { ColorRole } from '@circuitjs-next/elements';
-import { mixColor, rgba, toCss, type Theme } from '@circuitjs-next/theme';
+import type { ColorRole } from '@perun/elements';
+import { mixColor, rgba, toCss, type Theme } from '@perun/theme';
 
 /** Odd, so 0 V lands exactly on the zero color. */
 export const COLOR_SCALE_COUNT = 201;

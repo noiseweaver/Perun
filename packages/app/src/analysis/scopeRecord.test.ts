@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import { readCircuit } from '@circuitjs-next/format';
+import { readCircuit } from '@perun/format';
 import { describe, expect, it } from 'vitest';
 import { ScopeRecorder } from './scopeRecord.ts';
 

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import { Simulation, constructElement, type CircuitElm } from '@circuitjs-next/elements';
-import { BUILTIN_THEMES } from '@circuitjs-next/theme';
+import { Simulation, constructElement, type CircuitElm } from '@perun/elements';
+import { BUILTIN_THEMES } from '@perun/theme';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SCHEMATIC, schematicBounds, schematicSvg } from './schematic.ts';
 

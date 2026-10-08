@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Phase 20 rewind and scrub: drag back through the last seconds of the run, replay it, and carry
 // on from the end or from an edit.
 
 import { expect, test, type Page } from '@playwright/test';
-import { compressCircuit } from '@circuitjs-next/format';
+import { compressCircuit } from '@perun/format';
 
 // a 5 V source charging 10 µF through 1 kΩ behind a switch, with a scope on the capacitor
 const RC =
@@ -19,14 +19,14 @@ const RC =
 const open = async (page: Page): Promise<void> => {
   await page.goto(`/?ctz=${compressCircuit(RC)}`);
   await expect(page.getByTestId('circuit-canvas')).toBeVisible();
-  await page.waitForFunction(() => (window.circuitjsNext?.controller.history.length ?? 0) > 60);
+  await page.waitForFunction(() => (window.perun?.controller.history.length ?? 0) > 60);
 };
 
 const simTime = (page: Page): Promise<number> =>
-  page.evaluate(() => window.circuitjsNext?.controller.circuit.sim.t ?? -1);
+  page.evaluate(() => window.perun?.controller.circuit.sim.t ?? -1);
 const capVolts = (page: Page): Promise<number> =>
   page.evaluate(() => {
-    const c = window.circuitjsNext?.controller.circuit;
+    const c = window.perun?.controller.circuit;
     const cap = c?.elements.find((e) => e.getClassName() === 'CapacitorElm');
     return cap ? (cap.volts[0] ?? 0) - (cap.volts[1] ?? 0) : NaN;
   });
@@ -98,7 +98,7 @@ test('an edit while rewound carries on from the frame shown', async ({ page }) =
   const pastV = await capVolts(page);
   // open the switch: the capacitor keeps the charge it had then
   await page.evaluate(() => {
-    const ctl = window.circuitjsNext?.controller;
+    const ctl = window.perun?.controller;
     const sw = ctl?.circuit.elements.find((e) => e.getClassName() === 'SwitchElm');
     if (ctl && sw) ctl.toggleSwitch(sw as never);
   });

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import { parseQuery, queryBoolean, startCircuitFromQuery } from '@circuitjs-next/format';
+import { parseQuery, queryBoolean, startCircuitFromQuery } from '@perun/format';
 import { fetchExample, fetchExampleList, findExample, type ExampleList } from './examples.ts';
 import { controller } from './SimController.ts';
 import { installAutosave, readLastCircuit } from './autosave.ts';

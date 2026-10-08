@@ -5,7 +5,7 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { isSupportedElementTag, readCircuit } from '@circuitjs-next/format';
+import { isSupportedElementTag, readCircuit } from '@perun/format';
 import { describe, expect, it } from 'vitest';
 import {
   EXAMPLES_DIR,

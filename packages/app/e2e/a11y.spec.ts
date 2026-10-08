@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 //
 // Phase 9 accessibility pass: axe finds no WCAG 2.2 A or AA problems in the main views, dialogs
 // and every built-in theme, and the circuit can be worked from the keyboard.
 
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { BUILTIN_THEMES } from '@circuitjs-next/theme';
+import { BUILTIN_THEMES } from '@perun/theme';
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 const ready = async (page: Page, query = ''): Promise<void> => {
   await page.goto(`/${query}`);
   await expect(page.getByTestId('circuit-title')).not.toHaveText('');
-  await page.waitForFunction(() => (window.circuitjsNext?.controller.frames ?? 0) > 2);
+  await page.waitForFunction(() => (window.perun?.controller.frames ?? 0) > 2);
 };
 
 const violations = async (page: Page): Promise<string[]> => {
@@ -34,7 +34,7 @@ test('the main view, property panel and sliders have no axe violations', async (
   await ready(page);
   expect(await violations(page)).toEqual([]);
   await page.evaluate(() => {
-    const c = window.circuitjsNext?.controller;
+    const c = window.perun?.controller;
     const e = c?.circuit.elements[1];
     if (c && e) c.editor.select(e);
   });
@@ -62,7 +62,7 @@ test('every built-in theme passes in the main view', async ({ page }) => {
   // theme's colors and this one's (Catppuccin Mocha to Latte failed that way in CI)
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await ready(page);
-  await page.evaluate(() => window.circuitjsNext?.controller.setRunning(false));
+  await page.evaluate(() => window.perun?.controller.setRunning(false));
   for (const id of Object.keys(BUILTIN_THEMES)) {
     await page.getByTestId('options-menu').click();
     await page.getByTestId('menu-theme').click();
@@ -86,7 +86,7 @@ test('dialogs have no axe violations', async ({ page }) => {
   expect(await violations(page), 'themes').toEqual([]);
   await page.keyboard.press('Escape');
   await page.evaluate(() => {
-    const c = window.circuitjsNext?.controller;
+    const c = window.perun?.controller;
     const e = c?.circuit.elements[1];
     if (c && e) c.openSliderDialog(e);
   });
@@ -118,7 +118,7 @@ test('the circuit can be worked from the keyboard', async ({ page }) => {
   const canvas = page.getByTestId('circuit-canvas');
   await expect(canvas).toHaveAttribute('aria-label', /^Circuit: /);
   await canvas.focus();
-  const count = await page.evaluate(() => window.circuitjsNext?.controller.circuit.elements.length);
+  const count = await page.evaluate(() => window.perun?.controller.circuit.elements.length);
   await page.keyboard.press(']');
   await expect(page.getByTestId('announcer')).toHaveText(new RegExp(`1 of ${count}\\.$`));
   await page.keyboard.press(']');
@@ -126,7 +126,7 @@ test('the circuit can be worked from the keyboard', async ({ page }) => {
   await page.keyboard.press('[');
   await expect(page.getByTestId('announcer')).toHaveText(new RegExp(`1 of ${count}\\.$`));
   const selected = () =>
-    page.evaluate(() => window.circuitjsNext?.controller.editor.selectedElements().length);
+    page.evaluate(() => window.perun?.controller.editor.selectedElements().length);
   expect(await selected()).toBe(1);
   // the element menu opens on it, and Escape closes it again
   await page.keyboard.press('Shift+F10');

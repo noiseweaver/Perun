@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2026 circuitjs-next contributors
+// Copyright (C) 2026 Perun contributors
 
-import { LabeledNodeElm, type CircuitElm } from '@circuitjs-next/elements';
+import { LabeledNodeElm, type CircuitElm } from '@perun/elements';
 import { t } from '../i18n.ts';
 
 /** "Resistor 2", "Labeled Node "out"": a name to pick an element by in a list. */
