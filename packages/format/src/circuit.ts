@@ -72,7 +72,10 @@ const KEPT_FLAGS =
 export interface CircuitOptions {
   /** OptionFlag bits, without ADJUST_TIMESTEP. */
   flags: number;
-  /** Simulation speed slider, 0..259. */
+  /**
+   * Simulation speed slider, 0..259. Upstream only has whole notches; the app's finer slider and
+   * typed speed can leave it between two (saved as `sp`, DEVIATIONS.md).
+   */
   speed: number;
   /** Current speed slider, 1..99. */
   currentBar: number;
@@ -481,6 +484,9 @@ export class Circuit {
       this.readCircuitFlags(r.parseIntAttr('f', 0));
       sim.maxTimeStep = sim.timeStep = r.parseDoubleAttr('ts', sim.maxTimeStep);
       this.setSpeedFromIterCount(r.parseDoubleAttr('ic', this.getIterCount()));
+      // not in upstream (DEVIATIONS.md): the exact speed when it falls between two notches
+      const sp = Number(r.parseStringAttr('sp', null) ?? NaN);
+      if (Number.isFinite(sp)) this.options.speed = clamp(sp, 0, 259);
       this.options.currentBar = clamp(r.parseIntAttr('cb', this.options.currentBar), 1, 99);
       this.options.voltageRange = r.parseDoubleAttr('vr', this.options.voltageRange);
       this.options.powerBar = clamp(r.parseIntAttr('pb', this.options.powerBar), 1, 99);
@@ -660,6 +666,7 @@ export class Circuit {
     w.dumpAttr('pb', this.options.powerBar);
     w.dumpAttr('vr', this.options.voltageRange);
     w.dumpAttr('mts', sim.minTimeStep);
+    if (!Number.isInteger(this.options.speed)) w.dumpAttr('sp', this.options.speed);
     if (sim.solverType !== 0) w.dumpAttr('st', sim.solverType);
     if (sim.temperature !== NOMINAL_TEMPERATURE) w.dumpAttr('temp', sim.temperature);
     const ramp = sim.temperatureRamp;

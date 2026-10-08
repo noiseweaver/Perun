@@ -1,21 +1,30 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 
-import { NOMINAL_TEMPERATURE, getUnitText } from '@perun/elements';
+import { NOMINAL_TEMPERATURE, getUnitText, parseUnits } from '@perun/elements';
 import * as Popover from '@radix-ui/react-popover';
 import * as Slider from '@radix-ui/react-slider';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import type { ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { openDialog } from '../commands.ts';
 import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
 import { Icon } from './Icon.tsx';
 import { t, tf } from '../i18n.ts';
+import {
+  SPEED_MAX,
+  SPEED_MIN,
+  SPEED_STEP,
+  speedForSteps,
+  stepsPerSecond,
+  stepsText,
+} from '../speed.ts';
 
 function LabeledSlider(props: {
   label: string;
   min: number;
   max: number;
+  step?: number;
   value: number;
   onChange: (v: number) => void;
   testId: string;
@@ -23,21 +32,105 @@ function LabeledSlider(props: {
   return (
     <label className="slider-field">
       <span className="slider-label">{t(props.label)}</span>
-      <Slider.Root
-        className="slider"
-        min={props.min}
-        max={props.max}
-        step={1}
-        value={[props.value]}
-        onValueChange={(v) => props.onChange(v[0] ?? props.value)}
-        data-testid={props.testId}
-      >
-        <Slider.Track className="slider-track">
-          <Slider.Range className="slider-range" />
-        </Slider.Track>
-        <Slider.Thumb className="slider-thumb" aria-label={t(props.label)} />
-      </Slider.Root>
+      <SliderControl {...props} />
     </label>
+  );
+}
+
+function SliderControl(props: {
+  label: string;
+  min: number;
+  max: number;
+  step?: number;
+  value: number;
+  onChange: (v: number) => void;
+  testId: string;
+}) {
+  return (
+    <Slider.Root
+      className="slider"
+      min={props.min}
+      max={props.max}
+      step={props.step ?? 1}
+      value={[props.value]}
+      onValueChange={(v) => props.onChange(v[0] ?? props.value)}
+      data-testid={props.testId}
+    >
+      <Slider.Track className="slider-track">
+        <Slider.Range className="slider-range" />
+      </Slider.Track>
+      <Slider.Thumb className="slider-thumb" aria-label={t(props.label)} />
+    </Slider.Root>
+  );
+}
+
+/**
+ * The simulation speed: a slider in quarter notches of upstream's scale, and the same speed in
+ * steps per second to read or type (Enter or leaving the field applies it, Escape drops it).
+ */
+function SimSpeedField() {
+  const speed = useApp((s) => s.speed);
+  const [draft, setDraft] = useState<string | null>(null);
+  // Escape drops the typed text; the blur that follows must not apply it
+  const cancelled = useRef(false);
+  const shown = stepsText(stepsPerSecond(speed));
+  const setSpeed = (v: number) => useApp.setState({ speed: v });
+  const apply = () => {
+    if (draft === null || cancelled.current) return;
+    setDraft(null);
+    let steps: number;
+    try {
+      steps = parseUnits(draft);
+    } catch {
+      return;
+    }
+    if (Number.isFinite(steps)) setSpeed(speedForSteps(steps));
+  };
+  return (
+    <div className="slider-field">
+      <div className="slider-label-row">
+        <span className="slider-label" id="sim-speed-label">
+          {t('Simulation speed')}
+        </span>
+        <span className="speed-entry">
+          <input
+            className="speed-input"
+            value={draft ?? shown}
+            inputMode="decimal"
+            enterKeyHint="done"
+            aria-label={t('Steps per second')}
+            data-testid="speed-input"
+            onFocus={(e) => {
+              cancelled.current = false;
+              setDraft(shown);
+              e.target.select();
+            }}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={apply}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.currentTarget.blur();
+              } else if (e.key === 'Escape') {
+                cancelled.current = true;
+                setDraft(null);
+                e.currentTarget.blur();
+              }
+            }}
+          />
+          <span className="speed-unit">{t('steps/s')}</span>
+        </span>
+      </div>
+      <SliderControl
+        label="Simulation speed"
+        min={SPEED_MIN}
+        max={SPEED_MAX}
+        step={SPEED_STEP}
+        value={speed}
+        // whole multiples of the step, without float noise
+        onChange={(v) => setSpeed(Math.round(v / SPEED_STEP) * SPEED_STEP)}
+        testId="speed-slider"
+      />
+    </div>
   );
 }
 
@@ -156,7 +249,6 @@ function IconButton(props: {
  * the time, but they are set now and then rather than used constantly.
  */
 function SpeedButton() {
-  const speed = useApp((s) => s.speed);
   const currentSpeed = useApp((s) => s.currentSpeed);
   return (
     <Popover.Root>
@@ -187,15 +279,13 @@ function SpeedButton() {
           sideOffset={8}
           collisionPadding={8}
           data-testid="speed-popover"
+          // Escape in the typed speed drops the edit only; a second one closes the popover
+          onEscapeKeyDown={(e) => {
+            if (document.activeElement?.classList.contains('speed-input') === true)
+              e.preventDefault();
+          }}
         >
-          <LabeledSlider
-            label="Simulation speed"
-            min={0}
-            max={259}
-            value={speed}
-            onChange={(v) => useApp.setState({ speed: v })}
-            testId="speed-slider"
-          />
+          <SimSpeedField />
           <LabeledSlider
             label="Current speed"
             min={1}
