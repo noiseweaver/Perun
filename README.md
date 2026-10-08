@@ -78,6 +78,8 @@ and/or modify it under the terms of the GNU General Public License as published 
 Software Foundation, either version 2 of the License, or (at your option) any later version. It is
 distributed in the hope that it will be useful, but without any warranty.
 
+circuitjs-next is made and maintained by Gadiel Zintu ([github.com/noiseweaver](https://github.com/noiseweaver)).
+
 CircuitJS1 is Copyright (C) Paul Falstad and Iain Sharp ([falstad.com](https://www.falstad.com/),
 [lushprojects.com](http://lushprojects.com/)), with the contributors its README and About box
 list; the app's About dialog repeats them. Files ported from CircuitJS1 name their upstream source
