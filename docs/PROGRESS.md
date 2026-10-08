@@ -14,7 +14,8 @@ themes and the last circuit survive. The service worker cache is now `perun-<has
 
 Next: Gady renames the repository on GitHub (Settings > General > Repository name: perun). The old
 github.io address stops working then (Pages doesn't redirect), so the installed iPhone app must be
-reinstalled from the new address after the first deploy there.
+reinstalled from the new address after the first deploy there. Gady named the repository `Perun` (capital P); github.io paths are case-sensitive, so the site is
+https://noiseweaver.github.io/Perun/ and the links say so.
 Open: the self-heating e2e test (params.spec.ts) fails locally on main too, not caused by this.
 
 ## 2026-10-08: release polish, version 1.0.0 (branch claude/release-polish-pf6oiv)

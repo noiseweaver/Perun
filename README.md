@@ -5,7 +5,7 @@ An electronic circuit simulator that runs in the browser: a TypeScript rebuild o
 and a JSON theme system. Simulation results and circuit files stay compatible with CircuitJS1: it
 opens upstream's links and files, and what it saves opens in upstream.
 
-**Open it: [noiseweaver.github.io/perun](https://noiseweaver.github.io/perun/)**.
+**Open it: [noiseweaver.github.io/Perun](https://noiseweaver.github.io/Perun/)**.
 Nothing to install, and it works offline once loaded.
 
 <p>
