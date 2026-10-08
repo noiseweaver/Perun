@@ -1,7 +1,7 @@
 {
   "name": "circuitjs-next",
   "private": true,
-  "version": "0.9.0",
+  "version": "1.0.0",
   "description": "TypeScript rebuild of CircuitJS1 with a new UI and a JSON theme system",
   "license": "GPL-2.0-or-later",
   "type": "module",

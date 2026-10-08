@@ -237,6 +237,18 @@ export function AppBar() {
             />
           )}
           <Item
+            label="What's new…"
+            icon="newReleases"
+            testId="menu-whats-new"
+            onSelect={() => openDialog('whatsNew')}
+          />
+          <Item
+            label="Send a suggestion…"
+            icon="feedback"
+            testId="menu-feedback"
+            onSelect={() => openDialog('feedback')}
+          />
+          <Item
             label="Support the project"
             icon="favorite"
             testId="menu-support"

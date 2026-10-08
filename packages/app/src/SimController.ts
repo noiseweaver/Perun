@@ -2269,6 +2269,11 @@ export class SimController {
     this.publishStatus(true);
   }
 
+  /** True while a subcircuit's own circuit is open for editing in place of the main one. */
+  editingModel(): boolean {
+    return this.contextStack.length > 0;
+  }
+
   /** The circuit as upstream saves it. */
   saveText(): string {
     return this.circuit.dumpXml();

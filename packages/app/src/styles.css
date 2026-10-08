@@ -3694,3 +3694,78 @@ ul.theme-contrast {
     display: none;
   }
 }
+
+/* ---- crash screen -------------------------------------------------------------------------- */
+
+.crash-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 16px;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  user-select: text;
+}
+
+.crash-card {
+  width: min(100%, 440px);
+  padding: 24px;
+  border-radius: var(--md-shape-xl);
+  background: var(--md-surface-container-high);
+  box-shadow: var(--md-elevation-3);
+}
+
+.crash-card h1 {
+  margin: 0 0 12px;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 32px;
+}
+
+.crash-card p {
+  margin: 0 0 12px;
+  color: var(--ui-text-muted);
+}
+
+.crash-detail {
+  margin: 0 0 16px;
+  max-height: 120px;
+  overflow: auto;
+  padding: 8px 12px;
+  border-radius: var(--md-shape-s);
+  background: var(--md-error-container);
+  font-family: var(--mono-font);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ---- what's new and suggestions ------------------------------------------------------------ */
+
+.whats-new-version {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+}
+
+.whats-new-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.whats-new-list li + li {
+  margin-top: 4px;
+}
+
+.feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feedback-form .text-area {
+  resize: vertical;
+}

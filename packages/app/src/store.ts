@@ -130,6 +130,8 @@ export interface AppState {
   install: 'none' | 'prompt' | 'ios';
   /** A new version has been downloaded and waits for a reload. */
   updateReady: boolean;
+  /** This run is the first of a newer version (its number): offer its notes once. */
+  updatedTo: string | null;
   /** Every file is cached: the app works offline. */
   offlineReady: boolean;
   /** The DC operating point panel is open. */
@@ -157,6 +159,8 @@ export interface AppState {
     | 'exportImage'
     | 'partsList'
     | 'scopeCsv'
+    | 'whatsNew'
+    | 'feedback'
     | null;
   /** Bumped to move keyboard focus to the property panel (double-click, Enter). */
   inspectorFocus: number;
@@ -382,6 +386,7 @@ export const useApp = create<AppState>(() => ({
   sliderRevision: 0,
   install: 'none',
   updateReady: false,
+  updatedTo: null,
   offlineReady: false,
   inspectorFocus: 0,
   subcircuitBar: { viewing: [], editing: null },
