@@ -1,5 +1,15 @@
 # Progress
 
+## 2026-10-08: themed update prompt (branch claude/themed-update-prompt-7tcphm)
+
+Done: the "A new version is ready" bar (UpdateBanner in App.tsx, shown by pwa.ts when the
+service worker has downloaded a new build; GitHub Pages adds no UI of its own) used Material's
+inverse snackbar colors, so on Dark it was a light bar with a dark outline button. It now uses
+the theme's raised surface, text and border colors, with a filled accent Reload button. Look only;
+update behavior unchanged.
+
+Next: Gady sees it on the next deploy after this one. Open: none.
+
 ## 2026-10-08: field follow-ups (branch claude/field-follow-ups-badkkd)
 
 Done (Gady picked "Field follow-ups", the open items from PR #20): Options > Visualizations now
