@@ -71,6 +71,13 @@ upstream is listed in [docs/DEVIATIONS.md](docs/DEVIATIONS.md).
 [ELEMENTS](docs/ELEMENTS.md), [ENGINE-NOTES](docs/ENGINE-NOTES.md), [THEMES](docs/THEMES.md),
 [EXAMPLES](docs/EXAMPLES.md), [UPSTREAM](docs/UPSTREAM.md).
 
+## Supporting the project
+
+circuitjs-next is free and stays free: no ads, no accounts, every feature open. If it helps you,
+you can support its development on [GitHub Sponsors](https://github.com/sponsors/noiseweaver) or
+[Ko-fi](https://ko-fi.com/noiseweaver). The simulator underneath is Paul Falstad's and Iain
+Sharp's CircuitJS1; see the credits below.
+
 ## License and credits
 
 GPL-2.0-or-later, see [LICENSE](LICENSE). This program is free software: you can redistribute it

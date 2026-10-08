@@ -1,5 +1,15 @@
 # Progress
 
+## 2026-10-08: support links (branch claude/project-thread-dhx7vn)
+
+Done (Gady picked "Tip jar + grants"; write-up in the project's ideas/monetization.md): File >
+Support the project opens GitHub Sponsors, About has one line linking Sponsors and Ko-fi, the
+README has a short Supporting section, and .github/FUNDING.yml adds the repo's Sponsor button.
+No popups, reminders or tracking; every feature stays free.
+
+Next: merge once Gady's Sponsors and Ko-fi pages are live (handles assumed noiseweaver). Open:
+the grant outline lives in the project files, not the repo.
+
 ## 2026-10-08: themed update prompt (branch claude/themed-update-prompt-7tcphm)
 
 Done: the "A new version is ready" bar (UpdateBanner in App.tsx, shown by pwa.ts when the

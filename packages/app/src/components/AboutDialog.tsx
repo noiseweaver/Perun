@@ -10,6 +10,9 @@ import { t } from '../i18n.ts';
 /** Where this app's source code is published (GPL-2.0 section 3). */
 export const SOURCE_URL = 'https://github.com/noiseweaver/circuitsjs-next';
 export const UPSTREAM_URL = 'https://github.com/pfalstad/circuitjs1';
+/** Voluntary tips. The app is free and never asks for them outside About and File > Support. */
+export const SPONSOR_URL = 'https://github.com/sponsors/noiseweaver';
+export const KOFI_URL = 'https://ko-fi.com/noiseweaver';
 
 /** The app's version, with the commit it was built from when known. */
 export function versionText(): string {
@@ -83,6 +86,13 @@ export function AboutDialog() {
           This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
           without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
           See the GNU General Public License for more details.
+        </p>
+        <p data-testid="about-support">
+          {t(
+            'This app is free and stays free, with no ads and no accounts. If it helps you, you can support its development on',
+          )}{' '}
+          <Link href={SPONSOR_URL}>GitHub Sponsors</Link> {t('or')}{' '}
+          <Link href={KOFI_URL}>Ko-fi</Link>.
         </p>
         <ul className="about-links">
           <li>
