@@ -19,7 +19,8 @@ The full plan is [docs/PLAN.md](docs/PLAN.md); the owner is Gady.
 - At the end of every session, add or update your branch's own file in docs/progress/
   (`YYYY-MM-DD-slug.md`: done, next, open issues). Never edit docs/PROGRESS.md or the
   docs/DEVIATIONS.md table (both frozen) or another branch's entry; that's what kept every open
-  pull request conflicting. CI fails a pull request that edits the two frozen files.
+  pull request conflicting. CI fails when either frozen file differs from its frozen content;
+  when merging main brings a conflict in one, take main's version (`git checkout origin/main -- <file>`).
 - Commit at each milestone with conventional commit messages. `pnpm check` (typecheck, lint, format,
   unit tests) must pass before each commit.
 - If a fact in PLAN.md section 4 marked [I] or [G] turns out wrong, correct it there.

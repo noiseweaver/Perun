@@ -1,17 +1,7 @@
 # Progress
 
-## 2026-10-08: current dots while paused, scope scale in auto (branch claude/dots-while-paused-b6v1s5)
-
-Done: Options > Show current when paused (user setting `pausedDots`, on by default). Upstream hides
-current dots whenever the simulation is stopped; with the setting on, paused and rewound circuits
-keep their dots standing still. Dots too fast to animate get a fixed phase while paused instead of
-a random one, so the picture holds. Off restores upstream's behaviour (DEVIATIONS.md).
-Scope cards in auto scale that show voltage and current together now draw the grid and its
-values for one plot's units (the selected plot, else the first voltage) instead of only the zero
-line, as manual scale does (`gridSpec` in ScopeCardView.ts).
-
-Next: nothing for this feature.
-Open: none.
+This file is frozen. New entries go in [docs/progress/](progress/README.md), one file per
+change, so parallel pull requests don't conflict here.
 
 ## 2026-10-08: renamed to Perun (branch claude/rename-to-perun-0ajv88)
 
@@ -27,8 +17,7 @@ themes and the last circuit survive. The service worker cache is now `perun-<has
 
 Next: Gady renames the repository on GitHub (Settings > General > Repository name: perun). The old
 github.io address stops working then (Pages doesn't redirect), so the installed iPhone app must be
-reinstalled from the new address after the first deploy there. Gady named the repository `Perun` (capital P); github.io paths are case-sensitive, so the site is
-https://noiseweaver.github.io/Perun/ and the links say so.
+reinstalled from the new address after the first deploy there.
 Open: the self-heating e2e test (params.spec.ts) fails locally on main too, not caused by this.
 
 ## 2026-10-08: release polish, version 1.0.0 (branch claude/release-polish-pf6oiv)
