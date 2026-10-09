@@ -6,7 +6,7 @@ import { Circuit } from './circuit.ts';
 
 const TEXT = '$ 1 5.0E-6 10 50 5.0\nr 96 96 192 96 0 1000\n';
 
-describe('speed between slider notches (not in upstream, DEVIATIONS.md)', () => {
+describe('speed between slider notches (not in upstream, docs/deviations/speed-between-notches.md)', () => {
   it('saves nothing extra on a whole notch', () => {
     const c = new Circuit();
     c.read(TEXT);
