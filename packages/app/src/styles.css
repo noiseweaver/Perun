@@ -1835,8 +1835,22 @@ textarea.field-input {
   white-space: nowrap;
 }
 
+.mode-chip > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .mode-chip .button {
   height: 32px;
+}
+
+/* phones: too narrow to share the top edge with the Sliders pill, so the chip goes under it */
+@media (max-width: 719px) {
+  .mode-chip {
+    top: 64px;
+    max-width: calc(100% - 24px);
+  }
 }
 
 .toast {
