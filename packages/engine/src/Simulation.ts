@@ -350,14 +350,19 @@ export class Simulation {
         ws.post = 1;
         this.setWireInfoResolved(wire, ws.bit);
         moved = 0;
+      } else if (moved > list.length * 2) {
+        // Deviation (docs/deviations/wire-loops.md): upstream stops with "wire loop detected"
+        // here. Every segment left is part of a closed loop of wires, whose circulating current
+        // is undetermined, so give this one zero current; the rest of the loop resolves from it.
+        ws.neighbors = [];
+        ws.labelNeighbors = [];
+        ws.post = 0;
+        this.setWireInfoResolved(wire, ws.bit);
+        moved = 0;
       } else {
         // not ready from either side yet; retry after the others
         list.push(list.splice(i--, 1)[0]);
         moved++;
-        if (moved > list.length * 2) {
-          this.stop('wire loop detected', wire);
-          return false;
-        }
       }
     }
     return true;
