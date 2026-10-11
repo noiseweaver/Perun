@@ -678,6 +678,11 @@ test.describe('pinch on a phone', () => {
   test('two fingers spreading over a scope shorten its time span', async ({ page }) => {
     await page.goto('/?startCircuit=lrc.txt');
     await ready(page);
+    // the example loads after the first frames, and its scope is laid out a frame after that
+    await page.waitForFunction(() => {
+      const m = window.perun?.controller.scopes;
+      return (m?.scopes.find((s) => m.isShown(s))?.rect.width ?? 0) > 1;
+    });
     const speed = () =>
       page.evaluate(() => {
         const m = window.perun?.controller.scopes;
