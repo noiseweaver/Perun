@@ -21,7 +21,8 @@ function commit(): string {
 }
 
 // `vite build --mode embed` builds the copy the Obsidian plugin runs in a frame (packages/obsidian):
-// relative paths, fonts inlined into the stylesheet, no service worker.
+// relative paths, fonts inlined into the stylesheet, MathJax inlined into the one script, no
+// service worker.
 export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
@@ -30,7 +31,14 @@ export default defineConfig(({ mode }) => ({
     ...(mode === 'embed' ? [] : [serviceWorker()]),
   ],
   ...(mode === 'embed'
-    ? { base: './', build: { outDir: 'dist-embed', assetsInlineLimit: 1 << 24 } }
+    ? {
+        base: './',
+        build: {
+          outDir: 'dist-embed',
+          assetsInlineLimit: 1 << 24,
+          rolldownOptions: { output: { codeSplitting: false } },
+        },
+      }
     : {}),
   server: { port: 5173, strictPort: true },
   define: {

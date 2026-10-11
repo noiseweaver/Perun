@@ -5,6 +5,9 @@
 import { getFixedUnitText, getUnitText, parseUnits, type CircuitElm } from '@perun/elements';
 import {
   DEFAULT_SCHEMATIC,
+  mathReady,
+  onMathReady,
+  preloadMathFor,
   schematicBounds,
   schematicCanvas,
   schematicSvg,
@@ -85,7 +88,16 @@ export function ExportImageDialog() {
   const h = bounds === null ? 0 : bounds.y2 - bounds.y1;
   // a PNG too large for the browser is drawn at the largest scale that fits
   const pngScale = Math.min(scale, MAX_PNG_SIDE / Math.max(w, h, 1));
-  const optsKey = JSON.stringify([opts, themeChoice, selectionOnly, format, pngScale]);
+  // formulas show their source until MathJax has loaded: draw the preview again then
+  const [mathLoaded, setMathLoaded] = useState(mathReady);
+  useEffect(() => {
+    if (mathLoaded) return;
+    const off = onMathReady(() => setMathLoaded(true));
+    preloadMathFor(elements);
+    return off;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const optsKey = JSON.stringify([opts, themeChoice, selectionOnly, format, pngScale, mathLoaded]);
 
   const [preview, setPreview] = useState<string | null>(null);
   useEffect(() => {

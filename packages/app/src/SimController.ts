@@ -48,6 +48,7 @@ import {
   type CardHit,
   type CircuitElm,
   type EditInfo,
+  type TextElm,
   type TolerancedElm,
   type Rect,
   type ScopeDefaultsStore,
@@ -66,6 +67,7 @@ import {
   ScopeRenderer,
   currentMultiplier,
   fitScale,
+  preloadMathFor,
   scopeAnchor,
   type FrameState,
   type UndockedScopeItem,
@@ -324,6 +326,7 @@ export class SimController {
 
   private afterLoad(title: string, running: boolean, fit = true): void {
     this.circuitVersion++;
+    preloadMathFor(this.circuit.elements);
     this.history.clear();
     this.rewindIndex = -1;
     this.viewStack = [];
@@ -1733,6 +1736,36 @@ export class SimController {
       e.tolerance = percent;
       return true;
     });
+    this.circuitChanged();
+  }
+
+  /** A formula box's linked parts, whose values its `\\V`, `\\I` and `\\P` show, undoably. */
+  setFormulaLinks(e: TextElm, links: CircuitElm[]): void {
+    this.editor.history.record('Edit', () => {
+      if (links.length === e.links.length && links.every((l, i) => l === e.links[i])) return false;
+      e.links = links;
+      e.mathLive = null;
+      return true;
+    });
+    this.circuitChanged();
+  }
+
+  /**
+   * A formula box's LaTeX while it is typed: drawn at once, recorded as one edit when the field
+   * is left (endFormulaPreview).
+   */
+  previewFormula(e: TextElm, src: string): void {
+    const h = this.editor.history;
+    if (h.pendingLabel !== 'Formula') h.begin('Formula');
+    e.formula = src;
+    e.mathLive = null;
+    h.touch();
+  }
+
+  endFormulaPreview(): void {
+    const h = this.editor.history;
+    if (h.pendingLabel !== 'Formula') return;
+    h.commit();
     this.circuitChanged();
   }
 

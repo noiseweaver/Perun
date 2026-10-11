@@ -35,6 +35,23 @@ export class TextElm extends CircuitElm {
    */
   family: TextFamily = 'options';
   fontStyle: TextStyleChoice = 'options';
+  /**
+   * Not in upstream (docs/deviations/formula-boxes.md): a formula box. Each line is LaTeX,
+   * typeset on the canvas. `text` keeps its backslashes doubled, so upstream shows the source.
+   * Saved as the extra XML attribute `tex`.
+   */
+  math = false;
+  /**
+   * A formula box's linked parts, whose values `\V`, `\I` and `\P` show (formulaTex.ts). Saved
+   * as `tl`, their numbers in the element list, which the circuit reader turns back into parts
+   * (`linkIndexes` holds the numbers until then).
+   */
+  links: CircuitElm[] = [];
+  linkIndexes: number[] | null = null;
+  /** Drawing state, not saved: the size the formula last drew at, in circuit units. */
+  mathSize: { width: number; height: number } | null = null;
+  /** Drawing state: the lines' TeX with live values, and when they were last read. */
+  mathLive: { text: string; at: number; lines: string[]; live: boolean } | null = null;
 
   override getClassName(): string {
     return 'TextElm';
@@ -83,6 +100,17 @@ export class TextElm extends CircuitElm {
     this.lines.push(sb);
   }
 
+  /** A formula box's LaTeX source: its lines, backslashes as typed. */
+  get formula(): string {
+    return this.lines.join('\n');
+  }
+
+  set formula(src: string) {
+    // doubled backslashes survive split(), and upstream's, as single ones
+    this.text = src.replaceAll('\\', '\\\\').replace(/\r?\n/g, '\\n');
+    this.split();
+  }
+
   override dumpXml(w: XmlAttrWriter): void {
     super.dumpXml(w);
     w.dumpAttr('si', this.size);
@@ -90,6 +118,8 @@ export class TextElm extends CircuitElm {
     if (this.color !== null) w.dumpAttr('co', this.color);
     if (this.family !== 'options') w.dumpAttr('ff', this.family);
     if (this.fontStyle !== 'options') w.dumpAttr('fs', this.fontStyle);
+    if (this.math) w.dumpAttr('tex', 1);
+    // `tl` (the linked parts' numbers) is written by the circuit, which knows them
   }
 
   override undumpXml(r: XmlAttrReader): void {
@@ -101,6 +131,15 @@ export class TextElm extends CircuitElm {
     this.family = FAMILIES.find((f) => f === ff) ?? 'options';
     const fs = r.parseStringAttr('fs', null);
     this.fontStyle = STYLES.find((f) => f === fs) ?? 'options';
+    this.math = r.parseIntAttr('tex', 0) === 1;
+    const tl = r.parseStringAttr('tl', null);
+    this.linkIndexes =
+      tl === null
+        ? null
+        : tl
+            .split(' ')
+            .map(Number)
+            .filter((n) => Number.isInteger(n) && n >= 0);
     this.split();
   }
 
@@ -117,7 +156,7 @@ export class TextElm extends CircuitElm {
   }
 
   override getInfo(arr: string[]): void {
-    arr[0] = this.text;
+    arr[0] = this.math ? this.formula : this.text;
   }
 
   override canViewInScope(): boolean {
@@ -125,10 +164,20 @@ export class TextElm extends CircuitElm {
   }
 
   override getElmType(): string {
-    return 'text';
+    return this.math ? 'formula' : 'text';
   }
 
   override getEditInfo(n: number): EditInfo | null {
+    if (this.math) {
+      if (n === 0) {
+        const ei = EditInfo.text('Formula (LaTeX)', this.formula);
+        ei.multiline = true;
+        return ei;
+      }
+      if (n === 1) return new EditInfo('Size', this.size, 5, 100);
+      if (n === 2) return EditInfo.text('Color', this.color ?? '').setIsColor();
+      return null;
+    }
     if (n === 0) {
       // upstream: a five-line TextArea showing the text with \n escapes as line breaks
       const ei = EditInfo.text('Text', this.text.replaceAll('\\n', '\n'));
@@ -159,6 +208,15 @@ export class TextElm extends CircuitElm {
   }
 
   override setEditValue(n: number, ei: EditInfo): void {
+    if (this.math) {
+      if (n === 0) this.formula = ei.text ?? '';
+      if (n === 1) this.size = javaDoubleToInt(ei.value);
+      if (n === 2) {
+        const c = ei.text ?? '';
+        this.color = c === '' ? null : c;
+      }
+      return;
+    }
     if (n === 0) {
       this.text = (ei.text ?? '').replaceAll('\n', '\\n');
       this.split();
@@ -182,3 +240,22 @@ export class TextElm extends CircuitElm {
 }
 
 export const TextElmType = elementType('TextElm', TextElm);
+
+/**
+ * The palette's Formula: a text box in math mode. Menu only, like ACRailElm: it saves as a text
+ * box, which loads back as a TextElm with `math` set.
+ */
+export class FormulaElm extends TextElm {
+  override initNew(): void {
+    super.initNew();
+    this.math = true;
+    this.size = 20;
+    this.formula = 'I = \\frac{V}{R}';
+  }
+
+  override getShortcut(): number {
+    return 0;
+  }
+}
+
+export const FormulaElmType = elementType('FormulaElm', FormulaElm);

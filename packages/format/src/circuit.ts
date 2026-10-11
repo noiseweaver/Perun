@@ -25,6 +25,7 @@ import {
   findEditItemByName,
   reorderAdjustables,
   ScopeElm,
+  TextElm,
   Simulation,
   StringTokenizer,
   classNameForXmlTag,
@@ -121,6 +122,8 @@ export class Circuit {
    * scope element numbers count as upstream's do.
    */
   private loadList: (CircuitElm | null)[] = [];
+  /** Where this read's elements start in `loadList`. */
+  private readStart = 0;
 
   constructor() {
     this.sim.currentElements = () => this.elements;
@@ -292,11 +295,20 @@ export class Circuit {
   }
 
   private beginRead(): void {
+    this.readStart = this.elements.length;
     this.loadList = [...this.elements];
     this.scopes.loadElements = this.loadList;
   }
 
   private endRead(): void {
+    // formula boxes' linked parts, numbered in the file's element order
+    for (const ce of this.loadList.slice(this.readStart)) {
+      if (!(ce instanceof TextElm) || ce.linkIndexes === null) continue;
+      ce.links = ce.linkIndexes
+        .map((i) => this.loadList[this.readStart + i])
+        .filter((x): x is CircuitElm => x !== undefined && x !== null && x !== ce);
+      ce.linkIndexes = null;
+    }
     this.scopes.loadElements = null;
     this.loadList = [];
   }
@@ -676,7 +688,7 @@ export class Circuit {
 
     modelsFor(sim).clearDumpedFlags();
     const doc = docWriter(root);
-    for (const ce of this.elements) appendElement(root, doc, ce);
+    for (const ce of this.elements) appendElement(root, doc, ce, this.elements);
     for (const sc of this.scopes.scopes) sc.serializer.dumpXml(w);
     for (const a of this.adjustables) root.appendChild(this.adjElement(a));
     if (this.hint.type !== -1) {
@@ -699,8 +711,8 @@ export class Circuit {
     modelsFor(this.sim).clearDumpedFlags();
     const doc = docWriter(root);
     // upstream leaves undocked scopes out: their element numbers would point elsewhere
-    for (const ce of [...elements].reverse())
-      if (!(ce instanceof ScopeElm)) appendElement(root, doc, ce);
+    const list = [...elements].reverse().filter((ce) => !(ce instanceof ScopeElm));
+    for (const ce of list) appendElement(root, doc, ce, list);
     return prettyPrint(root);
   }
 }
@@ -831,12 +843,22 @@ function docWriter(root: XmlElement): XmlDocWriter {
   };
 }
 
-function appendElement(root: XmlElement, doc: XmlDocWriter, ce: CircuitElm): void {
+function appendElement(
+  root: XmlElement,
+  doc: XmlDocWriter,
+  ce: CircuitElm,
+  list: readonly CircuitElm[],
+): void {
   // upstream elements append their models from inside dumpXml, before the element itself
   ce.dumpXmlModels(doc);
   const elem = new XmlElement(ce.getXmlDumpType());
   const ew = new AttrWriter(elem);
   ce.dumpXml(ew);
+  if (ce instanceof TextElm && ce.math) {
+    // a formula box's linked parts by their number in what is written (not in upstream)
+    const tl = ce.links.map((e) => list.indexOf(e)).filter((i) => i >= 0);
+    if (tl.length > 0) ew.dumpAttr('tl', tl.join(' '));
+  }
   ce.dumpXmlState(ew);
   root.appendChild(elem);
 }

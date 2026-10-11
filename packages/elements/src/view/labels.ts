@@ -12,6 +12,7 @@ import { LabeledNodeElm } from '../elm/LabeledNodeElm.ts';
 import { OutputElm } from '../elm/OutputElm.ts';
 import { ProbeElm } from '../elm/ProbeElm.ts';
 import { TextElm } from '../elm/TextElm.ts';
+import { hasLiveValues, liveTex } from '../formulaTex.ts';
 import {
   COMPONENT,
   drawCenteredText,
@@ -178,10 +179,61 @@ function textBox(e: TextElm, measure: (s: string) => number): Rect {
   return { x1: e.x, y1: e.y - e.size, x2, y2 };
 }
 
+/** Live values in a formula refresh this often (ms), so it isn't typeset again every frame. */
+const LIVE_REFRESH_MS = 100;
+/** Space between a formula's lines, in em. */
+const MATH_LINE_GAP = 0.3;
+
+/** A formula's lines as TeX, live values filled in at most every LIVE_REFRESH_MS. */
+function formulaLines(e: TextElm): string[] {
+  const now = Date.now();
+  const c = e.mathLive;
+  if (c !== null && c.text === e.text && (now - c.at < LIVE_REFRESH_MS || !c.live)) return c.lines;
+  let live = false;
+  const lines = e.lines.map((l) => {
+    if (!hasLiveValues(l)) return l;
+    live = true;
+    return liveTex(l, e.links, e.sim);
+  });
+  e.mathLive = { text: e.text, at: now, lines, live };
+  return lines;
+}
+
+/** A formula box: each line typeset, the first one's top where a text box's first line is. */
+function drawFormula(e: TextElm, ctx: DrawContext, ink: Ink): void {
+  const p = ctx.painter;
+  const size = e.size;
+  let top = e.y - size;
+  let width = 0;
+  for (const tex of formulaLines(e)) {
+    if (tex.trim() === '') {
+      top += size * (1 + MATH_LINE_GAP);
+      continue;
+    }
+    const box = p.measureMath(tex, size);
+    if (box === null || box.error !== null) {
+      // MathJax still loading, or TeX that doesn't parse: the source, as upstream shows it
+      const font: TextStyle = { size, font: 'serif' };
+      p.text(tex, pt(e.x, top + size), box === null ? ink : { role: 'badConnection' }, font);
+      width = Math.max(width, p.measureText(tex, font));
+      top += size * (1 + MATH_LINE_GAP);
+      continue;
+    }
+    p.math(tex, pt(e.x, top + box.height), ink, size);
+    width = Math.max(width, box.width);
+    top += box.height + box.depth + size * MATH_LINE_GAP;
+  }
+  e.mathSize = { width, height: top - (e.y - size) - size * MATH_LINE_GAP };
+}
+
 export const textView: ElementView<TextElm> = {
   draw(e, ctx) {
     const p = ctx.painter;
     const ink = ctx.highlighted ? LABEL : (textColor(e.color) ?? LABEL);
+    if (e.math) {
+      drawFormula(e, ctx, ink);
+      return;
+    }
     // the box's own font, else the Options default
     const tf = ctx.textFont;
     const family =
@@ -208,8 +260,22 @@ export const textView: ElementView<TextElm> = {
       cury += e.size + 3;
     }
   },
-  // without a painter, assume an average glyph is 0.55 em wide
-  bbox: (e) => textBox(e, (s) => s.length * e.size * 0.55),
+  bbox: (e) => {
+    if (e.math) {
+      const m = e.mathSize;
+      // not drawn yet: about half an em per character of source
+      const w = m?.width ?? Math.max(...e.lines.map((l) => l.length)) * e.size * 0.5;
+      const h = m?.height ?? e.lines.length * e.size * (1 + MATH_LINE_GAP);
+      return {
+        x1: e.x,
+        y1: e.y - e.size,
+        x2: e.x + Math.max(w, 8),
+        y2: e.y - e.size + Math.max(h, 8),
+      };
+    }
+    // without a painter, assume an average glyph is 0.55 em wide
+    return textBox(e, (s) => s.length * e.size * 0.55);
+  },
 };
 
 /** A box's ink: its chosen theme box color (`boxRed` for red), or the secondary part color. */

@@ -8,6 +8,7 @@
 import {
   CircuitElm,
   EditInfo,
+  TextElm,
   VoltageElm,
   bindingText,
   hasTolerance,
@@ -23,6 +24,8 @@ import { useApp } from '../store.ts';
 import { useNarrow } from './useNarrow.ts';
 import { Icon, type IconName } from './Icon.tsx';
 import { FormulaCard } from './FormulaCard.tsx';
+import { FormulaLinks } from './FormulaLinks.tsx';
+import { FormulaLegend, FormulaToolbar } from './FormulaToolbar.tsx';
 import { LiveHeader } from './LiveHeader.tsx';
 import { t } from '../i18n.ts';
 
@@ -223,14 +226,30 @@ function NumberField(props: FieldProps) {
   );
 }
 
+/** A formula box's LaTeX shows on the canvas as it is typed, one undo step per visit. */
+function isFormulaSource(props: FieldProps): props is FieldProps & { elm: TextElm } {
+  return props.elm instanceof TextElm && props.elm.math && props.n === 0;
+}
+
 function TextField(props: FieldProps) {
   const { ei } = props;
   const [text, setText] = useState(ei.text ?? '');
   useEffect(() => setText(ei.text ?? ''), [ei]);
+  const preview = isFormulaSource(props);
+  const area = useRef<HTMLTextAreaElement>(null);
   const commit = (s: string): void => {
+    if (preview) {
+      ei.text = s;
+      controller.endFormulaPreview();
+      return;
+    }
     if (s === ei.text) return;
     ei.text = s;
     apply(props);
+  };
+  const change = (s: string): void => {
+    setText(s);
+    if (preview) controller.previewFormula(props.elm as TextElm, s);
   };
   const id = `field-${props.n}`;
   const common = {
@@ -246,11 +265,13 @@ function TextField(props: FieldProps) {
       <label className="field-label" htmlFor={id}>
         {fieldLabel(ei)}
       </label>
+      {preview && <FormulaToolbar field={area} onInsert={change} />}
       {ei.multiline ? (
         <textarea
           {...common}
+          ref={area}
           rows={3}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => change(e.target.value)}
           onBlur={(e) => commit(e.target.value)}
         />
       ) : (
@@ -263,6 +284,7 @@ function TextField(props: FieldProps) {
           }}
         />
       )}
+      {preview && <FormulaLegend />}
     </div>
   );
 }
@@ -705,6 +727,9 @@ export function Inspector() {
             if (ei.text !== null) return <TextField key={key} {...props} />;
             return <NumberField key={key} {...props} />;
           })}
+          {selected instanceof TextElm && selected.math && (
+            <FormulaLinks key={`links:${revision}`} elm={selected} />
+          )}
           {hasTolerance(selected) && (
             // not in upstream (DEVIATIONS.md): the part's tolerance for Monte Carlo runs
             <ChoiceField

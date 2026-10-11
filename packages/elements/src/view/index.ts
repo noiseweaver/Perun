@@ -326,6 +326,7 @@ export type {
   ColorRole,
   DrawContext,
   Ink,
+  MathBox,
   Painter,
   Pt,
   StrokeStyle,

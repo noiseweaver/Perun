@@ -40,6 +40,12 @@ class RecordingPainter implements Painter {
   fontSize(): number {
     return 12;
   }
+  math(): null {
+    return null;
+  }
+  measureMath(): null {
+    return null;
+  }
   dots(a: Pt, b: Pt): void {
     this.use([a, b]);
   }

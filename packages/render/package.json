@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@perun/elements": "workspace:*",
-    "@perun/theme": "workspace:*"
+    "@perun/theme": "workspace:*",
+    "mathjax-full": "3.2.2"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"

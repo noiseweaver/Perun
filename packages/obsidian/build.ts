@@ -69,7 +69,8 @@ await build({
     rolldownOptions: {
       // provided by Obsidian
       external: ['obsidian', 'electron', /^@codemirror\//, /^@lezer\//],
-      output: { exports: 'default' },
+      // one file: MathJax, which the app loads on demand, comes inside it
+      output: { exports: 'default', codeSplitting: false },
     },
   },
 });

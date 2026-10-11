@@ -12,6 +12,8 @@ import {
   currentMultiplier,
   schematicSvg,
   scopeAnchor,
+  onMathReady,
+  preloadMathFor,
   type UndockedScopeItem,
 } from '@perun/render';
 import type { Theme } from '@perun/theme';
@@ -41,6 +43,7 @@ export class CircuitPlayer {
   private readonly renderer: CircuitRenderer;
   private readonly scopes: ScopeRenderer;
   private raf = 0;
+  private animating = false;
   private last = 0;
   private owed = 0;
   private width = 0;
@@ -67,6 +70,11 @@ export class CircuitPlayer {
     this.circuit.read(text);
     this.circuit.scopes.look = theme.style.scopeLook;
     this.renderer.setElements(this.circuit.elements);
+    // a still block showed its formulas' source until MathJax arrived: draw it again
+    preloadMathFor(this.circuit.elements);
+    onMathReady(() => {
+      if (!this.animating) this.frame(performance.now(), false);
+    });
   }
 
   get hasScopes(): boolean {
@@ -131,6 +139,7 @@ export class CircuitPlayer {
   /** Draw every animation frame until stop(); `animate` false draws one still frame. */
   start(animate: boolean): void {
     this.stop();
+    this.animating = animate;
     this.last = 0;
     const loop = (now: number): void => {
       if (animate) this.raf = requestAnimationFrame(loop);
@@ -140,6 +149,7 @@ export class CircuitPlayer {
   }
 
   stop(): void {
+    this.animating = false;
     cancelAnimationFrame(this.raf);
     this.raf = 0;
   }
