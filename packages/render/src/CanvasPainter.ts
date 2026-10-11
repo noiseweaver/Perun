@@ -133,14 +133,19 @@ export class CanvasPainter implements Painter {
     this.stroke(ink, style);
   }
 
-  fillPolygon(points: readonly Pt[], ink: Ink): void {
+  fillPolygon(points: readonly Pt[], ink: Ink, opacity = 1): void {
     if (points.length === 0) return;
     const c = this.ctx;
     c.beginPath();
     points.forEach((q, i) => (i === 0 ? c.moveTo(q.x, q.y) : c.lineTo(q.x, q.y)));
     c.closePath();
     c.fillStyle = this.style(ink);
-    c.fill();
+    if (opacity < 1) {
+      const alpha = c.globalAlpha;
+      c.globalAlpha = alpha * opacity;
+      c.fill();
+      c.globalAlpha = alpha;
+    } else c.fill();
   }
 
   circle(center: Pt, r: number, ink: Ink, style?: StrokeStyle): void {

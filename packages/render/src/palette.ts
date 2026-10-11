@@ -37,6 +37,11 @@ export class Palette {
       currentDot: c.currentDot,
       badConnection: c.badConnection,
       selection: c.selection,
+      boxRed: c.boxes.red,
+      boxOrange: c.boxes.orange,
+      boxGreen: c.boxes.green,
+      boxBlue: c.boxes.blue,
+      boxPurple: c.boxes.purple,
     };
     this.selection = c.selection;
     this.hover = c.hover;

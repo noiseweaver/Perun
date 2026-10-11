@@ -552,7 +552,11 @@ export class Editor {
     }
     this.follow = undefined;
     // dropping a post on a wire's middle splits the wire there
-    if (this.draggingPost >= 0 && this.mouseElm !== null) {
+    if (
+      this.draggingPost >= 0 &&
+      this.mouseElm !== null &&
+      this.draggingPost < this.mouseElm.getPostCount()
+    ) {
       const p = this.mouseElm.getPost(this.draggingPost);
       if (this.splitWireAt(p.x, p.y)) circuitChanged = true;
     }
@@ -639,9 +643,7 @@ export class Editor {
   private dragPost(x: number, y: number, all: boolean): boolean {
     const m = this.mouseElm;
     if (m === null) return false;
-    if (this.draggingPost === -1) {
-      this.draggingPost = distanceSq(m.x, m.y, x, y) > distanceSq(m.x2, m.y2, x, y) ? 1 : 0;
-    }
+    if (this.draggingPost === -1) this.draggingPost = m.closestHandle(x, y);
     const dx = x - this.dragGridX;
     const dy = y - this.dragGridY;
     if (dx === 0 && dy === 0) return false;
@@ -683,8 +685,11 @@ export class Editor {
     this.selectedArea = { x1, y1, x2, y2 };
     for (const ce of this.elements) {
       const b = this.host.bbox(ce);
-      // upstream selectRect: intersecting boxes are selected
-      if (b !== null && intersects(this.selectedArea, b)) ce.selected = true;
+      // upstream selectRect: intersecting boxes are selected, a box element only when inside
+      const hit = ce.selectsOnlyWhenEnclosed()
+        ? encloses(this.selectedArea, pointsRect(ce))
+        : b !== null && intersects(this.selectedArea, b);
+      if (hit) ce.selected = true;
       else if (!add) ce.selected = false;
     }
     this.host.selectionChanged();
@@ -1021,6 +1026,21 @@ function inBox(b: Rect, x: number, y: number): boolean {
 
 function intersects(a: Rect, b: Rect): boolean {
   return a.x1 <= b.x2 && b.x1 <= a.x2 && a.y1 <= b.y2 && b.y1 <= a.y2;
+}
+
+/** `b` lies inside `a`. */
+function encloses(a: Rect, b: Rect): boolean {
+  return a.x1 <= b.x1 && b.x2 <= a.x2 && a.y1 <= b.y1 && b.y2 <= a.y2;
+}
+
+/** The rectangle spanned by an element's two points (upstream's box `boundingBox`). */
+function pointsRect(e: CircuitElm): Rect {
+  return {
+    x1: Math.min(e.x, e.x2),
+    y1: Math.min(e.y, e.y2),
+    x2: Math.max(e.x, e.x2),
+    y2: Math.max(e.y, e.y2),
+  };
 }
 
 /** Upstream CircuitElm.pointOnSegmentInterior: strictly inside an axis-aligned segment. */

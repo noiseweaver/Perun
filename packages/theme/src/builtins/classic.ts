@@ -29,6 +29,13 @@ export const classic: Theme = {
     magneticField: '#ff00ff',
     energy: '#ffa500',
     heat: '#ff4500',
+    boxes: {
+      red: '#ff4040',
+      orange: '#ffa500',
+      green: '#00ff00',
+      blue: '#4d94ff',
+      purple: '#ff40ff',
+    },
   },
   // Scope.java, ScopePlot.java and ScopeTrigger.java colors; traces after the first are
   // upstream's eight colors for repeated plots

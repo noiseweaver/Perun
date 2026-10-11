@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 
-import { ResistorElm, SwitchElm, viewFor, WireElm, type CircuitElm } from '@perun/elements';
+import { BoxElm, ResistorElm, SwitchElm, viewFor, WireElm, type CircuitElm } from '@perun/elements';
 import { Circuit } from '@perun/format';
 import { describe, expect, it } from 'vitest';
 import { Editor, MouseMode, NO_MODIFIERS, type EditorHost } from './Editor.ts';
@@ -73,6 +73,37 @@ describe('Editor', () => {
     expect(pos(circuit.elements[0] as CircuitElm)).toEqual([96, 96, 192, 96]);
     ed.history.redo();
     expect(pos(circuit.elements[0] as CircuitElm)).toEqual([128, 144, 224, 144]);
+  });
+
+  describe('boxes', () => {
+    const BOXED = '$ 1 5.0E-6 10 50 5.0\nb 64 64 320 224 0\nr 96 128 192 128 0 1000\n';
+
+    it('selects a box by area only when the area holds all of it, as upstream', () => {
+      const { circuit, ed } = setup(BOXED);
+      const [box, r] = circuit.elements as [CircuitElm, CircuitElm];
+      // an area around the resistor, inside the box
+      drag(ed, 80, 112, 208, 144);
+      expect([box.selected, r.selected]).toEqual([false, true]);
+      drag(ed, 48, 48, 336, 240);
+      expect([box.selected, r.selected]).toEqual([true, true]);
+    });
+
+    it('resizes from a corner that is not one of its two points', () => {
+      const { circuit, ed } = setup(BOXED);
+      const box = circuit.elements[0] as CircuitElm;
+      // the top right corner
+      drag(ed, 320, 64, 352, 48);
+      expect(pos(box)).toEqual([64, 48, 352, 224]);
+    });
+
+    it('places a new box with a title', () => {
+      const { circuit, ed } = setup();
+      ed.setAddMode('BoxElm');
+      drag(ed, 64, 64, 256, 192);
+      const box = circuit.elements[0] as BoxElm;
+      expect(box).toBeInstanceOf(BoxElm);
+      expect(box.title).toBe('Label');
+    });
   });
 
   describe('wires following a moved part', () => {

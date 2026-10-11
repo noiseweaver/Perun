@@ -44,6 +44,8 @@ export interface Theme {
     energy: string;
     /** Glow and temperature labels on hot parts (heat overlay). */
     heat: string;
+    /** Colors a box (BoxElm) can pick for its border, title and shading. */
+    boxes: BoxColors;
   };
   scope: {
     /** Plot area. */
@@ -107,13 +109,23 @@ export interface Theme {
   };
 }
 
+/** The colors a box can pick, by name, so a box keeps its meaning across themes. */
+export interface BoxColors {
+  red: string;
+  orange: string;
+  green: string;
+  blue: string;
+  purple: string;
+}
+
 /** A theme as authored: every key but schemaVersion is optional and falls back to `meta.base`. */
 export type ThemeInput = {
   schemaVersion: 1;
   meta?: Partial<Theme['meta']>;
   canvas?: Partial<Theme['canvas']>;
-  circuit?: Partial<Omit<Theme['circuit'], 'voltage'>> & {
+  circuit?: Partial<Omit<Theme['circuit'], 'voltage' | 'boxes'>> & {
     voltage?: Partial<Theme['circuit']['voltage']>;
+    boxes?: Partial<BoxColors>;
   };
   scope?: Partial<Theme['scope']>;
   teaching?: Partial<Theme['teaching']>;
@@ -200,6 +212,19 @@ export const themeInputSchema = z
         magneticField: color('Field loops around inductors (Show fields).'),
         energy: color('Stored energy glow and energy flow arrows (Show fields).'),
         heat: color('Glow and temperature labels on hot parts (Heat visualization).'),
+        boxes: z
+          .object({
+            red: color('Red box.'),
+            orange: color('Orange box.'),
+            green: color('Green box.'),
+            blue: color('Blue box.'),
+            purple: color('Purple box.'),
+          })
+          .partial()
+          .describe(
+            'Colors a box can pick for its border, title and shading; a box without one uses ' +
+              'componentMuted.',
+          ),
       })
       .partial()
       .optional()

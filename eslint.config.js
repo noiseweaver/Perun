@@ -108,7 +108,9 @@ export default tseslint.config(
   {
     // The only place color literals may live, plus the theme package's own tests (they exercise
     // the color parser and theme validation) and the theme e2e tests (they author themes as data).
+    // The translations name colors as words (a box's Red or Orange), never as styling.
     files: [
+      'packages/app/src/i18nExtra.ts',
       'packages/theme/src/builtins/**',
       'packages/theme/src/**/*.test.ts',
       'packages/app/e2e/themes.spec.ts',

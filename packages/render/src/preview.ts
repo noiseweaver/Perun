@@ -46,5 +46,6 @@ export function drawPreview(
     showOhm: false,
     dotCount: () => 0,
   };
+  view.drawBehind?.(e, dc);
   view.draw(e, dc);
 }

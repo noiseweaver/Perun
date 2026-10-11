@@ -143,6 +143,37 @@
           "type": "string",
           "maxLength": 64,
           "description": "Glow and temperature labels on hot parts (Heat visualization)."
+        },
+        "boxes": {
+          "type": "object",
+          "properties": {
+            "red": {
+              "type": "string",
+              "maxLength": 64,
+              "description": "Red box."
+            },
+            "orange": {
+              "type": "string",
+              "maxLength": 64,
+              "description": "Orange box."
+            },
+            "green": {
+              "type": "string",
+              "maxLength": 64,
+              "description": "Green box."
+            },
+            "blue": {
+              "type": "string",
+              "maxLength": 64,
+              "description": "Blue box."
+            },
+            "purple": {
+              "type": "string",
+              "maxLength": 64,
+              "description": "Purple box."
+            }
+          },
+          "description": "Colors a box can pick for its border, title and shading; a box without one uses componentMuted."
         }
       }
     },

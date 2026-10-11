@@ -60,6 +60,12 @@ const PAIRS: [string, string, number][] = [
   ['circuit.magneticField', 'canvas.background', GRAPHIC_CONTRAST],
   ['circuit.energy', 'canvas.background', GRAPHIC_CONTRAST],
   ['circuit.heat', 'canvas.background', GRAPHIC_CONTRAST],
+  // box titles are text in these colors
+  ['circuit.boxes.red', 'canvas.background', TEXT_CONTRAST],
+  ['circuit.boxes.orange', 'canvas.background', TEXT_CONTRAST],
+  ['circuit.boxes.green', 'canvas.background', TEXT_CONTRAST],
+  ['circuit.boxes.blue', 'canvas.background', TEXT_CONTRAST],
+  ['circuit.boxes.purple', 'canvas.background', TEXT_CONTRAST],
   ['scope.traces.0', 'scope.background', GRAPHIC_CONTRAST],
   ['scope.current', 'scope.background', GRAPHIC_CONTRAST],
   ['teaching.pens.0', 'canvas.background', GRAPHIC_CONTRAST],

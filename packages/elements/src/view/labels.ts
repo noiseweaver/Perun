@@ -6,7 +6,7 @@
 // the drawing code is new.
 
 import type { AudioOutputElm } from '../elm/AudioOutputElm.ts';
-import type { BoxElm, LineElm } from '../elm/GraphicElm.ts';
+import { BOX_TITLE_PAD, type BoxElm, type LineElm } from '../elm/GraphicElm.ts';
 import type { InstructionDisplayElm } from '../elm/InstructionDisplayElm.ts';
 import { LabeledNodeElm } from '../elm/LabeledNodeElm.ts';
 import { OutputElm } from '../elm/OutputElm.ts';
@@ -27,8 +27,8 @@ import {
   volt,
   type ElementView,
 } from './common.ts';
-import { calcLeads, interp, pt, sign, type Rect } from './geometry.ts';
-import type { DrawContext, Ink, Pt, TextStyle } from './Painter.ts';
+import { calcLeads, interp, pt, sign, unionRect, type Rect } from './geometry.ts';
+import type { ColorRole, DrawContext, Ink, Pt, TextStyle } from './Painter.ts';
 import { getUnitTextWithScale } from './units.ts';
 
 const NODE_CIRCLE = 17;
@@ -212,21 +212,73 @@ export const textView: ElementView<TextElm> = {
   bbox: (e) => textBox(e, (s) => s.length * e.size * 0.55),
 };
 
+/** A box's ink: its chosen theme box color (`boxRed` for red), or the secondary part color. */
+function boxInk(e: BoxElm): Ink {
+  if (e.color === 'default') return MUTED;
+  return { role: `box${e.color.charAt(0).toUpperCase()}${e.color.slice(1)}` as ColorRole };
+}
+
+const BOX_DASH: Record<BoxElm['border'], readonly number[]> = {
+  dashed: [16, 6],
+  solid: [],
+  dotted: [2, 5],
+  none: [],
+};
+/** How much of the box color shows through a shaded box. */
+const BOX_SHADE = 0.12;
+/** Half the side of a corner handle drawn on a highlighted box. */
+const BOX_HANDLE = 3;
+
+/** A box title: the theme's monospace font, bold, at the box's title size. */
+const boxTitleFont = (e: BoxElm): TextStyle => ({ font: 'value', size: e.titleSize, bold: true });
+
 export const boxView: ElementView<BoxElm> = {
-  draw(e, ctx) {
-    const x1 = Math.min(e.x, e.x2);
-    const y1 = Math.min(e.y, e.y2);
-    const x2 = Math.max(e.x, e.x2);
-    const y2 = Math.max(e.y, e.y2);
-    const corners = [pt(x1, y1), pt(x2, y1), pt(x2, y2), pt(x1, y2)];
-    ctx.painter.polyline(corners, MUTED, { closed: true, width: 1, dash: [16, 6] });
+  drawBehind(e, ctx) {
+    if (!e.shaded) return;
+    const { x1, y1, x2, y2 } = e.rect();
+    ctx.painter.fillPolygon([pt(x1, y1), pt(x2, y1), pt(x2, y2), pt(x1, y2)], boxInk(e), BOX_SHADE);
   },
-  bbox: (e) => ({
-    x1: Math.min(e.x, e.x2),
-    y1: Math.min(e.y, e.y2),
-    x2: Math.max(e.x, e.x2),
-    y2: Math.max(e.y, e.y2),
-  }),
+  draw(e, ctx) {
+    const p = ctx.painter;
+    const ink = boxInk(e);
+    const { x1, y1, x2, y2 } = e.rect();
+    const font = boxTitleFont(e);
+    const w = e.title === '' ? 0 : Math.ceil(p.measureText(e.title, font));
+    const at = e.titleAt(w);
+    // with no border a highlighted box still shows its outline, so it can be found and moved
+    const border = e.border === 'none' && ctx.highlighted ? 'dashed' : e.border;
+    if (border !== 'none') {
+      const style = { width: 1, dash: BOX_DASH[border] };
+      // a title on the border leaves a gap in the top edge, clamped to the box
+      const gap1 = Math.max(x1, at.x - BOX_TITLE_PAD);
+      const gap2 = Math.min(x2, at.x + w + BOX_TITLE_PAD);
+      if (w > 0 && e.titlePlace !== 'inside' && gap2 > gap1)
+        p.polyline(
+          [pt(gap2, y1), pt(x2, y1), pt(x2, y2), pt(x1, y2), pt(x1, y1), pt(gap1, y1)],
+          ink,
+          style,
+        );
+      else
+        p.polyline([pt(x1, y1), pt(x2, y1), pt(x2, y2), pt(x1, y2)], ink, {
+          ...style,
+          closed: true,
+        });
+    }
+    if (w > 0) p.text(e.title, at, ink, { ...font, baseline: 'middle' });
+    if (ctx.highlighted)
+      for (const c of e.corners()) {
+        const s = BOX_HANDLE;
+        p.fillPolygon(
+          [pt(c.x - s, c.y - s), pt(c.x + s, c.y - s), pt(c.x + s, c.y + s), pt(c.x - s, c.y + s)],
+          ink,
+        );
+      }
+  },
+  bbox: (e) => {
+    const r = e.rect();
+    const t = e.titleRect();
+    return t === null ? r : unionRect(r, t);
+  },
 };
 
 export const lineView: ElementView<LineElm> = {

@@ -306,6 +306,19 @@ const COLOR_GROUPS: { title: string; fields: [Path, string][] }[] = [
     ],
   },
   {
+    title: 'Boxes',
+    // the names of a box's colors, not colors
+    /* eslint-disable local/no-color-literals */
+    fields: [
+      ['circuit.boxes.red', 'Red'],
+      ['circuit.boxes.orange', 'Orange'],
+      ['circuit.boxes.green', 'Green'],
+      ['circuit.boxes.blue', 'Blue'],
+      ['circuit.boxes.purple', 'Purple'],
+    ],
+    /* eslint-enable local/no-color-literals */
+  },
+  {
     title: 'Scopes',
     fields: [
       ['scope.background', 'Plot'],
@@ -338,6 +351,7 @@ const COLOR_GROUPS: { title: string; fields: [Path, string][] }[] = [
 const GROUP_PREFIX: Record<string, string> = {
   'Circuit area': 'Circuit',
   Voltages: 'Voltage',
+  Boxes: 'Box',
   Elements: '',
   Scopes: 'Scope',
   App: 'App',

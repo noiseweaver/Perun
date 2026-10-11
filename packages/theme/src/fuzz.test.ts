@@ -68,6 +68,7 @@ const KEYS = [
   'canvas',
   'circuit',
   'voltage',
+  'boxes',
   'scope',
   'traces',
   'teaching',
@@ -181,8 +182,9 @@ function expectSafe(r: ThemeParseResult): void {
     ...Object.values(t.canvas),
     ...Object.values(t.ui),
     ...Object.values(t.circuit.voltage),
+    ...Object.values(t.circuit.boxes),
     ...Object.entries(t.circuit)
-      .filter(([k]) => k !== 'voltage')
+      .filter(([k]) => k !== 'voltage' && k !== 'boxes')
       .map(([, v]) => v as string),
     ...Object.entries(t.scope).flatMap(([, v]) => (Array.isArray(v) ? v : [v])),
     ...t.teaching.pens,

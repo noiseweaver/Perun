@@ -375,6 +375,22 @@ export abstract class CircuitElm extends SimElement {
     return this.lastHandleGrabbed;
   }
 
+  /**
+   * The handle a drag that grabbed no handle moves: the nearer end (upstream `dragPost`'s
+   * choice).
+   */
+  closestHandle(x: number, y: number): number {
+    return distanceSq(this.x, this.y, x, y) > distanceSq(this.x2, this.y2, x, y) ? 1 : 0;
+  }
+
+  /**
+   * Selected by an area drag only when the area holds the whole element, not when it touches it
+   * (upstream BoxElm `selectRect`).
+   */
+  selectsOnlyWhenEnclosed(): boolean {
+    return false;
+  }
+
   /** Squared distance from the mouse, to pick between overlapping boxes; -1 means not a hit. */
   getMouseDistance(gx: number, gy: number): number {
     if (this.getPostCount() === 0)

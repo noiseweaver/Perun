@@ -35,6 +35,13 @@ export const nord: Theme = {
     magneticField: '#b48ead',
     energy: '#d08770',
     heat: '#ff7a6e',
+    boxes: {
+      red: '#d08d93',
+      orange: '#d28e78',
+      green: '#a3be8c',
+      blue: '#81a1c1',
+      purple: '#b894b1',
+    },
   },
   scope: {
     background: '#292e39',
@@ -86,6 +93,13 @@ export const solarizedDark: Theme = {
     magneticField: '#6c71c4',
     energy: '#cb4b16',
     heat: '#ff5a4f',
+    boxes: {
+      red: '#e56765',
+      orange: '#d7764d',
+      green: '#859900',
+      blue: '#3b96d6',
+      purple: '#868ace',
+    },
   },
   scope: {
     background: '#00252e',
@@ -137,6 +151,13 @@ export const gruvboxDark: Theme = {
     magneticField: '#d3869b',
     energy: '#fe8019',
     heat: '#fb4934',
+    boxes: {
+      red: '#fb5b48',
+      orange: '#fe8019',
+      green: '#b8bb26',
+      blue: '#83a598',
+      purple: '#d3869b',
+    },
   },
   scope: {
     background: '#1d2021',
@@ -188,6 +209,13 @@ export const adwaitaDark: Theme = {
     magneticField: '#dc8add',
     energy: '#ffa348',
     heat: '#ff7b63',
+    boxes: {
+      red: '#ff7b63',
+      orange: '#ffa348',
+      green: '#8ff0a4',
+      blue: '#78aeed',
+      purple: '#dc8add',
+    },
   },
   scope: {
     background: '#1a1a1a',

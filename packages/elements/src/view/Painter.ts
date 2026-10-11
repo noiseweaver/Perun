@@ -21,7 +21,13 @@ export type ColorRole =
   | 'currentDot'
   | 'badConnection'
   /** The selection color (a selected pin in the pin layout dialog). */
-  | 'selection';
+  | 'selection'
+  /** The colors a box can pick (theme `circuit.boxes`). */
+  | 'boxRed'
+  | 'boxOrange'
+  | 'boxGreen'
+  | 'boxBlue'
+  | 'boxPurple';
 
 /** What to draw with. */
 export type Ink =
@@ -79,7 +85,8 @@ export interface Painter {
     ink: Ink,
     style?: StrokeStyle & { readonly closed?: boolean },
   ): void;
-  fillPolygon(points: readonly Pt[], ink: Ink): void;
+  /** `opacity` (0 to 1, default 1) lets what is under the polygon show through. */
+  fillPolygon(points: readonly Pt[], ink: Ink, opacity?: number): void;
   circle(center: Pt, r: number, ink: Ink, style?: StrokeStyle): void;
   fillCircle(center: Pt, r: number, ink: Ink): void;
   text(s: string, at: Pt, ink: Ink, style?: TextStyle): void;
