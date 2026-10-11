@@ -55,6 +55,11 @@ const GLYPH_EM = 0.6;
 export const BOX_TITLE_INSET = 10;
 /** Space either side of a title drawn on the border. */
 export const BOX_TITLE_PAD = 4;
+/**
+ * How close to a corner grabs it, and to an edge picks the box, in circuit units: wider than a
+ * post's grab so a finger finds a corner. The box's bounds reach this far out.
+ */
+export const BOX_GRAB = 10;
 
 /** A dashed rectangle for grouping parts of a drawing. */
 export class BoxElm extends GraphicElm {
@@ -144,7 +149,7 @@ export class BoxElm extends GraphicElm {
 
   /** Near one of the four edges, or on the title. */
   override getMouseDistance(gx: number, gy: number): number {
-    const thresh = 10;
+    const thresh = BOX_GRAB;
     const dx1 = Math.abs(gx - this.x);
     const dy1 = Math.abs(gy - this.y);
     const dx2 = Math.abs(gx - this.x2);
@@ -171,6 +176,7 @@ export class BoxElm extends GraphicElm {
     minSize: number,
   ): number {
     this.lastHandleGrabbed = -1;
+    deltaSq = Math.max(deltaSq, BOX_GRAB * BOX_GRAB);
     if (distanceSq(this.x, this.y, this.x2, this.y2) >= minSize) {
       const corners = this.corners();
       for (let i = 0; i !== corners.length; i++) {

@@ -96,6 +96,14 @@ describe('Editor', () => {
       expect(pos(box)).toEqual([64, 48, 352, 224]);
     });
 
+    it('resizes from just outside a corner', () => {
+      const { circuit, ed } = setup(BOXED);
+      const box = circuit.elements[0] as CircuitElm;
+      // a press a few units past the bottom right corner, outside the box
+      drag(ed, 326, 230, 358, 262);
+      expect(pos(box)).toEqual([64, 64, 352, 256]);
+    });
+
     it('places a new box with a title', () => {
       const { circuit, ed } = setup();
       ed.setAddMode('BoxElm');

@@ -6,7 +6,7 @@
 // the drawing code is new.
 
 import type { AudioOutputElm } from '../elm/AudioOutputElm.ts';
-import { BOX_TITLE_PAD, type BoxElm, type LineElm } from '../elm/GraphicElm.ts';
+import { BOX_GRAB, BOX_TITLE_PAD, type BoxElm, type LineElm } from '../elm/GraphicElm.ts';
 import type { InstructionDisplayElm } from '../elm/InstructionDisplayElm.ts';
 import { LabeledNodeElm } from '../elm/LabeledNodeElm.ts';
 import { OutputElm } from '../elm/OutputElm.ts';
@@ -340,8 +340,10 @@ export const boxView: ElementView<BoxElm> = {
         );
       }
   },
+  // reaches past the edges, so a corner can be grabbed from outside the box too
   bbox: (e) => {
-    const r = e.rect();
+    const { x1, y1, x2, y2 } = e.rect();
+    const r = { x1: x1 - BOX_GRAB, y1: y1 - BOX_GRAB, x2: x2 + BOX_GRAB, y2: y2 + BOX_GRAB };
     const t = e.titleRect();
     return t === null ? r : unionRect(r, t);
   },

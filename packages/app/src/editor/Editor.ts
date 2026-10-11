@@ -321,6 +321,13 @@ export class Editor {
     }
   }
 
+  /** The hovered drawing's resize handle under the point (a box corner), or -1. */
+  hoverHandle(gx: number, gy: number): number {
+    const m = this.mouseElm;
+    if (m === null || m.getPostCount() > 0) return -1;
+    return m.getHandleGrabbedClose(gx, gy, POSTGRABSQ, MINPOSTGRABSIZE);
+  }
+
   // ---- mouse -------------------------------------------------------------------------------
 
   /** Pointer moved with no button down (hover). */

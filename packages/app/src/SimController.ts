@@ -5,6 +5,7 @@
 // 160 * iterCount steps per second, at most about 50 ms of simulation per frame.
 
 import {
+  BoxElm,
   CapacitorElm,
   INFO_WIDTH,
   InductorElm,
@@ -2366,7 +2367,13 @@ export class SimController {
       if (pan !== null) cursor = 'grabbing';
       else if (ed.mouseMode === MouseMode.ADD_ELM) cursor = 'crosshair';
       else if (m instanceof SwitchElm && inRect(switchRect(m), gx, gy)) cursor = 'pointer';
-      else if (m !== null) cursor = ed.mousePost >= 0 ? 'crosshair' : 'move';
+      else if (m instanceof BoxElm && ed.hoverHandle(gx, gy) >= 0) {
+        // a box corner: top left and bottom right resize along one diagonal
+        const c = m.corners()[ed.hoverHandle(gx, gy)];
+        const r = m.rect();
+        cursor =
+          c !== undefined && (c.x === r.x1) === (c.y === r.y1) ? 'nwse-resize' : 'nesw-resize';
+      } else if (m !== null) cursor = ed.mousePost >= 0 ? 'crosshair' : 'move';
       canvas.style.cursor = cursor;
     };
     const pinchState = (): { dist: number; mx: number; my: number } | null => {
