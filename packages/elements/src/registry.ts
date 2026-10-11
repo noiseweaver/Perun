@@ -17,7 +17,7 @@ import { JfetElmType, NJfetElmType, PJfetElmType } from './elm/JfetElm.ts';
 import { OpAmpElmType, OpAmpSwapElmType } from './elm/OpAmpElm.ts';
 import { PushSwitchElmType } from './elm/PushSwitchElm.ts';
 import { RailElmType } from './elm/RailElm.ts';
-import { TextElmType } from './elm/TextElm.ts';
+import { FormulaElmType, TextElmType } from './elm/TextElm.ts';
 import { NTransistorElmType, PTransistorElmType, TransistorElmType } from './elm/TransistorElm.ts';
 import { ZenerElmType } from './elm/ZenerElm.ts';
 import { CurrentElmType } from './elm/CurrentElm.ts';
@@ -173,6 +173,7 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   PTransistorElmType,
   NMosfetElmType,
   PMosfetElmType,
+  FormulaElmType,
   elementType('DCVoltageElm', DCVoltageElm),
   elementType('ACVoltageElm', ACVoltageElm),
   // Phase 8: inputs and sources

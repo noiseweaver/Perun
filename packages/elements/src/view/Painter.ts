@@ -73,6 +73,15 @@ export interface TextStyle {
   readonly rotate?: number;
 }
 
+/** A typeset formula's size in circuit units: width, height above the baseline, depth below. */
+export interface MathBox {
+  readonly width: number;
+  readonly height: number;
+  readonly depth: number;
+  /** Why the TeX doesn't parse, or null; nothing is drawn then. */
+  readonly error: string | null;
+}
+
 /**
  * Drawing surface for element views. Coordinates are circuit units; the renderer owns the
  * viewport transform, theme and HiDPI scaling.
@@ -93,6 +102,14 @@ export interface Painter {
   measureText(s: string, style?: TextStyle): number;
   /** Font size in circuit units for this style. */
   fontSize(style?: TextStyle): number;
+  /**
+   * Typeset LaTeX (one display-style formula) with the left end of its baseline at `at`, `size`
+   * circuit units to the em. Null when it can't be typeset yet (MathJax still loading, or a
+   * painter without math): the caller shows the source instead.
+   */
+  math(tex: string, at: Pt, ink: Ink, size: number): MathBox | null;
+  /** The size `math` would draw this formula at, without drawing it. */
+  measureMath(tex: string, size: number): MathBox | null;
   /**
    * Current dots from a to b at dot position `pos` (from DrawContext.dotCount). Draws nothing
    * while the simulation is paused or dots are off.

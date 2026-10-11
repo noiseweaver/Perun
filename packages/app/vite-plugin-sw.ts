@@ -19,9 +19,10 @@ function listFiles(dir: string): string[] {
 /**
  * Writes `sw.js`, the service worker that makes the app work offline (PLAN.md Phase 9): it
  * caches every file of the build on install (the app, fonts, the example circuits and the
- * licenses) and serves them from the cache. Translations are cached when first used, so only the
- * languages someone picks are downloaded. The cache name carries a hash of all the files, so a
- * new build is a new worker; the app offers to reload into it (src/pwa.ts).
+ * licenses) and serves them from the cache. Translations and MathJax are cached when first used,
+ * so only the languages someone picks are downloaded, and MathJax only where formulas are used.
+ * The cache name carries a hash of all the files, so a new build is a new worker; the app offers
+ * to reload into it (src/pwa.ts).
  */
 export function serviceWorker(): Plugin {
   let config: ResolvedConfig;
@@ -51,8 +52,11 @@ export function serviceWorker(): Plugin {
   };
 }
 
-/** Files cached on first use instead of on install: the string catalogs. */
-const LAZY = /^locale_[a-z-]+\.txt$/;
+/**
+ * Files cached on first use instead of on install: the string catalogs, and MathJax (about
+ * 600 kB compressed), which only circuits with formula boxes load.
+ */
+const LAZY = /^(locale_[a-z-]+\.txt|mathjax-[\w-]+\.js)$/;
 
 function workerSource(version: string, files: string[]): string {
   const LAZY_IN_WORKER = LAZY.toString();
@@ -110,7 +114,7 @@ self.addEventListener('fetch', (event) => {
         (hit) =>
           hit ||
           fetch(req).then((res) => {
-            // a language, once used, works offline too
+            // a language or MathJax, once used, works offline too
             if (res.ok && ${LAZY_IN_WORKER}.test(url.pathname.split('/').pop())) void cache.put(req, res.clone());
             return res;
           }),

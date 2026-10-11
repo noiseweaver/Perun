@@ -4,13 +4,47 @@
 import {
   CURRENT_TOO_FAST,
   type Ink,
+  type MathBox,
   type Painter,
   type Pt,
   type StrokeStyle,
   type TextStyle,
 } from '@perun/elements';
 import { parseColor, toCss, type Rgba } from '@perun/theme';
+import { layoutMath, type MathOp } from './math.ts';
 import type { Palette } from './palette.ts';
+
+const paths = new WeakMap<MathOp, Path2D>();
+
+/** Draw a formula's operations; the context is in em/1000 units with the baseline at y = 0. */
+export function drawMathOps(c: CanvasRenderingContext2D, ops: readonly MathOp[]): void {
+  for (const op of ops) {
+    c.save();
+    c.transform(...op.m);
+    if (op.kind === 'path') {
+      let p = paths.get(op);
+      if (p === undefined) {
+        p = new Path2D(op.d);
+        paths.set(op, p);
+      }
+      c.fill(p);
+    } else if (op.kind === 'rect') c.fillRect(op.x, op.y, op.w, op.h);
+    else if (op.kind === 'line') {
+      c.lineWidth = op.width;
+      c.setLineDash([]);
+      c.beginPath();
+      c.moveTo(op.x1, op.y1);
+      c.lineTo(op.x2, op.y2);
+      c.stroke();
+    } else {
+      c.font = `${op.italic ? 'italic ' : ''}${op.bold ? 'bold ' : ''}${op.size}px serif`;
+      c.textAlign = 'left';
+      c.textBaseline = 'alphabetic';
+      c.fillText(op.s, 0, 0);
+    }
+    c.restore();
+  }
+}
 
 /** Drawing settings for one frame. */
 export interface PaintSettings {
@@ -197,6 +231,31 @@ export class CanvasPainter implements Painter {
       c.fillText(s, 0, 0);
       c.restore();
     } else c.fillText(s, at.x, at.y);
+  }
+
+  measureMath(tex: string, size: number): MathBox | null {
+    const l = layoutMath(tex);
+    if (l === null) return null;
+    const k = size / 1000;
+    return { width: l.width * k, height: l.height * k, depth: l.depth * k, error: l.error };
+  }
+
+  math(tex: string, at: Pt, ink: Ink, size: number): MathBox | null {
+    const l = layoutMath(tex);
+    if (l === null) return null;
+    const k = size / 1000;
+    if (l.error === null) {
+      const c = this.ctx;
+      c.save();
+      c.translate(at.x, at.y);
+      c.scale(k, k);
+      const style = this.style(ink);
+      c.fillStyle = style;
+      c.strokeStyle = style;
+      drawMathOps(c, l.ops);
+      c.restore();
+    }
+    return { width: l.width * k, height: l.height * k, depth: l.depth * k, error: l.error };
   }
 
   dots(a: Pt, b: Pt, pos: number): void {

@@ -7,6 +7,7 @@ import {
   type CircuitElm,
   type DrawContext,
   type Ink,
+  type MathBox,
   type Painter,
   type Pt,
   type Rect,
@@ -16,6 +17,7 @@ import {
 } from '@perun/elements';
 import { parseColor, toCss, type Theme } from '@perun/theme';
 import { CanvasPainter, heatColor } from './CanvasPainter.ts';
+import { layoutMath, type Matrix } from './math.ts';
 import { Palette } from './palette.ts';
 import { findPosts } from './posts.ts';
 
@@ -146,6 +148,8 @@ export type MeasureText = (s: string, font: string, size: number) => number;
 export const estimateText: MeasureText = (s, _font, size) => s.length * size * 0.6;
 
 const fmt = (v: number): string => String(Math.round(v * 100) / 100);
+/** Formula coordinates are in em/1000, so whole units are fine enough. */
+const fmtMath = (v: number): string => String(Math.round(v * 1000) / 1000);
 
 function esc(s: string): string {
   return s
@@ -269,6 +273,45 @@ export class SvgPainter implements Painter {
     if (style?.rotate)
       a += ` transform="rotate(${fmt((style.rotate * 180) / Math.PI)} ${fmt(at.x)} ${fmt(at.y)})"`;
     this.out.push(`<text ${a} fill="${this.paint(ink)}" xml:space="preserve">${esc(s)}</text>`);
+  }
+
+  measureMath(tex: string, size: number): MathBox | null {
+    const l = layoutMath(tex);
+    if (l === null) return null;
+    const k = size / 1000;
+    return { width: l.width * k, height: l.height * k, depth: l.depth * k, error: l.error };
+  }
+
+  math(tex: string, at: Pt, ink: Ink, size: number): MathBox | null {
+    const l = layoutMath(tex);
+    if (l === null) return null;
+    const k = size / 1000;
+    if (l.error === null) {
+      const fill = this.paint(ink);
+      const parts: string[] = [];
+      const tf = (m: Matrix): string => `transform="matrix(${m.map(fmtMath).join(' ')})"`;
+      for (const op of l.ops) {
+        if (op.kind === 'path') parts.push(`<path d="${esc(op.d)}" ${tf(op.m)}/>`);
+        else if (op.kind === 'rect')
+          parts.push(
+            `<rect x="${fmtMath(op.x)}" y="${fmtMath(op.y)}" width="${fmtMath(op.w)}" height="${fmtMath(op.h)}" ${tf(op.m)}/>`,
+          );
+        else if (op.kind === 'line')
+          parts.push(
+            `<line x1="${fmtMath(op.x1)}" y1="${fmtMath(op.y1)}" x2="${fmtMath(op.x2)}" y2="${fmtMath(op.y2)}" stroke="${fill}" stroke-width="${fmtMath(op.width)}" ${tf(op.m)}/>`,
+          );
+        else {
+          const st = `${op.italic ? ' font-style="italic"' : ''}${op.bold ? ' font-weight="bold"' : ''}`;
+          parts.push(
+            `<text font-family="serif" font-size="${fmtMath(op.size)}"${st} ${tf(op.m)} xml:space="preserve">${esc(op.s)}</text>`,
+          );
+        }
+      }
+      this.out.push(
+        `<g fill="${fill}" transform="translate(${fmt(at.x)} ${fmt(at.y)}) scale(${String(k)})">${parts.join('')}</g>`,
+      );
+    }
+    return { width: l.width * k, height: l.height * k, depth: l.depth * k, error: l.error };
   }
 
   dots(): void {}

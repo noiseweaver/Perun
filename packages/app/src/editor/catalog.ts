@@ -95,6 +95,7 @@ const GROUPS: [string, [string, string, string?][]][] = [
       ['LEDElm', 'LED', 'light emitting diode'],
       ['LampElm', 'Lamp', 'bulb light'],
       ['TextElm', 'Text', 'label note'],
+      ['FormulaElm', 'Formula', 'latex math equation tex live value'], // not in upstream
       ['BoxElm', 'Box', 'rectangle frame'],
       ['LineElm', 'Line', 'graphic'],
       ['LabeledNodeElm', 'Labeled Node', 'net name label'],
