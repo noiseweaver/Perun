@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Perun contributors
 
 import type { RefObject } from 'react';
+import { flushSync } from 'react-dom';
 import { t } from '../i18n.ts';
 
 /**
@@ -79,11 +80,10 @@ export function FormulaToolbar({
     const text = value.slice(0, a) + s.before + picked + (s.after ?? '') + value.slice(b);
     // inside the first slot, after any selected text
     const cursor = a + s.before.length + picked.length;
-    onInsert(text);
-    requestAnimationFrame(() => {
-      ta.focus();
-      ta.setSelectionRange(cursor, cursor);
-    });
+    // render the new text now, so the cursor is in place before the next key press
+    flushSync(() => onInsert(text));
+    ta.focus();
+    ta.setSelectionRange(cursor, cursor);
   };
   const group = (snippets: readonly Snippet[], mono = false) => (
     <div className="formula-tools-group">
