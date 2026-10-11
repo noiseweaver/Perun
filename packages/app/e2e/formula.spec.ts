@@ -76,3 +76,27 @@ test('the palette places a formula box that saves as a text box', async ({ page 
   const xml = await page.evaluate(() => window.perun?.controller.circuit.dumpXml() ?? '');
   expect(xml).toMatch(/<x [^>]*te="I = \\\\frac\{V\}\{R\}"[^>]*tex="1"/);
 });
+
+test('insert buttons put LaTeX at the cursor and the legend explains it', async ({ page }) => {
+  await open(page, CIRCUIT);
+  const f = await at(page, 500, 145);
+  await page.mouse.dblclick(f.x, f.y);
+  const field = page.getByTestId('field-0');
+  await field.fill('V = ');
+  await page.getByTestId('formula-insert-Fraction').click();
+  await page.keyboard.type('a');
+  await page.getByTestId('formula-insert-Omega').click();
+  await page.getByTestId('formula-insert-Current of the first linked part').click();
+  await expect(field).toHaveValue('V = \\frac{a\\Omega \\I }{}');
+  await expect.poll(() => formulaText(page)).toBe('V = \\frac{a\\Omega \\I }{}');
+
+  // a selection goes into the slot
+  await field.fill('R1');
+  await field.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(1, 2));
+  await page.getByTestId('formula-insert-Subscript').click();
+  await expect(field).toHaveValue('R_{1}');
+
+  const legend = page.getByTestId('formula-legend');
+  await legend.locator('summary').click();
+  await expect(legend).toContainText('\\V{out}');
+});

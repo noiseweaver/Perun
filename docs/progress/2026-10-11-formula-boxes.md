@@ -17,7 +17,11 @@ boldsymbol, cancel, color, gensymb, newcommand, upgreek. The embed build and the
 inline MathJax (main.js grows from 4.6 to 8.2 MB, as it is in both the blocks and the editor page).
 Saved format and compatibility: [deviation](../deviations/formula-boxes.md).
 
-Next: nothing planned. Possible extras: a symbol picker, more TeX packages (physics, mhchem).
+Above the LaTeX field, insert buttons (fraction, sub/superscript, root, times, units, Greek
+letters, `\V \I \P \V{…}`) put a snippet at the cursor, wrapping any selected text in its first
+slot; below it, a collapsible "LaTeX help" legend lists the common commands and the live values.
 
-Open: new labels (Formula, Linked parts, the live values hint) are English only. Links to a part
+Next: nothing planned. Possible extras: more TeX packages (physics, mhchem).
+
+Open: new labels (Formula, Linked parts, the live values hint, insert button titles, the legend) are English only. Links to a part
 that is deleted show `?` until saved; on reload the remaining parts are renumbered.

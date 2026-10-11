@@ -25,6 +25,7 @@ import { useNarrow } from './useNarrow.ts';
 import { Icon, type IconName } from './Icon.tsx';
 import { FormulaCard } from './FormulaCard.tsx';
 import { FormulaLinks } from './FormulaLinks.tsx';
+import { FormulaLegend, FormulaToolbar } from './FormulaToolbar.tsx';
 import { LiveHeader } from './LiveHeader.tsx';
 import { t } from '../i18n.ts';
 
@@ -235,6 +236,7 @@ function TextField(props: FieldProps) {
   const [text, setText] = useState(ei.text ?? '');
   useEffect(() => setText(ei.text ?? ''), [ei]);
   const preview = isFormulaSource(props);
+  const area = useRef<HTMLTextAreaElement>(null);
   const commit = (s: string): void => {
     if (preview) {
       ei.text = s;
@@ -263,9 +265,11 @@ function TextField(props: FieldProps) {
       <label className="field-label" htmlFor={id}>
         {fieldLabel(ei)}
       </label>
+      {preview && <FormulaToolbar field={area} onInsert={change} />}
       {ei.multiline ? (
         <textarea
           {...common}
+          ref={area}
           rows={3}
           onChange={(e) => change(e.target.value)}
           onBlur={(e) => commit(e.target.value)}
@@ -280,6 +284,7 @@ function TextField(props: FieldProps) {
           }}
         />
       )}
+      {preview && <FormulaLegend />}
     </div>
   );
 }

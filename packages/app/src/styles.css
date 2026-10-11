@@ -3849,3 +3849,64 @@ ul.theme-contrast {
 .feedback-form .text-area {
   resize: vertical;
 }
+
+/* formula box insert buttons and LaTeX legend (docs/deviations/formula-boxes.md) */
+.formula-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.formula-tools-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.formula-tool {
+  min-width: 32px;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.formula-tool:hover {
+  border-color: var(--ui-accent);
+}
+
+.formula-tool-mono {
+  font-family: var(--mono-font);
+  font-size: 12px;
+}
+
+.formula-legend {
+  font-size: 12px;
+  color: var(--ui-text-muted);
+}
+
+.formula-legend summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.formula-legend table {
+  margin: 4px 0;
+  border-collapse: collapse;
+}
+
+.formula-legend td {
+  padding: 2px 8px 2px 0;
+  vertical-align: top;
+}
+
+.formula-legend-tex {
+  font-family: var(--mono-font);
+  color: var(--ui-text);
+  white-space: pre;
+}
