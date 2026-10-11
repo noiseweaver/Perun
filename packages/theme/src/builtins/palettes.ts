@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 
+import { contrastRatio, rgba } from '../color.ts';
+import { TEXT_CONTRAST } from '../contrast.ts';
 import type { Theme } from '../schema.ts';
 import { dark } from './dark.ts';
 
@@ -54,6 +56,15 @@ function mix(a: string, b: string, w: number): string {
   return `#${[0, 1, 2].map((i) => hex(ch(a, i) * w + ch(b, i) * (1 - w))).join('')}`;
 }
 
+/** `c` mixed toward `fg` in small steps until it reads as text on `bg` (WCAG 4.5:1). */
+function readable(c: string, bg: string, fg: string): string {
+  const b = rgba(bg);
+  let out = c;
+  for (let w = 1; w > 0 && contrastRatio(rgba(out), b) < TEXT_CONTRAST + 0.05; w -= 0.02)
+    out = mix(c, fg, w - 0.02);
+  return out;
+}
+
 function paletteTheme(p: Palette): Theme {
   return {
     schemaVersion: 1,
@@ -74,6 +85,14 @@ function paletteTheme(p: Palette): Theme {
       magneticField: p.purple,
       energy: p.energy ?? p.orange,
       heat: mix(p.red, p.orange, 0.6),
+      // box titles are text: nudged toward the text color where a palette color is too faint
+      boxes: {
+        red: readable(p.red, p.bg, p.fg),
+        orange: readable(p.orange, p.bg, p.fg),
+        green: readable(p.green, p.bg, p.fg),
+        blue: readable(p.blue, p.bg, p.fg),
+        purple: readable(p.purple, p.bg, p.fg),
+      },
     },
     scope: {
       background: p.scopeBg,

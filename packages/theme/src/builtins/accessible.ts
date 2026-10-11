@@ -29,6 +29,13 @@ export const highContrast: Theme = {
     magneticField: '#ff9cff',
     energy: '#ffd000',
     heat: '#ff5c39',
+    boxes: {
+      red: '#ff6b6b',
+      orange: '#ffa040',
+      green: '#3dff6e',
+      blue: '#4dc3ff',
+      purple: '#ff9cff',
+    },
   },
   scope: {
     background: '#000000',
@@ -79,6 +86,13 @@ export const colorblindSafe: Theme = {
     magneticField: '#cc79a7',
     energy: '#e69f00',
     heat: '#d55e00',
+    boxes: {
+      red: '#d6640a',
+      orange: '#e69f00',
+      green: '#009e73',
+      blue: '#328ec1',
+      purple: '#cc79a7',
+    },
   },
   scope: {
     ...dark.scope,

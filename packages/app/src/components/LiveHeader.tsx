@@ -54,7 +54,9 @@ export function LiveHeader({ elm }: { elm: CircuitElm }) {
       const b = viewFor(elm)?.bbox(elm) ?? { x1: elm.x, y1: elm.y, x2: elm.x2, y2: elm.y2 };
       const bw = Math.max(b.x2 - b.x1, 1);
       const bh = Math.max(b.y2 - b.y1, 1);
-      const turned = bh > bw * 1.2;
+      // a drawing (a box, a line) is shown whole and upright
+      const drawing = elm.getPostCount() === 0;
+      const turned = !drawing && bh > bw * 1.2;
       if (turned !== canvas.hasAttribute('data-turned'))
         canvas.toggleAttribute('data-turned', turned);
       const w = canvas.clientWidth;
@@ -68,7 +70,9 @@ export function LiveHeader({ elm }: { elm: CircuitElm }) {
       const across = Math.min(bw, bh);
       const long = Math.max(w, h);
       const short = Math.min(w, h);
-      vp.scale = Math.min((long - 16) / Math.min(len, 80), (short - 12) / across, 2);
+      vp.scale = drawing
+        ? Math.min((w - 16) / bw, (h - 12) / bh, 2)
+        : Math.min((long - 16) / Math.min(len, 80), (short - 12) / across, 2);
       vp.offsetX = (w - bw * vp.scale) / 2 - b.x1 * vp.scale;
       vp.offsetY = (h - bh * vp.scale) / 2 - b.y1 * vp.scale;
       r.refreshPosts();

@@ -20,6 +20,7 @@ export function resolveTheme(input: ThemeInput): Theme {
       ...base.circuit,
       ...input.circuit,
       voltage: { ...base.circuit.voltage, ...input.circuit?.voltage },
+      boxes: { ...base.circuit.boxes, ...input.circuit?.boxes },
     },
     scope: {
       ...base.scope,

@@ -43,7 +43,6 @@ function names(e: CircuitElm): string[] {
 /** Upstream gives the antenna no fields. */
 const NO_FIELDS = new Set([
   'AntennaElm',
-  'BoxElm',
   'CC2Elm',
   'CC2NegElm',
   'ComparatorElm',

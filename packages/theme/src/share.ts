@@ -32,7 +32,7 @@ export function minimizeTheme(theme: Theme): ThemeInput {
     const b = base[group] as unknown as Record<string, unknown>;
     const diff: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(t)) {
-      if (group === 'circuit' && k === 'voltage') {
+      if (group === 'circuit' && (k === 'voltage' || k === 'boxes')) {
         const vb = b[k] as Record<string, unknown>;
         const vd = Object.fromEntries(
           Object.entries(v as Record<string, unknown>).filter(([kk, vv]) => !same(vv, vb[kk])),

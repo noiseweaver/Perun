@@ -33,6 +33,13 @@ export const light: Theme = {
     magneticField: '#7b1fa2',
     energy: '#e65100',
     heat: '#d84315',
+    boxes: {
+      red: '#c62828',
+      orange: '#bf4300',
+      green: '#2e7d32',
+      blue: '#1565c0',
+      purple: '#7b1fa2',
+    },
   },
   scope: {
     background: '#ffffff',

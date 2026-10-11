@@ -11,6 +11,11 @@ import type { DrawContext, Ink, Pt, TextStyle } from './Painter.ts';
 /** How one element class is drawn. */
 export interface ElementView<E extends CircuitElm = CircuitElm> {
   draw(e: E, ctx: DrawContext): void;
+  /**
+   * Drawn before any element's `draw`, under the whole circuit (a box's shading). Never
+   * highlighted.
+   */
+  drawBehind?(e: E, ctx: DrawContext): void;
   /** Box for hit testing and bad-connection checks (upstream `boundingBox`). */
   bbox(e: E): Rect;
 }

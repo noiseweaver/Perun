@@ -83,19 +83,19 @@ export function drawSchematic(
   opts: SchematicOptions,
 ): void {
   const els = drawn(elements);
-  for (const e of els) {
-    const dc: DrawContext = {
-      painter,
-      highlighted: false,
-      showValues: opts.showValues,
-      euroResistors: opts.euroResistors,
-      euroGates: opts.euroGates,
-      showOhm: opts.showOhm,
-      textFont: opts.textFont,
-      dotCount: () => 0,
-    };
-    viewFor(e)?.draw(e, dc);
-  }
+  const dc: DrawContext = {
+    painter,
+    highlighted: false,
+    showValues: opts.showValues,
+    euroResistors: opts.euroResistors,
+    euroGates: opts.euroGates,
+    showOhm: opts.showOhm,
+    textFont: opts.textFont,
+    dotCount: () => 0,
+  };
+  // box shading first, under everything
+  for (const e of els) viewFor(e)?.drawBehind?.(e, dc);
+  for (const e of els) viewFor(e)?.draw(e, dc);
   const posts = findPosts(els);
   const post = (p: { x: number; y: number }, role: 'post' | 'badConnection'): void =>
     painter.fillCircle({ x: p.x + 0.5, y: p.y + 0.5 }, 3.5, { role });
@@ -225,9 +225,10 @@ export class SvgPainter implements Painter {
     this.out.push(`<${tag} points="${this.points(points)}" ${this.strokeAttrs(ink, style)}/>`);
   }
 
-  fillPolygon(points: readonly Pt[], ink: Ink): void {
+  fillPolygon(points: readonly Pt[], ink: Ink, opacity = 1): void {
     if (points.length === 0) return;
-    this.out.push(`<polygon points="${this.points(points)}" fill="${this.paint(ink)}"/>`);
+    const op = opacity < 1 ? ` fill-opacity="${fmt(opacity)}"` : '';
+    this.out.push(`<polygon points="${this.points(points)}" fill="${this.paint(ink)}"${op}/>`);
   }
 
   circle(center: Pt, r: number, ink: Ink, style?: StrokeStyle): void {

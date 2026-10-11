@@ -309,6 +309,9 @@ export class CircuitRenderer {
       valueScale: frame.valueScale,
     };
 
+    // box shading, under everything else
+    this.drawBehind(frame);
+
     // under the elements, so the parts stay readable
     if (anyFields(frame.fields))
       this.fields.draw(c, this.elements, this.palette, {
@@ -376,6 +379,26 @@ export class CircuitRenderer {
     c.globalAlpha = 0.08;
     c.fillRect(r.x1, r.y1, r.x2 - r.x1, r.y2 - r.y1);
     c.restore();
+  }
+
+  /** What views draw under the whole circuit (`ElementView.drawBehind`). */
+  private drawBehind(frame: FrameState): void {
+    const painter = this.painter;
+    painter.highlighted = false;
+    for (const e of this.elements) {
+      const view = viewFor(e);
+      if (!view?.drawBehind) continue;
+      view.drawBehind(e, {
+        painter,
+        highlighted: false,
+        showValues: frame.showValues,
+        euroResistors: frame.euroResistors,
+        euroGates: frame.euroGates,
+        showOhm: frame.showOhm,
+        textFont: frame.textFont,
+        dotCount: () => 0,
+      });
+    }
   }
 
   /**
