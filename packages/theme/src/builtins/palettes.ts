@@ -9,12 +9,11 @@ import { dark } from './dark.ts';
 /*
  * Themes after popular editor and Obsidian palettes, built from each palette's published values:
  * Dracula (draculatheme.com), Monokai (Wimer Hazenberg), Tokyo Night (enkia), Catppuccin
- * (catppuccin.com), Rosé Pine (rosepinetheme.com), Everforest (sainnhe), GitHub's Primer colors,
- * Solarized (Ethan Schoonover), Obsidian's default theme, One Dark (Atom), Kanagawa (rebelot), Ayu
- * (dempfi) and Night Owl (Sarah Drasner). Every theme maps its palette the same
- * way: voltages run from the palette's red to its green, current dots are its yellow, selection
- * and hover its blue and cyan. Where a palette color is too faint for the contrast checks
- * (contrast.ts), it is nudged and the comment says so.
+ * (catppuccin.com), Rosé Pine (rosepinetheme.com), Everforest (sainnhe), Solarized (Ethan
+ * Schoonover), Obsidian's default theme, Kanagawa (rebelot) and Ayu (dempfi). Every theme maps its
+ * palette the same way: voltages run from the palette's red to its green, current dots are its
+ * yellow, selection and hover its blue and cyan. Where a palette color is too faint for the
+ * contrast checks (contrast.ts), it is nudged and the comment says so.
  */
 
 interface Palette {
@@ -299,54 +298,6 @@ export const everforestDark = paletteTheme({
   accent: '#a7c080',
 });
 
-export const githubDark = paletteTheme({
-  name: 'GitHub Dark',
-  description: "Near-black with bright blue, after GitHub's dark mode",
-  base: 'dark',
-  bg: '#0d1117',
-  scopeBg: '#010409',
-  surface: '#010409',
-  raised: '#161b22',
-  grid: '#161b22',
-  gridMajor: '#21262d',
-  border: '#30363d',
-  fg: '#e6edf3',
-  muted: '#8b949e',
-  zero: '#6e7681',
-  red: '#f85149',
-  orange: '#db6d28',
-  yellow: '#d29922',
-  green: '#3fb950',
-  cyan: '#39c5cf',
-  blue: '#58a6ff',
-  purple: '#a371f7',
-  accent: '#58a6ff',
-});
-
-export const githubLight = paletteTheme({
-  name: 'GitHub Light',
-  description: "Clean white with GitHub's blue, after its light mode",
-  base: 'light',
-  bg: '#ffffff',
-  scopeBg: '#ffffff',
-  surface: '#ffffff',
-  raised: '#f6f8fa',
-  grid: '#eaeef2',
-  gridMajor: '#d0d7de',
-  border: '#d0d7de',
-  fg: '#1f2328',
-  muted: '#59636e',
-  zero: '#818b98',
-  red: '#d1242f',
-  orange: '#bc4c00',
-  yellow: '#9a6700',
-  green: '#1a7f37',
-  cyan: '#1b7c83',
-  blue: '#0969da',
-  purple: '#8250df',
-  accent: '#0969da',
-});
-
 export const solarizedLight = paletteTheme({
   name: 'Solarized Light',
   description: 'Warm cream with Solarized accents',
@@ -426,32 +377,6 @@ export const obsidianLight = paletteTheme({
   danger: '#c8243a',
 });
 
-export const oneDark = paletteTheme({
-  name: 'One Dark',
-  description: "Cool slate with soft pastels, after Atom's One Dark",
-  base: 'dark',
-  bg: '#282c34',
-  scopeBg: '#21252b',
-  surface: '#21252b',
-  raised: '#2c313a',
-  grid: '#2c313a',
-  gridMajor: '#3e4451',
-  border: '#3e4451',
-  // One Dark's foreground, lightened for 4.5:1 on the tinted paused Run button
-  fg: '#c8ccd4',
-  muted: '#9da5b4',
-  // One Dark's gutter grey, lightened for 3:1
-  zero: '#7f848e',
-  red: '#e06c75',
-  orange: '#d19a66',
-  yellow: '#e5c07b',
-  green: '#98c379',
-  cyan: '#56b6c2',
-  blue: '#61afef',
-  purple: '#c678dd',
-  accent: '#61afef',
-});
-
 export const kanagawa = paletteTheme({
   name: 'Kanagawa',
   description: 'Ink blue with muted woodblock colors, after Kanagawa',
@@ -499,29 +424,4 @@ export const ayuDark = paletteTheme({
   blue: '#59c2ff',
   purple: '#d2a6ff',
   accent: '#e6b450',
-});
-
-export const nightOwl = paletteTheme({
-  name: 'Night Owl',
-  description: 'Midnight navy with bright pastels, after Night Owl',
-  base: 'dark',
-  bg: '#011627',
-  scopeBg: '#01111d',
-  surface: '#01111d',
-  raised: '#0b2942',
-  grid: '#0b2942',
-  gridMajor: '#122d42',
-  border: '#1d3b53',
-  fg: '#d6deeb',
-  muted: '#a1aab8',
-  // Night Owl's comment color, lightened for 3:1
-  zero: '#6a8aa3',
-  red: '#ef5350',
-  orange: '#f78c6c',
-  yellow: '#ecc48d',
-  green: '#addb67',
-  cyan: '#7fdbca',
-  blue: '#82aaff',
-  purple: '#c792ea',
-  accent: '#82aaff',
 });

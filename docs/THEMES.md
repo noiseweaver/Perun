@@ -54,7 +54,6 @@ you type; the app ignores it.
 | `high-contrast`     | High Contrast     | Black and white, bright voltages, thick lines and large current dots    |
 | `colorblind-safe`   | Colorblind Safe   | Blue to orange voltages and Okabe-Ito accents instead of red and green  |
 | `chalkboard`        | Chalkboard        | Slate green with chalky pastels and thicker lines, for projectors       |
-| `whiteboard`        | Whiteboard        | White with marker colors (black, red, blue, green) and thick lines      |
 | `eink`              | E-ink             | Black on white for e-ink: grey voltage steps, thick lines, big dots     |
 | `blueprint`         | Blueprint         | Deep blue with white line work on a ruled grid                          |
 | `phosphor`          | Phosphor          | Green oscilloscope screen; voltage reads as brightness                  |
@@ -71,14 +70,10 @@ you type; the app ignores it.
 | `catppuccin-latte`  | Catppuccin Latte  | After Catppuccin's light flavor                                         |
 | `rose-pine`         | Rosé Pine         | After Rosé Pine                                                         |
 | `everforest-dark`   | Everforest Dark   | After Everforest                                                        |
-| `github-dark`       | GitHub Dark       | After GitHub's dark mode (Primer colors)                                |
-| `github-light`      | GitHub Light      | After GitHub's light mode (Primer colors)                               |
 | `obsidian-dark`     | Obsidian Dark     | After Obsidian's default dark theme                                     |
 | `obsidian-light`    | Obsidian Light    | After Obsidian's default light theme                                    |
-| `one-dark`          | One Dark          | After Atom's One Dark                                                   |
 | `kanagawa`          | Kanagawa          | After Kanagawa                                                          |
 | `ayu-dark`          | Ayu Dark          | After Ayu's dark mode                                                   |
-| `night-owl`         | Night Owl         | After Night Owl                                                         |
 
 Chalkboard to Engineering Paper are after real surfaces rather than palettes, and set their
 colors by hand (`builtins/looks.ts`). E-ink and Phosphor drop red to green on purpose: E-ink

@@ -3,12 +3,11 @@
 
 import type { Theme } from '../schema.ts';
 import { dark } from './dark.ts';
-import { light } from './light.ts';
 
 /*
- * Themes after real surfaces rather than editor palettes: a chalkboard and a whiteboard for
- * teaching, an e-ink screen, a blueprint, a phosphor oscilloscope screen and engineering paper.
- * Each keeps the app's Material 3 layout and fonts and only changes colors and line weights.
+ * Themes after real surfaces rather than editor palettes: a chalkboard for teaching, an e-ink
+ * screen, a blueprint, a phosphor oscilloscope screen and engineering paper. Each keeps the app's
+ * Material 3 layout and fonts and only changes colors and line weights.
  */
 
 /** Slate green with chalky pastels, for teaching on a projector. */
@@ -68,57 +67,6 @@ export const chalkboard: Theme = {
     danger: '#f6b0b0',
   },
   style: { ...dark.style, strokeWidth: 3, dotRadius: 3 },
-};
-
-/** White with marker colors and heavy lines, readable from the back of a room. */
-export const whiteboard: Theme = {
-  schemaVersion: 1,
-  meta: {
-    name: 'Whiteboard',
-    author: 'Perun',
-    description: 'White with black, red, blue and green marker colors and thick lines',
-    base: 'light',
-  },
-  canvas: { background: '#ffffff', grid: '#eceef1', gridMajor: '#dcdfe4' },
-  circuit: {
-    voltage: { negative: '#d32f2f', zero: '#6f7378', positive: '#18803a' },
-    currentDot: '#b25e00',
-    component: '#111111',
-    componentMuted: '#6f7378',
-    selection: '#7b1fa2',
-    hover: '#00838f',
-    post: '#111111',
-    text: '#111111',
-    label: '#3c4043',
-    badConnection: '#d32f2f',
-    electricField: '#1a56db',
-    magneticField: '#7b1fa2',
-    energy: '#c25100',
-    heat: '#d84315',
-    boxes: {
-      red: '#c62828',
-      orange: '#b34700',
-      green: '#18803a',
-      blue: '#1a56db',
-      purple: '#7b1fa2',
-    },
-  },
-  scope: {
-    background: '#ffffff',
-    card: '#f1f3f6',
-    undockedCard: '#e8ebf0',
-    grid: '#e3e6eb',
-    gridMajor: '#a9afba',
-    text: '#111111',
-    current: '#b25e00',
-    trigger: '#c25100',
-    fft: '#d32f2f',
-    fftGrid: '#f3c7c7',
-    traces: ['#18803a', '#1a56db', '#d32f2f', '#7b1fa2', '#111111', '#c25100'],
-  },
-  teaching: { pens: ['#111111', '#d32f2f', '#1a56db', '#18803a', '#7b1fa2'], laser: '#e11d48' },
-  ui: { ...light.ui, surface: '#ffffff', surfaceAlt: '#f1f3f6' },
-  style: { ...dark.style, strokeWidth: 3.5 },
 };
 
 /**
