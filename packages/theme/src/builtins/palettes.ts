@@ -10,7 +10,8 @@ import { dark } from './dark.ts';
  * Themes after popular editor and Obsidian palettes, built from each palette's published values:
  * Dracula (draculatheme.com), Monokai (Wimer Hazenberg), Tokyo Night (enkia), Catppuccin
  * (catppuccin.com), Rosé Pine (rosepinetheme.com), Everforest (sainnhe), GitHub's Primer colors,
- * Solarized (Ethan Schoonover) and Obsidian's default theme. Every theme maps its palette the same
+ * Solarized (Ethan Schoonover), Obsidian's default theme, One Dark (Atom), Kanagawa (rebelot), Ayu
+ * (dempfi) and Night Owl (Sarah Drasner). Every theme maps its palette the same
  * way: voltages run from the palette's red to its green, current dots are its yellow, selection
  * and hover its blue and cyan. Where a palette color is too faint for the contrast checks
  * (contrast.ts), it is nudged and the comment says so.
@@ -423,4 +424,104 @@ export const obsidianLight = paletteTheme({
   purple: '#7852ee',
   accent: '#7852ee',
   danger: '#c8243a',
+});
+
+export const oneDark = paletteTheme({
+  name: 'One Dark',
+  description: "Cool slate with soft pastels, after Atom's One Dark",
+  base: 'dark',
+  bg: '#282c34',
+  scopeBg: '#21252b',
+  surface: '#21252b',
+  raised: '#2c313a',
+  grid: '#2c313a',
+  gridMajor: '#3e4451',
+  border: '#3e4451',
+  // One Dark's foreground, lightened for 4.5:1 on the tinted paused Run button
+  fg: '#c8ccd4',
+  muted: '#9da5b4',
+  // One Dark's gutter grey, lightened for 3:1
+  zero: '#7f848e',
+  red: '#e06c75',
+  orange: '#d19a66',
+  yellow: '#e5c07b',
+  green: '#98c379',
+  cyan: '#56b6c2',
+  blue: '#61afef',
+  purple: '#c678dd',
+  accent: '#61afef',
+});
+
+export const kanagawa = paletteTheme({
+  name: 'Kanagawa',
+  description: 'Ink blue with muted woodblock colors, after Kanagawa',
+  base: 'dark',
+  bg: '#1f1f28',
+  scopeBg: '#16161d',
+  surface: '#16161d',
+  raised: '#2a2a37',
+  grid: '#2a2a37',
+  gridMajor: '#363646',
+  border: '#54546d',
+  fg: '#dcd7ba',
+  muted: '#c8c093',
+  zero: '#727169',
+  red: '#e46876',
+  orange: '#ffa066',
+  yellow: '#e6c384',
+  green: '#98bb6c',
+  cyan: '#7fb4ca',
+  blue: '#7e9cd8',
+  purple: '#957fb8',
+  accent: '#7e9cd8',
+  danger: '#ff5d62',
+});
+
+export const ayuDark = paletteTheme({
+  name: 'Ayu Dark',
+  description: 'Near black with warm orange and gold, after Ayu',
+  base: 'dark',
+  bg: '#0b0e14',
+  scopeBg: '#0d1017',
+  surface: '#0d1017',
+  raised: '#131721',
+  grid: '#131721',
+  gridMajor: '#1b1f29',
+  border: '#2d3340',
+  fg: '#bfbdb6',
+  muted: '#9b9a94',
+  zero: '#636a72',
+  red: '#f07178',
+  orange: '#ff8f40',
+  yellow: '#e6b450',
+  green: '#aad94c',
+  cyan: '#95e6cb',
+  blue: '#59c2ff',
+  purple: '#d2a6ff',
+  accent: '#e6b450',
+});
+
+export const nightOwl = paletteTheme({
+  name: 'Night Owl',
+  description: 'Midnight navy with bright pastels, after Night Owl',
+  base: 'dark',
+  bg: '#011627',
+  scopeBg: '#01111d',
+  surface: '#01111d',
+  raised: '#0b2942',
+  grid: '#0b2942',
+  gridMajor: '#122d42',
+  border: '#1d3b53',
+  fg: '#d6deeb',
+  muted: '#a1aab8',
+  // Night Owl's comment color, lightened for 3:1
+  zero: '#6a8aa3',
+  red: '#ef5350',
+  orange: '#f78c6c',
+  yellow: '#ecc48d',
+  green: '#addb67',
+  cyan: '#7fdbca',
+  blue: '#82aaff',
+  purple: '#c792ea',
+  accent: '#82aaff',
 });
