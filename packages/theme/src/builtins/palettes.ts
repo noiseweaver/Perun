@@ -9,11 +9,11 @@ import { dark } from './dark.ts';
 /*
  * Themes after popular editor and Obsidian palettes, built from each palette's published values:
  * Dracula (draculatheme.com), Monokai (Wimer Hazenberg), Tokyo Night (enkia), Catppuccin
- * (catppuccin.com), Rosé Pine (rosepinetheme.com), Everforest (sainnhe), GitHub's Primer colors,
- * Solarized (Ethan Schoonover) and Obsidian's default theme. Every theme maps its palette the same
- * way: voltages run from the palette's red to its green, current dots are its yellow, selection
- * and hover its blue and cyan. Where a palette color is too faint for the contrast checks
- * (contrast.ts), it is nudged and the comment says so.
+ * (catppuccin.com), Rosé Pine (rosepinetheme.com), Everforest (sainnhe), Solarized (Ethan
+ * Schoonover), Obsidian's default theme, Kanagawa (rebelot) and Ayu (dempfi). Every theme maps its
+ * palette the same way: voltages run from the palette's red to its green, current dots are its
+ * yellow, selection and hover its blue and cyan. Where a palette color is too faint for the
+ * contrast checks (contrast.ts), it is nudged and the comment says so.
  */
 
 interface Palette {
@@ -298,54 +298,6 @@ export const everforestDark = paletteTheme({
   accent: '#a7c080',
 });
 
-export const githubDark = paletteTheme({
-  name: 'GitHub Dark',
-  description: "Near-black with bright blue, after GitHub's dark mode",
-  base: 'dark',
-  bg: '#0d1117',
-  scopeBg: '#010409',
-  surface: '#010409',
-  raised: '#161b22',
-  grid: '#161b22',
-  gridMajor: '#21262d',
-  border: '#30363d',
-  fg: '#e6edf3',
-  muted: '#8b949e',
-  zero: '#6e7681',
-  red: '#f85149',
-  orange: '#db6d28',
-  yellow: '#d29922',
-  green: '#3fb950',
-  cyan: '#39c5cf',
-  blue: '#58a6ff',
-  purple: '#a371f7',
-  accent: '#58a6ff',
-});
-
-export const githubLight = paletteTheme({
-  name: 'GitHub Light',
-  description: "Clean white with GitHub's blue, after its light mode",
-  base: 'light',
-  bg: '#ffffff',
-  scopeBg: '#ffffff',
-  surface: '#ffffff',
-  raised: '#f6f8fa',
-  grid: '#eaeef2',
-  gridMajor: '#d0d7de',
-  border: '#d0d7de',
-  fg: '#1f2328',
-  muted: '#59636e',
-  zero: '#818b98',
-  red: '#d1242f',
-  orange: '#bc4c00',
-  yellow: '#9a6700',
-  green: '#1a7f37',
-  cyan: '#1b7c83',
-  blue: '#0969da',
-  purple: '#8250df',
-  accent: '#0969da',
-});
-
 export const solarizedLight = paletteTheme({
   name: 'Solarized Light',
   description: 'Warm cream with Solarized accents',
@@ -423,4 +375,53 @@ export const obsidianLight = paletteTheme({
   purple: '#7852ee',
   accent: '#7852ee',
   danger: '#c8243a',
+});
+
+export const kanagawa = paletteTheme({
+  name: 'Kanagawa',
+  description: 'Ink blue with muted woodblock colors, after Kanagawa',
+  base: 'dark',
+  bg: '#1f1f28',
+  scopeBg: '#16161d',
+  surface: '#16161d',
+  raised: '#2a2a37',
+  grid: '#2a2a37',
+  gridMajor: '#363646',
+  border: '#54546d',
+  fg: '#dcd7ba',
+  muted: '#c8c093',
+  zero: '#727169',
+  red: '#e46876',
+  orange: '#ffa066',
+  yellow: '#e6c384',
+  green: '#98bb6c',
+  cyan: '#7fb4ca',
+  blue: '#7e9cd8',
+  purple: '#957fb8',
+  accent: '#7e9cd8',
+  danger: '#ff5d62',
+});
+
+export const ayuDark = paletteTheme({
+  name: 'Ayu Dark',
+  description: 'Near black with warm orange and gold, after Ayu',
+  base: 'dark',
+  bg: '#0b0e14',
+  scopeBg: '#0d1017',
+  surface: '#0d1017',
+  raised: '#131721',
+  grid: '#131721',
+  gridMajor: '#1b1f29',
+  border: '#2d3340',
+  fg: '#bfbdb6',
+  muted: '#9b9a94',
+  zero: '#636a72',
+  red: '#f07178',
+  orange: '#ff8f40',
+  yellow: '#e6b450',
+  green: '#aad94c',
+  cyan: '#95e6cb',
+  blue: '#59c2ff',
+  purple: '#d2a6ff',
+  accent: '#e6b450',
 });

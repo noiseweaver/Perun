@@ -45,30 +45,39 @@ you type; the app ignores it.
 
 ## Built-in themes
 
-| Id                 | Name             | Notes                                                                   |
-| ------------------ | ---------------- | ----------------------------------------------------------------------- |
-| `dark`             | Dark             | The default. Material 3 dark scheme from a blue seed, muted voltages    |
-| `light`            | Light            | Material 3 light scheme, deep voltage colors with 3:1 contrast on white |
-| `classic`          | Classic          | The CircuitJS1 look: black, green and red voltages, yellow current      |
-| `classic-dots`     | Classic Dots     | Classic with a dot grid                                                 |
-| `high-contrast`    | High Contrast    | Black and white, bright voltages, thick lines and large current dots    |
-| `colorblind-safe`  | Colorblind Safe  | Blue to orange voltages and Okabe-Ito accents instead of red and green  |
-| `nord`             | Nord             | After the Nord palette                                                  |
-| `solarized-dark`   | Solarized Dark   | After Solarized                                                         |
-| `gruvbox-dark`     | Gruvbox Dark     | After Gruvbox                                                           |
-| `adwaita-dark`     | Adwaita Dark     | After GNOME's libadwaita dark style                                     |
-| `solarized-light`  | Solarized Light  | After Solarized's light mode                                            |
-| `dracula`          | Dracula          | After Dracula                                                           |
-| `monokai`          | Monokai          | After Monokai                                                           |
-| `tokyo-night`      | Tokyo Night      | After Tokyo Night                                                       |
-| `catppuccin-mocha` | Catppuccin Mocha | After Catppuccin's dark flavor                                          |
-| `catppuccin-latte` | Catppuccin Latte | After Catppuccin's light flavor                                         |
-| `rose-pine`        | Rosé Pine        | After Rosé Pine                                                         |
-| `everforest-dark`  | Everforest Dark  | After Everforest                                                        |
-| `github-dark`      | GitHub Dark      | After GitHub's dark mode (Primer colors)                                |
-| `github-light`     | GitHub Light     | After GitHub's light mode (Primer colors)                               |
-| `obsidian-dark`    | Obsidian Dark    | After Obsidian's default dark theme                                     |
-| `obsidian-light`   | Obsidian Light   | After Obsidian's default light theme                                    |
+| Id                  | Name              | Notes                                                                   |
+| ------------------- | ----------------- | ----------------------------------------------------------------------- |
+| `dark`              | Dark              | The default. Material 3 dark scheme from a blue seed, muted voltages    |
+| `light`             | Light             | Material 3 light scheme, deep voltage colors with 3:1 contrast on white |
+| `classic`           | Classic           | The CircuitJS1 look: black, green and red voltages, yellow current      |
+| `classic-dots`      | Classic Dots      | Classic with a dot grid                                                 |
+| `high-contrast`     | High Contrast     | Black and white, bright voltages, thick lines and large current dots    |
+| `colorblind-safe`   | Colorblind Safe   | Blue to orange voltages and Okabe-Ito accents instead of red and green  |
+| `chalkboard`        | Chalkboard        | Slate green with chalky pastels and thicker lines, for projectors       |
+| `eink`              | E-ink             | Black on white for e-ink: grey voltage steps, thick lines, big dots     |
+| `blueprint`         | Blueprint         | Deep blue with white line work on a ruled grid                          |
+| `phosphor`          | Phosphor          | Green oscilloscope screen; voltage reads as brightness                  |
+| `engineering-paper` | Engineering Paper | Cream paper, pencil-grey parts, faint green ruled grid                  |
+| `nord`              | Nord              | After the Nord palette                                                  |
+| `solarized-dark`    | Solarized Dark    | After Solarized                                                         |
+| `gruvbox-dark`      | Gruvbox Dark      | After Gruvbox                                                           |
+| `adwaita-dark`      | Adwaita Dark      | After GNOME's libadwaita dark style                                     |
+| `solarized-light`   | Solarized Light   | After Solarized's light mode                                            |
+| `dracula`           | Dracula           | After Dracula                                                           |
+| `monokai`           | Monokai           | After Monokai                                                           |
+| `tokyo-night`       | Tokyo Night       | After Tokyo Night                                                       |
+| `catppuccin-mocha`  | Catppuccin Mocha  | After Catppuccin's dark flavor                                          |
+| `catppuccin-latte`  | Catppuccin Latte  | After Catppuccin's light flavor                                         |
+| `rose-pine`         | Rosé Pine         | After Rosé Pine                                                         |
+| `everforest-dark`   | Everforest Dark   | After Everforest                                                        |
+| `obsidian-dark`     | Obsidian Dark     | After Obsidian's default dark theme                                     |
+| `obsidian-light`    | Obsidian Light    | After Obsidian's default light theme                                    |
+| `kanagawa`          | Kanagawa          | After Kanagawa                                                          |
+| `ayu-dark`          | Ayu Dark          | After Ayu's dark mode                                                   |
+
+Chalkboard to Engineering Paper are after real surfaces rather than palettes, and set their
+colors by hand (`builtins/looks.ts`). E-ink and Phosphor drop red to green on purpose: E-ink
+runs light grey (negative) to black (positive) for greyscale screens, Phosphor dim to bright green.
 
 The palette themes (Nord onwards) all map colors the same way: the palette's red and green for
 voltages, its yellow for current, its blue and cyan for selection and hover. Where a palette

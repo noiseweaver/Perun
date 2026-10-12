@@ -7,13 +7,14 @@ import { classic, classicDots } from './classic.ts';
 import { adwaitaDark, gruvboxDark, nord, solarizedDark } from './community.ts';
 import { dark } from './dark.ts';
 import { light } from './light.ts';
+import { blueprint, chalkboard, eink, engineeringPaper, phosphor } from './looks.ts';
 import {
+  ayuDark,
   catppuccinLatte,
   catppuccinMocha,
   dracula,
   everforestDark,
-  githubDark,
-  githubLight,
+  kanagawa,
   monokai,
   obsidianDark,
   obsidianLight,
@@ -30,6 +31,11 @@ export const BUILTIN_THEMES: Readonly<Record<string, Theme>> = {
   'classic-dots': classicDots,
   'high-contrast': highContrast,
   'colorblind-safe': colorblindSafe,
+  chalkboard,
+  eink,
+  blueprint,
+  phosphor,
+  'engineering-paper': engineeringPaper,
   nord,
   'solarized-dark': solarizedDark,
   'gruvbox-dark': gruvboxDark,
@@ -42,10 +48,10 @@ export const BUILTIN_THEMES: Readonly<Record<string, Theme>> = {
   'catppuccin-latte': catppuccinLatte,
   'rose-pine': rosePine,
   'everforest-dark': everforestDark,
-  'github-dark': githubDark,
-  'github-light': githubLight,
   'obsidian-dark': obsidianDark,
   'obsidian-light': obsidianLight,
+  kanagawa,
+  'ayu-dark': ayuDark,
 };
 
 /** The theme a new user sees, and the base for themes that name none. */
