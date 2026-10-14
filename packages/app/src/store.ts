@@ -10,6 +10,7 @@ import {
   type Theme,
 } from '@perun/theme';
 import { ALL_FIELDS, NO_FIELDS, type FieldOptions } from '@perun/render';
+import type { LoadIssue } from '@perun/format';
 import { create } from 'zustand';
 import type { ExampleList } from './examples.ts';
 
@@ -117,7 +118,8 @@ export interface AppState {
   display: CircuitDisplay;
   settings: UserSettings;
   status: SimStatus;
-  warnings: string[];
+  /** What the last load left out; cleared when the notice is dismissed. */
+  loadIssues: LoadIssue[];
   /** Load or fetch error to show. */
   error: string | null;
   examples: ExampleList | null;
@@ -163,6 +165,7 @@ export interface AppState {
     | 'scopeCsv'
     | 'whatsNew'
     | 'feedback'
+    | 'loadIssues'
     | null;
   /** Bumped to move keyboard focus to the property panel (double-click, Enter). */
   inspectorFocus: number;
@@ -372,7 +375,7 @@ export const useApp = create<AppState>(() => ({
     stopMessage: null,
     badConnections: 0,
   },
-  warnings: [],
+  loadIssues: [],
   error: null,
   examples: null,
   editor: {

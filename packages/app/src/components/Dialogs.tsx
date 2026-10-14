@@ -22,6 +22,7 @@ import { useApp } from '../store.ts';
 import { themeLink } from '../themes.ts';
 import { AboutDialog } from './AboutDialog.tsx';
 import { FeedbackDialog } from './FeedbackDialog.tsx';
+import { LoadIssuesDialog } from './LoadIssuesDialog.tsx';
 import { WhatsNewDialog } from './WhatsNewDialog.tsx';
 import { BodeDialog } from './BodeDialog.tsx';
 import { SweepDialog } from './SweepDialog.tsx';
@@ -576,6 +577,8 @@ export function Dialogs() {
       return <WhatsNewDialog />;
     case 'feedback':
       return <FeedbackDialog />;
+    case 'loadIssues':
+      return <LoadIssuesDialog />;
     default:
       return null;
   }

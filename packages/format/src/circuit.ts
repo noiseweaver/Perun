@@ -61,6 +61,30 @@ export const OptionFlag = {
   AUTO_DC_ON_RESET: 128,
 } as const;
 
+/** Why a load left a record out. */
+export type LoadIssueKind =
+  /** A part type this app doesn't know (newer CircuitJS1, another program, or a damaged file). */
+  | 'unknown-part'
+  /** A record that failed to read (bad numbers, too few fields). */
+  | 'unreadable'
+  /** A scope that watches a part that was left out. */
+  | 'scope-part-missing'
+  /** A slider that adjusts a part that was left out. */
+  | 'slider-part-missing';
+
+/** A record a load left out, and why (the app lists these behind its "skipped" notice). */
+export interface LoadIssue {
+  kind: LoadIssueKind;
+  /** What upstream would print to its console. */
+  message: string;
+  /** The part's type code or XML tag (unknown-part), or the error text (unreadable). */
+  detail: string;
+  /** The record as written in the file. */
+  record: string;
+  /** The record's line in a text-format file, from 1; 0 in XML. */
+  line: number;
+}
+
 const KEPT_FLAGS =
   OptionFlag.DOTS |
   OptionFlag.SMALL_GRID |
@@ -95,6 +119,11 @@ export interface Hint {
 const clamp = (v: number, min: number, max: number): number => Math.min(Math.max(v, min), max);
 
 /** `tramp`: "to duration", the ambient ramp's end temperature in °C and its length in seconds. */
+/** An exception's own message, without Java's class-name prefix. */
+function errorText(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
+
 function parseRamp(s: string | null): { to: number; duration: number } | null {
   if (s === null) return null;
   const [to, duration] = s.trim().split(/\s+/).map(Number);
@@ -185,8 +214,26 @@ export class Circuit {
   }
   /** A subcircuit's circuit is open for editing: loading keeps the circuit's own models. */
   keepLocalModels = false;
+  /** The records the last load left out (unknown or broken), in file order. */
+  issues: LoadIssue[] = [];
+  /** The record being read, for `warn` (an XML record is printed only when it is left out). */
+  private reading: { record: string | XmlElement; line: number } = { record: '', line: 0 };
+
   /** What upstream would print to its console while loading (unknown or broken records). */
-  warnings: string[] = [];
+  get warnings(): string[] {
+    return this.issues.map((i) => i.message);
+  }
+
+  private warn(kind: LoadIssueKind, message: string, detail = ''): void {
+    const { record, line } = this.reading;
+    this.issues.push({
+      kind,
+      message,
+      detail,
+      record: typeof record === 'string' ? record : prettyPrint(record).trim(),
+      line,
+    });
+  }
 
   /** Upstream `getIterCount()`: the speed slider as iterations per frame. */
   getIterCount(): number {
@@ -295,6 +342,8 @@ export class Circuit {
   }
 
   private beginRead(): void {
+    this.issues = [];
+    this.reading = { record: '', line: 0 };
     this.readStart = this.elements.length;
     this.loadList = [...this.elements];
     this.scopes.loadElements = this.loadList;
@@ -325,7 +374,7 @@ export class Circuit {
 
   private addScope(sc: Scope): void {
     if (sc.serializer.missingElement) {
-      this.warnings.push('a scope shows an element that is not supported yet');
+      this.warn('scope-part-missing', 'a scope shows an element that is not supported yet');
       return;
     }
     this.scopes.addScope(sc);
@@ -339,7 +388,9 @@ export class Circuit {
   // ---- text format ---------------------------------------------------------------------------
 
   private readText(text: string, retain: boolean): void {
-    for (const line of text.split(/\r\n|\r|\n/)) {
+    const lines = text.split(/\r\n|\r|\n/);
+    for (const [i, line] of lines.entries()) {
+      this.reading = { record: line.trim(), line: i + 1 };
       const st = new StringTokenizer(line, ' +\t\n\r\f');
       if (!st.hasMoreTokens()) continue;
       const type = st.nextToken();
@@ -405,20 +456,20 @@ export class Circuit {
         const f = parseJavaInt(st.nextToken());
         const ce = createCe(tint, x1, y1, x2, y2, f, st, this.sim);
         if (ce === null) {
-          this.warnings.push('unrecognized dump type: ' + type);
+          this.warn('unknown-part', 'unrecognized dump type: ' + type, type);
           this.skipElement();
           continue;
         }
         ce.sim = this.sim;
         ce.setPoints();
         if (ce instanceof ScopeElm && ce.missingElement) {
-          this.warnings.push('a scope shows an element that is not supported yet');
+          this.warn('scope-part-missing', 'a scope shows an element that is not supported yet');
           this.skipElement();
           continue;
         }
         this.addElement(ce);
       } catch (e) {
-        this.warnings.push(`exception while undumping ${String(e)}`);
+        this.warn('unreadable', `exception while undumping ${String(e)}`, errorText(e));
       }
     }
   }
@@ -522,6 +573,7 @@ export class Circuit {
     for (const elem of root.elements()) {
       const tag = elem.name;
       r.elem = elem;
+      this.reading = { record: elem, line: 0 };
       if (tag === 'o') {
         if (retain) continue;
         const sc = this.scopes.newScope();
@@ -529,7 +581,7 @@ export class Circuit {
           sc.serializer.undumpXml(new AttrReader(elem));
           this.addScope(sc);
         } catch (e) {
-          this.warnings.push(`exception while reading a scope: ${String(e)}`);
+          this.warn('unreadable', `exception while reading a scope: ${String(e)}`, errorText(e));
         }
         continue;
       }
@@ -577,7 +629,7 @@ export class Circuit {
       if (x === null) continue;
       const className = classNameForXmlTag(tag);
       if (className === undefined) {
-        this.warnings.push('unrecognized xml element: ' + tag);
+        this.warn('unknown-part', 'unrecognized xml element: ' + tag, tag);
         this.skipElement();
         continue;
       }
@@ -596,7 +648,7 @@ export class Circuit {
       }) as [number, number, number, number];
       elm.setPosition(...pos);
       if (elm instanceof ScopeElm && elm.missingElement) {
-        this.warnings.push('a scope shows an element that is not supported yet');
+        this.warn('scope-part-missing', 'a scope shows an element that is not supported yet');
         this.skipElement();
         continue;
       }
@@ -610,7 +662,7 @@ export class Circuit {
     if (e === -1) return;
     const elm = this.loadList[e];
     if (elm === undefined || elm === null) {
-      this.warnings.push('a slider controls an element that could not be loaded');
+      this.warn('slider-part-missing', 'a slider controls an element that could not be loaded');
       return;
     }
     const item = findEditItemByName(elm, r.parseStringAttr('en', null), r.parseIntAttr('ei', 0));
