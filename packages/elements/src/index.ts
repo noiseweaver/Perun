@@ -81,6 +81,8 @@ export { DiodeElm } from './elm/DiodeElm.ts';
 export { LEDElm } from './elm/LEDElm.ts';
 export { MosfetElm, NMosfetElm, PMosfetElm } from './elm/MosfetElm.ts';
 export { OpAmpElm } from './elm/OpAmpElm.ts';
+export { OpAmpRealElm } from './elm/OpAmpRealElm.ts';
+export { OPAMP_MACROS, type OpAmpMacroSpec } from './elm/opAmpMacro.ts';
 export { PushSwitchElm } from './elm/PushSwitchElm.ts';
 export { RailElm } from './elm/RailElm.ts';
 export { FormulaElm, TextElm } from './elm/TextElm.ts';

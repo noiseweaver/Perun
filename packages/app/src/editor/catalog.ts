@@ -142,7 +142,7 @@ const GROUPS: [string, [string, string, string?][]][] = [
     [
       ['OpAmpElm', 'Op Amp (ideal, - on top)', 'opamp amplifier'],
       ['OpAmpSwapElm', 'Op Amp (ideal, + on top)', 'opamp amplifier'],
-      ['OpAmpRealElm', 'Op Amp (real)', 'opamp amplifier lm741 lm324'],
+      ['OpAmpRealElm', 'Op Amp (real)', 'opamp amplifier lm741 lm324 tl072 ne5532 rc4558 4558'],
       ['AnalogSwitchElm', 'Analog Switch (SPST)', 'cmos'],
       ['AnalogSwitch2Elm', 'Analog Switch (SPDT)', 'cmos'],
       ['AnalogMuxElm', 'Analog Multiplexer', 'mux'],

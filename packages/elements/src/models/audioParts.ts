@@ -153,10 +153,10 @@ export const BJT_PARTS: readonly BjtPart[] = [
     vjc: 0.3997,
     mjc: 0.2955,
   },
-  // Germanium PNP, fitted: hFE about 90 at 1 mA (datasheet 55 to 175), VBE about 0.22 V at 1 mA,
-  // ICBO about 2 µA so ICEO is about 180 µA (germanium fuzz builders look for 100 to 250 µA),
-  // fT about 1.5 MHz. Leakage follows the circuit temperature like silicon's, slower than real
-  // germanium.
+  // Germanium PNP, fitted: hFE about 125 at 1 mA (datasheet 55 to 175), VBE about 0.22 V at
+  // 1 mA, ICBO about 2 µA so ICEO is about 200 µA (germanium fuzz builders look for 100 to
+  // 250 µA), fT about 1.5 MHz. Leakage follows the circuit temperature like silicon's, slower
+  // than real germanium.
   {
     name: 'AC128',
     description: 'PNP, germanium',

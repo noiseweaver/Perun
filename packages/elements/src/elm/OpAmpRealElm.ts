@@ -15,6 +15,7 @@ import { getCurrentText, getVoltageText } from '../view/units.ts';
 import type { XmlAttrReader, XmlAttrWriter } from '../xml.ts';
 import { CapacitorElm } from './CapacitorElm.ts';
 import { CompositeElm } from './CompositeElm.ts';
+import { OPAMP_MACROS, OpAmpMacroCore, opAmpMacroComposite } from './opAmpMacro.ts';
 import { ResistorElm } from './ResistorElm.ts';
 import { TransistorElm } from './TransistorElm.ts';
 
@@ -64,11 +65,17 @@ const LM324V2_EXTERNAL_NODES = [2, 1, 5, 3, 4];
 
 const DEFAULT_CURRENT_LIMIT = 0.0231;
 
-/** A transistor-level op-amp: LM741, or LM324 (an old and a fixed model). */
+/**
+ * A transistor-level op-amp: LM741, or LM324 (an old and a fixed model). Perun adds behavioural
+ * TL072, NE5532 and RC4558 models (opAmpMacro.ts; not in upstream).
+ */
 export class OpAmpRealElm extends CompositeElm {
   static readonly MODEL_741 = 0;
   static readonly MODEL_324 = 1;
   static readonly MODEL_324v2 = 2;
+  static readonly MODEL_TL072 = 3;
+  static readonly MODEL_NE5532 = 4;
+  static readonly MODEL_RC4558 = 5;
   static readonly FLAG_SWAP = 2;
 
   readonly opheight = 16;
@@ -127,6 +134,8 @@ export class OpAmpRealElm extends CompositeElm {
       case OpAmpRealElm.MODEL_324v2:
         this.init324v2();
         break;
+      default:
+        this.initMacro();
     }
     // upstream leaves the node list to preStamp; volts are allocated here so the element can be
     // drawn before the first analysis
@@ -171,8 +180,28 @@ export class OpAmpRealElm extends CompositeElm {
     this.loadComposite(st, LM324V2_MODEL_STRING, LM324V2_EXTERNAL_NODES);
   }
 
+  /** A behavioural model (opAmpMacro.ts); unknown model numbers fall back to the TL072. */
+  private initMacro(): void {
+    const spec = OPAMP_MACROS[this.modelType] ?? OPAMP_MACROS[OpAmpRealElm.MODEL_TL072];
+    const mc = opAmpMacroComposite(spec);
+    this.loadComposite(new StringTokenizer(mc.dump, '/'), mc.model, mc.externalNodes);
+    (this.compElmList[0] as CapacitorElm).voltdiff = this.capValue;
+    const core = new OpAmpMacroCore(0, 0, 0, 0, 0);
+    core.sim = this.sim;
+    core.parent = this;
+    core.configure(spec, this.slewRate, this.currentLimit);
+    core.allocNodes();
+    this.compElmList.push(core);
+    this.compNodeInfo.push(mc.coreNodes);
+  }
+
+  isMacro(): boolean {
+    return this.modelType >= OpAmpRealElm.MODEL_TL072;
+  }
+
   getCapacitor(): CapacitorElm | null {
     if (this.modelType === OpAmpRealElm.MODEL_324v2) return null;
+    if (this.isMacro()) return this.compElmList[0] as CapacitorElm;
     return this.compElmList[this.modelType === OpAmpRealElm.MODEL_741 ? 20 : 4] as CapacitorElm;
   }
 
@@ -238,7 +267,11 @@ export class OpAmpRealElm extends CompositeElm {
   }
 
   override getInfo(arr: string[]): void {
-    const type = this.modelType === OpAmpRealElm.MODEL_741 ? 'LM741' : 'LM324';
+    const type = this.isMacro()
+      ? (OPAMP_MACROS[this.modelType] ?? OPAMP_MACROS[OpAmpRealElm.MODEL_TL072]).label
+      : this.modelType === OpAmpRealElm.MODEL_741
+        ? 'LM741'
+        : 'LM324';
     arr[0] = 'op-amp (' + type + ')';
     arr[1] = 'V+ = ' + getVoltageText(this.volts[1]);
     arr[2] = 'V- = ' + getVoltageText(this.volts[0]);
@@ -249,15 +282,15 @@ export class OpAmpRealElm extends CompositeElm {
   override getEditInfo(n: number): EditInfo | null {
     if (n === 0) {
       const name = EditInfo.makeLink('opampreal.html', 'Model');
-      // the old 324 model is offered only to circuits that already use it
-      const ei =
-        this.modelType === OpAmpRealElm.MODEL_324
-          ? EditInfo.createChoice(name, ['LM741', 'LM324, old', 'LM324, fixed'], this.modelType)
-          : EditInfo.createChoice(
-              name,
-              ['LM741', 'LM324'],
-              this.modelType === OpAmpRealElm.MODEL_741 ? 0 : 1,
-            );
+      const types = this.modelChoices();
+      const ei = EditInfo.createChoice(
+        name,
+        types.map((t) => t[0]),
+        Math.max(
+          0,
+          types.findIndex((t) => t[1] === this.modelType),
+        ),
+      );
       ei.value = this.modelType;
       return ei;
     }
@@ -275,11 +308,40 @@ export class OpAmpRealElm extends CompositeElm {
     return null;
   }
 
+  /**
+   * The model list and the model each entry selects. The old 324 model is offered only to circuits
+   * that already use it; the behavioural models come after upstream's.
+   */
+  private modelChoices(): [string, number][] {
+    const list: [string, number][] =
+      this.modelType === OpAmpRealElm.MODEL_324
+        ? [
+            ['LM741', OpAmpRealElm.MODEL_741],
+            ['LM324, old', OpAmpRealElm.MODEL_324],
+            ['LM324, fixed', OpAmpRealElm.MODEL_324v2],
+          ]
+        : [
+            ['LM741', OpAmpRealElm.MODEL_741],
+            ['LM324', OpAmpRealElm.MODEL_324v2],
+          ];
+    for (const [type, spec] of Object.entries(OPAMP_MACROS)) list.push([spec.label, Number(type)]);
+    return list;
+  }
+
   override setEditValue(n: number, ei: EditInfo): void {
     if (n === 0 && ei.choice !== null) {
-      this.modelType = ei.choice.selected;
-      if (ei.choice.items.length === 2 && this.modelType === 1)
-        this.modelType = OpAmpRealElm.MODEL_324v2;
+      const old = this.modelType;
+      this.modelType = this.modelChoices()[ei.choice.selected]?.[1] ?? OpAmpRealElm.MODEL_741;
+      // each behavioural model starts from its datasheet slew rate and output current; leaving
+      // one goes back to upstream's defaults
+      const spec = OPAMP_MACROS[this.modelType];
+      if (spec !== undefined) {
+        this.slewRate = spec.slewRate;
+        this.currentLimit = spec.ilim;
+      } else if (OPAMP_MACROS[old] !== undefined) {
+        this.slewRate = 0.6;
+        this.currentLimit = DEFAULT_CURRENT_LIMIT;
+      }
       this.capValue = 0;
       this.initModel();
       ei.newDialog = true;
