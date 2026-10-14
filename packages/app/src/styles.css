@@ -1323,31 +1323,6 @@ textarea,
   margin: 12px 8px 4px 12px;
 }
 
-/* tab on the canvas edge that slides the palette back */
-.palette-reveal {
-  position: absolute;
-  z-index: 2;
-  top: 50%;
-  left: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 56px;
-  padding: 0;
-  transform: translateY(-50%);
-  border: none;
-  border-radius: 0 var(--md-shape-m) var(--md-shape-m) 0;
-  color: var(--ui-text-muted);
-  background: var(--md-surface-container-high);
-  box-shadow: var(--md-elevation-2);
-  cursor: pointer;
-}
-
-.palette-reveal:hover {
-  color: var(--ui-text);
-}
-
 .palette-search {
   display: flex;
   flex: 1;
@@ -1509,6 +1484,196 @@ kbd,
 .palette-empty {
   margin: 16px 8px;
   color: var(--ui-text-muted);
+}
+
+/* a palette row: the component, then the star that pins it to the quick pick */
+.palette-row {
+  display: flex;
+  align-items: center;
+}
+
+.palette-row .palette-item {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+}
+
+.palette-star {
+  flex: none;
+  color: var(--ui-text-muted);
+}
+
+.palette-star[data-on] {
+  color: var(--ui-accent);
+}
+
+/* with a mouse the empty star shows on the row under it; touch screens always show it */
+@media (hover: hover) and (pointer: fine) {
+  .palette-star:not([data-on]) {
+    opacity: 0;
+  }
+
+  .palette-row:hover .palette-star,
+  .palette-star:focus-visible {
+    opacity: 1;
+  }
+}
+
+/* ---- editor: quick pick ------------------------------------------------------------------- */
+
+.quick-pick {
+  display: flex;
+  gap: 2px;
+}
+
+.quick-pick-group {
+  display: flex;
+  gap: 2px;
+}
+
+.quick-slot {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 52px;
+  height: 44px;
+  padding: 0;
+  color: var(--ui-text);
+  background: transparent;
+  border: none;
+  border-radius: var(--md-shape-m);
+  cursor: grab;
+  /* a swipe along the bar scrolls it; a drag across carries the component onto the canvas */
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.quick-slot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 150ms var(--md-motion);
+}
+
+.quick-slot:hover::before {
+  opacity: 0.08;
+}
+
+.quick-slot:active::before {
+  opacity: 0.1;
+}
+
+.quick-slot[data-active] {
+  background: var(--md-secondary-container);
+}
+
+.quick-pick-divider {
+  flex: none;
+  background: var(--ui-border);
+}
+
+/* down the canvas's left edge while the palette is slid away */
+.quick-pick-rail {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  left: 0;
+  flex-direction: column;
+  align-items: center;
+  max-height: calc(100% - 24px);
+  padding: 4px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  border-radius: 0 var(--md-shape-l) var(--md-shape-l) 0;
+  background: var(--md-surface-container-high);
+  box-shadow: var(--md-elevation-2);
+}
+
+.quick-pick-rail .quick-pick-group {
+  flex-direction: column;
+}
+
+.quick-pick-rail .quick-pick-divider,
+.quick-pick-grid .quick-pick-divider {
+  align-self: stretch;
+  height: 1px;
+  margin: 2px 6px;
+}
+
+/* the tab that slides the palette back, at the top of the rail */
+.quick-pick-reveal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 52px;
+  height: 32px;
+  padding: 0;
+  color: var(--ui-text-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--md-shape-m);
+  cursor: pointer;
+}
+
+.quick-pick-reveal:hover {
+  color: var(--ui-text);
+  background: color-mix(in srgb, var(--ui-text) 8%, transparent);
+}
+
+/* at the top of the open palette */
+.quick-pick-grid {
+  flex-direction: column;
+  padding: 4px 0 8px;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.quick-pick-grid .quick-pick-group {
+  flex-wrap: wrap;
+}
+
+.quick-pick-caption {
+  margin: 4px 4px 2px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--ui-text-muted);
+}
+
+/* phones upright: a row between the canvas and the run controls */
+.quick-pick-strip {
+  flex: none;
+  align-items: center;
+  margin: 8px 8px 0;
+  padding: 2px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-radius: var(--md-shape-l);
+  background: var(--md-surface-container-low);
+}
+
+.quick-pick-strip .quick-slot {
+  width: 48px;
+  touch-action: pan-x;
+}
+
+.quick-pick-strip .quick-pick-divider {
+  width: 1px;
+  height: 28px;
+  margin: 0 4px;
+}
+
+.quick-pick-more {
+  color: var(--ui-text-muted);
+  cursor: pointer;
 }
 
 /* ---- editor: property panel --------------------------------------------------------------- */
@@ -2161,8 +2326,7 @@ textarea.field-input {
 }
 
 @media (max-width: 719px) {
-  .palette[data-open='false'],
-  .palette-reveal {
+  .palette[data-open='false'] {
     display: none;
   }
 

@@ -86,6 +86,7 @@ import { History, type StateRoots } from './rewind/history.ts';
 import { download } from './download.ts';
 import { arrangeCards } from './scopeLayout.ts';
 import { sliderEntries, type SliderEntry } from './sliders.ts';
+import { notePlaced } from './quickPick.ts';
 import {
   showToast,
   shownTheme,
@@ -707,6 +708,7 @@ export class SimController {
       circuitChanged: () => this.circuitChanged(),
       selectionChanged: () => this.publishEditor(),
       restore: (xml) => this.restore(xml),
+      placed: (className) => notePlaced(className),
       visibleArea: () => {
         const r = this.renderer;
         if (!r) return { x1: 0, y1: 0, x2: 800, y2: 600 };

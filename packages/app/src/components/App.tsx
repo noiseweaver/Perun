@@ -6,7 +6,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { useEffect } from 'react';
 import { startup } from '../startup.ts';
 import { applyUpdate } from '../pwa.ts';
-import { setPaletteOpen, shownTheme, useApp } from '../store.ts';
+import { shownTheme, useApp } from '../store.ts';
 import { installShortcuts, openDialog } from '../commands.ts';
 import { paletteItem } from '../editor/catalog.ts';
 import { controller } from '../SimController.ts';
@@ -19,6 +19,8 @@ import { Dialogs } from './Dialogs.tsx';
 import { Inspector } from './Inspector.tsx';
 import { Icon } from './Icon.tsx';
 import { Palette } from './Palette.tsx';
+import { QuickPick } from './QuickPick.tsx';
+import { useNarrow, useShortLandscape } from './useNarrow.ts';
 import { FieldLegend } from './FieldLegend.tsx';
 import { SliderPanel } from './SliderPanel.tsx';
 import { WheelValuePopup } from './WheelValuePopup.tsx';
@@ -34,6 +36,10 @@ export function App() {
   const theme = useApp(shownTheme);
   const previewing = useApp((s) => s.preview !== null);
   const paletteOpen = useApp((s) => s.paletteOpen);
+  // phones upright get the quick pick as a strip under the canvas, everything else as a rail
+  const narrow = useNarrow();
+  const shortLandscape = useShortLandscape();
+  const strip = narrow && !shortLandscape;
   // a new language re-renders every label (none of the components below is memoized)
   useApp((s) => s.language);
 
@@ -64,18 +70,7 @@ export function App() {
         <div className="workspace">
           <Palette />
           <main className="canvas-area">
-            {!paletteOpen && (
-              <button
-                type="button"
-                className="palette-reveal"
-                aria-label={t('Show components')}
-                title={t('Show components')}
-                data-testid="palette-reveal"
-                onClick={() => setPaletteOpen(true)}
-              >
-                <Icon name="chevronRight" size={20} />
-              </button>
-            )}
+            {!paletteOpen && !strip && <QuickPick variant="rail" />}
             <CircuitCanvas />
             <div className="overlay-right">
               <SliderPanel />
@@ -93,6 +88,7 @@ export function App() {
           </main>
           <Inspector />
         </div>
+        {strip && <QuickPick variant="strip" />}
         <Timeline />
         <ControlBar />
         <Dialogs />
