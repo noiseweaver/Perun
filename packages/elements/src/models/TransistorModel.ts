@@ -12,6 +12,7 @@ import { unescapeToken } from '../escape.ts';
 import { parseJavaDouble, parseJavaInt } from '../java.ts';
 import { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlDocWriter } from '../xml.ts';
+import { BJT_PARTS, type BjtPart } from './audioParts.ts';
 
 /** Java `String.compareTo` order on model names (UTF-16 code units), for the model lists. */
 function compareNames(a: { name: string }, b: { name: string }): number {
@@ -54,6 +55,40 @@ export class TransistorModel implements Editable {
   internal = false;
   /** The library's map, so a renamed model registers itself (upstream's static modelMap). */
   modelMap: Map<string, TransistorModel> | null = null;
+  /**
+   * For a named part (audioParts.ts, not in upstream): its BF and polarity, which picking the part
+   * applies to the transistor. Not saved; null for every other model.
+   */
+  part: { beta: number; pnp: number } | null = null;
+
+  /** A named part's parameters (audioParts.ts). */
+  static ofPart(p: BjtPart): TransistorModel {
+    const m = new TransistorModel();
+    m.description = p.description;
+    m.satCur = p.is;
+    m.invRollOffF = p.ikf === undefined ? 0 : 1 / p.ikf;
+    m.BEleakCur = p.ise ?? 0;
+    m.leakBEemissionCoeff = p.ne ?? 1.5;
+    m.invRollOffR = p.ikr === undefined ? 0 : 1 / p.ikr;
+    m.BCleakCur = p.isc ?? 0;
+    m.leakBCemissionCoeff = p.nc ?? 2;
+    m.emissionCoeffF = p.nf ?? 1;
+    m.emissionCoeffR = p.nr ?? 1;
+    m.invEarlyVoltF = p.vaf === undefined ? 0 : 1 / p.vaf;
+    m.invEarlyVoltR = p.var === undefined ? 0 : 1 / p.var;
+    m.betaR = p.br ?? 1;
+    m.junctionCapBE = p.cje ?? 0;
+    m.junctionPotBE = p.vje ?? 0.75;
+    m.junctionExpBE = p.mje ?? 0.33;
+    m.junctionCapBC = p.cjc ?? 0;
+    m.junctionPotBC = p.vjc ?? 0.75;
+    m.junctionExpBC = p.mjc ?? 0.33;
+    m.transitTimeF = p.tf ?? 0;
+    m.transitTimeR = p.tr ?? 0;
+    m.part = { beta: p.bf, pnp: p.pnp ? -1 : 1 };
+    m.updateModel();
+    return m;
+  }
 
   /** Upstream `TransistorModel(String d, double sc)`. */
   static withSatCur(d: string, sc: number): TransistorModel {
@@ -325,6 +360,16 @@ export class TransistorModels {
     this.loadInternalModel('~lm317-qpl-A2 0 2e-16 0 0 1.5 0 0 2 1 1 0.02 0 1');
     this.loadInternalModel('~lm317-qnl-A5 0 5e-16 0 0 1.5 0 0 2 1 1 0.01 0 1');
     this.loadInternalModel('~lm317-qnl-A50 0 5e-15 0 0 1.5 0 0 2 1 1 0.01 0 1');
+
+    // named parts, not in upstream (audioParts.ts)
+    for (const p of BJT_PARTS) this.addPartModel(p.name, TransistorModel.ofPart(p));
+  }
+
+  /** Read-only like a default model, but saved into the circuit so CircuitJS1 can open it. */
+  private addPartModel(name: string, tm: TransistorModel): void {
+    this.modelMap.set(name, tm);
+    tm.readOnly = true;
+    tm.name = name;
   }
 
   private addDefaultModel(name: string, tm: TransistorModel): void {
