@@ -10,6 +10,7 @@ import { openDialog } from '../commands.ts';
 import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
 import { Icon } from './Icon.tsx';
+import { dismissLoadIssues } from './LoadIssuesDialog.tsx';
 import { t, tf } from '../i18n.ts';
 import {
   SPEED_MAX,
@@ -341,7 +342,7 @@ export function ControlBar() {
     stopMessage,
     badConnections,
   } = useApp((s) => s.status);
-  const warnings = useApp((s) => s.warnings);
+  const skipped = useApp((s) => s.loadIssues.length);
   const error = useApp((s) => s.error);
   const stopped = stopMessage !== null;
 
@@ -396,15 +397,32 @@ export function ControlBar() {
             {t(badConnections === 1 ? ' bad connection' : ' bad connections')}
           </span>
         )}
-        {warnings.length > 0 && (
-          <span className="chip" title={warnings.join('\n')} data-testid="load-warnings">
-            <Icon name="warning" size={16} />
-            {tf(
-              warnings.length === 1
-                ? '{n} unsupported item skipped'
-                : '{n} unsupported items skipped',
-              { n: warnings.length },
-            )}
+        {skipped > 0 && (
+          <span className="chip chip-notice" data-testid="load-warnings">
+            <button
+              type="button"
+              className="chip-notice-main"
+              title={t('Show what was skipped and why')}
+              onClick={() => openDialog('loadIssues')}
+            >
+              <Icon name="warning" size={16} />
+              {tf(
+                skipped === 1 ? '{n} unsupported item skipped' : '{n} unsupported items skipped',
+                {
+                  n: skipped,
+                },
+              )}
+            </button>
+            <button
+              type="button"
+              className="chip-notice-close"
+              aria-label={t('Hide notice')}
+              title={t('Hide notice')}
+              data-testid="load-warnings-dismiss"
+              onClick={dismissLoadIssues}
+            >
+              <Icon name="close" size={16} />
+            </button>
           </span>
         )}
         <span className="readout readout-time" data-testid="sim-time">

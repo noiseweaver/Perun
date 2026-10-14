@@ -309,13 +309,16 @@ export class SimController {
       this.circuit.read('');
       useApp.setState({
         error: `Could not read the circuit: ${e instanceof Error ? e.message : String(e)}`,
+        loadIssues: [],
       });
       this.afterLoad(title, false);
       if (undoable) history.touch();
       history.commit();
       return false;
     }
-    useApp.setState({ error: null });
+    // what this file left out; undo and leaving a subcircuit re-read this app's own copy, which
+    // has none, so they keep the notice as it is
+    useApp.setState({ error: null, loadIssues: [...this.circuit.issues] });
     this.afterLoad(title, running);
     if (undoable) {
       history.touch();
@@ -337,7 +340,6 @@ export class SimController {
       running,
       speed: o.speed,
       currentSpeed: o.currentBar,
-      warnings: [...this.circuit.warnings],
       display: {
         showDots: (o.flags & OptionFlag.DOTS) !== 0,
         voltageColors: (o.flags & OptionFlag.HIDE_VOLTAGE_COLORS) === 0,

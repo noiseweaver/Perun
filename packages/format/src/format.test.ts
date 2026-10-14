@@ -75,6 +75,41 @@ describe('reading and saving circuits', () => {
     expect((pot as PotElm).sliderText).toBe('Some Text');
   });
 
+  it('says what each load left out, where and why', () => {
+    const c = readCircuit('$ 1 0.000005 10 50 5 50\n9999 0 0 16 0 0\nr 0 0 64 0 0 abc\n');
+    expect(c.issues).toEqual([
+      {
+        kind: 'unknown-part',
+        message: 'unrecognized dump type: 9999',
+        detail: '9999',
+        record: '9999 0 0 16 0 0',
+        line: 2,
+      },
+      {
+        kind: 'unreadable',
+        message: 'exception while undumping NumberFormatException: For input string: "abc"',
+        detail: 'For input string: "abc"',
+        record: 'r 0 0 64 0 0 abc',
+        line: 3,
+      },
+    ]);
+    const x = readCircuit(
+      '<cir f="1"><zz x="0 0 16 0" f="0"/><r x="0 0 64 0" f="0" r="10"/></cir>',
+    );
+    expect(x.issues).toEqual([
+      {
+        kind: 'unknown-part',
+        message: 'unrecognized xml element: zz',
+        detail: 'zz',
+        record: '<zz x="0 0 16 0" f="0"/>',
+        line: 0,
+      },
+    ]);
+    // the next load starts afresh
+    x.read('r 0 0 64 0 0 100\n');
+    expect(x.issues).toEqual([]);
+  });
+
   it('skips a broken element line and keeps the rest', () => {
     const c = readCircuit('r 0 0 64 0 0 abc\nr 0 0 64 0 0 100\n');
     expect(c.elements).toHaveLength(1);

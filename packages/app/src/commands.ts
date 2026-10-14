@@ -38,6 +38,7 @@ export type DialogKind =
   | 'scopeCsv'
   | 'whatsNew'
   | 'feedback'
+  | 'loadIssues'
   | null;
 
 export function openDialog(kind: DialogKind): void {
