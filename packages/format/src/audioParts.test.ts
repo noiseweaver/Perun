@@ -8,6 +8,7 @@ import {
   DiodeElm,
   type EditInfo,
   JfetElm,
+  MosfetElm,
   TransistorElm,
   modelsFor,
 } from '@perun/elements';
@@ -142,6 +143,26 @@ describe('audio diodes', () => {
     expect(diodeDrop('1N34A', 5e-3)).toBeLessThan(1);
   });
 
+  it('1N4001: 0.57 V at 1 mA, at most 1.1 V at 1 A (fitted)', () => {
+    expect(diodeDrop('1N4001', 1e-3)).toBeCloseTo(0.57, 2);
+    expect(diodeDrop('1N4001', 1)).toBeGreaterThan(0.85);
+    expect(diodeDrop('1N4001', 1)).toBeLessThan(1.1);
+  });
+
+  it('Schottky diodes: 1N5817 at most 0.45 V at 1 A, BAT41 at most 0.45 V at 1 mA', () => {
+    expect(diodeDrop('1N5817', 1e-3)).toBeCloseTo(0.18, 2);
+    expect(diodeDrop('1N5817', 1)).toBeCloseTo(0.4, 2);
+    expect(diodeDrop('1N5817', 1)).toBeLessThan(0.45);
+    expect(diodeDrop('BAT41', 1e-3)).toBeCloseTo(0.32, 2);
+    expect(diodeDrop('BAT41', 1e-3)).toBeLessThan(0.45);
+    expect(diodeDrop('BAT41', 0.2)).toBeLessThan(1);
+  });
+
+  it('OA91 germanium: about 0.3 V at 1 mA, below a silicon diode at 10 mA (fitted)', () => {
+    expect(diodeDrop('OA91', 1e-3)).toBeCloseTo(0.32, 1);
+    expect(diodeDrop('OA91', 10e-3)).toBeLessThan(diodeDrop('1N914', 10e-3));
+  });
+
   it('LEDs clip at their colour forward voltages', () => {
     expect(diodeDrop('led-red', 1e-3)).toBeCloseTo(1.65, 2);
     expect(diodeDrop('led-red', 20e-3)).toBeCloseTo(1.95, 2);
@@ -149,6 +170,10 @@ describe('audio diodes', () => {
     expect(diodeDrop('led-green', 20e-3)).toBeCloseTo(2.15, 2);
     expect(diodeDrop('led-blue', 1e-3)).toBeCloseTo(2.6, 2);
     expect(diodeDrop('led-blue', 20e-3)).toBeCloseTo(3.1, 2);
+    expect(diodeDrop('led-yellow', 1e-3)).toBeCloseTo(1.8, 2);
+    expect(diodeDrop('led-yellow', 20e-3)).toBeCloseTo(2.05, 2);
+    expect(diodeDrop('led-white', 1e-3)).toBeCloseTo(2.65, 2);
+    expect(diodeDrop('led-white', 20e-3)).toBeCloseTo(3.2, 2);
   });
 });
 
@@ -199,6 +224,48 @@ describe('audio transistors (hFE ranges from the datasheets)', () => {
     expect(leak).toBeLessThan(250e-6);
   });
 
+  it('BC549C: hFE 420 to 800 at 2 mA', () => {
+    const p = bjtAt('BC549C', 2e-3, 5);
+    expect(p.hfe).toBeGreaterThan(420);
+    expect(p.hfe).toBeLessThan(800);
+  });
+
+  it('BC557B is a PNP with hFE 220 to 475 at 2 mA', () => {
+    const p = bjtAt('BC557B', 2e-3, 5);
+    expect(p.hfe).toBeGreaterThan(220);
+    expect(p.hfe).toBeLessThan(475);
+  });
+
+  it('2N5089: hFE 450 to 1800 at 1 mA, above the 2N5088', () => {
+    const p = bjtAt('2N5089', 1e-3, 5);
+    expect(p.hfe).toBeGreaterThan(450);
+    expect(p.hfe).toBeLessThan(1800);
+    expect(p.hfe).toBeGreaterThan(bjtAt('2N5088', 1e-3, 5).hfe);
+  });
+
+  it('MPSA18: hFE 500 to 1500 at 1 mA', () => {
+    const p = bjtAt('MPSA18', 1e-3, 5);
+    expect(p.hfe).toBeGreaterThan(500);
+    expect(p.hfe).toBeLessThan(1500);
+  });
+
+  it('NKT275 and OC44 germanium: Fuzz Face and Rangemaster gain and leakage', () => {
+    const nkt = bjtAt('NKT275', 1e-3, 5);
+    expect(nkt.hfe).toBeGreaterThan(65);
+    expect(nkt.hfe).toBeLessThan(110);
+    expect(nkt.vbe).toBeLessThan(0.3);
+    const nktLeak = bjtPoint('NKT275', 0, 5).ic;
+    expect(nktLeak).toBeGreaterThan(100e-6);
+    expect(nktLeak).toBeLessThan(250e-6);
+    const oc = bjtAt('OC44', 1e-3, 5);
+    expect(oc.hfe).toBeGreaterThan(60);
+    expect(oc.hfe).toBeLessThan(110);
+    expect(oc.vbe).toBeLessThan(0.3);
+    const ocLeak = bjtPoint('OC44', 0, 5).ic;
+    expect(ocLeak).toBeGreaterThan(40e-6);
+    expect(ocLeak).toBeLessThan(150e-6);
+  });
+
   it('picking a part sets the transistor beta and polarity', () => {
     const c = readCircuit(HEADER + 't 208 224 256 224 0 1 0 0 100 default\n');
     const t = find(c, TransistorElm);
@@ -218,6 +285,10 @@ describe('audio JFETs (IDSS and VGS(off) ranges from the datasheets)', () => {
     ['2N5457', 1e-3, 5e-3, 1e-9],
     ['J201', 0.2e-3, 1e-3, 100e-12],
     ['2N5460', 1e-3, 5e-3, 5e-9],
+    ['2N5458', 2e-3, 9e-3, 1e-9],
+    ['MPF102', 2e-3, 20e-3, 2e-9],
+    ['J113', 2e-3, 20e-3, 1e-9],
+    ['2SK30A', 2.6e-3, 6.5e-3, 1e-9],
   ];
   for (const [name, lo, hi, igss] of cases) {
     it(`${name}: IDSS within ${lo * 1e3} to ${hi * 1e3} mA, cut off at VTO, gate leakage under ${igss} A`, () => {
@@ -237,6 +308,47 @@ describe('audio JFETs (IDSS and VGS(off) ranges from the datasheets)', () => {
     pickModel(j, '2N5460');
     expect(j.pnp).toBe(-1);
   });
+});
+
+/** Drain current of a MOSFET part at VGS and VDS. */
+function mosfetId(model: string, vgs: number, vds: number): number {
+  const probe = readCircuit(HEADER + 'f 208 224 256 224 32 1.5 0.02\n');
+  const m0 = find(probe, MosfetElm);
+  const src = m0.getPost(1);
+  const drn = m0.getPost(2);
+  const c = readCircuit(
+    HEADER +
+      'f 208 224 256 224 32 1.5 0.02\n' +
+      rail(208, 224, vgs) +
+      `w ${drn.x} ${drn.y} 400 ${drn.y} 0\n` +
+      rail(400, drn.y, vds) +
+      `w ${src.x} ${src.y} 320 ${src.y} 0\n` +
+      `g 320 ${src.y} 320 ${src.y + 48} 0\n`,
+  );
+  const m = find(c, MosfetElm);
+  pickModel(m, model);
+  run(c);
+  return Math.abs(m.getCurrentIntoNode(2));
+}
+
+describe('audio MOSFETs', () => {
+  for (const name of ['2N7000', 'BS170']) {
+    it(`${name}: VGS(th) 0.8 to 3 V, RDS(on) under 5 ohms at VGS 10 V`, () => {
+      // VGS(th) is where 1 mA flows at VDS = VGS (datasheet test condition is 1 mA)
+      let lo = 0.8;
+      let hi = 3;
+      for (let i = 0; i < 20; i++) {
+        const mid = (lo + hi) / 2;
+        if (mosfetId(name, mid, mid) > 1e-3) hi = mid;
+        else lo = mid;
+      }
+      expect(lo).toBeGreaterThan(0.8);
+      expect(hi).toBeLessThan(3);
+      const rdson = 0.1 / mosfetId(name, 10, 0.1);
+      expect(rdson).toBeGreaterThan(0.5);
+      expect(rdson).toBeLessThan(5);
+    });
+  }
 });
 
 describe('saving a circuit that uses a named part', () => {

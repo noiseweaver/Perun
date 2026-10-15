@@ -1,25 +1,40 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
-// The behavioural TL072, NE5532 and RC4558 op-amps (packages/elements/src/elm/opAmpMacro.ts)
-// against their datasheet figures: gain, bandwidth, slew rate, clipping, bias and supply current.
+// The behavioural op-amps (packages/elements/src/elm/opAmpMacro.ts, models/OpAmpModel.ts)
+// against their datasheet figures: gain, bandwidth, slew rate, clipping, bias and supply current;
+// and custom op-amp models: editing, saving, the kept library, and what CircuitJS1 reads.
 
-import { type EditInfo, OPAMP_MACROS, OpAmpRealElm, RailElm } from '@perun/elements';
+import {
+  type EditInfo,
+  type ModelEditRequest,
+  OPAMP_PARTS,
+  type OpAmpModel,
+  OpAmpModels,
+  type OpAmpPart,
+  OpAmpRealElm,
+  RailElm,
+  modelEditor,
+  modelsFor,
+} from '@perun/elements';
 import { describe, expect, it } from 'vitest';
 import { readCircuit, type Circuit } from './circuit.ts';
-
-const TL072 = OpAmpRealElm.MODEL_TL072;
-const NE5532 = OpAmpRealElm.MODEL_NE5532;
-const RC4558 = OpAmpRealElm.MODEL_RC4558;
-const MACROS = [TL072, NE5532, RC4558];
 
 /** A post position. */
 type Point = { x: number; y: number };
 
 const header = (dt: number): string => `$ 1 ${dt} 10.2 50 5 50 5e-11\n`;
-const OPAMP = (type: number): string => {
-  const spec = OPAMP_MACROS[type];
-  return `409 208 224 400 224 0 ${spec.slewRate} 0 ${spec.ilim} ${type}\n`;
-};
+/** An LM741; build() then picks the model. */
+const OPAMP = '409 208 224 400 224 0 0.6 0 0.0231 0\n';
+
+/** Pick `name` in the op-amp's model list, the way the property panel does. */
+function pick(op: OpAmpRealElm, name: string): void {
+  const ei = op.getEditInfo(0) as EditInfo;
+  if (ei.choice === null) throw new Error('no choice');
+  const i = ei.choice.items.findIndex((s) => s === name || s.startsWith(name + ' ('));
+  if (i < 0) throw new Error(`no model ${name}`);
+  ei.choice.selected = i;
+  op.setEditValue(0, ei);
+}
 
 /** A DC rail at `v` volts whose terminal is at p. */
 const rail = (p: Point, v: number): string =>
@@ -31,33 +46,32 @@ const ground = (p: Point): string => `g ${p.x} ${p.y} ${p.x} ${p.y + 32} 0\n`;
 const at = (x: number, y: number): Point => ({ x, y });
 
 /** The op-amp's posts: inverting input, non-inverting input, output, V+, V-. */
-function postsOf(type: number): Point[] {
-  const c = readCircuit(header(5e-6) + OPAMP(type));
+function postsOf(): Point[] {
+  const c = readCircuit(header(5e-6) + OPAMP);
   const op = c.elements[0];
   return [0, 1, 2, 3, 4].map((i) => op.getPost(i));
 }
 
-/** An op-amp of `type` with ±`supply` rails and the rest of the circuit from `rest`. */
+/** An op-amp using model `type` with ±`supply` rails and the rest of the circuit from `rest`. */
 function build(
-  type: number,
+  type: string,
   dt: number,
   rest: (p: Point[]) => string,
   vpos = 15,
   vneg = -15,
   supplyR = 0,
 ): { c: Circuit; op: OpAmpRealElm } {
-  const p = postsOf(type);
+  const p = postsOf();
   // with supplyR, each rail feeds its pin through that resistance
   const supply = (q: Point, v: number): string => {
     if (supplyR === 0) return rail(q, v);
     const f = at(q.x, q.y + (v > 0 ? -96 : 96));
     return rail(f, v) + resistor(f, q, supplyR);
   };
-  const c = readCircuit(
-    header(dt) + OPAMP(type) + supply(p[3], vpos) + supply(p[4], vneg) + rest(p),
-  );
+  const c = readCircuit(header(dt) + OPAMP + supply(p[3], vpos) + supply(p[4], vneg) + rest(p));
   const op = c.elements.find((e) => e instanceof OpAmpRealElm);
   if (op === undefined) throw new Error('no op-amp');
+  pick(op, type);
   c.sim.setElements(c.elements);
   return { c, op };
 }
@@ -95,9 +109,18 @@ const nonInverting =
     );
   };
 
-describe.each(MACROS.map((t) => [OPAMP_MACROS[t].label, t] as const))('%s', (label, type) => {
-  const spec = OPAMP_MACROS[type];
+/** Slew rate (V/µs) of a follower stepped to 10 V, measured between 2 V and 8 V. */
+function slewOf(c: Circuit, op: OpAmpRealElm, dt: number): number {
+  while (out(op) < 2) run(c, 1);
+  let steps = 0;
+  while (out(op) < 8) {
+    run(c, 1);
+    steps++;
+  }
+  return 6 / (steps * dt) / 1e6;
+}
 
+describe.each(OPAMP_PARTS.map((p) => [p.name, p] as const))('%s', (type, spec: OpAmpPart) => {
   it('follows its input to within the open-loop gain', () => {
     const { c, op } = build(type, 5e-6, follower(1));
     run(c, 400);
@@ -122,16 +145,10 @@ describe.each(MACROS.map((t) => [OPAMP_MACROS[t].label, t] as const))('%s', (lab
   });
 
   it(`slews at ${spec.slewRate} V/µs`, () => {
-    const dt = 1e-9;
+    const dt = spec.slewRate < 1 ? 1e-8 : 1e-9;
     const { c, op } = build(type, dt, follower(10));
     // measure between 2 V and 8 V, well inside the swing
-    while (out(op) < 2) run(c, 1);
-    let steps = 0;
-    while (out(op) < 8) {
-      run(c, 1);
-      steps++;
-    }
-    const sr = 6 / (steps * dt) / 1e6;
+    const sr = slewOf(c, op, dt);
     expect(sr / spec.slewRate).toBeGreaterThan(0.97);
     expect(sr / spec.slewRate).toBeLessThan(1.03);
   });
@@ -153,7 +170,7 @@ describe.each(MACROS.map((t) => [OPAMP_MACROS[t].label, t] as const))('%s', (lab
     const { c, op } = build(type, 1e-7, nonInverting(1, 100e3, 1e3));
     run(c, 2000);
     expect(out(op)).toBeGreaterThan(10);
-    const inp = postsOf(type)[1];
+    const inp = postsOf()[1];
     const inputRail = c.elements.find(
       (e) => e instanceof RailElm && e.getPost(0).x === inp.x && e.getPost(0).y === inp.y,
     );
@@ -167,7 +184,7 @@ describe.each(MACROS.map((t) => [OPAMP_MACROS[t].label, t] as const))('%s', (lab
     expect(Math.abs(out(op))).toBeLessThan(0.05);
   });
 
-  it(`draws its ${spec.iq * 1e3} mA supply current from V+ into V-, plus what the load takes`, () => {
+  it(`draws its ${String(spec.iq * 1e3)} mA supply current from V+ into V-, plus what the load takes`, () => {
     // 1 kΩ in each supply lead: the pins sit lower by the current times 1 kΩ
     let b = build(type, 5e-6, follower(0), 15, -15, 1000);
     run(b.c, 400);
@@ -190,7 +207,7 @@ describe.each(MACROS.map((t) => [OPAMP_MACROS[t].label, t] as const))('%s', (lab
     expect(b.op.volts[4]).toBeCloseTo(-15 + spec.iq * 1000, 2);
   });
 
-  it(`limits the output current to ${spec.ilim * 1e3} mA`, () => {
+  it(`limits the output current to ${String(spec.ilim * 1e3)} mA`, () => {
     const { c, op } = build(
       type,
       5e-6,
@@ -200,7 +217,9 @@ describe.each(MACROS.map((t) => [OPAMP_MACROS[t].label, t] as const))('%s', (lab
         ground(at(p[2].x + 64, p[2].y)),
     );
     run(c, 400);
-    expect(Math.abs(op.getCurrentIntoNode(2))).toBeCloseTo(spec.ilim, 3);
+    // within 3 %: the soft limit lets a little more through with a low output resistance
+    expect(Math.abs(op.getCurrentIntoNode(2)) / spec.ilim).toBeGreaterThan(0.98);
+    expect(Math.abs(op.getCurrentIntoNode(2)) / spec.ilim).toBeLessThan(1.03);
   });
 
   it('runs a hard-clipping 1 kHz gain stage at the default timestep without trouble', () => {
@@ -226,7 +245,7 @@ describe.each(MACROS.map((t) => [OPAMP_MACROS[t].label, t] as const))('%s', (lab
     expect(lo).toBeCloseTo(-15 + spec.headroomLow, 1);
   });
 
-  it(`takes ${spec.ib * 1e9} nA of bias current into each input`, () => {
+  it(`takes ${String(spec.ib * 1e9)} nA of bias current into each input`, () => {
     // a follower whose input sits on 1 MΩ to ground: the output shows -Ib x 1 MΩ
     const { c, op } = build(type, 5e-6, (p) => {
       const g = at(p[1].x - 96, p[1].y);
@@ -238,31 +257,205 @@ describe.each(MACROS.map((t) => [OPAMP_MACROS[t].label, t] as const))('%s', (lab
 });
 
 describe('the op-amp model list', () => {
-  it('offers upstream models first, then the behavioural ones, with their datasheet defaults', () => {
-    const c = readCircuit(header(5e-6) + '409 208 224 400 224 0 0.6 0 0.0231 0\n');
+  it('offers upstream models first, then the datasheet ones by name, with their figures', () => {
+    const c = readCircuit(header(5e-6) + OPAMP);
     const op = c.elements[0] as OpAmpRealElm;
     const ei = op.getEditInfo(0) as EditInfo;
-    expect(ei.choice?.items).toEqual(['LM741', 'LM324', 'TL072', 'NE5532', 'RC4558']);
-    if (ei.choice === null) throw new Error('no choice');
-    ei.choice.selected = 3;
-    op.setEditValue(0, ei);
-    expect(op.modelType).toBe(NE5532);
-    expect(op.slewRate).toBe(9);
-    expect(op.currentLimit).toBe(0.038);
-    const back = op.getEditInfo(0) as EditInfo;
-    if (back.choice === null) throw new Error('no choice');
-    back.choice.selected = 0;
-    op.setEditValue(0, back);
+    expect(ei.choice?.items.map((s) => s.split(' (')[0])).toEqual([
+      'LM741',
+      'LM324',
+      'LM358',
+      'LM833',
+      'NE5532',
+      'OPA2134',
+      'RC4558',
+      'TL072',
+      'TL082',
+    ]);
+    pick(op, 'NE5532');
+    expect(op.model?.name).toBe('NE5532');
+    expect(op.model?.slewRate).toBe(9);
+    // a datasheet model offers a copy to edit, not editing itself
+    expect(op.getEditInfo(2)?.button?.label).toBe('Create New Model');
+    expect(op.getEditInfo(3)).toBeNull();
+    pick(op, 'LM741');
+    expect(op.model).toBeNull();
     expect(op.modelType).toBe(OpAmpRealElm.MODEL_741);
     expect(op.slewRate).toBe(0.6);
   });
 
-  it('saves the model number and reads it back', () => {
-    const c = readCircuit(header(5e-6) + OPAMP(RC4558));
+  it('saves a datasheet model by name, as an LM741 with its slew rate for CircuitJS1', () => {
+    const c = readCircuit(header(5e-6) + OPAMP);
+    pick(c.elements[0] as OpAmpRealElm, 'RC4558');
     const xml = c.dumpXml();
-    expect(xml).toContain('mt="5"');
+    expect(xml).toMatch(/<OpAmpReal [^>]*slr="1" cl="0.025" mt="0" om="RC4558"/);
+    // a built-in model needs no record
+    expect(xml).not.toContain('<om ');
     const back = readCircuit(xml).elements[0] as OpAmpRealElm;
-    expect(back.modelType).toBe(RC4558);
-    expect(back.slewRate).toBe(1);
+    expect(back.model?.name).toBe('RC4558');
+  });
+
+  it('reads the model numbers of the first preview build', () => {
+    const c = readCircuit(header(5e-6) + '409 208 224 400 224 0 13 0 0.026 3\n');
+    expect((c.elements[0] as OpAmpRealElm).model?.name).toBe('TL072');
+    const x = readCircuit(c.dumpXml().replace('mt="0" om="TL072"', 'mt="4"'));
+    expect((x.elements[0] as OpAmpRealElm).model?.name).toBe('NE5532');
+  });
+});
+
+/** Press a button of the op-amp's property panel and return the model dialog it opens. */
+function pressButton(op: OpAmpRealElm, label: string): ModelEditRequest {
+  let req: ModelEditRequest | null = null;
+  modelEditor.open = (r) => (req = r);
+  for (let n = 0; n < 10; n++) {
+    const b = op.getEditInfo(n)?.button;
+    if (b?.label === label) b.onClick();
+  }
+  modelEditor.open = null;
+  if (req === null) throw new Error(`no ${label}`);
+  return req;
+}
+
+/** Type values into the model dialog (field number to value) and press OK. */
+function fillDialog(req: ModelEditRequest, values: Record<number, number | string>): void {
+  for (const [k, v] of Object.entries(values)) {
+    const n = Number(k);
+    const ei = req.target.getEditInfo(n) as EditInfo;
+    if (typeof v === 'string') ei.text = v;
+    else ei.value = v;
+    req.target.setEditValue(n, ei);
+  }
+  req.onApply?.();
+}
+
+describe('custom op-amp models', () => {
+  it('Create New Model copies the model; the op-amp then runs with the edited figures', () => {
+    const { c, op } = build('TL072', 1e-9, follower(10));
+    const req = pressButton(op, 'Create New Model');
+    // name, slew rate
+    fillDialog(req, { 0: 'my-fast-072', 2: 26 });
+    expect(op.model?.name).toBe('my-fast-072');
+    expect(op.model?.gbw).toBe(3e6);
+    c.sim.analyzeFlag = true;
+    expect(slewOf(c, op, 1e-9) / 26).toBeCloseTo(1, 1);
+    // the datasheet model is untouched
+    expect(modelsFor(c.sim).opamp.getModelWithName('TL072').slewRate).toBe(13);
+    expect(op.getEditInfo(3)?.button?.label).toBe('Edit Model');
+  });
+
+  it('Edit Model changes every op-amp using the model', () => {
+    const { c, op } = build('TL072', 1e-9, follower(10));
+    fillDialog(pressButton(op, 'Create New Model'), { 0: 'slow' });
+    fillDialog(pressButton(op, 'Edit Model'), { 2: 2 });
+    // the app rebuilds the op-amps after a model edit (CirSim.updateModels)
+    op.updateModels();
+    c.sim.analyzeFlag = true;
+    expect(slewOf(c, op, 1e-9) / 2).toBeCloseTo(1, 1);
+  });
+
+  it('a model left unnamed, or named like a datasheet model, gets a free name', () => {
+    const c = readCircuit(header(5e-6) + OPAMP + OPAMP.replace('208 224 400', '208 324 400'));
+    const [a, b] = c.elements as OpAmpRealElm[];
+    fillDialog(pressButton(a, 'Create New Model'), { 0: '' });
+    expect(a.model?.name).toBe('opampmodel');
+    fillDialog(pressButton(b, 'Create New Model'), { 0: 'TL072' });
+    expect(b.model?.name).toBe('TL072-2');
+    expect(modelsFor(c.sim).opamp.getModelWithName('TL072').builtIn).toBe(true);
+  });
+
+  it('saves a custom model in the circuit, ahead of the op-amp, and reads it back', () => {
+    const c = readCircuit(header(5e-6) + OPAMP);
+    const op = c.elements[0] as OpAmpRealElm;
+    fillDialog(pressButton(op, 'Create New Model'), {
+      0: 'my 4558',
+      1: 4e6,
+      2: 1.5,
+      3: 150e3,
+      4: 6e6,
+      5: 30e-9,
+      6: 2e-3,
+      7: 20e-3,
+      8: 60,
+      9: 0.9,
+      10: 1.1,
+    });
+    const xml = c.dumpXml();
+    expect(xml).toContain(
+      '<om nm="my 4558" gbw="4000000" sr="1.5" av="150000" rin="6000000" ib="3e-8" iq="0.002" ' +
+        'il="0.02" ro="60" hh="0.9" hl="1.1"/>',
+    );
+    expect(xml.indexOf('<om ')).toBeLessThan(xml.indexOf('<OpAmpReal '));
+    expect(xml).toMatch(/<OpAmpReal [^>]*slr="1.5" cl="0.02" mt="0" om="my 4558"/);
+    const back = readCircuit(xml);
+    const m = (back.elements[0] as OpAmpRealElm).model as OpAmpModel;
+    expect(m.name).toBe('my 4558');
+    expect([m.gbw, m.slewRate, m.avol, m.rin, m.ib, m.iq, m.ilim, m.rout]).toEqual([
+      4e6, 1.5, 150e3, 6e6, 30e-9, 2e-3, 20e-3, 60,
+    ]);
+    expect([m.headroomHigh, m.headroomLow, m.readOnly]).toEqual([0.9, 1.1, false]);
+  });
+
+  it('a circuit cannot change a datasheet model', () => {
+    const c = readCircuit(
+      '<cir f="1" ts="0.000005" ic="10.2" cb="50" pb="50" vr="5" mts="5e-11">\n' +
+        '  <om nm="TL072" gbw="1" sr="1"/>\n' +
+        '  <OpAmpReal x="208 224 400 224" f="0" slr="13" cl="0.026" mt="0" om="TL072"/>\n' +
+        '</cir>',
+    );
+    expect((c.elements[0] as OpAmpRealElm).model?.slewRate).toBe(13);
+  });
+});
+
+describe('kept op-amp models (My Models)', () => {
+  /** Browser storage, in memory. */
+  function memoryStorage(): NonNullable<OpAmpModels['storage']> {
+    const map = new Map<string, string>();
+    return {
+      get length() {
+        return map.size;
+      },
+      key: (i: number) => [...map.keys()][i] ?? null,
+      getItem: (k: string) => map.get(k) ?? null,
+      setItem: (k: string, v: string) => void map.set(k, v),
+      removeItem: (k: string) => void map.delete(k),
+    };
+  }
+
+  it('a kept model is in every later library, under its new name after a rename', () => {
+    const storage = memoryStorage();
+    const lib = new OpAmpModels();
+    lib.storage = storage;
+    const m = lib.createCopy(lib.getModelWithName('NE5532'));
+    lib.rename(m, 'warm 5532');
+    expect(m.getEditInfo(11)?.checkbox?.state).toBe(false);
+    const keep = m.getEditInfo(11) as EditInfo;
+    if (keep.checkbox === null) throw new Error('no checkbox');
+    keep.checkbox.state = true;
+    m.setEditValue(11, keep);
+    const slew = m.getEditInfo(2) as EditInfo;
+    slew.value = 4;
+    m.setEditValue(2, slew);
+    const name = m.getEditInfo(0) as EditInfo;
+    name.text = 'warmer 5532';
+    m.setEditValue(0, name);
+
+    const later = new OpAmpModels();
+    later.storage = storage;
+    later.loadModelsFromStorage();
+    expect(later.modelMap.has('warm 5532')).toBe(false);
+    const k = later.getModelWithName('warmer 5532');
+    expect(k.slewRate).toBe(4);
+    expect(k.gbw).toBe(10e6);
+    expect(k.isSaved()).toBe(true);
+  });
+
+  it('datasheet models offer no keep checkbox and are never stored', () => {
+    const lib = new OpAmpModels();
+    const storage = memoryStorage();
+    lib.storage = storage;
+    const tl = lib.getModelWithName('TL072');
+    lib.setSaved(tl, true);
+    expect(storage.length).toBe(0);
+    expect(new OpAmpModels().getModelWithName('LM358').getEditInfo(11)).toBeNull();
   });
 });

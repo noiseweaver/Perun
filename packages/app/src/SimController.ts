@@ -251,6 +251,9 @@ export class SimController {
       try {
         lib.storage = window.localStorage;
         lib.loadModelsFromStorage(this.circuit.sim);
+        const opamps = modelsFor(this.circuit.sim).opamp;
+        opamps.storage = window.localStorage;
+        opamps.loadModelsFromStorage();
       } catch {
         // storage disabled: models last for the session
       }

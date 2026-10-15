@@ -13,7 +13,7 @@ import { parseJavaDouble, parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlDocWriter } from '../xml.ts';
 import { DiodeModel } from './DiodeModel.ts';
-import { JFET_PARTS, type JfetPart } from './audioParts.ts';
+import { JFET_PARTS, type JfetPart, MOSFET_PARTS, type MosfetPart } from './audioParts.ts';
 
 /** Java `String.compareTo` order on model names (UTF-16 code units), for the model lists. */
 function compareNames(a: { name: string }, b: { name: string }): number {
@@ -100,6 +100,16 @@ export class MosfetModel implements Editable {
     m.gateSatCur = p.is;
     m.showBulk = m.bodyDiode = false;
     m.part = { pnp: p.pnp ? -1 : 1 };
+    return m;
+  }
+
+  /** A named MOSFET (audioParts.ts), N-channel with its body diode. */
+  static ofMosfetPart(p: MosfetPart): MosfetModel {
+    const m = new MosfetModel(p.description, p.vto, p.kp);
+    m.lambda = p.lambda;
+    m.capGS = p.cgs;
+    m.capGD = p.cgd;
+    m.part = { pnp: 1 };
     return m;
   }
 
@@ -279,6 +289,7 @@ export class MosfetModels {
 
     // named JFETs, not in upstream (audioParts.ts)
     for (const p of JFET_PARTS) this.addPartModel(p.name, MosfetModel.ofJfetPart(p));
+    for (const p of MOSFET_PARTS) this.addPartModel(p.name, MosfetModel.ofMosfetPart(p));
   }
 
   /** Read-only like a default model, but saved into the circuit so CircuitJS1 can open it. */

@@ -2,9 +2,9 @@
 // Copyright (C) 2026 Perun contributors
 
 /**
- * Behavioural op-amp models for the "real" op-amp (OpAmpRealElm), built from datasheet figures
- * out of existing parts. Not in upstream (docs/deviations/audio-op-amps.md): upstream's real
- * op-amps are only the transistor-level LM741 and LM324.
+ * Behavioural op-amps for the "real" op-amp (OpAmpRealElm), built from datasheet figures
+ * (models/OpAmpModel.ts) out of existing parts. Not in upstream (docs/deviations/audio-op-amps.md):
+ * upstream's real op-amps are only the transistor-level LM741 and LM324.
  *
  * Each model is a single-pole op-amp in the style of the Boyle macromodel:
  * - an input transconductance that saturates (tanh) at `imax`, into a gain node X with R1 and C1
@@ -20,73 +20,7 @@
  */
 
 import { CircuitElm } from '../CircuitElm.ts';
-
-export interface OpAmpMacroSpec {
-  /** Shown in the model list and the info box. */
-  label: string;
-  /** Unity-gain bandwidth (Hz). */
-  gbw: number;
-  /** Slew rate (V/µs), the default for the element's slew rate field. */
-  slewRate: number;
-  /** DC open-loop gain (V/V). */
-  avol: number;
-  /** Differential input resistance (Ω). */
-  rin: number;
-  /** Input bias current (A), into each input; 0 for FET inputs. */
-  ib: number;
-  /** Quiescent supply current per op-amp (A). */
-  iq: number;
-  /** Output short-circuit current (A), the default for the current limit field. */
-  ilim: number;
-  /** Open-loop output resistance (Ω). */
-  rout: number;
-  /** How close the output gets to V+ and to V- with a light load (V). */
-  headroomHigh: number;
-  headroomLow: number;
-}
-
-/** Datasheet typical values (TI TL072, TI/Philips NE5532, JRC 4558), ±15 V supplies. */
-export const OPAMP_MACROS: Readonly<Record<number, OpAmpMacroSpec>> = {
-  3: {
-    label: 'TL072',
-    gbw: 3e6,
-    slewRate: 13,
-    avol: 200e3,
-    rin: 1e12,
-    ib: 0,
-    iq: 1.4e-3,
-    ilim: 26e-3,
-    rout: 100,
-    headroomHigh: 1.5,
-    headroomLow: 1.5,
-  },
-  4: {
-    label: 'NE5532',
-    gbw: 10e6,
-    slewRate: 9,
-    avol: 100e3,
-    rin: 300e3,
-    ib: 200e-9,
-    iq: 4e-3,
-    ilim: 38e-3,
-    rout: 30,
-    headroomHigh: 1.3,
-    headroomLow: 1.3,
-  },
-  5: {
-    label: 'RC4558',
-    gbw: 3e6,
-    slewRate: 1,
-    avol: 100e3,
-    rin: 5e6,
-    ib: 25e-9,
-    iq: 1.75e-3,
-    ilim: 25e-3,
-    rout: 75,
-    headroomHigh: 1,
-    headroomLow: 1,
-  },
-};
+import type { OpAmpMacroSpec } from '../models/OpAmpModel.ts';
 
 /** C1 of the gain node. The other values scale from it; 1 nF keeps them all moderate. */
 const C1 = 1e-9;
@@ -145,13 +79,13 @@ export class OpAmpMacroCore extends CircuitElm {
     return true;
   }
 
-  configure(spec: OpAmpMacroSpec, slewRate: number, currentLimit: number): void {
-    this.imax = slewRate * 1e6 * C1;
+  configure(spec: OpAmpMacroSpec): void {
+    this.imax = spec.slewRate * 1e6 * C1;
     this.gm = 2 * Math.PI * spec.gbw * C1;
     this.headroomHigh = spec.headroomHigh;
     this.headroomLow = spec.headroomLow;
     this.rout = spec.rout;
-    this.vlim = currentLimit * spec.rout;
+    this.vlim = spec.ilim * spec.rout;
     this.ib = spec.ib;
     this.iq = spec.iq;
   }
@@ -167,8 +101,9 @@ export class OpAmpMacroCore extends CircuitElm {
     const n = this.nodes;
     for (const node of n) sim.stampNonLinear(node);
     // quiescent current from V+ to V-, bias currents into the inputs and out through V-
+    // (negative: out of the inputs, for PNP input stages)
     sim.stampCurrentSource(n[3], n[4], this.iq);
-    if (this.ib > 0) {
+    if (this.ib !== 0) {
       sim.stampCurrentSource(n[0], n[4], this.ib);
       sim.stampCurrentSource(n[1], n[4], this.ib);
     }
