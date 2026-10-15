@@ -3106,6 +3106,20 @@ textarea.field-input {
   }
 }
 
+/* on a desktop, Circuits > Search circuits: a dialog in the middle */
+@media (min-width: 720px) and (min-height: 560px) {
+  .circuits-sheet {
+    top: 10vh;
+    bottom: 10vh;
+    width: min(560px, calc(100% - 32px));
+    border-radius: var(--md-shape-xl);
+  }
+
+  .circuits-sheet-handle {
+    visibility: hidden;
+  }
+}
+
 @keyframes sheet-up {
   from {
     transform: translateY(48px);

@@ -58,6 +58,8 @@ the quick pick strip (design A) to build first.
   resize redraws the last frame before the page is painted.
 - The visualizations legend moved from the canvas's top left (where the rail is) into the top
   right column, under the sliders and the DC table.
+- Circuits > Search circuits (desktop) opens the phone's circuits sheet as a centred dialog with
+  the search box focused; Enter opens the first match.
 
 ## Next
 

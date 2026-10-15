@@ -335,12 +335,30 @@ test('Circuits submenus open to the right of the menu', async ({ page }) => {
   await page.goto(`/?cct=${cct(RC)}`);
   await page.getByTestId('circuits-menu').click();
   const top = page.getByRole('menu').first();
-  await top.getByRole('menuitem').first().click();
+  await top.getByRole('menuitem', { name: /Basics/ }).click();
   const sub = page.getByRole('menu').nth(1);
   await expect(sub).toBeVisible();
   const a = await top.boundingBox();
   const b = await sub.boundingBox();
   expect(b?.x ?? 0).toBeGreaterThanOrEqual((a?.x ?? 0) + (a?.width ?? 0) - 1);
+});
+
+test('Circuits > Search circuits finds an example by name; Enter opens it', async ({ page }) => {
+  await page.goto(`/?cct=${cct(RC)}`);
+  await expect(page.getByTestId('circuits-menu')).toBeEnabled();
+  await page.getByTestId('circuits-menu').click();
+  await page.getByTestId('circuits-search-open').click();
+  const sheet = page.getByTestId('circuits-sheet');
+  await expect(sheet).toBeVisible();
+  // ready for typing
+  await expect(page.getByTestId('circuits-search')).toBeFocused();
+  await page.keyboard.type('lrc');
+  await expect(sheet.getByRole('button', { name: /LRC Circuit/ }).first()).toBeVisible();
+  await page.keyboard.press('Enter');
+  await expect(sheet).toBeHidden();
+  await expect
+    .poll(() => page.evaluate(() => window.perun?.controller.circuit.scopes.scopeCount))
+    .toBe(3);
 });
 
 test.describe('Circuits on a phone', () => {

@@ -323,11 +323,22 @@ export function AppBar() {
             disabled={examples === null}
             testId="circuits-menu"
           >
+            <Item
+              label="Search circuits"
+              icon="search"
+              testId="circuits-search-open"
+              onSelect={() => setSheetOpen(true)}
+            />
+            <Menu.Separator className="menu-separator" />
             {examples && <ExampleItems menu={examples.root} />}
           </AppMenu>
         )}
-        {compact && sheetOpen && examples && (
-          <CircuitsSheet root={examples.root} onClose={() => setSheetOpen(false)} />
+        {sheetOpen && examples && (
+          <CircuitsSheet
+            root={examples.root}
+            focusSearch={!compact}
+            onClose={() => setSheetOpen(false)}
+          />
         )}
 
         <AppMenu label="Scopes" icon="scope" testId="scopes-menu">
