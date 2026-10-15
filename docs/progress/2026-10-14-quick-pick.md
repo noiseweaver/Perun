@@ -28,6 +28,10 @@ the quick pick strip (design A) to build first.
   off (the palette tab stays); "Reorder" after the Favorites caption in the palette puts the
   favorites in order by dragging (mouse, pen or finger) or with the arrow keys. The palette shows
   the favorites on phones too, so they can be reordered there. Five more strings.
+- Later on 2026-10-15: the rail and the phone strip fold away completely, leaving only a faint
+  grip (a short bar at the canvas's left edge, or above the run controls on phones) that brings
+  them back; each remembers its own state. While the rail is folded, the app bar's menu button
+  brings the palette back.
 
 ## Next
 
