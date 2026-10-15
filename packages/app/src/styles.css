@@ -1579,21 +1579,40 @@ kbd,
   background: var(--ui-border);
 }
 
-/* down the canvas's left edge while the palette is slid away */
-.quick-pick-rail {
+/* down the canvas's left edge while the palette is slid away, with its fold handle beside it */
+.quick-pick-dock-rail {
   position: absolute;
   z-index: 2;
   top: 12px;
   left: 0;
+  bottom: 12px;
+  display: flex;
+  align-items: flex-start;
+  pointer-events: none;
+}
+
+.quick-pick-dock-rail > * {
+  pointer-events: auto;
+}
+
+.quick-pick-rail {
   flex-direction: column;
   align-items: center;
-  max-height: calc(100% - 24px);
+  max-height: 100%;
   padding: 4px;
   overflow-y: auto;
   scrollbar-width: none;
   border-radius: 0 var(--md-shape-l) var(--md-shape-l) 0;
   background: var(--md-surface-container-high);
   box-shadow: var(--md-elevation-2);
+}
+
+/* the rail alone (bar turned off in Options): only the tab that brings the palette back */
+.canvas-area > .quick-pick-rail {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  left: 0;
 }
 
 .quick-pick-rail .quick-pick-group {
@@ -1626,6 +1645,55 @@ kbd,
 .quick-pick-reveal:hover {
   color: var(--ui-text);
   background: color-mix(in srgb, var(--ui-text) 8%, transparent);
+}
+
+/* the fold handle: a faint grip, brighter under the pointer */
+.quick-pick-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  padding: 0;
+  color: var(--ui-text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0.45;
+  transition: opacity 150ms var(--md-motion);
+  touch-action: manipulation;
+}
+
+.quick-pick-handle:hover,
+.quick-pick-handle:focus-visible {
+  opacity: 1;
+}
+
+.quick-pick-grip {
+  display: block;
+  border-radius: var(--md-shape-full);
+  background: currentColor;
+}
+
+.quick-pick-handle-rail {
+  width: 16px;
+  height: 48px;
+  margin-top: 8px;
+}
+
+.quick-pick-handle-rail .quick-pick-grip {
+  width: 4px;
+  height: 28px;
+}
+
+.quick-pick-handle-strip {
+  align-self: center;
+  width: 64px;
+  height: 16px;
+}
+
+.quick-pick-handle-strip .quick-pick-grip {
+  width: 32px;
+  height: 4px;
 }
 
 /* at the top of the open palette */
@@ -1690,11 +1758,18 @@ kbd,
   color: var(--ui-text-muted);
 }
 
-/* phones upright: a row between the canvas and the run controls */
+/* phones upright: a row between the canvas and the run controls, under its fold handle */
+.quick-pick-dock-strip {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .quick-pick-strip {
   flex: none;
   align-items: center;
-  margin: 8px 8px 0;
+  margin: 0 8px;
   padding: 2px 4px;
   overflow-x: auto;
   scrollbar-width: none;

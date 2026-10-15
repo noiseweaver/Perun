@@ -88,14 +88,14 @@ test('with the palette away, the rail picks components', async ({ page }) => {
   await expect(rail).toHaveCount(0);
 });
 
-test('the rail folds away to its two buttons, and stays folded', async ({ page }) => {
+test('the rail folds away to its handle, and stays folded', async ({ page }) => {
   await open(page);
   await page.getByTestId('palette-hide').click();
   const rail = page.getByTestId('quick-pick-rail');
   await expect(rail.getByTestId('quick-ResistorElm')).toBeVisible();
   await page.getByTestId('quick-rail-fold').click();
-  await expect(rail.getByTestId('quick-ResistorElm')).toHaveCount(0);
-  await expect(page.getByTestId('palette-reveal')).toBeVisible();
+  await expect(rail).toHaveCount(0);
+  await expect(page.getByTestId('palette-reveal')).toHaveCount(0);
   await page.reload();
   await expect(page.getByTestId('quick-rail-fold')).toHaveAttribute('aria-expanded', 'false');
   await page.getByTestId('quick-rail-fold').click();
@@ -163,5 +163,20 @@ test.describe('on a phone', () => {
     await expect(page.getByTestId('mode-chip')).toContainText('Resistor');
     await strip.getByTestId('quick-more').tap();
     await expect(page.getByTestId('palette')).toHaveAttribute('data-open', 'true');
+  });
+
+  test('the strip folds away to a small handle, and stays folded', async ({ page }) => {
+    await open(page);
+    const canvasHeight = async (): Promise<number> =>
+      (await page.getByTestId('circuit-canvas').boundingBox())?.height ?? 0;
+    const tall = await canvasHeight();
+    await page.getByTestId('quick-strip-fold').tap();
+    await expect(page.getByTestId('quick-pick-strip')).toHaveCount(0);
+    // the canvas takes the room
+    await expect.poll(canvasHeight).toBeGreaterThan(tall + 30);
+    await page.reload();
+    await expect(page.getByTestId('quick-strip-fold')).toHaveAttribute('aria-expanded', 'false');
+    await page.getByTestId('quick-strip-fold').tap();
+    await expect(page.getByTestId('quick-pick-strip')).toBeVisible();
   });
 });

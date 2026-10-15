@@ -9,7 +9,13 @@ import { paletteItem, type PaletteItem } from './editor/catalog.ts';
 
 const FAVORITES_KEY = 'circuitjs-next.paletteFavorites';
 const RECENTS_KEY = 'circuitjs-next.paletteRecents';
-const RAIL_KEY = 'circuitjs-next.quickPickRailCollapsed';
+const FOLDED_KEYS = {
+  rail: 'circuitjs-next.quickPickRailCollapsed',
+  strip: 'circuitjs-next.quickPickStripCollapsed',
+} as const;
+
+/** Where the quick pick bar sits: down the canvas's left edge, or under it on phones. */
+export type QuickPickBar = keyof typeof FOLDED_KEYS;
 
 /** The favorites before any are pinned: what most circuits are drawn with. */
 export const DEFAULT_FAVORITES: readonly string[] = [
@@ -33,8 +39,8 @@ const SUBCIRCUIT = 'CustomCompositeElm:';
 interface QuickPickState {
   favorites: string[];
   recents: string[];
-  /** The rail beside the canvas is folded down to its two buttons. */
-  railCollapsed: boolean;
+  /** The bar is folded away to its handle. */
+  folded: Record<QuickPickBar, boolean>;
 }
 
 function load(key: string, fallback: readonly string[]): string[] {
@@ -59,7 +65,7 @@ function save(key: string, list: string[]): void {
 export const useQuickPick = create<QuickPickState>(() => ({
   favorites: load(FAVORITES_KEY, DEFAULT_FAVORITES),
   recents: load(RECENTS_KEY, []),
-  railCollapsed: loadFlag(RAIL_KEY),
+  folded: { rail: loadFlag(FOLDED_KEYS.rail), strip: loadFlag(FOLDED_KEYS.strip) },
 }));
 
 function loadFlag(key: string): boolean {
@@ -70,11 +76,11 @@ function loadFlag(key: string): boolean {
   }
 }
 
-/** Fold the rail away to its two buttons, or open it again. */
-export function setRailCollapsed(collapsed: boolean): void {
-  useQuickPick.setState({ railCollapsed: collapsed });
+/** Fold a bar away to its handle, or open it again. */
+export function setBarFolded(bar: QuickPickBar, folded: boolean): void {
+  useQuickPick.setState((s) => ({ folded: { ...s.folded, [bar]: folded } }));
   try {
-    localStorage.setItem(RAIL_KEY, String(collapsed));
+    localStorage.setItem(FOLDED_KEYS[bar], String(folded));
   } catch {
     // storage disabled: the choice lasts for this page
   }
