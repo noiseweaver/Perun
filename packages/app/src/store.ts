@@ -23,10 +23,6 @@ export const VALUE_SIZES = [
 ] as const;
 
 /** Display settings that belong to the user, not the circuit (kept in localStorage). */
-/** Options > Shadows, from none to strong. */
-export const SHADOW_STRENGTHS = ['off', 'soft', 'normal', 'strong'] as const;
-export type ShadowStrength = (typeof SHADOW_STRENGTHS)[number];
-
 export interface UserSettings {
   /** A built-in theme id, or `user:` and the id of a theme in the library (themes.ts). */
   themeId: string;
@@ -51,8 +47,6 @@ export interface UserSettings {
   quickPickBar: boolean;
   /** Q, a right-button flick or a long press on empty canvas opens the radial wheel. */
   quickPickWheel: boolean;
-  /** How strong the shadows under the panels, menus and tabs floating over the canvas are. */
-  shadows: ShadowStrength;
   /** Font for text boxes; a display choice, not saved with circuits. */
   textFont: TextFont;
   /** Interface language: `auto` (the browser's) or an upstream catalog code (i18n.ts). */
@@ -255,7 +249,6 @@ function loadSettings(): UserSettings {
     wiresFollow: true,
     quickPickBar: true,
     quickPickWheel: true,
-    shadows: 'normal',
     valueSize: 0.875,
     textFont: { family: 'default', bold: false, italic: false },
     language: 'auto',
@@ -292,7 +285,6 @@ function loadSettings(): UserSettings {
       quickPickBar: typeof s.quickPickBar === 'boolean' ? s.quickPickBar : defaults.quickPickBar,
       quickPickWheel:
         typeof s.quickPickWheel === 'boolean' ? s.quickPickWheel : defaults.quickPickWheel,
-      shadows: SHADOW_STRENGTHS.find((x) => x === s.shadows) ?? defaults.shadows,
       valueSize: VALUE_SIZES.some((v) => v.scale === s.valueSize)
         ? (s.valueSize as number)
         : defaults.valueSize,

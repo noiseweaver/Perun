@@ -12,6 +12,7 @@ import {
   parseTheme,
   parseThemeJson,
   resolveTheme,
+  shadowCssVariables,
   themeCssVariables,
   toCss,
 } from './index.ts';
@@ -77,6 +78,29 @@ describe('themes', () => {
     const t = BUILTIN_THEMES['classic-dots'];
     expect(t?.style.grid).toBe('dots');
     expect(t?.circuit).toEqual(BUILTIN_THEMES['classic']?.circuit);
+  });
+});
+
+describe('shadows', () => {
+  it('is half opaque at 1, clear at 0, and darker toward black above 1', () => {
+    expect(shadowCssVariables(1)).toEqual({
+      '--md-shadow-strength': '50%',
+      '--md-shadow-tint': '100%',
+    });
+    expect(shadowCssVariables(0)['--md-shadow-strength']).toBe('0%');
+    expect(shadowCssVariables(2)).toEqual({
+      '--md-shadow-strength': '85%',
+      '--md-shadow-tint': '40%',
+    });
+  });
+
+  it('is part of every theme, and off on E-ink', () => {
+    for (const t of Object.values(BUILTIN_THEMES)) {
+      const v = themeCssVariables(t);
+      expect(v['--md-shadow-strength']).toMatch(/^\d+%$/);
+    }
+    expect(BUILTIN_THEMES['eink']?.style.shadows).toBe(0);
+    expect(BUILTIN_THEMES['dark']?.style.shadows).toBe(1);
   });
 });
 

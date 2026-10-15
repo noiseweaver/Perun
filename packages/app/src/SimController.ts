@@ -101,7 +101,6 @@ import {
   useApp,
   type AppState,
   type EditorState,
-  type ShadowStrength,
   type TeachTool,
 } from './store.ts';
 import { t } from './i18n.ts';
@@ -410,7 +409,6 @@ export class SimController {
     renderer.motion = this.motion;
     this.renderer = renderer;
     this.scopeRenderer = new ScopeRenderer(canvas, shownTheme(state));
-    this.scopeRenderer.shadow = SHADOW_SCALE[state.settings.shadows];
     renderer.setElements(this.circuit.elements);
     this.needsFit = true;
     this.unsubscribe = useApp.subscribe((s, prev) => this.onStore(s, prev));
@@ -508,8 +506,6 @@ export class SimController {
   }
 
   private onStore(s: AppState, prev: AppState): void {
-    if (s.settings.shadows !== prev.settings.shadows && this.scopeRenderer)
-      this.scopeRenderer.shadow = SHADOW_SCALE[s.settings.shadows];
     const theme = shownTheme(s);
     if (theme !== shownTheme(prev)) {
       this.renderer?.setTheme(theme);
@@ -3345,9 +3341,6 @@ export class SimController {
     return this.renderer?.viewport.toScreen(x, y) ?? null;
   }
 }
-
-/** The undocked scope cards' shadow for each choice in Options > Shadows. */
-const SHADOW_SCALE: Record<ShadowStrength, number> = { off: 0, soft: 0.5, normal: 1, strong: 1.6 };
 
 /** How long after a part is placed the view follows it as the properties panel opens. */
 const REVEAL_MS = 600;

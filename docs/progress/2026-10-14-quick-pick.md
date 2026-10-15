@@ -48,9 +48,10 @@ the quick pick strip (design A) to build first.
   doesn't see moves over the wheel or panels).
 - Gady's next round (2026-10-15 afternoon): the app bar's menu button is gone and the logo sits
   in its place at the top left (phones too); the rail's tab opens the palette, and on phones a
-  tab shows on the canvas while the strip is folded or off. Options > Shadows (Off, Soft,
-  Normal, Strong) scales the Material shadows under panels, menus and tabs and the undocked scope
-  cards' shadow (`data-shadows` on the root, `--md-shadow-strength`). A part placed where the
+  tab shows on the canvas while the strip is folded or off. A new theme key, `style.shadows` (0 none, 1 Material,
+  2 strong; a slider in the theme editor, E-ink at 0), scales the shadows under panels, menus and
+  tabs and the undocked scope cards' shadow (`shadowCssVariables`); Gady first had it under
+  Options, then asked for it in the theme. A part placed where the
   properties panel then opens (or under a phone's sheet) is panned back into view
   (`SimController.revealPlaced`). The palette's Favorites and Recent captions fold like the
   categories (remembered with them). The canvas no longer blanks while the palette slides: a

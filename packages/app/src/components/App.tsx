@@ -61,11 +61,6 @@ export function App() {
     document.querySelector('meta[name=theme-color]')?.setAttribute('content', theme.ui.surface);
   }, [theme, themeId, previewing]);
 
-  const shadows = useApp((s) => s.settings.shadows);
-  useEffect(() => {
-    document.documentElement.dataset['shadows'] = shadows;
-  }, [shadows]);
-
   useEffect(() => installShortcuts(), []);
 
   useEffect(() => {

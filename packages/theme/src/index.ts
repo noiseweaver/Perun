@@ -23,6 +23,7 @@ export {
   parseTheme,
   parseThemeJson,
   resolveTheme,
+  shadowCssVariables,
   themeCssVariables,
   type ThemeParseResult,
 } from './resolve.ts';

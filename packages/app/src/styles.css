@@ -18,9 +18,14 @@
   --md-surface-container-highest: color-mix(in srgb, var(--ui-surface-alt) 86%, var(--ui-text));
   --md-secondary-container: color-mix(in srgb, var(--ui-accent) 22%, var(--ui-surface-alt));
   --md-error-container: color-mix(in srgb, var(--ui-danger) 22%, var(--ui-surface-alt));
-  /* Options > Shadows sets this (see :root[data-shadows] below) */
+  /* the theme's style.shadows sets the strength and tint (shadowCssVariables) */
   --md-shadow-strength: 50%;
-  --md-shadow: color-mix(in srgb, var(--ui-shadow) var(--md-shadow-strength), transparent);
+  --md-shadow-tint: 100%;
+  --md-shadow: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--ui-shadow) var(--md-shadow-tint), black) var(--md-shadow-strength),
+    transparent
+  );
   --md-elevation-2:
     0 1px 2px var(--md-shadow), 0 2px 6px 2px color-mix(in srgb, var(--md-shadow) 50%, transparent);
   --md-elevation-3:
@@ -32,26 +37,6 @@
   --md-shape-xl: 28px;
   --md-shape-full: 999px;
   --md-motion: cubic-bezier(0.2, 0, 0, 1);
-}
-
-:root[data-shadows='off'] {
-  --md-shadow-strength: 0%;
-  --md-elevation-2: none;
-  --md-elevation-3: none;
-}
-
-:root[data-shadows='soft'] {
-  --md-shadow-strength: 25%;
-}
-
-:root[data-shadows='strong'] {
-  --md-shadow-strength: 85%;
-  /* dark themes cast shadows in their own near-black surface color: deepen it so it shows */
-  --md-shadow: color-mix(
-    in srgb,
-    color-mix(in srgb, var(--ui-shadow) 40%, black) var(--md-shadow-strength),
-    transparent
-  );
 }
 
 * {

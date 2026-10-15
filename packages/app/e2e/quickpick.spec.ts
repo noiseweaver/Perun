@@ -150,25 +150,6 @@ test('Favorites and Recent fold like the other categories, and stay folded', asy
   await expect(grid.getByTestId('palette-quick-WireElm')).toBeVisible();
 });
 
-test('Options > Shadows turns the shadows down, off or up, and remembers', async ({ page }) => {
-  await open(page);
-  const root = page.locator('html');
-  await expect(root).toHaveAttribute('data-shadows', 'normal');
-  await page.getByTestId('options-menu').click();
-  await page.getByTestId('menu-shadows').click();
-  await page.getByTestId('shadows-off').click();
-  await expect(root).toHaveAttribute('data-shadows', 'off');
-  const elevation = await page.evaluate(() =>
-    getComputedStyle(document.documentElement).getPropertyValue('--md-elevation-2').trim(),
-  );
-  expect(elevation).toBe('none');
-  await page.getByTestId('shadows-strong').click();
-  await expect(root).toHaveAttribute('data-shadows', 'strong');
-  await page.keyboard.press('Escape');
-  await page.reload();
-  await expect(root).toHaveAttribute('data-shadows', 'strong');
-});
-
 test('favorites are put in order by dragging or with the arrow keys', async ({ page }) => {
   await open(page);
   const order = (): Promise<string[]> =>

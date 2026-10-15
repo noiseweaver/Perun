@@ -75,10 +75,23 @@ export function themeCssVariables(theme: Theme): Record<string, string> {
   // Material shadows: the darker of the surface and its text, so light themes cast dark shadows
   const dark = luminance(rgba(theme.ui.surface)) <= luminance(rgba(theme.ui.text));
   vars['--ui-shadow'] = dark ? theme.ui.surface : theme.ui.text;
+  Object.assign(vars, shadowCssVariables(theme.style.shadows));
   vars['--font'] = theme.style.font;
   vars['--mono-font'] = theme.style.monoFont;
   Object.assign(vars, shapeCssVariables(theme.style.roundness));
   return vars;
+}
+
+/**
+ * The CSS variables for `style.shadows`: how opaque the shadow color is (half at 1, as Material
+ * 3), and above 1 how much of the theme's own shadow color is kept before mixing in black.
+ */
+export function shadowCssVariables(shadows: number): Record<string, string> {
+  const s = Math.min(2, Math.max(0, shadows));
+  return {
+    '--md-shadow-strength': `${Math.round(Math.min(s, 1.7) * 50)}%`,
+    '--md-shadow-tint': `${Math.round(100 - Math.max(0, s - 1) * 60)}%`,
+  };
 }
 
 const kebab = (s: string): string => s.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase());
