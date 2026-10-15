@@ -55,6 +55,8 @@ the quick pick strip (design A) to build first.
   (`SimController.revealPlaced`). The palette's Favorites and Recent captions fold like the
   categories (remembered with them). The canvas no longer blanks while the palette slides: a
   resize redraws the last frame before the page is painted.
+- The visualizations legend moved from the canvas's top left (where the rail is) into the top
+  right column, under the sliders and the DC table.
 
 ## Next
 

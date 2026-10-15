@@ -87,8 +87,8 @@ export function App() {
             <div className="overlay-right">
               <SliderPanel />
               <DcPanel />
+              <FieldLegend />
             </div>
-            <FieldLegend />
             <WheelValuePopup />
             <ModeChip />
             <SubcircuitBar />

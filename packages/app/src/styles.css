@@ -821,12 +821,10 @@ textarea,
   color: var(--ui-accent);
 }
 
+/* the key to the visualizations: in the top right column with the sliders, clear of the rail */
 .field-legend {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 5;
-  max-width: calc(100% - 24px);
+  flex: none;
+  min-width: 160px;
   border-radius: var(--md-shape-m);
   background: color-mix(in srgb, var(--md-surface-container-high) 92%, transparent);
   box-shadow: var(--md-elevation-2);
@@ -885,7 +883,7 @@ textarea,
 
 /* ---- the circuit's sliders (upstream's side panel) ---------------------------------------- */
 
-/* the cards over the top right of the canvas: sliders, then the DC table */
+/* the cards over the top right of the canvas: sliders, the DC table, then the legend */
 .overlay-right {
   position: absolute;
   top: 12px;
