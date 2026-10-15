@@ -213,9 +213,10 @@ export class OpAmpModels {
     return name === undefined ? null : this.getModelWithName(name);
   }
 
-  /** A new model to edit, copied from `from`; it is in the list once named. */
+  /** A new model to edit, copied from `from` and named after it; it joins the list on OK. */
   createCopy(from: OpAmpModel): OpAmpModel {
     const m = OpAmpModel.copyOf(from);
+    m.name = pickModelName(from.name + ' copy', this.modelMap);
     m.library = this;
     return m;
   }

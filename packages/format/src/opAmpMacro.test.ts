@@ -426,6 +426,7 @@ describe('kept op-amp models (My Models)', () => {
     const lib = new OpAmpModels();
     lib.storage = storage;
     const m = lib.createCopy(lib.getModelWithName('NE5532'));
+    expect(m.name).toBe('NE5532 copy');
     lib.rename(m, 'warm 5532');
     expect(m.getEditInfo(11)?.checkbox?.state).toBe(false);
     const keep = m.getEditInfo(11) as EditInfo;
