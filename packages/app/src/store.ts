@@ -45,6 +45,8 @@ export interface UserSettings {
   wiresFollow: boolean;
   /** The quick pick bar: the rail beside the canvas and the strip under it on phones. */
   quickPickBar: boolean;
+  /** Q, a right-button flick or a long press on empty canvas opens the radial wheel. */
+  quickPickWheel: boolean;
   /** Font for text boxes; a display choice, not saved with circuits. */
   textFont: TextFont;
   /** Interface language: `auto` (the browser's) or an upstream catalog code (i18n.ts). */
@@ -246,6 +248,7 @@ function loadSettings(): UserSettings {
     wheelEdit: true,
     wiresFollow: true,
     quickPickBar: true,
+    quickPickWheel: true,
     valueSize: 0.875,
     textFont: { family: 'default', bold: false, italic: false },
     language: 'auto',
@@ -280,6 +283,8 @@ function loadSettings(): UserSettings {
       wheelEdit: typeof s.wheelEdit === 'boolean' ? s.wheelEdit : defaults.wheelEdit,
       wiresFollow: typeof s.wiresFollow === 'boolean' ? s.wiresFollow : defaults.wiresFollow,
       quickPickBar: typeof s.quickPickBar === 'boolean' ? s.quickPickBar : defaults.quickPickBar,
+      quickPickWheel:
+        typeof s.quickPickWheel === 'boolean' ? s.quickPickWheel : defaults.quickPickWheel,
       valueSize: VALUE_SIZES.some((v) => v.scale === s.valueSize)
         ? (s.valueSize as number)
         : defaults.valueSize,

@@ -402,6 +402,13 @@ export function AppBar() {
             testId="menu-quick-pick"
           />
           <CheckItem
+            label="Quick pick wheel"
+            icon="apps"
+            checked={settings.quickPickWheel}
+            onCheckedChange={(v) => updateSettings({ quickPickWheel: v })}
+            testId="menu-quick-wheel"
+          />
+          <CheckItem
             label="European resistors"
             icon="euroResistor"
             checked={settings.euroResistors}

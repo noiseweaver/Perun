@@ -97,6 +97,25 @@ test('a right-button flick on empty canvas picks; a right click still opens the 
   await expect(page.getByRole('menuitem', { name: /Centre Circuit/ })).toBeVisible();
 });
 
+test('Options turns the wheel off: q does nothing and a right drag is a plain right click', async ({
+  page,
+}) => {
+  const c = await open(page);
+  await page.getByTestId('options-menu').click();
+  await page.getByTestId('menu-quick-wheel').click();
+  await page.keyboard.press('Escape');
+  await page.mouse.move(c.x, c.y);
+  await page.keyboard.press('q');
+  await expect(page.getByTestId('radial-wheel')).toHaveCount(0);
+  await page.mouse.down({ button: 'right' });
+  await page.mouse.move(c.x, c.y - 70, { steps: 4 });
+  await page.mouse.up({ button: 'right' });
+  await expect(page.getByTestId('radial-wheel')).toHaveCount(0);
+  expect(await placed(page)).toEqual([]);
+  // the bar stays on: it has its own switch
+  await expect(page.getByTestId('quick-pick-grid')).toBeVisible();
+});
+
 test.describe('on a phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 

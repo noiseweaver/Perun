@@ -2713,7 +2713,8 @@ export class SimController {
       const p = local(e);
       if (inScopes(p) || this.undockedAt(p.x, p.y) !== null) return;
       const g = grid(p);
-      if (ed.pick(g.x, g.y).elm !== null || wheelItems().length === 0) return;
+      if (ed.pick(g.x, g.y).elm !== null || !useApp.getState().settings.quickPickWheel) return;
+      if (wheelItems().length === 0) return;
       rightPress = { id: e.pointerId, x: p.x, y: p.y, cx: e.clientX, cy: e.clientY, menu: false };
       try {
         canvas.setPointerCapture(e.pointerId);
@@ -3219,7 +3220,8 @@ export class SimController {
     pointerId: number | null = null,
   ): boolean {
     const r = this.renderer;
-    if (!r || this.viewStack.length > 0 || wheelItems().length === 0) return false;
+    if (!r || this.viewStack.length > 0 || !useApp.getState().settings.quickPickWheel) return false;
+    if (wheelItems().length === 0) return false;
     let at = this.clientToCircuit(clientX, clientY);
     if (at === null) {
       const rect = r.canvas.getBoundingClientRect();

@@ -42,6 +42,8 @@ the quick pick strip (design A) to build first.
   down. On touch the wheel also has Paste, Select All and Centre Circuit, which the long press
   menu on empty canvas had. Listed in Keyboard shortcuts. Tests: `radialWheel.test.ts`,
   `editor.test.ts`, `e2e/wheel.spec.ts`.
+- Options > Quick pick wheel turns the wheel off (q does nothing, a right drag is a plain right
+  click, a long press opens the menu again), separately from Options > Quick pick bar.
 
 ## Next
 
