@@ -44,6 +44,9 @@ the quick pick strip (design A) to build first.
   `editor.test.ts`, `e2e/wheel.spec.ts`.
 - Options > Quick pick wheel turns the wheel off (q does nothing, a right drag is a plain right
   click, a long press opens the menu again), separately from Options > Quick pick bar.
+- Undo and Redo sit under the wheel (desktop and touch) and leave it open; letting go over one
+  after a flick or a slide presses it. Q opens the wheel where the pointer really is (the canvas
+  doesn't see moves over the wheel or panels).
 
 ## Next
 

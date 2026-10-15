@@ -69,6 +69,33 @@ test('a quick tap of q leaves the wheel open to click; Esc closes it', async ({ 
   expect(await placed(page)).toHaveLength(2);
 });
 
+test('undo and redo under the wheel step back and forward and leave it open', async ({ page }) => {
+  const c = await open(page);
+  await page.mouse.move(c.x, c.y);
+  await page.keyboard.press('q');
+  await expect(page.getByTestId('wheel-undo')).toBeDisabled();
+  await page.getByTestId('wheel-ResistorElm').click();
+  await page.keyboard.press('q');
+  await page.getByTestId('wheel-CapacitorElm').click();
+  await page.keyboard.press('q');
+  await page.getByTestId('wheel-undo').click();
+  await page.getByTestId('wheel-undo').click();
+  expect(await placed(page)).toEqual([]);
+  await expect(page.getByTestId('radial-wheel')).toBeVisible();
+  await page.getByTestId('wheel-redo').click();
+  expect(await placed(page)).toEqual([{ cls: 'ResistorElm', upright: false }]);
+  // a right flick let go on Undo undoes, rather than placing the part below
+  await page.keyboard.press('Escape');
+  await page.mouse.move(c.x - 160, c.y);
+  await page.mouse.down({ button: 'right' });
+  await page.mouse.move(c.x - 160, c.y + 30, { steps: 2 });
+  const undo = await page.getByTestId('wheel-undo').boundingBox();
+  if (!undo) throw new Error('no undo button');
+  await page.mouse.move(undo.x + undo.width / 2, undo.y + undo.height / 2, { steps: 4 });
+  await page.mouse.up({ button: 'right' });
+  expect(await placed(page)).toEqual([]);
+});
+
 test('a right-button flick on empty canvas picks; a right click still opens the menu', async ({
   page,
 }) => {

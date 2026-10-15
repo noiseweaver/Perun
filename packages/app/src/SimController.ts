@@ -87,7 +87,14 @@ import { download } from './download.ts';
 import { arrangeCards } from './scopeLayout.ts';
 import { sliderEntries, type SliderEntry } from './sliders.ts';
 import { notePlaced } from './quickPick.ts';
-import { closeWheel, openWheel, useWheel, wheelItems, type WheelVia } from './radialWheel.ts';
+import {
+  closeWheel,
+  lastPointer,
+  openWheel,
+  useWheel,
+  wheelItems,
+  type WheelVia,
+} from './radialWheel.ts';
 import {
   showToast,
   shownTheme,
@@ -3240,9 +3247,10 @@ export class SimController {
   openWheelAtPointer(): boolean {
     const r = this.renderer;
     if (!r) return false;
+    // the pointer's own last position: over the wheel or a panel the canvas doesn't see it move
     const rect = r.canvas.getBoundingClientRect();
-    const m = this.mouse ?? { x: rect.width / 2, y: rect.height / 2 };
-    return this.openWheelAt(rect.left + m.x, rect.top + m.y, 'key');
+    const m = lastPointer ?? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    return this.openWheelAt(m.x, m.y, 'key');
   }
 
   /** A part picked on the radial wheel goes where the wheel opened. */

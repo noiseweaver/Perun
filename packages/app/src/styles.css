@@ -4459,3 +4459,11 @@ ul.theme-contrast {
   opacity: 0.5;
   cursor: default;
 }
+
+.radial-wheel-actions-divider {
+  align-self: center;
+  width: 1px;
+  height: 24px;
+  margin: 0 2px;
+  background: var(--ui-border);
+}

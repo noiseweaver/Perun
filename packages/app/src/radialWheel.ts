@@ -46,6 +46,17 @@ export function wheelItems(
   return quickPickItems(favorites, [], models).favorites.slice(0, WHEEL_SLOTS);
 }
 
+/** Where the mouse or pen last was on the page, in client pixels: where q opens the wheel. */
+export let lastPointer: { x: number; y: number } | null = null;
+if (typeof window !== 'undefined')
+  window.addEventListener(
+    'pointermove',
+    (e) => {
+      if (e.pointerType !== 'touch') lastPointer = { x: e.clientX, y: e.clientY };
+    },
+    { capture: true, passive: true },
+  );
+
 export function openWheel(w: Omit<WheelState, 'openedAt'>): void {
   useWheel.setState({ wheel: { ...w, openedAt: performance.now() }, lit: -1 });
 }

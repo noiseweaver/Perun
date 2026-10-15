@@ -40,12 +40,14 @@ function Wheel({ wheel }: { wheel: WheelState }) {
   const favorites = useQuickPick((s) => s.favorites);
   const models = useApp((s) => s.subcircuitModels);
   const canPaste = useApp((s) => s.editor.canPaste);
+  const canUndo = useApp((s) => s.editor.canUndo);
+  const canRedo = useApp((s) => s.editor.canRedo);
   const items = wheelItems(favorites, models);
   const n = items.length;
   const touch = wheel.via === 'touch';
   const size = touch ? SIZES.touch : SIZES.mouse;
   // nudged inward near the window's edges; the part still goes where the wheel opened
-  const below = touch ? 56 : 36;
+  const below = 56;
   const cx = clamp(wheel.x, size.outer + EDGE, window.innerWidth - size.outer - EDGE);
   const cy = clamp(wheel.y, size.outer + EDGE, window.innerHeight - size.outer - below - EDGE);
   const root = useRef<HTMLDivElement>(null);
@@ -53,6 +55,13 @@ function Wheel({ wheel }: { wheel: WheelState }) {
   // click whose press started on the wheel counts
   const pressedOnWheel = useRef(false);
   const clickable = (): boolean => pressedOnWheel.current;
+  // a button under the wheel pressed by letting go over it (see up below)
+  const releasedOnAction = useRef(false);
+  const act = (fn: () => void) => (): void => {
+    if (!clickable() && !releasedOnAction.current) return;
+    releasedOnAction.current = false;
+    fn();
+  };
   // the latest values for the window listeners below
   const live = useRef({ cx, cy, n, items, wheel });
   live.current = { cx, cy, n, items, wheel };
@@ -64,8 +73,16 @@ function Wheel({ wheel }: { wheel: WheelState }) {
       if (it === undefined) return;
       controller.placeFromWheel(it.className, wedgeVertical(i, n));
     };
+    /** The button in the row under the wheel at the pointer, if any. */
+    const actionAt = (e: PointerEvent): HTMLButtonElement | null =>
+      document
+        .elementFromPoint(e.clientX, e.clientY)
+        ?.closest<HTMLButtonElement>('.radial-wheel-action') ?? null;
+    // over the row under the wheel no wedge lights up: it picks by direction everywhere else
     const at = (e: PointerEvent): number =>
-      wedgeAt(e.clientX - live.current.cx, e.clientY - live.current.cy, live.current.n);
+      actionAt(e) !== null
+        ? -1
+        : wedgeAt(e.clientX - live.current.cx, e.clientY - live.current.cy, live.current.n);
     const move = (e: PointerEvent): void => {
       const w = live.current.wheel;
       // a finger only steers the wheel while it is the one that opened it
@@ -75,11 +92,19 @@ function Wheel({ wheel }: { wheel: WheelState }) {
     const up = (e: PointerEvent): void => {
       const w = live.current.wheel;
       if (w.pointerId !== e.pointerId) return;
+      const action = e.type === 'pointerup' ? actionAt(e) : null;
       const i = e.type === 'pointerup' ? at(e) : -1;
       if (i >= 0) pick(i);
       // a flick let go in the middle changes nothing; a finger lifted there leaves it open to tap
-      else if (w.via === 'flick') closeWheel();
-      else useWheel.setState({ wheel: { ...w, pointerId: null }, lit: -1 });
+      else if (w.via === 'flick' && action === null) closeWheel();
+      else {
+        useWheel.setState({ wheel: { ...w, pointerId: null }, lit: -1 });
+        // let go on a button under the wheel: that button, with the wheel left open
+        if (action !== null && !action.disabled) {
+          releasedOnAction.current = true;
+          action.click();
+        }
+      }
     };
     const downOutside = (e: PointerEvent): void => {
       if (root.current?.contains(e.target as Node)) {
@@ -179,7 +204,6 @@ function Wheel({ wheel }: { wheel: WheelState }) {
             aria-label={`${name} (${i + 1})`}
             title={name}
             data-testid={`wheel-${it.className}`}
-            onPointerEnter={() => setLit(i)}
             onClick={() => {
               if (clickable()) controller.placeFromWheel(it.className, wedgeVertical(i, n));
             }}
@@ -195,7 +219,6 @@ function Wheel({ wheel }: { wheel: WheelState }) {
         aria-label={t('Close')}
         title={t('Close')}
         data-testid="radial-wheel-close"
-        onPointerEnter={() => setLit(-1)}
         onClick={() => {
           if (clickable()) closeWheel();
         }}
@@ -205,49 +228,75 @@ function Wheel({ wheel }: { wheel: WheelState }) {
       <div className="radial-wheel-name" style={{ top: d + 6 }} aria-live="polite">
         {litItem !== undefined ? tItem(litItem.label) : ''}
       </div>
-      {touch && (
-        // a long press on empty canvas used to open a menu with these
-        <div className="radial-wheel-actions" style={{ top: d + 32 }}>
-          <button
-            type="button"
-            className="radial-wheel-action"
-            disabled={!canPaste}
-            aria-label={t('Paste')}
-            title={t('Paste')}
-            onClick={() => {
-              closeWheel();
-              controller.paste();
-            }}
-          >
-            <Icon name="paste" size={20} />
-          </button>
-          <button
-            type="button"
-            className="radial-wheel-action"
-            aria-label={t('Select All')}
-            title={t('Select All')}
-            onClick={() => {
-              closeWheel();
-              controller.editor.selectAll();
-              controller.publishEditor();
-            }}
-          >
-            <Icon name="selectAll" size={20} />
-          </button>
-          <button
-            type="button"
-            className="radial-wheel-action"
-            aria-label={t('Centre Circuit')}
-            title={t('Centre Circuit')}
-            onClick={() => {
-              closeWheel();
-              controller.fit();
-            }}
-          >
-            <Icon name="fit" size={20} />
-          </button>
-        </div>
-      )}
+      <div className="radial-wheel-actions" style={{ top: d + 32 }}>
+        {/* undo and redo leave the wheel open, to step back or forward more than once */}
+        <button
+          type="button"
+          className="radial-wheel-action"
+          disabled={!canUndo}
+          aria-label={t('Undo')}
+          title={t('Undo')}
+          data-testid="wheel-undo"
+          onClick={act(() => controller.undo())}
+        >
+          <Icon name="undo" size={20} />
+        </button>
+        <button
+          type="button"
+          className="radial-wheel-action"
+          disabled={!canRedo}
+          aria-label={t('Redo')}
+          title={t('Redo')}
+          data-testid="wheel-redo"
+          onClick={act(() => controller.redo())}
+        >
+          <Icon name="redo" size={20} />
+        </button>
+        {touch && (
+          // a long press on empty canvas used to open a menu with these
+          <>
+            <span className="radial-wheel-actions-divider" aria-hidden />
+            <button
+              type="button"
+              className="radial-wheel-action"
+              disabled={!canPaste}
+              aria-label={t('Paste')}
+              title={t('Paste')}
+              onClick={act(() => {
+                closeWheel();
+                controller.paste();
+              })}
+            >
+              <Icon name="paste" size={20} />
+            </button>
+            <button
+              type="button"
+              className="radial-wheel-action"
+              aria-label={t('Select All')}
+              title={t('Select All')}
+              onClick={act(() => {
+                closeWheel();
+                controller.editor.selectAll();
+                controller.publishEditor();
+              })}
+            >
+              <Icon name="selectAll" size={20} />
+            </button>
+            <button
+              type="button"
+              className="radial-wheel-action"
+              aria-label={t('Centre Circuit')}
+              title={t('Centre Circuit')}
+              onClick={act(() => {
+                closeWheel();
+                controller.fit();
+              })}
+            >
+              <Icon name="fit" size={20} />
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }
