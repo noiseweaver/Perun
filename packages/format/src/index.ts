@@ -12,6 +12,8 @@ export {
   type CircuitOptions,
   type CompositeResult,
   type Hint,
+  type LoadIssue,
+  type LoadIssueKind,
 } from './circuit.ts';
 export {
   runCircuit,

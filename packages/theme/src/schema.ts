@@ -106,6 +106,12 @@ export interface Theme {
      * Below 1 round buttons become rounded squares.
      */
     roundness: number;
+    /**
+     * Strength of the shadows under panels, menus, tabs and undocked scope cards: 0 none, 1
+     * Material's own, 2 strong (darker than the theme's own shadow color, so they show on dark
+     * themes too).
+     */
+    shadows: number;
   };
 }
 
@@ -308,6 +314,15 @@ export const themeInputSchema = z
             'Corner rounding of the UI and scope cards: 0 square, 1 Material 3 (default), 2 extra ' +
               'round. Large radii change faster than small ones; below 1 round buttons become ' +
               'rounded squares.',
+          ),
+        shadows: z
+          .number()
+          .min(0)
+          .max(2)
+          .describe(
+            'Strength of the shadows under panels, menus, tabs and undocked scope cards: 0 none, ' +
+              '1 Material 3 (default), 2 strong. Above 1 they also darken toward black, so they ' +
+              'show on dark themes.',
           ),
       })
       .partial()

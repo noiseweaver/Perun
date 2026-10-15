@@ -59,6 +59,8 @@ export interface EditorHost {
   restore(xml: string): void;
   /** The part of the circuit on screen, in circuit coordinates. */
   visibleArea(): Rect;
+  /** An element of this palette class was placed (the quick pick's recent list). */
+  placed?(className: string): void;
 }
 
 /** Placement, selection, dragging and the edit commands, in circuit coordinates. DOM free. */
@@ -100,6 +102,8 @@ export class Editor {
   private dragRowColElms: { e: CircuitElm; post: number }[] = [];
   private clipboard = '';
   private paletteDragClass = '';
+  /** Palette class of the element being dragged out on the canvas. */
+  private dragClass = '';
   /**
    * Wire ends on a moved part's posts move with it (user setting, not in upstream). Holding Alt
    * while dragging leaves them behind, as upstream does.
@@ -203,9 +207,22 @@ export class Editor {
       this.elements.push(de);
       for (const e of this.elements) e.selected = e === de;
     });
+    this.host.placed?.(this.paletteDragClass);
     this.host.circuitChanged();
     this.host.selectionChanged();
     return de;
+  }
+
+  /**
+   * Drop an element at its default length centred on (x, y), lying down or (vertical) upright,
+   * as the radial wheel does (not upstream).
+   */
+  placeAt(className: string, x: number, y: number, vertical: boolean): CircuitElm | null {
+    this.paletteDragMove(className, { x, y }, vertical);
+    const de = this.dragElm;
+    if (de === null) return null;
+    de.move(-this.snapGrid((de.x2 - de.x) / 2), -this.snapGrid((de.y2 - de.y) / 2));
+    return this.paletteDragEnd();
   }
 
   // ---- selection ---------------------------------------------------------------------------
@@ -421,6 +438,7 @@ export class Editor {
     }
 
     if (this.tempMouseMode !== MouseMode.ADD_ELM) return 'none';
+    this.dragClass = this.addClass;
     this.dragElm = constructElement(
       this.addClass,
       this.snapGrid(gx),
@@ -585,6 +603,7 @@ export class Editor {
         // a routed wire goes round posts instead of connecting to them
         if (de instanceof WireElm && !(de instanceof RoutedWireElm)) this.wireDraggingDone(de);
         circuitChanged = true;
+        this.host.placed?.(this.dragClass);
       }
     }
     if (circuitChanged) {

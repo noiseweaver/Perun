@@ -259,6 +259,18 @@ test('the library edits and deletes saved themes', async ({ page }) => {
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
 
+test('the shadows slider takes the shadows away and brings them back stronger', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await pickFromThemeMenu(page, 'menu-edit-theme');
+  expect(await cssVar(page, '--md-shadow-strength')).toBe('50%');
+  await page.getByTestId('range-shadows').fill('0');
+  await expect.poll(() => cssVar(page, '--md-shadow-strength')).toBe('0%');
+  await page.getByTestId('range-shadows').fill('2');
+  await expect.poll(() => cssVar(page, '--md-shadow-tint')).toBe('40%');
+});
+
 test('the roundness slider squares off the UI, round buttons included', async ({ page }) => {
   await page.goto('/');
   await pickFromThemeMenu(page, 'menu-edit-theme');

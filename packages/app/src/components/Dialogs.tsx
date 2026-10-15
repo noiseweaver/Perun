@@ -22,6 +22,7 @@ import { useApp } from '../store.ts';
 import { themeLink } from '../themes.ts';
 import { AboutDialog } from './AboutDialog.tsx';
 import { FeedbackDialog } from './FeedbackDialog.tsx';
+import { LoadIssuesDialog } from './LoadIssuesDialog.tsx';
 import { WhatsNewDialog } from './WhatsNewDialog.tsx';
 import { BodeDialog } from './BodeDialog.tsx';
 import { SweepDialog } from './SweepDialog.tsx';
@@ -443,6 +444,7 @@ const EDIT_KEYS: [string, string][] = [
   ['Double-click, Enter', 'Edit properties'],
   ['] / [', 'Select the next / previous element'],
   ['Shift+F10, Menu key', 'Menu for the selection'],
+  ['Q, right-drag on empty space', 'Wheel of favorites: flick or click toward one to place it'],
   ['Arrow keys', 'Move the selection'],
   ['Delete, Backspace', 'Delete'],
   ['Esc', 'Stop placing, clear selection'],
@@ -576,6 +578,8 @@ export function Dialogs() {
       return <WhatsNewDialog />;
     case 'feedback':
       return <FeedbackDialog />;
+    case 'loadIssues':
+      return <LoadIssuesDialog />;
     default:
       return null;
   }

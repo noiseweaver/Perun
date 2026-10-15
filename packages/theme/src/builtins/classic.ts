@@ -82,6 +82,7 @@ export const classic: Theme = {
       "'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace",
     scopeLook: 'classic',
     roundness: 1,
+    shadows: 1,
   },
 };
 

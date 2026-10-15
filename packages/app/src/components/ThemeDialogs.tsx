@@ -790,6 +790,15 @@ export function ThemeEditorDialog() {
               onChange={(v) => set('style.roundness', v)}
               testId="roundness"
             />
+            <NumberField
+              label="Shadows"
+              value={draft.style.shadows}
+              min={0}
+              max={2}
+              step={0.1}
+              onChange={(v) => set('style.shadows', v)}
+              testId="shadows"
+            />
             <SelectField
               label="Grid"
               value={draft.style.grid}

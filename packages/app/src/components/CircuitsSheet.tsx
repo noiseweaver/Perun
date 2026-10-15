@@ -146,9 +146,15 @@ function useSwipeToDismiss(
 /**
  * The Circuits menu on a phone: a sheet with a search box and groups that open in place, where
  * the desktop dropdown's side-opening submenus have no room. Tapping outside it, pulling it down,
- * the close button or Escape put it away.
+ * the close button or Escape put it away. On a desktop, Circuits > Search circuits opens it as a
+ * dialog with the search box ready for typing.
  */
-export function CircuitsSheet(props: { root: ExampleMenu; onClose: () => void }) {
+export function CircuitsSheet(props: {
+  root: ExampleMenu;
+  onClose: () => void;
+  /** Put the keyboard in the search box (not on phones: their keyboard would cover the list). */
+  focusSearch?: boolean;
+}) {
   const [query, setQuery] = useState('');
   const all = useMemo(() => flatten(props.root), [props.root]);
   const q = query.trim().toLowerCase();
@@ -161,6 +167,7 @@ export function CircuitsSheet(props: { root: ExampleMenu; onClose: () => void })
             t(e.item.title).toLowerCase().includes(q) || e.item.title.toLowerCase().includes(q),
         );
   const [sheet, setSheet] = useState<HTMLDivElement | null>(null);
+  const search = useRef<HTMLInputElement>(null);
   const body = useRef<HTMLDivElement>(null);
   useSwipeToDismiss(sheet, body, props.onClose);
   const pick = (it: ExampleItem): void => {
@@ -171,7 +178,16 @@ export function CircuitsSheet(props: { root: ExampleMenu; onClose: () => void })
     <Dialog.Root open onOpenChange={(o) => !o && props.onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="circuits-sheet-scrim" data-testid="circuits-sheet-scrim" />
-        <Dialog.Content ref={setSheet} className="circuits-sheet" data-testid="circuits-sheet">
+        <Dialog.Content
+          ref={setSheet}
+          className="circuits-sheet"
+          data-testid="circuits-sheet"
+          onOpenAutoFocus={(e) => {
+            if (!props.focusSearch) return;
+            e.preventDefault();
+            search.current?.focus();
+          }}
+        >
           <div className="circuits-sheet-handle" aria-hidden>
             <span className="sheet-handle-bar" />
           </div>
@@ -187,11 +203,17 @@ export function CircuitsSheet(props: { root: ExampleMenu; onClose: () => void })
           <label className="palette-search circuits-sheet-search">
             <Icon name="search" />
             <input
+              ref={search}
               className="palette-search-input"
               placeholder={t('Search circuits')}
               value={query}
               data-testid="circuits-search"
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                // Enter opens the first match
+                const first = found[0];
+                if (e.key === 'Enter' && first !== undefined) pick(first.item);
+              }}
             />
           </label>
           <div ref={body} className="circuits-sheet-body" key={q === '' ? 'tree' : 'search'}>

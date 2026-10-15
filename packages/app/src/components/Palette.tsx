@@ -1,106 +1,31 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 
-import { Simulation, constructElement } from '@perun/elements';
-import { drawPreview } from '@perun/render';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { searchPalette, type PaletteGroup, type PaletteItem } from '../editor/catalog.ts';
-import { controller } from '../SimController.ts';
-import { setPaletteOpen, shownTheme, useApp } from '../store.ts';
+import { setPaletteOpen, useApp } from '../store.ts';
 import { Icon } from './Icon.tsx';
+import { PaletteButton } from './PaletteButton.tsx';
+import { QuickPick } from './QuickPick.tsx';
+import { toggleFavorite, useQuickPick } from '../quickPick.ts';
 import { t, tGroup, tItem } from '../i18n.ts';
 
-const previewSim = new Simulation();
-const ICON_W = 44;
-const ICON_H = 32;
-
-/** The element drawn small with the current theme. */
-export function Preview({ className }: { className: string }) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  const theme = useApp(shownTheme);
-  useEffect(() => {
-    const c = ref.current;
-    if (!c) return;
-    // a user's subcircuit is found through the circuit's own model list
-    const sim = className.startsWith('CustomCompositeElm:') ? controller.circuit.sim : previewSim;
-    const e = constructElement(className, 0, 0, sim);
-    if (!e) return;
-    e.dragPlace(0, 0, false);
-    drawPreview(c, e, theme, ICON_W, ICON_H, window.devicePixelRatio || 1);
-  }, [className, theme]);
-  return (
-    <canvas
-      ref={ref}
-      className="palette-icon"
-      style={{ width: ICON_W, height: ICON_H }}
-      aria-hidden
-    />
-  );
-}
-
-/** Pixels a press must travel before it becomes a drag onto the canvas. */
-const DRAG_THRESHOLD = 6;
-
-function PaletteButton({ item, active }: { item: PaletteItem; active: boolean }) {
-  const drag = useRef<{ x: number; y: number; id: number; active: boolean } | null>(null);
-
-  const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>): void => {
-    if (e.button !== 0) return;
-    drag.current = { x: e.clientX, y: e.clientY, id: e.pointerId, active: false };
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
-  const onPointerMove = (e: React.PointerEvent<HTMLButtonElement>): void => {
-    const d = drag.current;
-    if (!d || d.id !== e.pointerId) return;
-    if (!d.active) {
-      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < DRAG_THRESHOLD) return;
-      d.active = true;
-    }
-    const pos = controller.clientToCircuit(e.clientX, e.clientY);
-    controller.editor.paletteDragMove(item.className, pos, e.shiftKey);
-  };
-  const onPointerUp = (e: React.PointerEvent<HTMLButtonElement>): void => {
-    const d = drag.current;
-    drag.current = null;
-    if (!d || d.id !== e.pointerId) return;
-    if (d.active) {
-      controller.editor.paletteDragEnd();
-      // the drag is not a click
-      e.preventDefault();
-      return;
-    }
-    // a click picks the element for placing by dragging on the canvas (again to stop)
-    if (active) controller.editor.setSelectMode();
-    else controller.editor.setAddMode(item.className);
-    if (window.innerWidth < 720) setPaletteOpen(false);
-  };
-  const onPointerCancel = (): void => {
-    drag.current = null;
-    controller.editor.paletteDragMove(item.className, null, false);
-  };
-
+/** The star after a palette row: pins the component to the quick pick, or unpins it. */
+function FavoriteStar({ item, testId }: { item: PaletteItem; testId: string }) {
+  const on = useQuickPick((s) => s.favorites.includes(item.className));
+  const label = `${t(on ? 'Remove from favorites' : 'Add to favorites')}: ${tItem(item.label)}`;
   return (
     <button
       type="button"
-      className="palette-item"
-      data-active={active || undefined}
-      data-testid={`palette-${item.className}`}
-      title={item.shortcut ? `${tItem(item.label)} (${item.shortcut})` : tItem(item.label)}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerCancel}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          if (active) controller.editor.setSelectMode();
-          else controller.editor.setAddMode(item.className);
-        }
-      }}
+      className="icon-button icon-button-small palette-star"
+      data-on={on || undefined}
+      aria-pressed={on}
+      aria-label={label}
+      title={label}
+      data-testid={testId}
+      onClick={() => toggleFavorite(item.className)}
     >
-      <Preview className={item.className} />
-      <span className="palette-label">{tItem(item.label)}</span>
-      {item.shortcut && <kbd className="palette-key">{item.shortcut}</kbd>}
+      <Icon name={on ? 'star' : 'starBorder'} size={18} />
     </button>
   );
 }
@@ -207,6 +132,7 @@ export function Palette() {
         </div>
         <div className="palette-hint">{t('Click, then drag on the canvas. Or drag onto it.')}</div>
         <div className="palette-list">
+          {!searching && <QuickPick variant="grid" collapsed={collapsed} onToggle={toggleGroup} />}
           {groups.map((g) => (
             <section key={g.title} className="palette-group">
               <h2 className="palette-group-title">
@@ -224,7 +150,14 @@ export function Palette() {
               </h2>
               {(searching || !collapsed.has(g.title)) &&
                 g.items.map((it) => (
-                  <PaletteButton key={it.className} item={it} active={addClass === it.className} />
+                  <div key={it.className} className="palette-row">
+                    <PaletteButton
+                      item={it}
+                      active={addClass === it.className}
+                      testId={`palette-${it.className}`}
+                    />
+                    <FavoriteStar item={it} testId={`palette-star-${it.className}`} />
+                  </div>
                 ))}
             </section>
           ))}

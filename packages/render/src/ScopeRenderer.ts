@@ -519,9 +519,13 @@ export class ScopeRenderer {
     const text = rgba(theme.ui.text);
     const shade = luminance(surface) < luminance(text) ? surface : text;
     c.save();
-    c.shadowColor = toCss({ ...shade, a: 0.55 });
-    c.shadowBlur = 14 * this.dpr;
-    c.shadowOffsetY = 3 * this.dpr;
+    // the theme's style.shadows: 0 none, 1 as designed, 2 strong
+    const strength = theme.style.shadows;
+    if (strength > 0) {
+      c.shadowColor = toCss({ ...shade, a: Math.min(0.9, 0.55 * strength) });
+      c.shadowBlur = 14 * this.dpr;
+      c.shadowOffsetY = 3 * this.dpr;
+    }
     c.fillStyle = theme.scope.undockedCard;
     roundRect(c, s.x, s.y, s.width, s.height, 10, theme.style.roundness);
     c.fill();

@@ -38,6 +38,7 @@ export type DialogKind =
   | 'scopeCsv'
   | 'whatsNew'
   | 'feedback'
+  | 'loadIssues'
   | null;
 
 export function openDialog(kind: DialogKind): void {
@@ -213,6 +214,9 @@ export function installShortcuts(): () => void {
       }
     }
     if (toggled) return done();
+
+    // q: the radial wheel of favorites at the mouse (not upstream)
+    if (k === 'q' && !keys.has(e.key) && controller.openWheelAtPointer()) return done();
 
     const cls = keys.get(e.key);
     if (cls !== undefined) {

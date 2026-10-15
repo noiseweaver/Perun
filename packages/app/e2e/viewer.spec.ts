@@ -335,12 +335,30 @@ test('Circuits submenus open to the right of the menu', async ({ page }) => {
   await page.goto(`/?cct=${cct(RC)}`);
   await page.getByTestId('circuits-menu').click();
   const top = page.getByRole('menu').first();
-  await top.getByRole('menuitem').first().click();
+  await top.getByRole('menuitem', { name: /Basics/ }).click();
   const sub = page.getByRole('menu').nth(1);
   await expect(sub).toBeVisible();
   const a = await top.boundingBox();
   const b = await sub.boundingBox();
   expect(b?.x ?? 0).toBeGreaterThanOrEqual((a?.x ?? 0) + (a?.width ?? 0) - 1);
+});
+
+test('Circuits > Search circuits finds an example by name; Enter opens it', async ({ page }) => {
+  await page.goto(`/?cct=${cct(RC)}`);
+  await expect(page.getByTestId('circuits-menu')).toBeEnabled();
+  await page.getByTestId('circuits-menu').click();
+  await page.getByTestId('circuits-search-open').click();
+  const sheet = page.getByTestId('circuits-sheet');
+  await expect(sheet).toBeVisible();
+  // ready for typing
+  await expect(page.getByTestId('circuits-search')).toBeFocused();
+  await page.keyboard.type('lrc');
+  await expect(sheet.getByRole('button', { name: /LRC Circuit/ }).first()).toBeVisible();
+  await page.keyboard.press('Enter');
+  await expect(sheet).toBeHidden();
+  await expect
+    .poll(() => page.evaluate(() => window.perun?.controller.circuit.scopes.scopeCount))
+    .toBe(3);
 });
 
 test.describe('Circuits on a phone', () => {
@@ -493,4 +511,19 @@ test.describe('A phone on its side', () => {
     await page.getByTestId('circuits-menu').tap();
     await expect(page.getByTestId('circuits-sheet')).toBeVisible();
   });
+});
+
+test('the skipped-items notice explains what was left out and can be hidden', async ({ page }) => {
+  await page.goto(`/?ctz=${compressCircuit(RC + '9999 0 0 16 0 0\nr 0 0 64 0 0 abc\n')}`);
+  const notice = page.getByTestId('load-warnings');
+  await expect(notice).toContainText('2 unsupported items skipped');
+  await notice.getByText('2 unsupported items skipped').click();
+  const details = page.getByTestId('load-issues');
+  await expect(details).toContainText('Unknown part type “9999”');
+  await expect(details).toContainText('9999 0 0 16 0 0');
+  await expect(details).toContainText('Line 7 · Expected a number, found “abc”.');
+  await page.getByRole('button', { name: 'OK' }).click();
+  await expect(notice).toBeVisible();
+  await page.getByTestId('load-warnings-dismiss').click();
+  await expect(notice).toHaveCount(0);
 });
