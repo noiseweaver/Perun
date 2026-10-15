@@ -92,6 +92,8 @@ test('undo and redo under the wheel step back and forward and leave it open', as
   const undo = await page.getByTestId('wheel-undo').boundingBox();
   if (!undo) throw new Error('no undo button');
   await page.mouse.move(undo.x + undo.width / 2, undo.y + undo.height / 2, { steps: 4 });
+  // over the row no wedge is lit
+  await expect(page.locator('.radial-wheel-slot[data-lit]')).toHaveCount(0);
   await page.mouse.up({ button: 'right' });
   expect(await placed(page)).toEqual([]);
 });

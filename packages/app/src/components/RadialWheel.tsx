@@ -73,11 +73,24 @@ function Wheel({ wheel }: { wheel: WheelState }) {
       if (it === undefined) return;
       controller.placeFromWheel(it.className, wedgeVertical(i, n));
     };
-    /** The button in the row under the wheel at the pointer, if any. */
-    const actionAt = (e: PointerEvent): HTMLButtonElement | null =>
-      document
-        .elementFromPoint(e.clientX, e.clientY)
-        ?.closest<HTMLButtonElement>('.radial-wheel-action') ?? null;
+    /**
+     * The button in the row under the wheel at the pointer, if any: by its box, not by what is
+     * topmost there, so a chip or panel drawn over its edge doesn't turn a press into a pick.
+     */
+    const actionAt = (e: PointerEvent): HTMLButtonElement | null => {
+      for (const b of root.current?.querySelectorAll<HTMLButtonElement>('.radial-wheel-action') ??
+        []) {
+        const r = b.getBoundingClientRect();
+        if (
+          e.clientX >= r.left &&
+          e.clientX <= r.right &&
+          e.clientY >= r.top &&
+          e.clientY <= r.bottom
+        )
+          return b;
+      }
+      return null;
+    };
     // over the row under the wheel no wedge lights up: it picks by direction everywhere else
     const at = (e: PointerEvent): number =>
       actionAt(e) !== null
