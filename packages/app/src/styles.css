@@ -4323,3 +4323,139 @@ ul.theme-contrast {
   color: var(--ui-text);
   white-space: pre;
 }
+
+/* ---- editor: radial wheel ------------------------------------------------------------------ */
+
+/* a point at the wheel's centre; everything in it is placed from there */
+.radial-wheel {
+  position: fixed;
+  z-index: 40;
+  width: 1px;
+  height: 1px;
+  touch-action: none;
+  user-select: none;
+  animation: radial-wheel-in 120ms var(--md-motion);
+}
+
+@keyframes radial-wheel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radial-wheel {
+    animation: none;
+  }
+}
+
+.radial-wheel-disc {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  overflow: visible;
+  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--ui-text) 25%, transparent));
+}
+
+.radial-wheel-base {
+  fill: var(--md-surface-container-high);
+  stroke: var(--ui-border);
+  stroke-width: 1;
+}
+
+.radial-wheel-lit {
+  fill: var(--md-secondary-container);
+}
+
+.radial-wheel-slot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  touch-action: none;
+}
+
+.radial-wheel-slot[data-lit] {
+  background: transparent;
+}
+
+.radial-wheel-hub {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--ui-text-muted);
+  background: var(--md-surface-container-highest);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--md-shape-full);
+  cursor: pointer;
+}
+
+.radial-wheel-hub:hover {
+  color: var(--ui-text);
+}
+
+/* the lit part's name under the wheel */
+.radial-wheel-name {
+  position: absolute;
+  left: 0;
+  transform: translateX(-50%);
+  max-width: 240px;
+  min-height: 20px;
+  padding: 0 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ui-text);
+  background: var(--md-surface-container-high);
+  border-radius: var(--md-shape-full);
+  pointer-events: none;
+}
+
+.radial-wheel-name:empty {
+  visibility: hidden;
+}
+
+/* touch: what the long press menu on empty canvas had */
+.radial-wheel-actions {
+  position: absolute;
+  left: 0;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  padding: 2px;
+  background: var(--md-surface-container-high);
+  border-radius: var(--md-shape-full);
+  box-shadow: var(--md-elevation-2);
+}
+
+.radial-wheel-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 40px;
+  padding: 0;
+  color: var(--ui-text);
+  background: transparent;
+  border: none;
+  border-radius: var(--md-shape-full);
+  cursor: pointer;
+}
+
+.radial-wheel-action:hover {
+  background: color-mix(in srgb, var(--ui-text) 8%, transparent);
+}
+
+.radial-wheel-action:disabled {
+  color: var(--ui-text-muted);
+  opacity: 0.5;
+  cursor: default;
+}

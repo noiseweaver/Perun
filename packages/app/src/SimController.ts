@@ -87,6 +87,7 @@ import { download } from './download.ts';
 import { arrangeCards } from './scopeLayout.ts';
 import { sliderEntries, type SliderEntry } from './sliders.ts';
 import { notePlaced } from './quickPick.ts';
+import { closeWheel, openWheel, useWheel, wheelItems, type WheelVia } from './radialWheel.ts';
 import {
   showToast,
   shownTheme,
@@ -2335,6 +2336,19 @@ export class SimController {
     // touch long press: opens the context menu, as a right click does with a mouse
     let press: { timer: number; id: number; x: number; y: number; cx: number; cy: number } | null =
       null;
+    // the pointer whose long press is opening a menu: on empty canvas it opens the radial wheel
+    let longPressId: number | null = null;
+    // a right-button press on empty canvas: a flick opens the radial wheel, a click the menu
+    let rightPress: {
+      id: number;
+      x: number;
+      y: number;
+      cx: number;
+      cy: number;
+      menu: boolean;
+    } | null = null;
+    // when the last flick ended (Windows sends the menu event after the button comes up)
+    let flickEnded = -Infinity;
     const cancelPress = (): void => {
       if (press !== null) window.clearTimeout(press.timer);
       press = null;
@@ -2484,6 +2498,7 @@ export class SimController {
           press = null;
           if (at === null) return;
           abandonGesture(id);
+          longPressId = id;
           canvas.dispatchEvent(
             new MouseEvent('contextmenu', {
               bubbles: true,
@@ -2690,8 +2705,27 @@ export class SimController {
       if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
       return true;
     };
+    /** A right-button press with a mouse or pen on empty canvas may become a flick. */
+    const rightDown = (e: PointerEvent): void => {
+      rightPress = null;
+      if (e.pointerType === 'touch' || this.viewStack.length > 0) return;
+      if (useApp.getState().teach.tool !== null) return;
+      const p = local(e);
+      if (inScopes(p) || this.undockedAt(p.x, p.y) !== null) return;
+      const g = grid(p);
+      if (ed.pick(g.x, g.y).elm !== null || wheelItems().length === 0) return;
+      rightPress = { id: e.pointerId, x: p.x, y: p.y, cx: e.clientX, cy: e.clientY, menu: false };
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {
+        // the pointer is already gone
+      }
+    };
     const down = (e: PointerEvent): void => {
-      if (e.button === 2) return; // the context menu handles it
+      if (e.button === 2) {
+        rightDown(e);
+        return; // the context menu handles the rest
+      }
       canvas.focus({ preventScroll: true });
       const p = local(e);
       this.mouse = p;
@@ -2743,7 +2777,11 @@ export class SimController {
       } catch {
         // the pointer is already gone (released before this handler ran)
       }
-      if (e.pointerType === 'touch' && ed.mouseMode === MouseMode.SELECT) startLongPress(e, p);
+      if (
+        ed.mouseMode === MouseMode.SELECT &&
+        (e.pointerType === 'touch' || (e.pointerType === 'pen' && ed.pick(g.x, g.y).elm === null))
+      )
+        startLongPress(e, p);
       this.publishEditor();
       updateCursor(g.x, g.y);
       e.preventDefault();
@@ -2752,6 +2790,16 @@ export class SimController {
       const r = this.renderer;
       if (!r) return;
       const p = local(e);
+      const rp = rightPress;
+      if (rp !== null && rp.id === e.pointerId) {
+        if (Math.hypot(p.x - rp.x, p.y - rp.y) > FLICK_START) {
+          rightPress = null;
+          this.openWheelAt(rp.cx, rp.cy, 'flick', e.pointerId);
+        }
+        return;
+      }
+      // the radial wheel follows the pointer that opened it
+      if (useWheel.getState().wheel?.pointerId === e.pointerId) return;
       this.mouse = p;
       this.mouseType = e.pointerType;
       if (teachMove(e, p)) return;
@@ -2880,6 +2928,30 @@ export class SimController {
       updateCursor(g.x, g.y);
     };
     const up = (e: PointerEvent): void => {
+      const rp = rightPress;
+      if (rp !== null && rp.id === e.pointerId) {
+        rightPress = null;
+        if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+        // no flick: the menu that was held back opens now
+        if (rp.menu && e.type === 'pointerup')
+          canvas.dispatchEvent(
+            new MouseEvent('contextmenu', {
+              bubbles: true,
+              cancelable: true,
+              clientX: rp.cx,
+              clientY: rp.cy,
+              button: 2,
+            }),
+          );
+        return;
+      }
+      if (useWheel.getState().wheel?.pointerId === e.pointerId) {
+        // the wheel picks on this release itself
+        flickEnded = performance.now();
+        touches.delete(e.pointerId);
+        if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+        return;
+      }
       if (teachUp(e)) return;
       const drag = this.leaderDrag;
       if (drag !== null && drag.id === e.pointerId) {
@@ -2992,12 +3064,32 @@ export class SimController {
         e.preventDefault();
         return;
       }
+      // a right press that may still become a flick (macOS and Linux send this on the press):
+      // the menu waits for the button to come up without one
+      if (rightPress !== null) {
+        e.preventDefault();
+        rightPress.menu = true;
+        return;
+      }
+      // the menu event after a flick (Windows sends it on the release), or one while it's open;
+      // the menu held back for a plain right click is dispatched by us, so it isn't trusted
+      if (
+        useWheel.getState().wheel !== null ||
+        (e.isTrusted && performance.now() - flickEnded < 300)
+      ) {
+        flickEnded = -Infinity;
+        e.preventDefault();
+        return;
+      }
       // the browser's own long-press menu event: same as ours, so the timer is not needed
       if (press !== null) {
         const id = press.id;
         cancelPress();
         abandonGesture(id);
+        longPressId = id;
       }
+      const fromLongPress = longPressId;
+      longPressId = null;
       const lp = local(e);
       this.menuScope = -1;
       this.menuUndocked = null;
@@ -3027,6 +3119,16 @@ export class SimController {
       // selected element for a menu opened from the keyboard
       const g = grid(lp);
       ed.hover(g.x, g.y);
+      // a long press on empty canvas opens the radial wheel, which also has the menu's actions
+      if (
+        fromLongPress !== null &&
+        this.keyboardMenuElm === null &&
+        ed.mouseElm === null &&
+        this.openWheelAt(e.clientX, e.clientY, 'touch', fromLongPress)
+      ) {
+        e.preventDefault();
+        return;
+      }
       this.menuElm = this.keyboardMenuElm ?? ed.mouseElm;
       this.keyboardMenuElm = null;
       this.menuPos = g;
@@ -3106,6 +3208,50 @@ export class SimController {
   }
 
   /** Circuit coordinates of a page point, or null when it is not over the canvas. */
+  /**
+   * Open the radial wheel at a point on screen (the canvas's centre when the point is off it).
+   * False when it can't open: no favorites, or a subcircuit's parts are being looked at.
+   */
+  openWheelAt(
+    clientX: number,
+    clientY: number,
+    via: WheelVia,
+    pointerId: number | null = null,
+  ): boolean {
+    const r = this.renderer;
+    if (!r || this.viewStack.length > 0 || wheelItems().length === 0) return false;
+    let at = this.clientToCircuit(clientX, clientY);
+    if (at === null) {
+      const rect = r.canvas.getBoundingClientRect();
+      clientX = rect.left + rect.width / 2;
+      clientY = rect.top + rect.height / 2;
+      at = this.clientToCircuit(clientX, clientY);
+    }
+    if (at === null) return false;
+    this.editor.leave();
+    openWheel({ x: clientX, y: clientY, gx: at.x, gy: at.y, via, pointerId });
+    this.publishEditor();
+    return true;
+  }
+
+  /** The q key: the radial wheel at the mouse, or in the middle of the canvas. */
+  openWheelAtPointer(): boolean {
+    const r = this.renderer;
+    if (!r) return false;
+    const rect = r.canvas.getBoundingClientRect();
+    const m = this.mouse ?? { x: rect.width / 2, y: rect.height / 2 };
+    return this.openWheelAt(rect.left + m.x, rect.top + m.y, 'key');
+  }
+
+  /** A part picked on the radial wheel goes where the wheel opened. */
+  placeFromWheel(className: string, vertical: boolean): void {
+    const w = useWheel.getState().wheel;
+    closeWheel();
+    if (w === null) return;
+    this.editor.placeAt(className, w.gx, w.gy, vertical);
+    this.publishEditor();
+  }
+
   clientToCircuit(clientX: number, clientY: number): { x: number; y: number } | null {
     const r = this.renderer;
     if (!r) return null;
@@ -3186,6 +3332,8 @@ function inRect(r: Rect, x: number, y: number): boolean {
 
 /** How long a touch must stay still to open the context menu, and how far it may wander (px). */
 const LONG_PRESS_MS = 500;
+/** Pixels a right-button press must travel before it is a flick that opens the radial wheel. */
+const FLICK_START = 10;
 const LONG_PRESS_SLOP = 8;
 /** Canvas narrower than this shows one scope column at a time (CSS px). */
 const COMPACT_WIDTH = 600;

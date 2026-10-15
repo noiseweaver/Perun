@@ -20,6 +20,7 @@ import { Inspector } from './Inspector.tsx';
 import { Icon } from './Icon.tsx';
 import { Palette } from './Palette.tsx';
 import { QuickPick } from './QuickPick.tsx';
+import { RadialWheel } from './RadialWheel.tsx';
 import { useNarrow, useShortLandscape } from './useNarrow.ts';
 import { FieldLegend } from './FieldLegend.tsx';
 import { SliderPanel } from './SliderPanel.tsx';
@@ -91,6 +92,7 @@ export function App() {
         {strip && <QuickPick variant="strip" />}
         <Timeline />
         <ControlBar />
+        <RadialWheel />
         <Dialogs />
         <Announcer />
       </div>

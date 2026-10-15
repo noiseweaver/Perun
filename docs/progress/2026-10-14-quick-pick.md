@@ -32,11 +32,22 @@ the quick pick strip (design A) to build first.
   grip (a short bar at the canvas's left edge, or above the run controls on phones) that brings
   them back; each remembers its own state. While the rail is folded, the app bar's menu button
   brings the palette back.
+- Radial wheel (Gady picked it on 2026-10-15, design B of the proposal): the first eight
+  favorites in a ring around the pointer (`radialWheel.ts`, `components/RadialWheel.tsx`). It
+  opens with q at the mouse (hold, point, let go; or tap q and click; 1 to 8 pick, Esc closes),
+  with a right-button flick on empty canvas (a right click without moving still opens the menu,
+  held back until the button comes up on macOS and Linux), and with a long press on empty canvas
+  with a finger or pen (slide and lift, or lift and tap). The part is dropped at its default
+  length centred where the wheel opened (`Editor.placeAt`), upright when flicked straight up or
+  down. On touch the wheel also has Paste, Select All and Centre Circuit, which the long press
+  menu on empty canvas had. Listed in Keyboard shortcuts. Tests: `radialWheel.test.ts`,
+  `editor.test.ts`, `e2e/wheel.spec.ts`.
 
 ## Next
 
 - Gady tries it in the preview artifact.
-- Later picks from the proposal: the radial wheel (design B) can reuse these favorites.
+- Later picks from the proposal: search at the pointer (design C) could open from the wheel's
+  centre.
 
 ## Open issues
 

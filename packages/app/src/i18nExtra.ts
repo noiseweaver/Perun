@@ -75,6 +75,7 @@ export const EXTRA_KEYS = [
   'Quick pick bar',
   'Reorder',
   'Drag to reorder, or use the arrow keys.',
+  'Quick pick wheel',
 ] as const;
 
 export const EXTRA: Record<string, readonly string[]> = {
@@ -148,6 +149,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Barra de selecció ràpida',
     'Reordena',
     'Arrossega per reordenar, o fes servir les tecles de fletxa.',
+    'Roda de selecció ràpida',
   ],
   csx: [
     'O aplikaci Perun',
@@ -219,6 +221,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Lišta rychlého výběru',
     'Přeuspořádat',
     'Přetažením změníte pořadí, nebo použijte šipky.',
+    'Kolečko rychlého výběru',
   ],
   da: [
     'Om Perun',
@@ -290,6 +293,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Hurtigvalgslinje',
     'Omarranger',
     'Træk for at omarrangere, eller brug piletasterne.',
+    'Hurtigvalgshjul',
   ],
   de: [
     'Über Perun',
@@ -361,6 +365,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Schnellauswahlleiste',
     'Neu anordnen',
     'Zum Neuanordnen ziehen oder die Pfeiltasten verwenden.',
+    'Schnellauswahlrad',
   ],
   es: [
     'Acerca de Perun',
@@ -432,6 +437,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Barra de selección rápida',
     'Reordenar',
     'Arrastra para reordenar o usa las teclas de flecha.',
+    'Rueda de selección rápida',
   ],
   fi: [
     'Tietoja Perunista',
@@ -503,6 +509,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Pikavalintapalkki',
     'Järjestä',
     'Järjestä vetämällä tai nuolinäppäimillä.',
+    'Pikavalintakiekko',
   ],
   fr: [
     'À propos de Perun',
@@ -574,6 +581,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Barre de sélection rapide',
     'Réorganiser',
     'Faites glisser pour réorganiser, ou utilisez les flèches.',
+    'Roue de sélection rapide',
   ],
   it: [
     'Informazioni su Perun',
@@ -645,6 +653,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Barra di selezione rapida',
     'Riordina',
     'Trascina per riordinare, o usa i tasti freccia.',
+    'Ruota di selezione rapida',
   ],
   ja: [
     'Perun について',
@@ -716,6 +725,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'クイック選択バー',
     '並べ替え',
     'ドラッグするか矢印キーで並べ替えます。',
+    'クイック選択ホイール',
   ],
   kr: [
     'Perun 정보',
@@ -787,6 +797,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '빠른 선택 막대',
     '순서 변경',
     '끌어서 순서를 바꾸거나 화살표 키를 사용하세요.',
+    '빠른 선택 휠',
   ],
   nb: [
     'Om Perun',
@@ -858,6 +869,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Hurtigvalgslinje',
     'Endre rekkefølge',
     'Dra for å endre rekkefølge, eller bruk piltastene.',
+    'Hurtigvalghjul',
   ],
   pl: [
     'O aplikacji Perun',
@@ -929,6 +941,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Pasek szybkiego wyboru',
     'Zmień kolejność',
     'Przeciągnij, aby zmienić kolejność, lub użyj strzałek.',
+    'Koło szybkiego wyboru',
   ],
   pt: [
     'Sobre o Perun',
@@ -1000,6 +1013,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Barra de seleção rápida',
     'Reordenar',
     'Arraste para reordenar ou use as teclas de seta.',
+    'Roda de seleção rápida',
   ],
   ru: [
     'О Perun',
@@ -1071,6 +1085,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Панель быстрого выбора',
     'Упорядочить',
     'Перетащите, чтобы изменить порядок, или используйте стрелки.',
+    'Колесо быстрого выбора',
   ],
   zh: [
     '关于 Perun',
@@ -1142,6 +1157,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '快速选择栏',
     '重新排序',
     '拖动或使用方向键重新排序。',
+    '快速选择轮盘',
   ],
   'zh-tw': [
     '關於 Perun',
@@ -1213,6 +1229,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '快速選擇列',
     '重新排序',
     '拖曳或使用方向鍵重新排序。',
+    '快速選擇輪盤',
   ],
 };
 

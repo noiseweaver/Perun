@@ -213,6 +213,18 @@ export class Editor {
     return de;
   }
 
+  /**
+   * Drop an element at its default length centred on (x, y), lying down or (vertical) upright,
+   * as the radial wheel does (not upstream).
+   */
+  placeAt(className: string, x: number, y: number, vertical: boolean): CircuitElm | null {
+    this.paletteDragMove(className, { x, y }, vertical);
+    const de = this.dragElm;
+    if (de === null) return null;
+    de.move(-this.snapGrid((de.x2 - de.x) / 2), -this.snapGrid((de.y2 - de.y) / 2));
+    return this.paletteDragEnd();
+  }
+
   // ---- selection ---------------------------------------------------------------------------
 
   selectedElements(): CircuitElm[] {

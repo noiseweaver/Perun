@@ -285,6 +285,17 @@ describe('Editor', () => {
     expect(pos(circuit.elements[0] as CircuitElm)).toEqual([112, 160, 112, 224]);
   });
 
+  it('drops an element picked on the radial wheel centred where it opened', () => {
+    const { circuit, ed } = setup();
+    expect(ed.placeAt('ResistorElm', 200, 100, false)).not.toBeNull();
+    expect(ed.placeAt('CapacitorElm', 200, 300, true)).not.toBeNull();
+    // (200, 100) snaps to (192, 96) and (200, 300) to (192, 304)
+    expect(circuit.elements.map((e) => pos(e))).toEqual([
+      [160, 96, 224, 96],
+      [192, 272, 192, 336],
+    ]);
+  });
+
   it('saves a circuit it built that reads back the same', () => {
     const { circuit, ed } = setup();
     ed.setAddMode('DCVoltageElm');
