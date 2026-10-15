@@ -23,7 +23,7 @@ import { openSweep } from './SweepDialog.tsx';
 import { CategoryIcon } from './CategoryIcon.tsx';
 import { CircuitsSheet } from './CircuitsSheet.tsx';
 import { Icon, MenuIcon, type IconName } from './Icon.tsx';
-import { useCompact, useNarrow } from './useNarrow.ts';
+import { useCompact, useNarrow, useShortLandscape } from './useNarrow.ts';
 import { OpenLinkDialog } from './OpenLinkDialog.tsx';
 import { promptInstall } from '../pwa.ts';
 import { t, resolveLanguage, setLanguage } from '../i18n.ts';
@@ -125,6 +125,8 @@ export function AppBar() {
   const narrow = useNarrow();
   // phones either way up pick circuits from a sheet: the dropdown's side submenus are cramped there
   const compact = useCompact();
+  const shortLandscape = useShortLandscape();
+  const strip = narrow && !shortLandscape;
   const install = useApp((s) => s.install);
 
   const setDisplay = (patch: Partial<CircuitDisplay>): void =>
@@ -387,13 +389,16 @@ export function AppBar() {
             title={t('Hold Alt while dragging to leave the wires behind')}
             testId="menu-wires-follow"
           />
-          <CheckItem
-            label="Quick pick bar"
-            icon="star"
-            checked={settings.quickPickBar}
-            onCheckedChange={(v) => updateSettings({ quickPickBar: v })}
-            testId="menu-quick-pick"
-          />
+          {/* the strip under the canvas is a phone's; elsewhere the palette has the quick picks */}
+          {strip && (
+            <CheckItem
+              label="Quick pick bar"
+              icon="star"
+              checked={settings.quickPickBar}
+              onCheckedChange={(v) => updateSettings({ quickPickBar: v })}
+              testId="menu-quick-pick"
+            />
+          )}
           <CheckItem
             label="Quick pick wheel"
             icon="apps"

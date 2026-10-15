@@ -60,6 +60,10 @@ the quick pick strip (design A) to build first.
   right column, under the sliders and the DC table.
 - Circuits > Search circuits (desktop) opens the phone's circuits sheet as a centred dialog with
   the search box focused; Enter opens the first match.
+- Gady's pick after the merge (2026-10-15 13:55, "Palette and wheel only"): the desktop rail is
+  gone. With the palette slid away the canvas keeps only its tab (`PaletteTab`, also on phones
+  while the strip is away); favorites and recents are at the top of the palette and on the Q
+  wheel. Options > Quick pick bar shows only where the phone strip is.
 
 ## Next
 

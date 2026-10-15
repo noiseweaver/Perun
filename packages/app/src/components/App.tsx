@@ -38,7 +38,8 @@ export function App() {
   const theme = useApp(shownTheme);
   const previewing = useApp((s) => s.preview !== null);
   const paletteOpen = useApp((s) => s.paletteOpen);
-  // phones upright get the quick pick as a strip under the canvas, everything else as a rail
+  // phones upright get the quick pick as a strip under the canvas; elsewhere it is in the palette
+  // and on the radial wheel
   const narrow = useNarrow();
   const shortLandscape = useShortLandscape();
   const strip = narrow && !shortLandscape;
@@ -76,8 +77,7 @@ export function App() {
         <div className="workspace">
           <Palette />
           <main className="canvas-area">
-            {!paletteOpen && !strip && <QuickPick variant="rail" />}
-            {!paletteOpen && strip && !stripShown && <PaletteTab />}
+            {!paletteOpen && !(strip && stripShown) && <PaletteTab />}
             <CircuitCanvas />
             <div className="overlay-right">
               <SliderPanel />

@@ -17,40 +17,29 @@ import { PaletteButton, Preview } from './PaletteButton.tsx';
 
 /**
  * Favorite and recent components, one tap or click each.
- * - `rail`: down the canvas's left edge while the palette is slid away, under the tab that
- *   brings it back.
- * - `strip`: a row under the canvas on phones, ending in a button that opens the palette.
+ * - `strip`: a row under the canvas on phones, ending in a button that opens the palette. It
+ *   folds away completely, leaving only a small handle.
  * - `grid`: at the top of the open palette, where the favorites can be put in order.
- *
- * The rail and the strip fold away completely, leaving only a small handle.
  */
 export function QuickPick({
   variant,
   collapsed,
   onToggle,
 }: {
-  variant: 'rail' | 'strip' | 'grid';
+  variant: 'strip' | 'grid';
   /** grid: the palette's folded categories; Favorites and Recent fold like the others. */
   collapsed?: ReadonlySet<string> | undefined;
   onToggle?: ((key: string) => void) | undefined;
 }) {
-  // with the bar turned off in Options the rail keeps only the tab that brings the palette back
   const barOn = useApp((s) => s.settings.quickPickBar);
-  const folded = useQuickPick((s) => (variant === 'grid' ? false : s.folded[variant]));
+  const folded = useQuickPick((s) => s.folded.strip);
   if (variant === 'grid')
     return <QuickPickBody variant="grid" collapsed={collapsed} onToggle={onToggle} />;
-  if (!barOn) return variant === 'rail' ? <PaletteTab /> : null;
-  const handle = <FoldHandle bar={variant} folded={folded} />;
+  if (!barOn) return null;
   return (
-    <div className={`quick-pick-dock quick-pick-dock-${variant}`} data-folded={folded || undefined}>
-      {variant === 'strip' && handle}
-      {/* folded, the rail keeps the tab that brings the palette back */}
-      {!folded ? (
-        <QuickPickBody variant={variant} />
-      ) : (
-        variant === 'rail' && <QuickPickBody variant="rail" bare />
-      )}
-      {variant === 'rail' && handle}
+    <div className="quick-pick-dock quick-pick-dock-strip" data-folded={folded || undefined}>
+      <FoldHandle bar="strip" folded={folded} />
+      {!folded && <QuickPickBody variant="strip" />}
     </div>
   );
 }
@@ -61,11 +50,22 @@ function quickGroupKey(id: string): string {
 }
 
 /**
- * Only the tab that brings the palette back: the rail with the bar turned off, and on a phone
- * while the strip (which has its own button for that) is folded or turned off.
+ * The tab at the canvas's left edge that brings the palette back while it is slid away (on a
+ * phone, only while the strip, which has its own button for that, is folded or turned off).
  */
 export function PaletteTab() {
-  return <QuickPickBody variant="rail" bare />;
+  return (
+    <button
+      type="button"
+      className="palette-tab"
+      aria-label={t('Show components')}
+      title={t('Show components')}
+      data-testid="palette-reveal"
+      onClick={() => setPaletteOpen(true)}
+    >
+      <Icon name="chevronRight" size={20} />
+    </button>
+  );
 }
 
 /** A small grip at the edge of a bar that folds it away and brings it back. */
@@ -88,13 +88,10 @@ function FoldHandle({ bar, folded }: { bar: QuickPickBar; folded: boolean }) {
 
 function QuickPickBody({
   variant,
-  bare = false,
   collapsed,
   onToggle,
 }: {
-  variant: 'rail' | 'strip' | 'grid';
-  /** Only the tab that brings the palette back (see PaletteTab). */
-  bare?: boolean;
+  variant: 'strip' | 'grid';
   collapsed?: ReadonlySet<string> | undefined;
   onToggle?: ((key: string) => void) | undefined;
 }) {
@@ -110,7 +107,6 @@ function QuickPickBody({
     { id: 'recent', label: t('Recent'), items: items.recents },
   ].filter((s) => s.items.length > 0);
   if (variant === 'grid' && sections.length === 0) return null;
-  const shown = bare ? [] : sections;
   const shut = (id: string): boolean =>
     variant === 'grid' && (collapsed?.has(quickGroupKey(id)) ?? false);
 
@@ -119,24 +115,12 @@ function QuickPickBody({
       className={`quick-pick quick-pick-${variant}`}
       role="toolbar"
       aria-label={t('Quick pick')}
-      aria-orientation={variant === 'rail' ? 'vertical' : 'horizontal'}
+      aria-orientation="horizontal"
       data-testid={`quick-pick-${variant}`}
     >
-      {variant === 'rail' && (
-        <button
-          type="button"
-          className="quick-pick-reveal"
-          aria-label={t('Show components')}
-          title={t('Show components')}
-          data-testid="palette-reveal"
-          onClick={() => setPaletteOpen(true)}
-        >
-          <Icon name="chevronRight" size={20} />
-        </button>
-      )}
-      {shown.map((s, i) => (
+      {sections.map((s, i) => (
         <Fragment key={s.id}>
-          {(i > 0 || variant === 'rail') && <span className="quick-pick-divider" aria-hidden />}
+          {i > 0 && <span className="quick-pick-divider" aria-hidden />}
           {variant === 'grid' && (
             <div className="quick-pick-caption">
               <button

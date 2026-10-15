@@ -2,7 +2,8 @@
 // Copyright (C) 2026 Perun contributors
 //
 // The quick pick: components pinned as favorites and the ones placed most recently, kept in this
-// browser's storage and shown in a strip beside the canvas (not upstream).
+// browser's storage and shown at the top of the palette, on the radial wheel and in a strip under
+// the canvas on phones (not upstream).
 
 import { create } from 'zustand';
 import { paletteItem, type PaletteItem } from './editor/catalog.ts';
@@ -10,11 +11,10 @@ import { paletteItem, type PaletteItem } from './editor/catalog.ts';
 const FAVORITES_KEY = 'circuitjs-next.paletteFavorites';
 const RECENTS_KEY = 'circuitjs-next.paletteRecents';
 const FOLDED_KEYS = {
-  rail: 'circuitjs-next.quickPickRailCollapsed',
   strip: 'circuitjs-next.quickPickStripCollapsed',
 } as const;
 
-/** Where the quick pick bar sits: down the canvas's left edge, or under it on phones. */
+/** Where the quick pick bar sits: under the canvas on phones. */
 export type QuickPickBar = keyof typeof FOLDED_KEYS;
 
 /** The favorites before any are pinned: what most circuits are drawn with. */
@@ -65,7 +65,7 @@ function save(key: string, list: string[]): void {
 export const useQuickPick = create<QuickPickState>(() => ({
   favorites: load(FAVORITES_KEY, DEFAULT_FAVORITES),
   recents: load(RECENTS_KEY, []),
-  folded: { rail: loadFlag(FOLDED_KEYS.rail), strip: loadFlag(FOLDED_KEYS.strip) },
+  folded: { strip: loadFlag(FOLDED_KEYS.strip) },
 }));
 
 function loadFlag(key: string): boolean {
