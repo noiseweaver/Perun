@@ -101,6 +101,7 @@ import {
   useApp,
   type AppState,
   type EditorState,
+  type ShadowStrength,
   type TeachTool,
 } from './store.ts';
 import { t } from './i18n.ts';
@@ -213,6 +214,8 @@ export class SimController {
   private wheelEdit: { elm: CircuitElm; carry: number; timer: number } | null = null;
   /** What the last frame was drawn with, for the live previews in the panels. */
   lastFrameState: FrameState | null = null;
+  /** Until when (performance.now()) a part just placed is kept in view; see revealPlaced. */
+  private revealUntil = 0;
   /** Called after each frame is drawn (the property panel's live header, the scope preview). */
   readonly frameListeners = new Set<(frame: FrameState) => void>();
   /** Undocked scope the context menu was opened on, or null. */
@@ -407,6 +410,7 @@ export class SimController {
     renderer.motion = this.motion;
     this.renderer = renderer;
     this.scopeRenderer = new ScopeRenderer(canvas, shownTheme(state));
+    this.scopeRenderer.shadow = SHADOW_SCALE[state.settings.shadows];
     renderer.setElements(this.circuit.elements);
     this.needsFit = true;
     this.unsubscribe = useApp.subscribe((s, prev) => this.onStore(s, prev));
@@ -452,9 +456,60 @@ export class SimController {
       r.fit();
       this.needsFit = false;
     }
+    // resizing clears the canvas after this frame was drawn: draw it again before the page is
+    // painted, so the circuit doesn't blink out while a side panel slides open or shut
+    this.redraw();
+    this.revealPlaced();
+  }
+
+  /** The last frame drawn again as it was, without stepping the simulation or moving the dots. */
+  private redraw(): void {
+    const r = this.renderer;
+    const f = this.lastFrameState;
+    if (!r || f === null) return;
+    r.render({ ...f, currentMult: 0 });
+    this.drawScopes();
+    this.drawAnnotations();
+  }
+
+  /**
+   * After a part is placed, the properties panel opens beside the canvas (a sheet over it on
+   * phones). Until then, and as the canvas settles, the new part is panned back into view if it
+   * ended up under the panel or past an edge, ready to be grabbed.
+   */
+  private revealPlaced(): void {
+    const r = this.renderer;
+    if (!r || performance.now() > this.revealUntil) return;
+    const e = this.editor.selectedElements()[0];
+    if (e === undefined) return;
+    const v = viewFor(e);
+    const box = v ? v.bbox(e) : null;
+    const x1 = Math.min(e.x, e.x2, box?.x1 ?? e.x);
+    const y1 = Math.min(e.y, e.y2, box?.y1 ?? e.y);
+    const x2 = Math.max(e.x, e.x2, box?.x2 ?? e.x);
+    const y2 = Math.max(e.y, e.y2, box?.y2 ?? e.y);
+    const a = r.viewport.toScreen(x1, y1);
+    const b = r.viewport.toScreen(x2, y2);
+    const rect = r.canvas.getBoundingClientRect();
+    // what of the canvas is still in sight: the phone's sheet covers its bottom
+    let bottom = rect.height;
+    const sheet = document.querySelector<HTMLElement>('[data-testid="inspector"]');
+    if (sheet !== null && getComputedStyle(sheet).position === 'fixed') {
+      // where it comes to rest, not where its slide-in animation has got to
+      const top = window.innerHeight - sheet.offsetHeight - rect.top;
+      if (top > 0 && top < bottom) bottom = top;
+    }
+    const dx = shiftInto(a.x, b.x, 0, rect.width);
+    const dy = shiftInto(a.y, b.y, 0, bottom);
+    if (dx !== 0 || dy !== 0) {
+      r.viewport.pan(dx, dy);
+      this.redraw();
+    }
   }
 
   private onStore(s: AppState, prev: AppState): void {
+    if (s.settings.shadows !== prev.settings.shadows && this.scopeRenderer)
+      this.scopeRenderer.shadow = SHADOW_SCALE[s.settings.shadows];
     const theme = shownTheme(s);
     if (theme !== shownTheme(prev)) {
       this.renderer?.setTheme(theme);
@@ -716,7 +771,14 @@ export class SimController {
       circuitChanged: () => this.circuitChanged(),
       selectionChanged: () => this.publishEditor(),
       restore: (xml) => this.restore(xml),
-      placed: (className) => notePlaced(className),
+      placed: (className) => {
+        notePlaced(className);
+        // the panel opens over the next frames; check again once it has
+        this.revealUntil = performance.now() + REVEAL_MS;
+        requestAnimationFrame(() => requestAnimationFrame(() => this.revealPlaced()));
+        // a phone's sheet sizes itself a moment later
+        setTimeout(() => this.revealPlaced(), REVEAL_MS / 2);
+      },
       visibleArea: () => {
         const r = this.renderer;
         if (!r) return { x1: 0, y1: 0, x2: 800, y2: 600 };
@@ -3282,6 +3344,25 @@ export class SimController {
   toScreen(x: number, y: number): { x: number; y: number } | null {
     return this.renderer?.viewport.toScreen(x, y) ?? null;
   }
+}
+
+/** The undocked scope cards' shadow for each choice in Options > Shadows. */
+const SHADOW_SCALE: Record<ShadowStrength, number> = { off: 0, soft: 0.5, normal: 1, strong: 1.6 };
+
+/** How long after a part is placed the view follows it as the properties panel opens. */
+const REVEAL_MS = 600;
+/** Room kept between a part brought back into view and the canvas's edge, in CSS pixels. */
+const REVEAL_MARGIN = 32;
+
+/**
+ * How far to move the span lo..hi (screen pixels) to bring it inside min..max with a margin, or
+ * 0 when it is already in sight. A span too big to fit is lined up with the start.
+ */
+export function shiftInto(lo: number, hi: number, min: number, max: number): number {
+  const m = Math.min(REVEAL_MARGIN, Math.max(0, (max - min - (hi - lo)) / 2));
+  if (lo >= min && hi <= max) return 0;
+  if (hi - lo > max - min - 2 * m || lo < min) return min + m - lo;
+  return max - m - hi;
 }
 
 /** Size of a new undocked scope (circuit units). */

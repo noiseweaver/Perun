@@ -30,8 +30,7 @@ the quick pick strip (design A) to build first.
   the favorites on phones too, so they can be reordered there. Five more strings.
 - Later on 2026-10-15: the rail and the phone strip fold away completely, leaving only a faint
   grip (a short bar at the canvas's left edge, or above the run controls on phones) that brings
-  them back; each remembers its own state. While the rail is folded, the app bar's menu button
-  brings the palette back.
+  them back; each remembers its own state. The palette tab stays while the rail is folded.
 - Radial wheel (Gady picked it on 2026-10-15, design B of the proposal): the first eight
   favorites in a ring around the pointer (`radialWheel.ts`, `components/RadialWheel.tsx`). It
   opens with q at the mouse (hold, point, let go; or tap q and click; 1 to 8 pick, Esc closes),
@@ -47,6 +46,15 @@ the quick pick strip (design A) to build first.
 - Undo and Redo sit under the wheel (desktop and touch) and leave it open; letting go over one
   after a flick or a slide presses it. Q opens the wheel where the pointer really is (the canvas
   doesn't see moves over the wheel or panels).
+- Gady's next round (2026-10-15 afternoon): the app bar's menu button is gone and the logo sits
+  in its place at the top left (phones too); the rail's tab opens the palette, and on phones a
+  tab shows on the canvas while the strip is folded or off. Options > Shadows (Off, Soft,
+  Normal, Strong) scales the Material shadows under panels, menus and tabs and the undocked scope
+  cards' shadow (`data-shadows` on the root, `--md-shadow-strength`). A part placed where the
+  properties panel then opens (or under a phone's sheet) is panned back into view
+  (`SimController.revealPlaced`). The palette's Favorites and Recent captions fold like the
+  categories (remembered with them). The canvas no longer blanks while the palette slides: a
+  resize redraws the last frame before the page is painted.
 
 ## Next
 

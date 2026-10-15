@@ -94,8 +94,9 @@ test('the rail folds away to its handle, and stays folded', async ({ page }) => 
   const rail = page.getByTestId('quick-pick-rail');
   await expect(rail.getByTestId('quick-ResistorElm')).toBeVisible();
   await page.getByTestId('quick-rail-fold').click();
-  await expect(rail).toHaveCount(0);
-  await expect(page.getByTestId('palette-reveal')).toHaveCount(0);
+  await expect(rail.getByTestId('quick-ResistorElm')).toHaveCount(0);
+  // the tab that brings the palette back stays
+  await expect(page.getByTestId('palette-reveal')).toBeVisible();
   await page.reload();
   await expect(page.getByTestId('quick-rail-fold')).toHaveAttribute('aria-expanded', 'false');
   await page.getByTestId('quick-rail-fold').click();
@@ -114,6 +115,58 @@ test('Options turns the quick pick bar off, leaving the tab that brings the pale
   await expect(page.getByTestId('quick-rail-fold')).toHaveCount(0);
   await page.getByTestId('palette-reveal').click();
   await expect(page.getByTestId('palette')).toHaveAttribute('data-open', 'true');
+});
+
+test('the app bar has the logo at the left and no components button', async ({ page }) => {
+  await open(page);
+  await expect(page.getByTestId('palette-toggle')).toHaveCount(0);
+  const bar = await page.locator('.app-bar').boundingBox();
+  const logo = await page.locator('.app-bar-brand').boundingBox();
+  expect((logo?.x ?? 99) - (bar?.x ?? 0)).toBeLessThan(24);
+});
+
+test('Favorites and Recent fold like the other categories, and stay folded', async ({ page }) => {
+  await open(page);
+  const grid = page.getByTestId('quick-pick-grid');
+  await page.getByTestId('palette-search').fill('zener');
+  await page.getByTestId('palette-ZenerElm').click();
+  await page.getByTestId('palette-search').fill('');
+  await dragOnCanvas(page, 96, 0);
+  await expect(grid.getByTestId('palette-quick-ZenerElm')).toBeVisible();
+  await page.getByTestId('palette-group-quick-favorites').click();
+  await expect(page.getByTestId('palette-group-quick-favorites')).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  );
+  await expect(page.getByTestId('quick-reorder')).toHaveCount(0);
+  await expect(grid.getByTestId('palette-quick-ResistorElm')).toHaveCount(0);
+  // Recent stays open on its own
+  await expect(grid.getByTestId('palette-quick-ZenerElm')).toBeVisible();
+  await page.getByTestId('palette-group-quick-recent').click();
+  await expect(grid.getByTestId('palette-quick-ZenerElm')).toHaveCount(0);
+  await page.reload();
+  await expect(grid.getByTestId('palette-quick-WireElm')).toHaveCount(0);
+  await page.getByTestId('palette-group-quick-favorites').click();
+  await expect(grid.getByTestId('palette-quick-WireElm')).toBeVisible();
+});
+
+test('Options > Shadows turns the shadows down, off or up, and remembers', async ({ page }) => {
+  await open(page);
+  const root = page.locator('html');
+  await expect(root).toHaveAttribute('data-shadows', 'normal');
+  await page.getByTestId('options-menu').click();
+  await page.getByTestId('menu-shadows').click();
+  await page.getByTestId('shadows-off').click();
+  await expect(root).toHaveAttribute('data-shadows', 'off');
+  const elevation = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--md-elevation-2').trim(),
+  );
+  expect(elevation).toBe('none');
+  await page.getByTestId('shadows-strong').click();
+  await expect(root).toHaveAttribute('data-shadows', 'strong');
+  await page.keyboard.press('Escape');
+  await page.reload();
+  await expect(root).toHaveAttribute('data-shadows', 'strong');
 });
 
 test('favorites are put in order by dragging or with the arrow keys', async ({ page }) => {
@@ -174,6 +227,10 @@ test.describe('on a phone', () => {
     await expect(page.getByTestId('quick-pick-strip')).toHaveCount(0);
     // the canvas takes the room
     await expect.poll(canvasHeight).toBeGreaterThan(tall + 30);
+    // and a small tab on it opens the palette, which the strip's own button did
+    await page.getByTestId('palette-reveal').tap();
+    await expect(page.getByTestId('palette')).toHaveAttribute('data-open', 'true');
+    await page.getByTestId('palette-hide').tap();
     await page.reload();
     await expect(page.getByTestId('quick-strip-fold')).toHaveAttribute('aria-expanded', 'false');
     await page.getByTestId('quick-strip-fold').tap();

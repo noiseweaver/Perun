@@ -18,7 +18,9 @@
   --md-surface-container-highest: color-mix(in srgb, var(--ui-surface-alt) 86%, var(--ui-text));
   --md-secondary-container: color-mix(in srgb, var(--ui-accent) 22%, var(--ui-surface-alt));
   --md-error-container: color-mix(in srgb, var(--ui-danger) 22%, var(--ui-surface-alt));
-  --md-shadow: color-mix(in srgb, var(--ui-shadow) 50%, transparent);
+  /* Options > Shadows sets this (see :root[data-shadows] below) */
+  --md-shadow-strength: 50%;
+  --md-shadow: color-mix(in srgb, var(--ui-shadow) var(--md-shadow-strength), transparent);
   --md-elevation-2:
     0 1px 2px var(--md-shadow), 0 2px 6px 2px color-mix(in srgb, var(--md-shadow) 50%, transparent);
   --md-elevation-3:
@@ -30,6 +32,26 @@
   --md-shape-xl: 28px;
   --md-shape-full: 999px;
   --md-motion: cubic-bezier(0.2, 0, 0, 1);
+}
+
+:root[data-shadows='off'] {
+  --md-shadow-strength: 0%;
+  --md-elevation-2: none;
+  --md-elevation-3: none;
+}
+
+:root[data-shadows='soft'] {
+  --md-shadow-strength: 25%;
+}
+
+:root[data-shadows='strong'] {
+  --md-shadow-strength: 85%;
+  /* dark themes cast shadows in their own near-black surface color: deepen it so it shows */
+  --md-shadow: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--ui-shadow) 40%, black) var(--md-shadow-strength),
+    transparent
+  );
 }
 
 * {
@@ -1721,6 +1743,15 @@ kbd,
 }
 
 /* "Reorder" / "Done" after the Favorites caption */
+/* Favorites and Recent fold like the categories below them */
+.quick-pick-caption-toggle {
+  flex: 1;
+  width: auto;
+  min-height: 24px;
+  margin-left: -4px;
+  color: inherit;
+}
+
 .quick-pick-caption-button {
   height: 24px;
   padding: 0 8px;
@@ -2297,7 +2328,9 @@ textarea.field-input {
   }
 
   .app-bar-brand {
-    display: none;
+    width: 32px;
+    height: 32px;
+    margin-right: 4px;
   }
 
   .app-bar-title {
@@ -4356,7 +4389,9 @@ ul.theme-contrast {
   top: 0;
   transform: translate(-50%, -50%);
   overflow: visible;
-  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--ui-text) 25%, transparent));
+  filter: drop-shadow(
+    0 2px 6px color-mix(in srgb, var(--ui-text) calc(var(--md-shadow-strength) / 2), transparent)
+  );
 }
 
 .radial-wheel-base {

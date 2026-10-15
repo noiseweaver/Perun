@@ -96,6 +96,31 @@ test('undo and redo under the wheel step back and forward and leave it open', as
   expect(await placed(page)).toEqual([]);
 });
 
+test('a part placed where the properties panel opens is brought back into view', async ({
+  page,
+}) => {
+  await open(page);
+  const before = await page.getByTestId('circuit-canvas').boundingBox();
+  if (!before) throw new Error('no canvas');
+  await page.mouse.move(before.x + before.width - 40, before.y + before.height / 2);
+  await page.keyboard.press('q');
+  // 3 is the resistor
+  await page.keyboard.press('3');
+  await expect(page.getByTestId('inspector')).toBeVisible();
+  const ends = (): Promise<number[]> =>
+    page.evaluate(() => {
+      const c = window.perun?.controller;
+      const e = c?.circuit.elements[0];
+      if (!c || !e) return [];
+      return [c.toScreen(e.x, e.y)?.x ?? -1, c.toScreen(e.x2, e.y2)?.x ?? -1];
+    });
+  const after = await page.getByTestId('circuit-canvas').boundingBox();
+  // the canvas got narrower, and both ends of the resistor are on it
+  expect(after?.width ?? 0).toBeLessThan(before.width - 100);
+  await expect.poll(async () => Math.max(...(await ends()))).toBeLessThan((after?.width ?? 0) - 8);
+  expect(Math.min(...(await ends()))).toBeGreaterThan(8);
+});
+
 test('a right-button flick on empty canvas picks; a right click still opens the menu', async ({
   page,
 }) => {

@@ -361,6 +361,8 @@ export class ScopeRenderer {
   private palette: ScopePalette;
   private graphics: CanvasScopeGraphics;
   private dpr = 1;
+  /** How dark the shadow under undocked cards is: 0 none, 1 as designed (Options > Shadows). */
+  shadow = 1;
   /**
    * Width of the info box in the corner: it only grows while it shows the same thing (the same
    * first line and number of lines), so it doesn't jitter as the values change.
@@ -519,9 +521,11 @@ export class ScopeRenderer {
     const text = rgba(theme.ui.text);
     const shade = luminance(surface) < luminance(text) ? surface : text;
     c.save();
-    c.shadowColor = toCss({ ...shade, a: 0.55 });
-    c.shadowBlur = 14 * this.dpr;
-    c.shadowOffsetY = 3 * this.dpr;
+    if (this.shadow > 0) {
+      c.shadowColor = toCss({ ...shade, a: Math.min(0.9, 0.55 * this.shadow) });
+      c.shadowBlur = 14 * this.dpr;
+      c.shadowOffsetY = 3 * this.dpr;
+    }
     c.fillStyle = theme.scope.undockedCard;
     roundRect(c, s.x, s.y, s.width, s.height, 10, theme.style.roundness);
     c.fill();

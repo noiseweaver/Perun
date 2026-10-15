@@ -132,7 +132,7 @@ export function Palette() {
         </div>
         <div className="palette-hint">{t('Click, then drag on the canvas. Or drag onto it.')}</div>
         <div className="palette-list">
-          {!searching && <QuickPick variant="grid" />}
+          {!searching && <QuickPick variant="grid" collapsed={collapsed} onToggle={toggleGroup} />}
           {groups.map((g) => (
             <section key={g.title} className="palette-group">
               <h2 className="palette-group-title">

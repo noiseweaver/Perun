@@ -24,20 +24,48 @@ import { PaletteButton, Preview } from './PaletteButton.tsx';
  *
  * The rail and the strip fold away completely, leaving only a small handle.
  */
-export function QuickPick({ variant }: { variant: 'rail' | 'strip' | 'grid' }) {
+export function QuickPick({
+  variant,
+  collapsed,
+  onToggle,
+}: {
+  variant: 'rail' | 'strip' | 'grid';
+  /** grid: the palette's folded categories; Favorites and Recent fold like the others. */
+  collapsed?: ReadonlySet<string> | undefined;
+  onToggle?: ((key: string) => void) | undefined;
+}) {
   // with the bar turned off in Options the rail keeps only the tab that brings the palette back
   const barOn = useApp((s) => s.settings.quickPickBar);
   const folded = useQuickPick((s) => (variant === 'grid' ? false : s.folded[variant]));
-  if (variant === 'grid') return <QuickPickBody variant="grid" />;
-  if (!barOn) return variant === 'rail' ? <QuickPickBody variant="rail" bare /> : null;
+  if (variant === 'grid')
+    return <QuickPickBody variant="grid" collapsed={collapsed} onToggle={onToggle} />;
+  if (!barOn) return variant === 'rail' ? <PaletteTab /> : null;
   const handle = <FoldHandle bar={variant} folded={folded} />;
   return (
     <div className={`quick-pick-dock quick-pick-dock-${variant}`} data-folded={folded || undefined}>
       {variant === 'strip' && handle}
-      {!folded && <QuickPickBody variant={variant} />}
+      {/* folded, the rail keeps the tab that brings the palette back */}
+      {!folded ? (
+        <QuickPickBody variant={variant} />
+      ) : (
+        variant === 'rail' && <QuickPickBody variant="rail" bare />
+      )}
       {variant === 'rail' && handle}
     </div>
   );
+}
+
+/** The key of Favorites or Recent among the palette's folded categories. */
+function quickGroupKey(id: string): string {
+  return `quick:${id}`;
+}
+
+/**
+ * Only the tab that brings the palette back: the rail with the bar turned off, and on a phone
+ * while the strip (which has its own button for that) is folded or turned off.
+ */
+export function PaletteTab() {
+  return <QuickPickBody variant="rail" bare />;
 }
 
 /** A small grip at the edge of a bar that folds it away and brings it back. */
@@ -61,10 +89,14 @@ function FoldHandle({ bar, folded }: { bar: QuickPickBar; folded: boolean }) {
 function QuickPickBody({
   variant,
   bare = false,
+  collapsed,
+  onToggle,
 }: {
   variant: 'rail' | 'strip' | 'grid';
-  /** Only the tab that brings the palette back (the rail with the bar turned off). */
+  /** Only the tab that brings the palette back (see PaletteTab). */
   bare?: boolean;
+  collapsed?: ReadonlySet<string> | undefined;
+  onToggle?: ((key: string) => void) | undefined;
 }) {
   const favorites = useQuickPick((s) => s.favorites);
   const recents = useQuickPick((s) => s.recents);
@@ -79,6 +111,8 @@ function QuickPickBody({
   ].filter((s) => s.items.length > 0);
   if (variant === 'grid' && sections.length === 0) return null;
   const shown = bare ? [] : sections;
+  const shut = (id: string): boolean =>
+    variant === 'grid' && (collapsed?.has(quickGroupKey(id)) ?? false);
 
   return (
     <div
@@ -105,8 +139,17 @@ function QuickPickBody({
           {(i > 0 || variant === 'rail') && <span className="quick-pick-divider" aria-hidden />}
           {variant === 'grid' && (
             <div className="quick-pick-caption">
-              <span aria-hidden>{s.label}</span>
-              {s.id === 'favorites' && s.items.length > 1 && (
+              <button
+                type="button"
+                className="palette-group-toggle quick-pick-caption-toggle"
+                aria-expanded={!shut(s.id)}
+                data-testid={`palette-group-quick-${s.id}`}
+                onClick={() => onToggle?.(quickGroupKey(s.id))}
+              >
+                <Icon name="dropDown" size={18} className="palette-group-chevron" />
+                {s.label}
+              </button>
+              {s.id === 'favorites' && s.items.length > 1 && !shut(s.id) && (
                 <button
                   type="button"
                   className="quick-pick-caption-button"
@@ -119,7 +162,7 @@ function QuickPickBody({
               )}
             </div>
           )}
-          {s.id === 'favorites' && reordering && variant === 'grid' ? (
+          {shut(s.id) ? null : s.id === 'favorites' && reordering && variant === 'grid' ? (
             <FavoriteOrder items={s.items} label={s.label} />
           ) : (
             <div className="quick-pick-group" role="group" aria-label={s.label}>

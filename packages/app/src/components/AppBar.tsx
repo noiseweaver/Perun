@@ -17,11 +17,11 @@ import { openDialog } from '../commands.ts';
 import { controller } from '../SimController.ts';
 import { openExample } from '../startup.ts';
 import {
+  SHADOW_STRENGTHS,
   VALUE_SIZES,
   updateSettings,
   useApp,
   type CircuitDisplay,
-  setPaletteOpen,
 } from '../store.ts';
 import { openBode } from './BodeDialog.tsx';
 import { openDcPanel } from './DcPanel.tsx';
@@ -141,22 +141,10 @@ export function AppBar() {
   };
   const ed = controller.editor;
   const editor = useApp((s) => s.editor);
-  const paletteOpen = useApp((s) => s.paletteOpen);
   const hasSel = editor.selectionCount > 0;
 
   return (
     <header className="app-bar">
-      <button
-        type="button"
-        className="icon-button"
-        aria-label={t(paletteOpen ? 'Hide components' : 'Show components')}
-        aria-pressed={paletteOpen}
-        title={t('Components')}
-        data-testid="palette-toggle"
-        onClick={() => setPaletteOpen(!paletteOpen)}
-      >
-        <Icon name="menu" />
-      </button>
       <div className="app-bar-brand" aria-hidden>
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor">
           <path d="M2 12h4l2-5 4 10 4-10 2 5h4" strokeWidth="2" strokeLinejoin="round" />
@@ -441,6 +429,36 @@ export function AppBar() {
             checked={settings.conventionalCurrent}
             onCheckedChange={(v) => updateSettings({ conventionalCurrent: v })}
           />
+          <OptionsSub label="Shadows" icon="gradient" testId="menu-shadows">
+            <Menu.RadioGroup
+              value={settings.shadows}
+              onValueChange={(v) =>
+                updateSettings({
+                  shadows: SHADOW_STRENGTHS.find((x) => x === v) ?? 'normal',
+                })
+              }
+            >
+              {(
+                [
+                  ['off', 'Off'],
+                  ['soft', 'Soft'],
+                  ['normal', 'Normal'],
+                  ['strong', 'Strong'],
+                ] as const
+              ).map(([id, label]) => (
+                <Menu.RadioItem
+                  key={id}
+                  value={id}
+                  className="menu-item"
+                  data-testid={`shadows-${id}`}
+                  // stays open, to compare one with the next
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  <Check on={settings.shadows === id} /> {t(label)}
+                </Menu.RadioItem>
+              ))}
+            </Menu.RadioGroup>
+          </OptionsSub>
           <OptionsSub label="Default text box font" icon="textFields" testId="menu-text-font">
             <Menu.RadioGroup
               value={settings.textFont.family}
