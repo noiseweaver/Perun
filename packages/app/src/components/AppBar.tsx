@@ -395,6 +395,13 @@ export function AppBar() {
             testId="menu-wires-follow"
           />
           <CheckItem
+            label="Quick pick bar"
+            icon="star"
+            checked={settings.quickPickBar}
+            onCheckedChange={(v) => updateSettings({ quickPickBar: v })}
+            testId="menu-quick-pick"
+          />
+          <CheckItem
             label="European resistors"
             icon="euroResistor"
             checked={settings.euroResistors}

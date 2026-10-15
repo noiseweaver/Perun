@@ -7,7 +7,6 @@ import { setPaletteOpen, useApp } from '../store.ts';
 import { Icon } from './Icon.tsx';
 import { PaletteButton } from './PaletteButton.tsx';
 import { QuickPick } from './QuickPick.tsx';
-import { useNarrow } from './useNarrow.ts';
 import { toggleFavorite, useQuickPick } from '../quickPick.ts';
 import { t, tGroup, tItem } from '../i18n.ts';
 
@@ -88,8 +87,6 @@ export function Palette() {
   };
   // a search shows every match, whatever is collapsed
   const searching = query.trim() !== '';
-  // phones have the quick pick strip under the canvas instead
-  const narrow = useNarrow();
   return (
     <aside
       className="palette"
@@ -135,7 +132,7 @@ export function Palette() {
         </div>
         <div className="palette-hint">{t('Click, then drag on the canvas. Or drag onto it.')}</div>
         <div className="palette-list">
-          {!searching && !narrow && <QuickPick variant="grid" />}
+          {!searching && <QuickPick variant="grid" />}
           {groups.map((g) => (
             <section key={g.title} className="palette-group">
               <h2 className="palette-group-title">

@@ -88,6 +88,64 @@ test('with the palette away, the rail picks components', async ({ page }) => {
   await expect(rail).toHaveCount(0);
 });
 
+test('the rail folds away to its two buttons, and stays folded', async ({ page }) => {
+  await open(page);
+  await page.getByTestId('palette-hide').click();
+  const rail = page.getByTestId('quick-pick-rail');
+  await expect(rail.getByTestId('quick-ResistorElm')).toBeVisible();
+  await page.getByTestId('quick-rail-fold').click();
+  await expect(rail.getByTestId('quick-ResistorElm')).toHaveCount(0);
+  await expect(page.getByTestId('palette-reveal')).toBeVisible();
+  await page.reload();
+  await expect(page.getByTestId('quick-rail-fold')).toHaveAttribute('aria-expanded', 'false');
+  await page.getByTestId('quick-rail-fold').click();
+  await expect(rail.getByTestId('quick-ResistorElm')).toBeVisible();
+});
+
+test('Options turns the quick pick bar off, leaving the tab that brings the palette back', async ({
+  page,
+}) => {
+  await open(page);
+  await page.getByTestId('palette-hide').click();
+  await page.getByTestId('options-menu').click();
+  await page.getByTestId('menu-quick-pick').click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('quick-ResistorElm')).toHaveCount(0);
+  await expect(page.getByTestId('quick-rail-fold')).toHaveCount(0);
+  await page.getByTestId('palette-reveal').click();
+  await expect(page.getByTestId('palette')).toHaveAttribute('data-open', 'true');
+});
+
+test('favorites are put in order by dragging or with the arrow keys', async ({ page }) => {
+  await open(page);
+  const order = (): Promise<string[]> =>
+    page.evaluate(() =>
+      JSON.parse(localStorage.getItem('circuitjs-next.paletteFavorites') ?? '[]'),
+    );
+  await page.getByTestId('quick-reorder').click();
+  // Ground (second) one place to the right, from the keyboard
+  await page.getByTestId('quick-order-GroundElm').focus();
+  await page.keyboard.press('ArrowRight');
+  expect((await order()).slice(0, 3)).toEqual(['WireElm', 'ResistorElm', 'GroundElm']);
+  await expect(page.getByTestId('quick-order-GroundElm')).toBeFocused();
+  // the op amp dragged onto the wire's place, first
+  const from = await page.getByTestId('quick-order-OpAmpElm').boundingBox();
+  const to = await page.getByTestId('quick-order-WireElm').boundingBox();
+  if (!from || !to) throw new Error('no slots');
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 8 });
+  await page.mouse.up();
+  expect((await order())[0]).toBe('OpAmpElm');
+  // done: the buttons pick components again, in the new order
+  await page.getByTestId('quick-reorder').click();
+  const grid = page.getByTestId('quick-pick-grid');
+  await expect(grid.locator('.quick-slot').first()).toHaveAttribute(
+    'data-testid',
+    'palette-quick-OpAmpElm',
+  );
+});
+
 test.describe('on a phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 

@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   DEFAULT_FAVORITES,
   RECENTS_SHOWN,
+  moveFavorite,
   notePlaced,
   quickPickItems,
   toggleFavorite,
@@ -26,6 +27,16 @@ describe('quick pick', () => {
     expect(useQuickPick.getState().favorites.at(-1)).toBe('ZenerElm');
     toggleFavorite('WireElm');
     expect(useQuickPick.getState().favorites).not.toContain('WireElm');
+  });
+
+  it("moves a favorite onto another one's place", () => {
+    useQuickPick.setState({ favorites: ['A', 'B', 'C', 'D'] });
+    moveFavorite('A', 2);
+    expect(useQuickPick.getState().favorites).toEqual(['B', 'C', 'A', 'D']);
+    moveFavorite('D', 0);
+    expect(useQuickPick.getState().favorites).toEqual(['D', 'B', 'C', 'A']);
+    moveFavorite('B', 99);
+    expect(useQuickPick.getState().favorites).toEqual(['D', 'C', 'A', 'B']);
   });
 
   it('keeps recent components newest first, once each', () => {

@@ -23,6 +23,11 @@ the quick pick strip (design A) to build first.
   the canvas. `Preview` and `PaletteButton` moved to `components/PaletteButton.tsx`.
 - Five new strings in all 16 languages (`i18nExtra.ts`).
 - Unit tests (`quickPick.test.ts`) and e2e tests (`e2e/quickpick.spec.ts`).
+- Follow-ups Gady asked for (2026-10-15): the rail folds away to its two buttons (the palette tab
+  and an unfold button; remembered); Options > Quick pick bar turns the rail and the phone strip
+  off (the palette tab stays); "Reorder" after the Favorites caption in the palette puts the
+  favorites in order by dragging (mouse, pen or finger) or with the arrow keys. The palette shows
+  the favorites on phones too, so they can be reordered there. Five more strings.
 
 ## Next
 
@@ -31,5 +36,4 @@ the quick pick strip (design A) to build first.
 
 ## Open issues
 
-- Favorites keep the order they were pinned in; there is no drag to reorder yet.
-- The strip takes about 50 px of a phone's height; there is no option to hide it.
+- None known.

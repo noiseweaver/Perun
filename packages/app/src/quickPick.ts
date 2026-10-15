@@ -9,6 +9,7 @@ import { paletteItem, type PaletteItem } from './editor/catalog.ts';
 
 const FAVORITES_KEY = 'circuitjs-next.paletteFavorites';
 const RECENTS_KEY = 'circuitjs-next.paletteRecents';
+const RAIL_KEY = 'circuitjs-next.quickPickRailCollapsed';
 
 /** The favorites before any are pinned: what most circuits are drawn with. */
 export const DEFAULT_FAVORITES: readonly string[] = [
@@ -32,6 +33,8 @@ const SUBCIRCUIT = 'CustomCompositeElm:';
 interface QuickPickState {
   favorites: string[];
   recents: string[];
+  /** The rail beside the canvas is folded down to its two buttons. */
+  railCollapsed: boolean;
 }
 
 function load(key: string, fallback: readonly string[]): string[] {
@@ -56,7 +59,26 @@ function save(key: string, list: string[]): void {
 export const useQuickPick = create<QuickPickState>(() => ({
   favorites: load(FAVORITES_KEY, DEFAULT_FAVORITES),
   recents: load(RECENTS_KEY, []),
+  railCollapsed: loadFlag(RAIL_KEY),
 }));
+
+function loadFlag(key: string): boolean {
+  try {
+    return localStorage.getItem(key) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+/** Fold the rail away to its two buttons, or open it again. */
+export function setRailCollapsed(collapsed: boolean): void {
+  useQuickPick.setState({ railCollapsed: collapsed });
+  try {
+    localStorage.setItem(RAIL_KEY, String(collapsed));
+  } catch {
+    // storage disabled: the choice lasts for this page
+  }
+}
 
 /** Pin a component to the favorites, or unpin it. */
 export function toggleFavorite(className: string): void {
@@ -64,6 +86,19 @@ export function toggleFavorite(className: string): void {
   const next = favorites.includes(className)
     ? favorites.filter((c) => c !== className)
     : [...favorites, className];
+  useQuickPick.setState({ favorites: next });
+  save(FAVORITES_KEY, next);
+}
+
+/** Move a favorite to another place in the list (clamped to its ends). */
+export function moveFavorite(className: string, to: number): void {
+  const { favorites } = useQuickPick.getState();
+  const from = favorites.indexOf(className);
+  if (from < 0) return;
+  const next = favorites.filter((c) => c !== className);
+  const at = Math.max(0, Math.min(next.length, to));
+  if (at === from) return;
+  next.splice(at, 0, className);
   useQuickPick.setState({ favorites: next });
   save(FAVORITES_KEY, next);
 }

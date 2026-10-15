@@ -40,6 +40,7 @@ export function App() {
   const narrow = useNarrow();
   const shortLandscape = useShortLandscape();
   const strip = narrow && !shortLandscape;
+  const quickPickBar = useApp((s) => s.settings.quickPickBar);
   // a new language re-renders every label (none of the components below is memoized)
   useApp((s) => s.language);
 
@@ -88,7 +89,7 @@ export function App() {
           </main>
           <Inspector />
         </div>
-        {strip && <QuickPick variant="strip" />}
+        {strip && quickPickBar && <QuickPick variant="strip" />}
         <Timeline />
         <ControlBar />
         <Dialogs />
