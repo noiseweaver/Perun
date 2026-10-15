@@ -16,13 +16,7 @@ import type { ExampleMenu } from '../examples.ts';
 import { openDialog } from '../commands.ts';
 import { controller } from '../SimController.ts';
 import { openExample } from '../startup.ts';
-import {
-  VALUE_SIZES,
-  updateSettings,
-  useApp,
-  type CircuitDisplay,
-  setPaletteOpen,
-} from '../store.ts';
+import { VALUE_SIZES, updateSettings, useApp, type CircuitDisplay } from '../store.ts';
 import { openBode } from './BodeDialog.tsx';
 import { openDcPanel } from './DcPanel.tsx';
 import { openSweep } from './SweepDialog.tsx';
@@ -141,22 +135,10 @@ export function AppBar() {
   };
   const ed = controller.editor;
   const editor = useApp((s) => s.editor);
-  const paletteOpen = useApp((s) => s.paletteOpen);
   const hasSel = editor.selectionCount > 0;
 
   return (
     <header className="app-bar">
-      <button
-        type="button"
-        className="icon-button"
-        aria-label={t(paletteOpen ? 'Hide components' : 'Show components')}
-        aria-pressed={paletteOpen}
-        title={t('Components')}
-        data-testid="palette-toggle"
-        onClick={() => setPaletteOpen(!paletteOpen)}
-      >
-        <Icon name="menu" />
-      </button>
       <div className="app-bar-brand" aria-hidden>
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor">
           <path d="M2 12h4l2-5 4 10 4-10 2 5h4" strokeWidth="2" strokeLinejoin="round" />
@@ -341,11 +323,22 @@ export function AppBar() {
             disabled={examples === null}
             testId="circuits-menu"
           >
+            <Item
+              label="Search circuits"
+              icon="search"
+              testId="circuits-search-open"
+              onSelect={() => setSheetOpen(true)}
+            />
+            <Menu.Separator className="menu-separator" />
             {examples && <ExampleItems menu={examples.root} />}
           </AppMenu>
         )}
-        {compact && sheetOpen && examples && (
-          <CircuitsSheet root={examples.root} onClose={() => setSheetOpen(false)} />
+        {sheetOpen && examples && (
+          <CircuitsSheet
+            root={examples.root}
+            focusSearch={!compact}
+            onClose={() => setSheetOpen(false)}
+          />
         )}
 
         <AppMenu label="Scopes" icon="scope" testId="scopes-menu">
@@ -393,6 +386,20 @@ export function AppBar() {
             onCheckedChange={(v) => updateSettings({ wiresFollow: v })}
             title={t('Hold Alt while dragging to leave the wires behind')}
             testId="menu-wires-follow"
+          />
+          <CheckItem
+            label="Quick pick bar"
+            icon="star"
+            checked={settings.quickPickBar}
+            onCheckedChange={(v) => updateSettings({ quickPickBar: v })}
+            testId="menu-quick-pick"
+          />
+          <CheckItem
+            label="Quick pick wheel"
+            icon="apps"
+            checked={settings.quickPickWheel}
+            onCheckedChange={(v) => updateSettings({ quickPickWheel: v })}
+            testId="menu-quick-wheel"
           />
           <CheckItem
             label="European resistors"

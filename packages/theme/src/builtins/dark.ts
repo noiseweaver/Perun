@@ -71,5 +71,6 @@ export const dark: Theme = {
     monoFont: "'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace",
     scopeLook: 'cards',
     roundness: 1,
+    shadows: 1,
   },
 };

@@ -129,7 +129,8 @@ export const eink: Theme = {
     accent: '#000000',
     danger: '#000000',
   },
-  style: { ...dark.style, strokeWidth: 3.5, dotRadius: 3.5, roundness: 0.5 },
+  // flat: a shadow is a grey smear on e-ink
+  style: { ...dark.style, strokeWidth: 3.5, dotRadius: 3.5, roundness: 0.5, shadows: 0 },
 };
 
 /** Deep blue with white line work on a ruled grid. */

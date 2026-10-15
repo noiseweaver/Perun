@@ -6,7 +6,7 @@
 // too small to read, or a folder where no one component stands for the category.
 
 import { Icon, type IconName } from './Icon.tsx';
-import { Preview } from './Palette.tsx';
+import { Preview } from './PaletteButton.tsx';
 
 /** Category title (as in setuplist.txt) to the element class drawn for it, or an icon. */
 const CATEGORY_ICONS: Readonly<Record<string, string | { icon: IconName }>> = {

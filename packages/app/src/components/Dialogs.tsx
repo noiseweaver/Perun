@@ -444,6 +444,7 @@ const EDIT_KEYS: [string, string][] = [
   ['Double-click, Enter', 'Edit properties'],
   ['] / [', 'Select the next / previous element'],
   ['Shift+F10, Menu key', 'Menu for the selection'],
+  ['Q, right-drag on empty space', 'Wheel of favorites: flick or click toward one to place it'],
   ['Arrow keys', 'Move the selection'],
   ['Delete, Backspace', 'Delete'],
   ['Esc', 'Stop placing, clear selection'],

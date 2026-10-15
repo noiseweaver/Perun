@@ -6,7 +6,8 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { useEffect } from 'react';
 import { startup } from '../startup.ts';
 import { applyUpdate } from '../pwa.ts';
-import { setPaletteOpen, shownTheme, useApp } from '../store.ts';
+import { shownTheme, useApp } from '../store.ts';
+import { useQuickPick } from '../quickPick.ts';
 import { installShortcuts, openDialog } from '../commands.ts';
 import { paletteItem } from '../editor/catalog.ts';
 import { controller } from '../SimController.ts';
@@ -19,6 +20,9 @@ import { Dialogs } from './Dialogs.tsx';
 import { Inspector } from './Inspector.tsx';
 import { Icon } from './Icon.tsx';
 import { Palette } from './Palette.tsx';
+import { PaletteTab, QuickPick } from './QuickPick.tsx';
+import { RadialWheel } from './RadialWheel.tsx';
+import { useNarrow, useShortLandscape } from './useNarrow.ts';
 import { FieldLegend } from './FieldLegend.tsx';
 import { SliderPanel } from './SliderPanel.tsx';
 import { WheelValuePopup } from './WheelValuePopup.tsx';
@@ -34,6 +38,14 @@ export function App() {
   const theme = useApp(shownTheme);
   const previewing = useApp((s) => s.preview !== null);
   const paletteOpen = useApp((s) => s.paletteOpen);
+  // phones upright get the quick pick as a strip under the canvas, everything else as a rail
+  const narrow = useNarrow();
+  const shortLandscape = useShortLandscape();
+  const strip = narrow && !shortLandscape;
+  // the strip has a button that opens the palette; with the strip away the canvas gets the tab
+  const stripOn = useApp((s) => s.settings.quickPickBar);
+  const stripFolded = useQuickPick((s) => s.folded.strip);
+  const stripShown = stripOn && !stripFolded;
   // a new language re-renders every label (none of the components below is memoized)
   useApp((s) => s.language);
 
@@ -64,24 +76,14 @@ export function App() {
         <div className="workspace">
           <Palette />
           <main className="canvas-area">
-            {!paletteOpen && (
-              <button
-                type="button"
-                className="palette-reveal"
-                aria-label={t('Show components')}
-                title={t('Show components')}
-                data-testid="palette-reveal"
-                onClick={() => setPaletteOpen(true)}
-              >
-                <Icon name="chevronRight" size={20} />
-              </button>
-            )}
+            {!paletteOpen && !strip && <QuickPick variant="rail" />}
+            {!paletteOpen && strip && !stripShown && <PaletteTab />}
             <CircuitCanvas />
             <div className="overlay-right">
               <SliderPanel />
               <DcPanel />
+              <FieldLegend />
             </div>
-            <FieldLegend />
             <WheelValuePopup />
             <ModeChip />
             <SubcircuitBar />
@@ -93,8 +95,10 @@ export function App() {
           </main>
           <Inspector />
         </div>
+        {strip && <QuickPick variant="strip" />}
         <Timeline />
         <ControlBar />
+        <RadialWheel />
         <Dialogs />
         <Announcer />
       </div>
