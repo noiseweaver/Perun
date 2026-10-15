@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Perun contributors
 //
 // The quick pick: favorites pinned with a star and the components placed most recently, at the
-// top of the palette, on a rail while the palette is away, and in a strip on phones.
+// top of the palette and in a strip on phones.
 
 import { expect, test, type Page } from '@playwright/test';
 import { compressCircuit } from '@perun/format';
@@ -72,49 +72,21 @@ test('placed components show as recent', async ({ page }) => {
   await expect(page.getByTestId('palette-quick-ResistorElm')).toHaveCount(1);
 });
 
-test('with the palette away, the rail picks components', async ({ page }) => {
-  await open(page);
-  await page.getByTestId('palette-hide').click();
-  const rail = page.getByTestId('quick-pick-rail');
-  await expect(rail).toBeVisible();
-  await rail.getByTestId('quick-CapacitorElm').click();
-  await expect(page.getByTestId('mode-chip')).toContainText('Capacitor');
-  await expect(rail.getByTestId('quick-CapacitorElm')).toHaveAttribute('aria-pressed', 'true');
-  await dragOnCanvas(page, 96, 0);
-  expect(await classes(page)).toEqual(['CapacitorElm']);
-  // the tab at its top brings the palette back
-  await page.getByTestId('palette-reveal').click();
-  await expect(page.getByTestId('palette')).toHaveAttribute('data-open', 'true');
-  await expect(rail).toHaveCount(0);
-});
-
-test('the rail folds away to its handle, and stays folded', async ({ page }) => {
-  await open(page);
-  await page.getByTestId('palette-hide').click();
-  const rail = page.getByTestId('quick-pick-rail');
-  await expect(rail.getByTestId('quick-ResistorElm')).toBeVisible();
-  await page.getByTestId('quick-rail-fold').click();
-  await expect(rail.getByTestId('quick-ResistorElm')).toHaveCount(0);
-  // the tab that brings the palette back stays
-  await expect(page.getByTestId('palette-reveal')).toBeVisible();
-  await page.reload();
-  await expect(page.getByTestId('quick-rail-fold')).toHaveAttribute('aria-expanded', 'false');
-  await page.getByTestId('quick-rail-fold').click();
-  await expect(rail.getByTestId('quick-ResistorElm')).toBeVisible();
-});
-
-test('Options turns the quick pick bar off, leaving the tab that brings the palette back', async ({
+test('with the palette away only its tab is left on the canvas; no quick pick bar', async ({
   page,
 }) => {
   await open(page);
   await page.getByTestId('palette-hide').click();
+  await expect(page.getByTestId('palette')).toHaveAttribute('data-open', 'false');
+  await expect(page.locator('.canvas-area [data-testid^="quick-"]')).toHaveCount(0);
+  await expect(page.getByTestId('quick-pick-strip')).toHaveCount(0);
+  // the Options switch is a phone's (its strip); here the quick picks are in the palette
   await page.getByTestId('options-menu').click();
-  await page.getByTestId('menu-quick-pick').click();
+  await expect(page.getByTestId('menu-quick-pick')).toHaveCount(0);
   await page.keyboard.press('Escape');
-  await expect(page.getByTestId('quick-ResistorElm')).toHaveCount(0);
-  await expect(page.getByTestId('quick-rail-fold')).toHaveCount(0);
   await page.getByTestId('palette-reveal').click();
   await expect(page.getByTestId('palette')).toHaveAttribute('data-open', 'true');
+  await expect(page.getByTestId('palette-reveal')).toHaveCount(0);
 });
 
 test('the app bar has the logo at the left and no components button', async ({ page }) => {
@@ -187,7 +159,7 @@ test.describe('on a phone', () => {
     await open(page);
     const strip = page.getByTestId('quick-pick-strip');
     await expect(strip).toBeVisible();
-    await expect(page.getByTestId('quick-pick-rail')).toHaveCount(0);
+    await expect(page.getByTestId('palette-reveal')).toHaveCount(0);
     // it sits between the canvas and the run controls
     const canvas = await page.getByTestId('circuit-canvas').boundingBox();
     const box = await strip.boundingBox();
@@ -196,6 +168,17 @@ test.describe('on a phone', () => {
     await strip.getByTestId('quick-ResistorElm').tap();
     await expect(page.getByTestId('mode-chip')).toContainText('Resistor');
     await strip.getByTestId('quick-more').tap();
+    await expect(page.getByTestId('palette')).toHaveAttribute('data-open', 'true');
+  });
+
+  test('Options turns the strip off, leaving a tab that opens the palette', async ({ page }) => {
+    await open(page);
+    await page.getByTestId('options-menu').tap();
+    await page.getByTestId('menu-quick-pick').tap();
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('quick-pick-strip')).toHaveCount(0);
+    await expect(page.getByTestId('quick-strip-fold')).toHaveCount(0);
+    await page.getByTestId('palette-reveal').tap();
     await expect(page.getByTestId('palette')).toHaveAttribute('data-open', 'true');
   });
 

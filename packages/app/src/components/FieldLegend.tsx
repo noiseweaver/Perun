@@ -97,7 +97,7 @@ function Swatch({ kind, theme }: { kind: keyof FieldOptions; theme: Theme }): Re
 
 /**
  * A small key to the visualizations that are on (Options > Visualizations), in the column of
- * cards at the canvas's top right (the quick pick rail has the left edge). It folds to its header.
+ * cards at the canvas's top right (the palette tab has the left edge). It folds to its header.
  */
 export function FieldLegend() {
   const fields = useApp((s) => s.settings.fields);
