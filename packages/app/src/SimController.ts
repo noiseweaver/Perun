@@ -103,7 +103,7 @@ import {
   type EditorState,
   type TeachTool,
 } from './store.ts';
-import { t } from './i18n.ts';
+import { t, tf } from './i18n.ts';
 
 /** What dropping a dragged docked scope does, as its drop label and undo name say. */
 const SCOPE_DROP_LABELS: Record<ScopeDrop, string> = {
@@ -1772,6 +1772,23 @@ export class SimController {
   cut(menuElm: CircuitElm | null = this.editor.keyTarget()): void {
     const s = this.editor.cut(menuElm);
     if (s !== null) writeClipboard(s);
+    this.publishEditor();
+  }
+
+  /** Edit > Tidy up: the selection, or the whole circuit; the result in a toast. */
+  tidyUp(): void {
+    const r = this.editor.tidyUp();
+    if (r === null)
+      showToast(t('Tidy up left the circuit as it was: it would have changed a connection.'));
+    else if (!r.changed) showToast(t('Already tidy.'));
+    else
+      showToast(
+        tf('Tidied up. Wires: {before} → {after}. Parts moved: {parts}.', {
+          before: r.wiresBefore,
+          after: r.wiresAfter,
+          parts: r.partsMoved,
+        }),
+      );
     this.publishEditor();
   }
 

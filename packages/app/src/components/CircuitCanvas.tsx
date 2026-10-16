@@ -224,6 +224,12 @@ export function CircuitCanvas() {
                 hint={`${MOD}A`}
                 onSelect={() => ed.selectAll()}
               />
+              <Item
+                label="Tidy up"
+                icon="tidy"
+                testId="ctx-tidy-up"
+                onSelect={() => controller.tidyUp()}
+              />
               <Ctx.Separator className="menu-separator" />
               <Item label="Centre Circuit" icon="fit" onSelect={() => controller.fit()} />
             </>
