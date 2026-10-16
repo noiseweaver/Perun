@@ -614,6 +614,11 @@ export class Circuit {
         modelsFor(sim).relay.undumpModelXml(r);
         continue;
       }
+      // behavioural op-amp models (not in upstream, which skips the record)
+      if (tag === 'om') {
+        modelsFor(sim).opamp.undumpModelXml(r);
+        continue;
+      }
       if (tag === 'ccm') {
         modelsFor(sim).composite.undumpModelXml(r, sim);
         continue;

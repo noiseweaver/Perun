@@ -13,6 +13,7 @@ import { parseJavaDouble, parseJavaInt } from '../java.ts';
 import { StringTokenizer } from '../StringTokenizer.ts';
 import { formatNumber } from '../view/units.ts';
 import type { XmlAttrReader, XmlDocWriter } from '../xml.ts';
+import { DIODE_PARTS } from './audioParts.ts';
 
 /** Java `String.compareTo` order on model names (UTF-16 code units), for the model lists. */
 function compareNames(a: { name: string }, b: { name: string }): number {
@@ -260,11 +261,23 @@ export class DiodeModels {
 
     // for LM317
     this.loadInternalModel('~lm317-dz 0 1e-14 0 1 6.3 0');
+
+    // named parts, not in upstream (audioParts.ts); last, so getModelWithParameters still finds
+    // upstream's models first
+    for (const p of DIODE_PARTS)
+      this.addPartModel(p.name, new DiodeModel(p.is, p.rs, p.n, p.bv, p.description));
   }
 
   private addDefaultModel(name: string, dm: DiodeModel): void {
     this.modelMap.set(name, dm);
     dm.readOnly = dm.builtIn = true;
+    dm.name = name;
+  }
+
+  /** Read-only like a default model, but saved into the circuit so CircuitJS1 can open it. */
+  private addPartModel(name: string, dm: DiodeModel): void {
+    this.modelMap.set(name, dm);
+    dm.readOnly = true;
     dm.name = name;
   }
 
