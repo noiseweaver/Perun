@@ -8,6 +8,7 @@
 import { SwitchElm } from '@perun/elements';
 import { compressCircuit } from '@perun/format';
 import { shortcutMap } from './editor/catalog.ts';
+import { quickSave } from './browserSaves.ts';
 import { download } from './download.ts';
 import { embedConfig } from './embedConfig.ts';
 import { controller } from './SimController.ts';
@@ -16,6 +17,7 @@ import { showToast, useApp } from './store.ts';
 /** Dialogs the commands open; the App renders whichever is set. */
 export type DialogKind =
   | 'save'
+  | 'myCircuits'
   | 'exportLink'
   | 'exportText'
   | 'importText'
@@ -161,7 +163,8 @@ export function installShortcuts(): () => void {
           ed.selectAll();
           return done();
         case 's':
-          openDialog('save');
+          // a circuit from My circuits saves over itself; anything else asks where and as what
+          if (!quickSave()) openDialog('save');
           return done();
         case 'o':
           document.querySelector<HTMLInputElement>('[data-testid="file-input"]')?.click();

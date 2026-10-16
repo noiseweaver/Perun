@@ -24,6 +24,10 @@ import { AboutDialog } from './AboutDialog.tsx';
 import { FeedbackDialog } from './FeedbackDialog.tsx';
 import { LoadIssuesDialog } from './LoadIssuesDialog.tsx';
 import { WhatsNewDialog } from './WhatsNewDialog.tsx';
+import { MyCircuitsDialog } from './MyCircuitsDialog.tsx';
+import { saveToBrowser, suggestedName } from '../browserSaves.ts';
+import { embedConfig } from '../embedConfig.ts';
+import { findByName, listCircuits, type SavedCircuit } from '../myCircuits.ts';
 import { BodeDialog } from './BodeDialog.tsx';
 import { SweepDialog } from './SweepDialog.tsx';
 import { ExportImageDialog, PartsListDialog, ScopeCsvDialog } from './ExportDialogs.tsx';
@@ -36,29 +40,101 @@ import { SubcircuitDialog, SubcircuitManagerDialog } from './SubcircuitDialog.ts
 import { ThemeEditorDialog, ThemesDialog } from './ThemeDialogs.tsx';
 import { t } from '../i18n.ts';
 
+type SaveTarget = 'browser' | 'file';
+const SAVE_TARGET_KEY = 'circuitjs-next.saveTarget';
+
+function readSaveTarget(): SaveTarget {
+  try {
+    return localStorage.getItem(SAVE_TARGET_KEY) === 'file' ? 'file' : 'browser';
+  } catch {
+    return 'browser';
+  }
+}
+
 function SaveDialog() {
-  const [name, setName] = useState(defaultFileName);
+  // in the Obsidian plugin's frame the host keeps the file; there is no browser library there
+  const [target, setTargetState] = useState<SaveTarget>(
+    embedConfig !== null ? 'file' : readSaveTarget,
+  );
+  const [fileName, setFileName] = useState(defaultFileName);
+  const [name, setName] = useState(suggestedName);
+  const [saved, setSaved] = useState<SavedCircuit[]>([]);
+  const savedAs = useApp((s) => s.savedAs);
+  useEffect(() => {
+    if (embedConfig !== null) return;
+    listCircuits().then(setSaved, () => undefined);
+  }, []);
+  const setTarget = (v: SaveTarget): void => {
+    setTargetState(v);
+    try {
+      localStorage.setItem(SAVE_TARGET_KEY, v);
+    } catch {
+      // remembered for this dialog only
+    }
+  };
+  const browser = target === 'browser';
+  // a save with the same name is replaced; the circuit's own save is simply updated
+  const clash = findByName(saved, name);
+  const replaces = clash !== undefined && clash.id !== savedAs?.id;
   return (
     <Shell
       title={t('Save circuit')}
-      description={t("Downloads the circuit in CircuitJS's file format.")}
+      description={
+        browser
+          ? t(
+              'Keeps the circuit in this browser on this device. Open it again from File > My circuits.',
+            )
+          : t("Downloads the circuit in CircuitJS's file format.")
+      }
     >
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          saveToFile(name);
+          if (browser) {
+            const n = name.trim() || suggestedName();
+            const id = clash?.id ?? (n === savedAs?.name ? savedAs.id : undefined);
+            void saveToBrowser(n, id);
+          } else saveToFile(fileName);
           openDialog(null);
         }}
       >
+        {embedConfig === null && (
+          <div className="dc-segmented save-target" role="radiogroup" aria-label={t('Save to')}>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={browser}
+              data-testid="save-target-browser"
+              onClick={() => setTarget('browser')}
+            >
+              {t('In this browser')}
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={!browser}
+              data-testid="save-target-file"
+              onClick={() => setTarget('file')}
+            >
+              {t('Download file')}
+            </button>
+          </div>
+        )}
         <input
+          key={target}
           className="text-input"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          value={browser ? name : fileName}
+          onChange={(e) => (browser ? setName(e.target.value) : setFileName(e.target.value))}
           onFocus={(e) => e.currentTarget.select()}
           autoFocus
-          aria-label={t('File name')}
+          aria-label={browser ? t('Name') : t('File name')}
           data-testid="save-name"
         />
+        {browser && replaces && (
+          <p className="save-note" data-testid="save-replaces">
+            {t('A saved circuit already has this name. Saving replaces it.')}
+          </p>
+        )}
         <div className="dialog-buttons">
           <Dialog.Close asChild>
             <button type="button" className="button">
@@ -66,7 +142,7 @@ function SaveDialog() {
             </button>
           </Dialog.Close>
           <button type="submit" className="button button-primary" data-testid="save-ok">
-            {t('Save')}
+            {browser && replaces ? t('Replace') : t('Save')}
           </button>
         </div>
       </form>
@@ -534,6 +610,8 @@ export function Dialogs() {
   switch (dialog) {
     case 'save':
       return <SaveDialog />;
+    case 'myCircuits':
+      return <MyCircuitsDialog />;
     case 'exportLink':
       return <ExportLinkDialog />;
     case 'exportText':

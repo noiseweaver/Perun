@@ -14,6 +14,10 @@ const SAVE_EVERY_MS = 3000;
 export interface LastCircuit {
   text: string;
   title: string;
+  /** The circuit's save in My circuits, if it has one. */
+  savedAs?: { id: string; name: string } | null;
+  /** It had changes not saved anywhere. */
+  unsaved?: boolean;
 }
 
 export function readLastCircuit(): LastCircuit | null {
@@ -21,9 +25,20 @@ export function readLastCircuit(): LastCircuit | null {
     const raw = localStorage.getItem(LAST_CIRCUIT_KEY);
     if (raw === null) return null;
     const v = JSON.parse(raw) as Partial<LastCircuit>;
-    return typeof v.text === 'string' && v.text !== '' && typeof v.title === 'string'
-      ? { text: v.text, title: v.title }
-      : null;
+    if (typeof v.text !== 'string' || v.text === '' || typeof v.title !== 'string') return null;
+    const sa = v.savedAs;
+    return {
+      text: v.text,
+      title: v.title,
+      savedAs:
+        typeof sa === 'object' &&
+        sa !== null &&
+        typeof sa.id === 'string' &&
+        typeof sa.name === 'string'
+          ? { id: sa.id, name: sa.name }
+          : null,
+      unsaved: v.unsaved === true,
+    };
   } catch {
     return null;
   }
@@ -41,8 +56,8 @@ export function saveLastCircuit(): void {
   } catch {
     return;
   }
-  const title = useApp.getState().title;
-  const value = JSON.stringify({ text, title });
+  const { title, savedAs } = useApp.getState();
+  const value = JSON.stringify({ text, title, savedAs, unsaved: controller.unsavedChanges });
   if (value === lastSaved) return;
   try {
     localStorage.setItem(LAST_CIRCUIT_KEY, value);

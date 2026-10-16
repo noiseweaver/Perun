@@ -192,11 +192,21 @@ textarea,
   color: var(--ui-accent);
 }
 
+.app-bar-title-row {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 40%;
+  /* the title's own padding (hover and edit) brings its text to 8px from the logo */
+  margin: 0 8px 0 2px;
+}
+
 .app-bar-title {
   flex: 0 1 auto;
   min-width: 0;
-  max-width: 40%;
-  margin: 0 8px;
+  margin: 0;
   font-size: 22px;
   line-height: 28px;
   font-weight: 400;
@@ -204,6 +214,48 @@ textarea,
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* the title is a button that turns into a field to rename the circuit */
+.app-bar-title-button {
+  display: block;
+  max-width: 100%;
+  padding: 2px 6px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: transparent;
+  border: none;
+  border-radius: var(--md-shape-s);
+  cursor: text;
+}
+
+.app-bar-title-button:hover {
+  background: color-mix(in srgb, var(--ui-text) 8%, transparent);
+}
+
+.app-bar-title-input {
+  width: 100%;
+  min-width: 8em;
+  padding: 2px 6px;
+  font-family: inherit;
+  color: var(--ui-text);
+  background: var(--md-surface-container-high);
+  border: none;
+  border-radius: var(--md-shape-s);
+  outline: 2px solid var(--ui-accent);
+}
+
+/* changes not saved anywhere */
+.app-bar-unsaved {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ui-accent);
 }
 
 .app-bar > .icon-button,
@@ -2316,10 +2368,13 @@ textarea.field-input {
     margin-right: 4px;
   }
 
-  .app-bar-title {
+  .app-bar-title-row {
     flex: 1 1 auto;
     max-width: none;
-    margin: 0 4px;
+    margin: 0 4px 0 -2px;
+  }
+
+  .app-bar-title {
     font-size: 18px;
     line-height: 24px;
   }
@@ -4567,4 +4622,171 @@ ul.theme-contrast {
 .part-search-empty {
   padding: 8px;
   color: var(--ui-text-muted);
+}
+
+/* ---- File > My circuits and the Save dialog ------------------------------------------------ */
+
+.save-target {
+  display: flex;
+  margin-bottom: 16px;
+}
+
+.save-target button {
+  flex: 1;
+  height: 40px;
+}
+
+.save-note {
+  margin: 8px 4px 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ui-text-muted);
+}
+
+.my-circuits-dialog {
+  display: flex;
+  flex-direction: column;
+  top: 8vh;
+  width: min(860px, calc(100vw - 32px));
+  max-height: 84vh;
+}
+
+.my-circuits-search {
+  flex: none;
+  margin-bottom: 12px;
+}
+
+.my-circuits-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0 -8px;
+  padding: 4px 8px;
+}
+
+.my-circuits-empty {
+  margin: 24px 0;
+  text-align: center;
+  color: var(--ui-text-muted);
+}
+
+.my-circuits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.my-circuit {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--md-surface-container-low);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--md-shape-m);
+}
+
+.my-circuit-current {
+  border-color: var(--ui-accent);
+}
+
+.my-circuit-open {
+  display: block;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.my-circuit-thumb {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: contain;
+  background: var(--canvas-background, var(--ui-surface));
+  color: var(--ui-text-muted);
+}
+
+.my-circuit-open:hover .my-circuit-thumb,
+.my-circuit-open:focus-visible .my-circuit-thumb {
+  filter: brightness(1.06);
+}
+
+.my-circuit-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 56px;
+  padding: 6px 4px 6px 12px;
+}
+
+.my-circuit-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.my-circuit-name {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.my-circuit-date {
+  font-size: 12px;
+  color: var(--ui-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.my-circuit-more {
+  flex: none;
+  background: transparent;
+}
+
+.my-circuit-rename {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  font-size: 14px;
+  padding: 0 8px;
+}
+
+.my-circuit-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px 10px;
+  font-size: 14px;
+}
+
+.my-circuit-confirm-text {
+  overflow-wrap: anywhere;
+}
+
+.my-circuit-confirm-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 719px) {
+  .my-circuits-dialog {
+    top: 4vh;
+    max-height: 92vh;
+    padding: 16px;
+  }
+
+  .my-circuits-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+  }
 }

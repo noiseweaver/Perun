@@ -5,6 +5,7 @@ import { parseQuery, queryBoolean, startCircuitFromQuery } from '@perun/format';
 import { fetchExample, fetchExampleList, findExample, type ExampleList } from './examples.ts';
 import { controller } from './SimController.ts';
 import { installAutosave, readLastCircuit } from './autosave.ts';
+import { checkSavedAs } from './browserSaves.ts';
 import { announceUpdate } from './whatsNew.ts';
 import { useApp } from './store.ts';
 import { loadLibrary, previewThemeFromQuery } from './themes.ts';
@@ -128,7 +129,12 @@ export async function startup(): Promise<void> {
     // reopen what was on screen last time; a fresh install gets the default circuit
     const last = readLastCircuit();
     const running = queryBoolean(q, 'running', true);
-    if (!last || !controller.load(last.text, last.title, running)) {
+    if (last && controller.load(last.text, last.title, running)) {
+      // still the same save in My circuits, with or without changes since
+      useApp.setState({ savedAs: last.savedAs ?? null });
+      controller.unsavedChanges = last.unsaved === true;
+      checkSavedAs();
+    } else {
       const def = examples?.defaultCircuit;
       if (def) await openExample(def.file, def.title, running);
     }

@@ -122,6 +122,10 @@ export type TeachTool = 'pencil' | 'laser' | 'eraser';
 
 export interface AppState {
   title: string;
+  /** The circuit changed since it was opened or saved (a dot beside the title). */
+  unsaved: boolean;
+  /** The circuit on screen is this one of My circuits: Ctrl+S saves over it. */
+  savedAs: { id: string; name: string } | null;
   running: boolean;
   /** Simulation speed slider, 0..259 (upstream scale, in quarter notches or finer). */
   speed: number;
@@ -155,6 +159,7 @@ export interface AppState {
   /** Open dialog (commands.ts DialogKind). */
   dialog:
     | 'save'
+    | 'myCircuits'
     | 'exportLink'
     | 'exportText'
     | 'importText'
@@ -384,6 +389,8 @@ const initialSettings = loadSettings();
 
 export const useApp = create<AppState>(() => ({
   title: '',
+  unsaved: false,
+  savedAs: null,
   running: true,
   speed: 117,
   currentSpeed: 50,
