@@ -32,6 +32,12 @@ Replace with… and a part search on Space and the radial wheel.
   search lists only parts whose posts land on the same points; scopes follow the new part.
 - Part search (`components/PartSearch.tsx`): Space opens a search box at the pointer (it used to
   switch to Select); Enter places the part there. The radial wheel has a search button under it.
+- Long leads (`Editor.joinLeads`): a post placed or moved onto a long part's lead (between a
+  post and its body) used to be a bad connection, as in CircuitJS1. Now the part is shortened
+  about its body so its post is there, and wires fill the rest of its leads out to where its
+  posts were. Same Options switch as dropping onto wires.
+- Right-click on empty canvas starts with the wheel's favorites and a search button; a pick goes
+  where the menu opened. Hidden when Options > Quick pick wheel is off.
 - Strings in all 16 languages (by Claude, not native-checked).
 - No file format change; nothing changes the simulation, so no deviation entry.
 - Tests: `smart.test.ts`, `arrange.test.ts` (RC low-pass layout, stray wire, and a sweep over

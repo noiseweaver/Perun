@@ -3407,6 +3407,15 @@ export class SimController {
     return true;
   }
 
+  /** The part search at a circuit point (the empty-canvas menu's search button). */
+  openPartSearchAt(gx: number, gy: number): void {
+    const r = this.renderer;
+    if (!r) return;
+    const rect = r.canvas.getBoundingClientRect();
+    const p = r.viewport.toScreen(gx, gy);
+    openPartSearch({ x: rect.left + p.x, y: rect.top + p.y, gx, gy, replace: null });
+  }
+
   /** The radial wheel's search button: the search where the wheel opened. */
   searchFromWheel(): void {
     const w = useWheel.getState().wheel;

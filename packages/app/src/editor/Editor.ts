@@ -236,6 +236,7 @@ export class Editor {
         this.splitWireAt(de.x2, de.y2);
       }
       this.elements.push(de);
+      this.joinLeads([de]);
       for (const e of this.elements) e.selected = e === de;
     });
     this.host.placed?.(this.paletteDragClass);
@@ -607,6 +608,8 @@ export class Editor {
 
   private endDrag(): void {
     const draggedSelection = this.tempMouseMode === MouseMode.DRAG_SELECTED && this.moved;
+    const draggedPost =
+      this.tempMouseMode === MouseMode.DRAG_POST && this.moved ? this.mouseElm : null;
     const wiresFollowed = this.follow !== null && this.follow !== undefined;
     this.mouseDragging = false;
     this.tempMouseMode = this.mouseMode;
@@ -667,6 +670,16 @@ export class Editor {
       const sel = this.selectedElements();
       if (sel.length === 1 && this.spliceIntoWire(sel[0])) circuitChanged = true;
     }
+    // a post left on a long part's lead joins it there
+    const touched: CircuitElm[] =
+      de !== null && !de.creationFailed()
+        ? [de, ...extras].filter((e) => this.elements.includes(e))
+        : draggedSelection
+          ? this.selectedElements()
+          : draggedPost !== null
+            ? [draggedPost]
+            : [];
+    if (this.joinLeads(touched)) circuitChanged = true;
     if (circuitChanged) {
       this.history.touch();
       this.host.circuitChanged();
@@ -915,6 +928,79 @@ export class Editor {
       return t0 === null || t1 === null || Math.min(t0, t1) < lo || Math.max(t0, t1) > hi;
     });
     return true;
+  }
+
+  /**
+   * A post that lands on a long part's lead, between one of its posts and its body, would be a
+   * bad connection. Instead the part is shortened about its body so that its post is there, and
+   * wires fill the rest of its leads out to where its posts were. Only parts or posts that were
+   * just placed or moved count (not upstream).
+   */
+  private joinLeads(touched: readonly CircuitElm[]): boolean {
+    if (!this.spliceOnDrop || touched.length === 0) return false;
+    const moved = new Set(touched);
+    let changed = false;
+    for (const part of [...this.elements]) {
+      if (part instanceof WireElm || part.getPostCount() !== 2) continue;
+      const leads = part.routingLeads();
+      const a = part.getPost(0);
+      const b = part.getPost(1);
+      if (leads === null || (a.x !== b.x && a.y !== b.y)) continue;
+      if (a.x !== part.x || a.y !== part.y || b.x !== part.x2 || b.y !== part.y2) continue;
+      // twice the body's centre, which stays put
+      const cx2 = a.x + b.x;
+      const cy2 = a.y + b.y;
+      let best: { x: number; y: number; side: 0 | 1 } | null = null;
+      let bestD = Infinity;
+      for (const e of this.elements) {
+        if (e === part || (!moved.has(part) && !moved.has(e))) continue;
+        for (let i = 0; i !== e.getPostCount(); i++) {
+          const p = e.getPost(i);
+          if ((p.x === a.x && p.y === a.y) || (p.x === b.x && p.y === b.y)) continue;
+          const side = onSpan(a, leads[0], p) ? 0 : onSpan(leads[1], b, p) ? 1 : null;
+          if (side === null) continue;
+          // the point nearest the body sets the new length
+          const d = Math.abs(2 * p.x - cx2) + Math.abs(2 * p.y - cy2);
+          if (d < bestD) {
+            bestD = d;
+            best = { x: p.x, y: p.y, side };
+          }
+        }
+      }
+      if (best === null) continue;
+      const mirror = { x: cx2 - best.x, y: cy2 - best.y };
+      const [p0, p1] = best.side === 0 ? [best, mirror] : [mirror, best];
+      const old = [
+        { x: a.x, y: a.y },
+        { x: b.x, y: b.y },
+      ];
+      part.x = p0.x;
+      part.y = p0.y;
+      part.x2 = p1.x;
+      part.y2 = p1.y;
+      part.setPoints();
+      const fills: WireElm[] = [];
+      for (const [from, to] of [
+        [old[0], p0],
+        [p1, old[1]],
+      ]) {
+        if (from.x === to.x && from.y === to.y) continue;
+        const w = constructElement('WireElm', from.x, from.y, this.circuit.sim);
+        if (!(w instanceof WireElm)) continue;
+        w.drag(to.x, to.y);
+        this.elements.push(w);
+        fills.push(w);
+      }
+      // other posts that were on the leads are on the new wires now: join them there too
+      for (const w of fills)
+        for (const e of this.elements)
+          for (let i = 0; i !== e.getPostCount(); i++) {
+            const p = e.getPost(i);
+            if (pointOnSegmentInterior(w.x, w.y, w.x2, w.y2, p.x, p.y)) this.splitWireAt(p.x, p.y);
+          }
+      changed = true;
+    }
+    return changed;
   }
 
   /**
@@ -1503,6 +1589,17 @@ function pointsRect(e: CircuitElm): Rect {
     x2: Math.max(e.x, e.x2),
     y2: Math.max(e.y, e.y2),
   };
+}
+
+/** Is p on the axis-aligned segment from a to b, ends included? */
+function onSpan(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  p: { x: number; y: number },
+): boolean {
+  if (a.x === b.x) return p.x === a.x && p.y >= Math.min(a.y, b.y) && p.y <= Math.max(a.y, b.y);
+  if (a.y === b.y) return p.y === a.y && p.x >= Math.min(a.x, b.x) && p.x <= Math.max(a.x, b.x);
+  return false;
 }
 
 /** Upstream CircuitElm.pointOnSegmentInterior: strictly inside an axis-aligned segment. */

@@ -93,6 +93,63 @@ describe('drop onto a wire', () => {
   });
 });
 
+describe('a wire on a long lead', () => {
+  // a resistor stretched from 0 to 320: its body sits in the middle, long leads either side
+  const LONG = 'r 0 96 320 96 0 1000\n';
+
+  it('shortens the part about its body so a wire drawn from its lead joins there', () => {
+    const { circuit, ed } = setup(LONG);
+    ed.setAddMode('WireElm');
+    drag(ed, [
+      [272, 96],
+      [272, 144],
+      [272, 192],
+    ]);
+    const r = parts(circuit)[0];
+    // the body stays where it was: posts mirrored about the middle (160)
+    expect(pos(r)).toEqual([48, 96, 272, 96]);
+    expect(wires(circuit).sort()).toEqual(
+      [
+        [0, 96, 48, 96],
+        [272, 96, 272, 192],
+        [272, 96, 320, 96],
+      ].sort(),
+    );
+    ed.history.undo();
+    expect(pos(parts(circuit)[0])).toEqual([0, 96, 320, 96]);
+    expect(wires(circuit)).toEqual([]);
+  });
+
+  it('joins a wire moved onto a lead, and a part dropped with its post there', () => {
+    const { circuit, ed } = setup(LONG + 'w 32 192 32 256 0\n');
+    drag(ed, [
+      [32, 224],
+      [32, 176],
+      [32, 128],
+    ]);
+    expect(pos(parts(circuit)[0])).toEqual([32, 96, 288, 96]);
+    expect(wires(circuit)).toContainEqual([0, 96, 32, 96]);
+    expect(wires(circuit)).toContainEqual([288, 96, 320, 96]);
+    // a capacitor stood up with its top post on the right-hand fill wire joins it there too
+    ed.paletteDragMove('CapacitorElm', { x: 304, y: 96 }, true);
+    ed.paletteDragEnd();
+    const cap = parts(circuit).find((e) => e.getClassName() === 'CapacitorElm');
+    expect(cap?.y).toBe(96);
+    expect(wires(circuit)).toContainEqual([288, 96, 304, 96]);
+  });
+
+  it('leaves a post on the body alone, and can be switched off', () => {
+    const { circuit, ed } = setup(LONG);
+    ed.spliceOnDrop = false;
+    ed.setAddMode('WireElm');
+    drag(ed, [
+      [272, 96],
+      [272, 192],
+    ]);
+    expect(pos(parts(circuit)[0])).toEqual([0, 96, 320, 96]);
+  });
+});
+
 describe('wire routing', () => {
   it('draws an L for a slanted drag, first leg the way the drag started', () => {
     const { circuit, ed } = setup();

@@ -12,7 +12,11 @@ import { useApp } from '../store.ts';
 import { Icon, MenuIcon, type IconName } from './Icon.tsx';
 import { canBode, openBode } from './BodeDialog.tsx';
 import { canSweep, openSweep } from './SweepDialog.tsx';
-import { t } from '../i18n.ts';
+import { t, tItem } from '../i18n.ts';
+import { usePartSearch } from '../partSearch.ts';
+import { useQuickPick } from '../quickPick.ts';
+import { wheelItems } from '../radialWheel.ts';
+import { Preview } from './PaletteButton.tsx';
 
 const MOD = typeof navigator !== 'undefined' && /Mac|iP/.test(navigator.platform) ? '⌘' : 'Ctrl+';
 
@@ -84,7 +88,16 @@ export function CircuitCanvas() {
         move it, Delete to remove it, and Shift+F10 for its menu. Press ? for all shortcuts.
       </p>
       <Ctx.Portal>
-        <Ctx.Content className="menu-content" data-testid="context-menu">
+        <Ctx.Content
+          className="menu-content"
+          data-testid="context-menu"
+          // a part search opened from the menu keeps the focus
+          onCloseAutoFocus={(e) => {
+            if (usePartSearch.getState().search === null) return;
+            e.preventDefault();
+            document.querySelector<HTMLInputElement>('.part-search input')?.focus();
+          }}
+        >
           {menuUndocked !== null ? (
             <ScopeMenuItems index={-1} undocked={menuUndocked} />
           ) : menuScope >= 0 ? (
@@ -141,7 +154,7 @@ export function CircuitCanvas() {
                   icon="replace"
                   testId="ctx-replace"
                   // after the menu has closed and given the focus back
-                  onSelect={() => window.setTimeout(() => controller.openReplace(menuElm), 0)}
+                  onSelect={() => controller.openReplace(menuElm)}
                 />
               )}
               <Ctx.Separator className="menu-separator" />
@@ -220,6 +233,7 @@ export function CircuitCanvas() {
             </>
           ) : (
             <>
+              <QuickPicks />
               <Item
                 label="Paste"
                 icon="paste"
@@ -252,6 +266,48 @@ export function CircuitCanvas() {
         </Ctx.Content>
       </Ctx.Portal>
     </Ctx.Root>
+  );
+}
+
+/**
+ * The radial wheel's favorites in a row at the top of the empty-canvas menu, with its search
+ * button: a pick goes where the menu was opened (not upstream). Off with the wheel.
+ */
+function QuickPicks() {
+  const on = useApp((s) => s.settings.quickPickWheel);
+  const favorites = useQuickPick((s) => s.favorites);
+  const models = useApp((s) => s.subcircuitModels);
+  const inside = useApp((s) => s.subcircuitBar.viewing.length > 0);
+  const items = wheelItems(favorites, models);
+  if (!on || inside || items.length === 0) return null;
+  const at = controller.menuPos;
+  return (
+    <>
+      <div className="menu-quick" role="group" aria-label={t('Quick pick')}>
+        {items.map((it) => (
+          <Ctx.Item
+            key={it.className}
+            className="menu-quick-item"
+            title={tItem(it.label)}
+            aria-label={tItem(it.label)}
+            data-testid={`ctx-quick-${it.className}`}
+            onSelect={() => controller.placeFromSearch(it.className, at.x, at.y)}
+          >
+            <Preview className={it.className} />
+          </Ctx.Item>
+        ))}
+        <Ctx.Item
+          className="menu-quick-item"
+          title={t('Search components')}
+          aria-label={t('Search components')}
+          data-testid="ctx-quick-search"
+          onSelect={() => controller.openPartSearchAt(at.x, at.y)}
+        >
+          <Icon name="search" size={20} />
+        </Ctx.Item>
+      </div>
+      <Ctx.Separator className="menu-separator" />
+    </>
   );
 }
 

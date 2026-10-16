@@ -139,3 +139,37 @@ test('the radial wheel has a search button too; Escape closes the search', async
   await expect(page.getByTestId('part-search')).toHaveCount(0);
   expect(await elements(page)).toEqual([]);
 });
+
+test('a wire drawn from a long lead joins there instead of a bad connection', async ({ page }) => {
+  await open(page, 'r 0 96 320 96 0 1000\n');
+  await page.getByTestId('circuit-canvas').focus();
+  await page.keyboard.press('w');
+  const a = await at(page, 272, 96);
+  const b = await at(page, 272, 192);
+  await page.mouse.move(a.x, a.y);
+  await page.mouse.down();
+  await page.mouse.move(a.x, (a.y + b.y) / 2, { steps: 4 });
+  await page.mouse.move(b.x, b.y, { steps: 4 });
+  await page.mouse.up();
+  const els = await elements(page);
+  expect(els.find((e) => e.cls === 'ResistorElm')?.pos).toEqual([48, 96, 272, 96]);
+  expect(els.filter((e) => e.cls === 'WireElm')).toHaveLength(3);
+});
+
+test('right-click on empty canvas offers the wheel favorites and a search', async ({ page }) => {
+  await open(page, '');
+  const p = await at(page, 160, 160);
+  await page.mouse.move(p.x, p.y);
+  await page.mouse.click(p.x, p.y, { button: 'right' });
+  await page.getByTestId('ctx-quick-CapacitorElm').click();
+  const els = await elements(page);
+  expect(els.map((e) => e.cls)).toEqual(['CapacitorElm']);
+  const [x1, y1, x2] = els[0]?.pos ?? [];
+  expect(Math.abs(((x1 ?? 0) + (x2 ?? 0)) / 2 - 160)).toBeLessThanOrEqual(32);
+  expect(Math.abs((y1 ?? 0) - 160)).toBeLessThanOrEqual(16);
+
+  const q = await at(page, 160, 320);
+  await page.mouse.click(q.x, q.y, { button: 'right' });
+  await page.getByTestId('ctx-quick-search').click();
+  await expect(page.getByTestId('part-search-input')).toBeFocused();
+});
