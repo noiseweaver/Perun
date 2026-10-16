@@ -139,8 +139,16 @@ export class SimController {
   readonly circuit = new Circuit();
   readonly editor: Editor;
   private renderer: CircuitRenderer | null = null;
+  private unsavedFlag = false;
   /** The circuit changed since it was loaded or saved. */
-  unsavedChanges = false;
+  get unsavedChanges(): boolean {
+    return this.unsavedFlag;
+  }
+  set unsavedChanges(v: boolean) {
+    if (v === this.unsavedFlag) return;
+    this.unsavedFlag = v;
+    useApp.setState({ unsaved: v });
+  }
   /** File name of the last save, offered again (upstream ExportAsLocalFileDialog). */
   lastFileName: string | null = null;
   private raf = 0;
@@ -320,6 +328,8 @@ export class SimController {
     }
     if (undoable) history.begin('Open');
     else history.cancel();
+    // a circuit from My circuits says so after loading it (browserSaves.ts)
+    useApp.setState({ savedAs: null });
     try {
       this.circuit.read(text);
     } catch (e) {
