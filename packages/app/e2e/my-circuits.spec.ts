@@ -88,3 +88,44 @@ test('the Save dialog still downloads a file', async ({ page }) => {
   await page.getByTestId('menu-save').click();
   await expect(page.getByTestId('save-target-file')).toHaveAttribute('aria-checked', 'true');
 });
+
+test('closing with unsaved changes asks first, unless turned off in Options', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByTestId('circuit-title')).toHaveText('LRC Circuit');
+  const asked: string[] = [];
+  page.on('dialog', (d) => {
+    asked.push(d.type());
+    void d.dismiss();
+  });
+  const reload = async (): Promise<void> => {
+    // a dismissed question leaves the page where it was, so don't wait for a load
+    await page.evaluate(() => window.location.reload()).catch(() => undefined);
+    await page.waitForTimeout(300);
+  };
+
+  // nothing changed yet: no question (the canvas click gives the page the user gesture browsers need)
+  const canvas = page.locator('canvas').first();
+  await canvas.click({ position: { x: 5, y: 5 } });
+  await reload();
+  expect(asked).toEqual([]);
+  await expect(page.getByTestId('circuit-title')).toHaveText('LRC Circuit');
+
+  // an edit: closing asks, and staying keeps the circuit
+  await canvas.click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press('Control+a');
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByTestId('unsaved-dot')).toHaveCount(1);
+  await reload();
+  expect(asked).toEqual(['beforeunload']);
+  await expect(page.getByTestId('unsaved-dot')).toHaveCount(1);
+
+  // switched off: no question
+  await page.getByTestId('options-menu').click();
+  const item = page.getByTestId('menu-warn-unsaved');
+  await expect(item).toHaveAttribute('aria-checked', 'true');
+  await item.click();
+  await page.keyboard.press('Escape');
+  await reload();
+  await page.waitForLoadState('load');
+  expect(asked).toEqual(['beforeunload']);
+});

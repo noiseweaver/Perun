@@ -569,6 +569,18 @@ export function AppBar() {
             checked={settings.conventionalCurrent}
             onCheckedChange={(v) => updateSettings({ conventionalCurrent: v })}
           />
+          {embedConfig === null && (
+            <CheckItem
+              label="Warn before closing with unsaved changes"
+              icon="save"
+              checked={settings.warnUnsaved}
+              onCheckedChange={(v) => updateSettings({ warnUnsaved: v })}
+              title={t(
+                'Closing or reloading the page asks first while the circuit has changes not saved anywhere',
+              )}
+              testId="menu-warn-unsaved"
+            />
+          )}
           <OptionsSub label="Default text box font" icon="textFields" testId="menu-text-font">
             <Menu.RadioGroup
               value={settings.textFont.family}

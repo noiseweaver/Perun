@@ -3,7 +3,7 @@
 
 import { themeCssVariables } from '@perun/theme';
 import { Component, type CSSProperties, type ReactNode } from 'react';
-import { LAST_CIRCUIT_KEY } from '../autosave.ts';
+import { allowLeave, LAST_CIRCUIT_KEY } from '../autosave.ts';
 import { t } from '../i18n.ts';
 import { shownTheme, useApp } from '../store.ts';
 
@@ -17,6 +17,7 @@ function themeStyle(): CSSProperties {
 }
 
 function reload(): void {
+  allowLeave();
   window.location.reload();
 }
 
@@ -28,6 +29,7 @@ function reloadBlank(): void {
     // storage disabled: nothing was kept
   }
   // drop any circuit named in the address too
+  allowLeave();
   window.location.replace(window.location.pathname);
 }
 

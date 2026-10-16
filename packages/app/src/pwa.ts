@@ -5,6 +5,7 @@
 // (vite-plugin-sw.ts), offers a reload when a new version has been downloaded, keeps the browser's
 // install prompt for the File menu, and opens files the installed app is asked to open.
 
+import { allowLeave } from './autosave.ts';
 import { BASE } from './startup.ts';
 import { controller } from './SimController.ts';
 import { useApp } from './store.ts';
@@ -43,6 +44,7 @@ export async function promptInstall(): Promise<void> {
 /** Switch to the new version waiting in the background, then reload into it. */
 export function applyUpdate(): void {
   if (waiting === null) {
+    allowLeave();
     window.location.reload();
     return;
   }
@@ -140,6 +142,7 @@ export function setupPwa(): void {
     // a worker that took over after the user asked for the update: show the new version
     if (reloading || waiting === null) return;
     reloading = true;
+    allowLeave();
     window.location.reload();
   });
   window.addEventListener('load', () => {

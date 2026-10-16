@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 
+import { embedConfig } from './embedConfig.ts';
 import { controller } from './SimController.ts';
 import { useApp } from './store.ts';
 
@@ -67,6 +68,26 @@ export function saveLastCircuit(): void {
   }
 }
 
+let leaving = false;
+
+/** The app reloads itself (an update, the crash screen): no question first. */
+export function allowLeave(): void {
+  leaving = true;
+}
+
+/**
+ * Closing or reloading the page while the circuit has changes not saved anywhere asks first
+ * (Options > Warn before closing with unsaved changes). Browsers show their own wording, and only
+ * once the page has been clicked or typed in; iPhone and iPad Safari never ask.
+ */
+function warnBeforeLeaving(e: BeforeUnloadEvent): void {
+  if (leaving || embedConfig !== null || !controller.unsavedChanges) return;
+  if (!useApp.getState().settings.warnUnsaved) return;
+  e.preventDefault();
+  // browsers from before preventDefault counted (Chrome before 119) ask when this is set
+  e.returnValue = true;
+}
+
 /** Save while the app runs and whenever it goes to the background. Returns a stop function. */
 export function installAutosave(): () => void {
   const timer = window.setInterval(() => {
@@ -77,9 +98,11 @@ export function installAutosave(): () => void {
   };
   document.addEventListener('visibilitychange', onHide);
   window.addEventListener('pagehide', saveLastCircuit);
+  window.addEventListener('beforeunload', warnBeforeLeaving);
   return () => {
     window.clearInterval(timer);
     document.removeEventListener('visibilitychange', onHide);
     window.removeEventListener('pagehide', saveLastCircuit);
+    window.removeEventListener('beforeunload', warnBeforeLeaving);
   };
 }
