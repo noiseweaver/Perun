@@ -135,6 +135,15 @@ export function CircuitCanvas() {
                 hint={`${MOD}D`}
                 onSelect={() => ed.duplicate(menuElm)}
               />
+              {!isWire && menuElm.getPostCount() > 0 && (
+                <Item
+                  label="Replace with…"
+                  icon="replace"
+                  testId="ctx-replace"
+                  // after the menu has closed and given the focus back
+                  onSelect={() => window.setTimeout(() => controller.openReplace(menuElm), 0)}
+                />
+              )}
               <Ctx.Separator className="menu-separator" />
               <Item
                 label="Swap Terminals"

@@ -1395,6 +1395,61 @@ export class Editor {
     return r;
   }
 
+  /** A part of this class built where `e` is, or null if it can't be. */
+  private buildLike(e: CircuitElm, className: string): CircuitElm | null {
+    const n = constructElement(className, e.x, e.y, this.circuit.sim);
+    if (n === null) return null;
+    n.x2 = e.x2;
+    n.y2 = e.y2;
+    n.setPoints();
+    return n;
+  }
+
+  /**
+   * Which of these classes could take the part's place (not in upstream): built on the same two
+   * points, its posts land exactly where the part's are, so every connection stays.
+   */
+  replacementsFor(e: CircuitElm, classes: readonly string[]): string[] {
+    if (e instanceof WireElm || e.getPostCount() === 0) return [];
+    const posts = (x: CircuitElm): string => {
+      const out: string[] = [];
+      for (let i = 0; i !== x.getPostCount(); i++) {
+        const p = x.getPost(i);
+        out.push(`${p.x},${p.y}`);
+      }
+      return out.sort().join(';');
+    };
+    const want = posts(e);
+    return classes.filter((c) => {
+      try {
+        const n = this.buildLike(e, c);
+        return n !== null && !(n instanceof WireElm) && posts(n) === want;
+      } catch {
+        return false;
+      }
+    });
+  }
+
+  /** Swap a part for one of another class in the same place (Replace with…). One undo step. */
+  replaceWith(e: CircuitElm, className: string): CircuitElm | null {
+    const i = this.elements.indexOf(e);
+    if (i < 0) return null;
+    const n = this.buildLike(e, className);
+    if (n === null) return null;
+    this.history.record('Replace', () => {
+      n.selected = e.selected;
+      this.elements[i] = n;
+      // scopes watching the old part watch the new one
+      for (const sc of [...this.circuit.scopes.scopes, ...this.circuit.undockedScopes()])
+        for (const p of sc.plots) if (p.elm === e) p.elm = n;
+      if (this.mouseElm === e) this.mouseElm = null;
+    });
+    this.host.placed?.(className);
+    this.host.circuitChanged();
+    this.host.selectionChanged();
+    return n;
+  }
+
   /** Split the wire under the mouse at the grid point nearest (gx, gy). */
   splitWire(gx: number, gy: number): void {
     this.history.record('Split wire', () => this.splitWireAt(this.snapGrid(gx), this.snapGrid(gy)));

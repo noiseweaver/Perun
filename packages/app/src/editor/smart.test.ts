@@ -232,3 +232,20 @@ describe('align and spread', () => {
     expect(parts(circuit).map((e) => e.y)).toEqual([0, 64]);
   });
 });
+
+describe('replace with', () => {
+  it('offers parts whose posts land on the same points, and swaps one in', () => {
+    const { circuit, ed } = setup('w 0 0 96 0 0\nr 96 0 160 0 0 1000\nw 160 0 224 0 0\n');
+    const r = parts(circuit)[0];
+    const fits = ed.replacementsFor(r, ['CapacitorElm', 'DiodeElm', 'TransistorElm', 'WireElm']);
+    expect(fits).toEqual(['CapacitorElm', 'DiodeElm']);
+    const sig = connectivity(circuit.elements);
+    const c = ed.replaceWith(r, 'CapacitorElm');
+    expect(c?.getClassName()).toBe('CapacitorElm');
+    expect(pos(parts(circuit)[0])).toEqual([96, 0, 160, 0]);
+    expect(connectivity(circuit.elements)).toBe(sig);
+    expect(ed.history.undoLabel).toBe('Replace');
+    ed.history.undo();
+    expect(parts(circuit)[0].getClassName()).toBe('ResistorElm');
+  });
+});

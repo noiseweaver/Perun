@@ -97,6 +97,8 @@ import {
   wheelItems,
   type WheelVia,
 } from './radialWheel.ts';
+import { closePartSearch, openPartSearch } from './partSearch.ts';
+import { paletteGroups } from './editor/catalog.ts';
 import {
   showToast,
   shownTheme,
@@ -1814,14 +1816,7 @@ export class SimController {
     else if (r.failure === 'empty') showToast(t('Nothing to arrange.'));
     else if (r.failure !== null)
       showToast(t('Arrange circuit left the circuit as it was: it could not wire it all.'));
-    else
-      showToast(
-        tf('Arranged {parts} parts. Wires: {before} → {after}.', {
-          parts: r.parts,
-          before: r.wiresBefore,
-          after: r.wiresAfter,
-        }),
-      );
+    else showToast(tf('Arranged {parts} parts. Undo puts them back.', { parts: r.parts }));
     this.publishEditor();
   }
 
@@ -3385,6 +3380,72 @@ export class SimController {
     if (w === null) return;
     this.editor.placeAt(className, w.gx, w.gy, vertical);
     this.publishEditor();
+  }
+
+  /**
+   * Space: the part search at the mouse (not upstream), or in the middle of the canvas. False
+   * when it can't open (a subcircuit's parts are being looked at).
+   */
+  openPartSearchAtPointer(): boolean {
+    const r = this.renderer;
+    if (!r || this.viewStack.length > 0) return false;
+    const rect = r.canvas.getBoundingClientRect();
+    let m = lastPointer ?? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    let at = this.clientToCircuit(m.x, m.y);
+    if (at === null) {
+      m = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      at = this.clientToCircuit(m.x, m.y);
+    }
+    if (at === null) return false;
+    closeWheel();
+    this.editor.leave();
+    openPartSearch({ x: m.x, y: m.y, gx: at.x, gy: at.y, replace: null });
+    this.publishEditor();
+    return true;
+  }
+
+  /** The radial wheel's search button: the search where the wheel opened. */
+  searchFromWheel(): void {
+    const w = useWheel.getState().wheel;
+    closeWheel();
+    if (w === null) return;
+    openPartSearch({ x: w.x, y: w.y, gx: w.gx, gy: w.gy, replace: null });
+  }
+
+  /** A part picked in the search goes where the search opened. */
+  placeFromSearch(className: string, gx: number, gy: number): void {
+    closePartSearch();
+    this.editor.placeAt(className, gx, gy, false);
+    this.publishEditor();
+  }
+
+  /** Replace with…: the search, listing only parts that fit this one's posts. */
+  openReplace(e: CircuitElm): void {
+    const r = this.renderer;
+    if (!r) return;
+    const b = viewFor(e)?.bbox(e);
+    const p = b ? r.viewport.toScreen((b.x1 + b.x2) / 2, b.y2) : { x: 0, y: 0 };
+    const rect = r.canvas.getBoundingClientRect();
+    openPartSearch({
+      x: rect.left + p.x,
+      y: rect.top + p.y + 12,
+      gx: e.x,
+      gy: e.y,
+      replace: e,
+    });
+  }
+
+  /** The palette classes that could take this part's place. */
+  replacements(e: CircuitElm): string[] {
+    const classes = paletteGroups().flatMap((g) => g.items.map((it) => it.className));
+    for (const name of useApp.getState().subcircuitModels)
+      classes.push(`CustomCompositeElm:${name}`);
+    return this.editor.replacementsFor(e, classes);
+  }
+
+  replaceWith(e: CircuitElm, className: string): void {
+    this.editor.replaceWith(e, className);
+    this.publishEditor(true);
   }
 
   clientToCircuit(clientX: number, clientY: number): { x: number; y: number } | null {

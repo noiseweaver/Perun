@@ -17,6 +17,7 @@ import {
   toleranceEditInfo,
   toleranceFromEditInfo,
   unitString,
+  WireElm,
 } from '@perun/elements';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { controller } from '../SimController.ts';
@@ -505,6 +506,15 @@ function SelectionActions({ elm }: { elm: CircuitElm | null }) {
         onClick={() => ed.rotateCW()}
       />
       <ActionButton icon="flip" label="Mirror X" caption="Mirror" onClick={() => ed.mirrorX()} />
+      {elm !== null && elm.getPostCount() > 0 && !(elm instanceof WireElm) && (
+        <ActionButton
+          icon="replace"
+          label="Replace with…"
+          caption="Replace"
+          testId="action-replace"
+          onClick={() => controller.openReplace(elm)}
+        />
+      )}
       {elm !== null && elm.getPostCount() === 2 && (
         <ActionButton
           icon="swap"

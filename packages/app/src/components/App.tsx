@@ -21,6 +21,7 @@ import { Inspector } from './Inspector.tsx';
 import { Icon } from './Icon.tsx';
 import { Palette } from './Palette.tsx';
 import { PaletteTab, QuickPick } from './QuickPick.tsx';
+import { PartSearch } from './PartSearch.tsx';
 import { RadialWheel } from './RadialWheel.tsx';
 import { useNarrow, useShortLandscape } from './useNarrow.ts';
 import { FieldLegend } from './FieldLegend.tsx';
@@ -99,6 +100,7 @@ export function App() {
         <Timeline />
         <ControlBar />
         <RadialWheel />
+        <PartSearch />
         <Dialogs />
         <Announcer />
       </div>
