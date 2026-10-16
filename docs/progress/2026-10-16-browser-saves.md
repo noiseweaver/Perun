@@ -36,6 +36,10 @@ and renaming a circuit by editing the title at the top left.
   it. The slot stays narrow enough that Options' submenus still open rightwards at 1280 px wide
   in French (a wider slot flipped them left and broke `i18n.spec.ts`). Phones were already
   steady (the name takes the free space there).
+- Follow-up: closing or reloading the page with changes not saved anywhere asks first (the
+  browser's own `beforeunload` question), Options > Warn before closing with unsaved changes, on
+  by default and remembered (`warnUnsaved`). The app's own reloads (update prompt, crash screen)
+  don't ask; the Obsidian plugin's frame never does. e2e in `my-circuits.spec.ts`.
 
 ## Next
 
@@ -47,3 +51,6 @@ and renaming a circuit by editing the title at the top left.
   separate lists. Clearing site data deletes them.
 - Thumbnails keep the theme they were saved in until the circuit is saved again.
 - Escape while renaming inside My circuits closes the dialog (the rename is dropped).
+- The leave warning can't word its own message (browsers show theirs), shows only after the page
+  has been clicked or typed in, and never on iPhone or iPad (Safari ignores it). Opening another
+  circuit inside the app over unsaved changes doesn't ask.

@@ -53,6 +53,8 @@ export interface UserSettings {
   quickPickBar: boolean;
   /** Q, a right-button flick or a long press on empty canvas opens the radial wheel. */
   quickPickWheel: boolean;
+  /** Closing the page with changes not saved anywhere asks first (autosave.ts). */
+  warnUnsaved: boolean;
   /** Font for text boxes; a display choice, not saved with circuits. */
   textFont: TextFont;
   /** Interface language: `auto` (the browser's) or an upstream catalog code (i18n.ts). */
@@ -265,6 +267,7 @@ function loadSettings(): UserSettings {
     routeWires: true,
     quickPickBar: true,
     quickPickWheel: true,
+    warnUnsaved: true,
     valueSize: 0.875,
     textFont: { family: 'default', bold: false, italic: false },
     language: 'auto',
@@ -304,6 +307,7 @@ function loadSettings(): UserSettings {
       quickPickBar: typeof s.quickPickBar === 'boolean' ? s.quickPickBar : defaults.quickPickBar,
       quickPickWheel:
         typeof s.quickPickWheel === 'boolean' ? s.quickPickWheel : defaults.quickPickWheel,
+      warnUnsaved: typeof s.warnUnsaved === 'boolean' ? s.warnUnsaved : defaults.warnUnsaved,
       valueSize: VALUE_SIZES.some((v) => v.scale === s.valueSize)
         ? (s.valueSize as number)
         : defaults.valueSize,
