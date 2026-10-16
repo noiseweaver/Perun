@@ -253,12 +253,6 @@ export function CircuitCanvas() {
                 testId="ctx-tidy-up"
                 onSelect={() => controller.tidyUp()}
               />
-              <Item
-                label="Arrange circuit"
-                icon="arrange"
-                testId="ctx-arrange"
-                onSelect={() => controller.arrange()}
-              />
               <Ctx.Separator className="menu-separator" />
               <Item label="Centre Circuit" icon="fit" onSelect={() => controller.fit()} />
             </>

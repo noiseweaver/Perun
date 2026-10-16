@@ -325,12 +325,6 @@ export function AppBar() {
             testId="menu-tidy-up"
             onSelect={() => controller.tidyUp()}
           />
-          <Item
-            label="Arrange circuit"
-            icon="arrange"
-            testId="menu-arrange"
-            onSelect={() => controller.arrange()}
-          />
           <Menu.Separator className="menu-separator" />
           <Item label="Centre Circuit" icon="fit" onSelect={() => controller.fit()} />
         </AppMenu>

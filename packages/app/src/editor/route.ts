@@ -5,9 +5,9 @@ import { TextElm, WireElm, type CircuitElm, type Rect } from '@perun/elements';
 
 /**
  * Not in upstream: a grid router for plain wires, used when a wire is drawn (it finds its way
- * round parts) and by Arrange circuit. Unlike upstream's routed wire, which is one element with
- * a stored path, the result is a list of corners that become ordinary wires, so the circuit opens
- * in CircuitJS1 as it is.
+ * round parts). Unlike upstream's routed wire, which is one element with a stored path, the
+ * result is a list of corners that become ordinary wires, so the circuit opens in CircuitJS1 as
+ * it is.
  *
  * A route runs along grid lines. It never enters a part's body, never touches a post or a wire
  * end (that would connect to it), may cross a wire at a right angle but never runs along one or
@@ -148,12 +148,6 @@ export class RouteGrid {
         if (x % gs === 0 && y % gs === 0) this.mark(x, y, HWIRE | VWIRE);
       }
     }
-  }
-
-  /** A route already laid (Arrange circuit routes one net after another). */
-  addPath(points: readonly Pt[]): void {
-    for (let i = 0; i + 1 < points.length; i++)
-      this.addWire(points[i].x, points[i].y, points[i + 1].x, points[i + 1].y);
   }
 
   /** Does a straight run from a to b (across or down) stay out of every part's body? */

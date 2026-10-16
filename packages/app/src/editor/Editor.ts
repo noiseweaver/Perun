@@ -29,7 +29,6 @@ import {
   type SpreadAxis,
 } from './align.ts';
 import { NO_GUIDES, alignmentGuides, type Guides } from './guides.ts';
-import { arrange, type ArrangeResult } from './arrange.ts';
 import { History } from './History.ts';
 import { RouteGrid, hasBody, leadDir, reverse, type Pt } from './route.ts';
 import { connectivity, tidy, type TidyResult } from './tidy.ts';
@@ -1463,48 +1462,6 @@ export class Editor {
     this.host.circuitChanged();
     this.host.selectionChanged();
     return result;
-  }
-
-  /**
-   * Lay the whole circuit out again (not in upstream; arrange.ts): signal left to right, supply
-   * on top, ground at the bottom, every wire drawn again. One undo step. Null: it couldn't, and
-   * nothing changed.
-   */
-  arrange(): ArrangeResult {
-    const saved = this.circuit.dumpXml();
-    this.history.begin('Arrange circuit');
-    const r = arrange(this.elements, {
-      gridSize: this.circuit.sim.gridSize,
-      bbox: (e) => this.host.bbox(e),
-    });
-    if (r.elements === null) {
-      this.history.cancel();
-      return r;
-    }
-    // scopes watching a wire watch its stand-in
-    const plots = [...this.circuit.scopes.scopes, ...this.circuit.undockedScopes()].flatMap(
-      (sc) => sc.plots,
-    );
-    if (
-      plots.some((p) => p.elm !== null && r.wireFor.has(p.elm) && r.wireFor.get(p.elm) === null)
-    ) {
-      this.history.cancel();
-      this.forgetElements();
-      this.host.restore(saved);
-      return { ...r, elements: null, failure: 'no route' };
-    }
-    for (const p of plots) {
-      const stand = p.elm === null ? undefined : r.wireFor.get(p.elm);
-      if (stand) p.elm = stand;
-    }
-    this.circuit.elements = r.elements;
-    for (const e of this.elements) e.selected = false;
-    this.forgetElements();
-    this.history.touch();
-    this.history.commit();
-    this.host.circuitChanged();
-    this.host.selectionChanged();
-    return r;
   }
 
   /** A part of this class built where `e` is, or null if it can't be. */

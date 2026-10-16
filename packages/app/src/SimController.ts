@@ -81,7 +81,6 @@ import {
   type EditorHost,
   type Modifiers,
 } from './editor/Editor.ts';
-import { ARRANGE_MAX_PARTS } from './editor/arrange.ts';
 import { alignUnits, type AlignKind, type SpreadAxis } from './editor/align.ts';
 import { ScopeRecorder } from './analysis/scopeRecord.ts';
 import { History, type StateRoots } from './rewind/history.ts';
@@ -1808,18 +1807,6 @@ export class SimController {
           parts: r.partsMoved,
         }),
       );
-    this.publishEditor();
-  }
-
-  /** Edit > Arrange circuit, with a toast saying how it went. */
-  arrange(): void {
-    const r = this.editor.arrange();
-    if (r.failure === 'too big')
-      showToast(tf('Arrange circuit works on up to {n} parts.', { n: ARRANGE_MAX_PARTS }));
-    else if (r.failure === 'empty') showToast(t('Nothing to arrange.'));
-    else if (r.failure !== null)
-      showToast(t('Arrange circuit left the circuit as it was: it could not wire it all.'));
-    else showToast(tf('Arranged {parts} parts. Undo puts them back.', { parts: r.parts }));
     this.publishEditor();
   }
 

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 //
-// Smart editing (not in upstream): drop onto a wire, align and spread, Arrange circuit,
-// Replace with… and the part search on Space and the radial wheel.
+// Smart editing (not in upstream): drop onto a wire, align and spread, Replace with… and the
+// part search on Space and the radial wheel.
 
 import { expect, test, type Page } from '@playwright/test';
 import { compressCircuit } from '@perun/format';
@@ -74,24 +74,6 @@ test('the inspector lines up and spreads a selection', async ({ page }) => {
   expect((await elements(page)).map((e) => e.pos[0])).toEqual([0, 160, 320]);
   await page.getByTestId('align-top').click();
   expect((await elements(page)).map((e) => e.pos[1])).toEqual([0, 0, 0]);
-});
-
-test('Arrange circuit lays out an RC low-pass and says so', async ({ page }) => {
-  await open(
-    page,
-    'v 0 0 64 0 0 1 1000 5 0 0 0.5\nr 160 64 160 128 0 1000\nc 288 160 288 96 0 1e-6 0 0.001\n' +
-      'g 0 160 0 192 0 0\nw 64 0 160 64 0\nw 160 128 288 96 0\nw 0 0 0 160 0\nw 288 160 288 224 0\n' +
-      'g 288 224 288 256 0 0\n',
-  );
-  await page.getByTestId('edit-menu').click();
-  await page.getByTestId('menu-arrange').click();
-  await expect(page.getByTestId('toast')).toContainText('Arranged');
-  const r = (await elements(page)).find((e) => e.cls === 'ResistorElm');
-  expect(r?.pos[1]).toBe(r?.pos[3]);
-  await page.keyboard.press('Control+z');
-  expect((await elements(page)).find((e) => e.cls === 'ResistorElm')?.pos).toEqual([
-    160, 64, 160, 128,
-  ]);
 });
 
 test('Replace with… swaps a resistor for a capacitor on the same posts', async ({ page }) => {
