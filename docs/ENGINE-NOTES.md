@@ -448,6 +448,17 @@ Crout LU, in place, with partial pivoting and **no scaling**:
    - if `j != n-1`, scale `a[i][j]` for `i > j` by `1.0/a[j][j]` (multiply by reciprocal, not divide)
      (`:1787-1791`).
 
+Perun's `luFactorDense` (packages/engine/src/lu.ts) gets the same result with far less work:
+circuit matrices are almost all zeros (a transistor-level LM324 has 69 rows, 280 nonzeros before
+factoring and under 1000 after), so it keeps each column of L as a list of its nonzero rows and,
+for column `j`, takes `a[i][k]*a[k][j]` off only the rows in column `k`'s list, for each nonzero
+`a[k][j]` with `k` rising. Every entry gets upstream's subtractions in upstream's order, minus the
+ones with a zero factor, which change nothing for finite values (at most the sign of an exact zero).
+Rows are swapped by reference. If any value turns infinite or NaN, it restores the input and runs
+upstream's loops (`luFactorDenseFull`), so NaNs spread as upstream's do. Unit tests compare the two
+on random sparse matrices (with NaN, infinity and overflow), and all 373 examples give bit-identical
+node voltages over 1000 steps.
+
 ### Dense: `lu_solve_dense` (`SimulationManager.java:1809-1844`)
 
 ```

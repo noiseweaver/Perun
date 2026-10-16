@@ -65,6 +65,17 @@ export interface LabelEntry {
 export const SolverType = { AUTO: 0, DENSE: 1, SPARSE: 2 } as const;
 export type SolverType = (typeof SolverType)[keyof typeof SolverType];
 
+/**
+ * A row of `n` zeros stored as doubles from the start. `new Array(n).fill(0)` starts out holding
+ * small integers and only some rows ever get a fraction, so loops over the matrix would see rows
+ * of two kinds and run several times slower.
+ */
+function zeroRow(n: number): number[] {
+  const row: number[] = [];
+  for (let i = 0; i !== n; i++) row.push(0.5);
+  return row.fill(0);
+}
+
 /** Matrices of this many rows or more use the sparse LU when the solver is AUTO. */
 export const SPARSE_THRESHOLD = 150;
 
@@ -710,9 +721,9 @@ export class Simulation {
     const matrices = this.matrices as CircuitMatrix[];
     for (const m of matrices) {
       const sz = m.size;
-      m.matrix = Array.from({ length: sz }, () => new Array<number>(sz).fill(0));
-      m.rightSide = new Array<number>(sz).fill(0);
-      m.origMatrix = Array.from({ length: sz }, () => new Array<number>(sz).fill(0));
+      m.matrix = Array.from({ length: sz }, () => zeroRow(sz));
+      m.rightSide = zeroRow(sz);
+      m.origMatrix = Array.from({ length: sz }, () => zeroRow(sz));
       m.origRightSide = new Array<number>(sz).fill(0);
       m.permute = new Array<number>(sz).fill(0);
       m.nodeVoltages = new Array<number>(m.nodeCount).fill(0);
@@ -973,8 +984,14 @@ export class Simulation {
         for (const m of matrices) {
           for (let i = 0; i !== m.size; i++) m.rightSide[i] = m.origRightSide[i];
           if (m.nonLinear) {
-            for (let i = 0; i !== m.size; i++)
-              for (let j = 0; j !== m.size; j++) m.matrix[i][j] = m.origMatrix[i][j];
+            const size = m.size;
+            const matrix = m.matrix;
+            const orig = m.origMatrix;
+            for (let i = 0; i !== size; i++) {
+              const row = matrix[i];
+              const origRow = orig[i];
+              for (let j = 0; j !== size; j++) row[j] = origRow[j];
+            }
           }
         }
         for (const e of elmArr) e.doStep();
