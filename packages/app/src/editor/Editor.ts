@@ -22,6 +22,7 @@ import type { Circuit } from '@perun/format';
 import {
   alignOffsets,
   alignUnits,
+  type Unit,
   spreadOffsets,
   type AlignKind,
   type Offset,
@@ -1120,13 +1121,13 @@ export class Editor {
 
   /** Can the selection be lined up (two parts or more) or spread out (three or more)? */
   alignable(): { align: boolean; spread: boolean } {
-    const n = alignUnits(this.selectedElements()).length;
+    const n = alignUnits(this.selectedElements(), this.elements).length;
     return { align: n >= 2, spread: n >= 3 };
   }
 
   /** Line the selected parts up along an edge or centre. */
   align(kind: AlignKind): 'moved' | 'unchanged' | 'refused' | 'none' {
-    const units = alignUnits(this.selectedElements());
+    const units = alignUnits(this.selectedElements(), this.elements);
     if (units.length < 2) return 'none';
     const bbox = (e: CircuitElm): Rect | null => this.host.bbox(e);
     return this.moveUnits('Align', alignOffsets(units, kind, this.circuit.sim.gridSize, bbox));
@@ -1134,7 +1135,7 @@ export class Editor {
 
   /** Spread the selected parts out evenly across or down. */
   spread(axis: SpreadAxis): 'moved' | 'unchanged' | 'refused' | 'none' {
-    const units = alignUnits(this.selectedElements());
+    const units = alignUnits(this.selectedElements(), this.elements);
     if (units.length < 3) return 'none';
     const bbox = (e: CircuitElm): Rect | null => this.host.bbox(e);
     return this.moveUnits('Spread', spreadOffsets(units, axis, this.circuit.sim.gridSize, bbox));
@@ -1144,32 +1145,57 @@ export class Editor {
    * Move parts by their own offsets, one undo step, their wires following each. If that would
    * change what connects to what (a post landing on another), nothing moves.
    */
-  private moveUnits(
-    label: string,
-    offsets: Map<CircuitElm, Offset>,
-  ): 'moved' | 'unchanged' | 'refused' {
+  private moveUnits(label: string, offsets: Map<Unit, Offset>): 'moved' | 'unchanged' | 'refused' {
     if (offsets.size === 0) return 'unchanged';
     const saved = this.circuit.dumpXml();
     const before = connectivity(this.elements);
     const selected = new Set(this.selectedElements());
     this.history.begin(label);
     let moved = false;
-    for (const [e, { dx, dy }] of offsets) {
-      if (!e.allowMove(dx, dy, this.elements)) continue;
-      // each part takes its own wires along
-      for (const ce of this.elements) ce.selected = ce === e;
+    let blocked = false;
+    for (const [unit, { dx, dy }] of offsets) {
+      if (!unit.every((e) => e.allowMove(dx, dy, this.elements))) {
+        blocked = true;
+        break;
+      }
+      // each unit takes its own wires along
+      const mine = new Set(unit);
+      for (const ce of this.elements) ce.selected = mine.has(ce);
       const follow = this.wiresFollow ? WireFollow.start(this.elements) : null;
-      e.move(dx, dy);
+      // a part staying put with a post straight on one of ours gets a wire to where it went
+      const bridges: { x: number; y: number }[] = [];
+      for (const e of unit)
+        for (let i = 0; i !== e.getPostCount(); i++) {
+          const p = e.getPost(i);
+          const held = this.elements.some((o) => {
+            if (mine.has(o) || o instanceof WireElm) return false;
+            for (let k = 0; k !== o.getPostCount(); k++) {
+              const q = o.getPost(k);
+              if (q.x === p.x && q.y === p.y) return true;
+            }
+            return false;
+          });
+          if (held && !bridges.some((b) => b.x === p.x && b.y === p.y))
+            bridges.push({ x: p.x, y: p.y });
+        }
+      for (const e of unit) e.move(dx, dy);
       follow?.apply(dx, dy, true);
       follow?.finish();
+      for (const b of bridges) {
+        const w = constructElement('WireElm', b.x, b.y, this.circuit.sim);
+        if (!(w instanceof WireElm)) continue;
+        w.drag(b.x + dx, b.y + dy);
+        this.elements.push(w);
+      }
       moved = true;
     }
     for (const ce of this.elements) ce.selected = selected.has(ce);
-    if (!moved) {
+    if (!moved && !blocked) {
       this.history.cancel();
       return 'unchanged';
     }
-    if (connectivity(this.elements) !== before) {
+    // one part would land on another, or a post on a post: none of it
+    if (blocked || connectivity(this.elements) !== before) {
       this.history.cancel();
       this.forgetElements();
       this.host.restore(saved);

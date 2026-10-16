@@ -866,7 +866,7 @@ export class SimController {
       canPaste: ed.hasClipboard,
       revision: prev.revision + (propertiesChanged ? 1 : 0),
       moving: ed.isMoving,
-      alignCount: alignUnits(sel).length,
+      alignCount: alignUnits(sel, this.circuit.elements).length,
     };
     if (
       next.addClass !== prev.addClass ||
@@ -1835,7 +1835,11 @@ export class SimController {
 
   private alignToast(r: 'moved' | 'unchanged' | 'refused' | 'none'): void {
     if (r === 'refused')
-      showToast(t('Nothing moved: lining these up would have changed a connection.'));
+      showToast(
+        t(
+          'Nothing moved: lining these up would have put parts on top of each other or changed a connection.',
+        ),
+      );
     else if (r === 'unchanged') showToast(t('Already lined up.'));
     this.publishEditor();
   }

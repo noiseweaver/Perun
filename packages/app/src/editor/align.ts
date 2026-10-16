@@ -16,9 +16,75 @@ export interface Offset {
   dy: number;
 }
 
-/** The selected elements that line up: everything but wires. */
-export function alignUnits(selected: readonly CircuitElm[]): CircuitElm[] {
-  return selected.filter((e) => !(e instanceof WireElm));
+/**
+ * What lines up as one: a selected part with any selected part whose post sits on one of its
+ * posts (no wire between), and the one-post parts (ground, rails, labels) on its posts, which
+ * go along. Wires are never units: they follow.
+ */
+export type Unit = readonly CircuitElm[];
+
+export function alignUnits(
+  selected: readonly CircuitElm[],
+  all: readonly CircuitElm[] = selected,
+): Unit[] {
+  const parts = selected.filter((e) => !(e instanceof WireElm));
+  const key = (p: { x: number; y: number }): string => `${p.x},${p.y}`;
+  const posts = (e: CircuitElm): string[] => {
+    const out: string[] = [];
+    for (let i = 0; i !== e.getPostCount(); i++) out.push(key(e.getPost(i)));
+    return out;
+  };
+  // parts touching post to post join up
+  const group = new Map<CircuitElm, number>();
+  const at = new Map<string, CircuitElm[]>();
+  for (const e of parts)
+    for (const k of posts(e)) {
+      const l = at.get(k);
+      if (l === undefined) at.set(k, [e]);
+      else l.push(e);
+    }
+  const units: CircuitElm[][] = [];
+  for (const e of parts) {
+    if (group.has(e)) continue;
+    const unit: CircuitElm[] = [];
+    group.set(e, units.length);
+    const stack = [e];
+    while (stack.length > 0) {
+      const cur = stack.pop();
+      if (cur === undefined) break;
+      unit.push(cur);
+      for (const k of posts(cur))
+        for (const nb of at.get(k) ?? [])
+          if (!group.has(nb)) {
+            group.set(nb, units.length);
+            stack.push(nb);
+          }
+    }
+    units.push(unit);
+  }
+  // unselected one-post parts on a unit's posts go with it
+  const inUnit = new Map<string, number>();
+  units.forEach((u, i) => {
+    for (const e of u) for (const k of posts(e)) inUnit.set(k, i);
+  });
+  for (const e of all) {
+    if (group.has(e) || e instanceof WireElm || e.getPostCount() !== 1) continue;
+    const i = inUnit.get(key(e.getPost(0)));
+    if (i !== undefined) units[i].push(e);
+  }
+  return units;
+}
+
+/** The box a unit lines up by: its parts', leaving out the one-post parts riding along. */
+export function unitExtent(unit: Unit, bbox: (e: CircuitElm) => Rect | null): Rect {
+  const main = unit.filter((e) => e.getPostCount() !== 1);
+  const rs = (main.length > 0 ? main : unit).map((e) => extent(e, bbox));
+  return rs.reduce((a, r) => ({
+    x1: Math.min(a.x1, r.x1),
+    y1: Math.min(a.y1, r.y1),
+    x2: Math.max(a.x2, r.x2),
+    y2: Math.max(a.y2, r.y2),
+  }));
 }
 
 /** The box a part lines up by. */
@@ -50,14 +116,14 @@ const snap = (v: number, gs: number): number => Math.round(v / gs) * gs;
 
 /** How far each part moves to line up (parts already in line are left out). */
 export function alignOffsets(
-  units: readonly CircuitElm[],
+  units: readonly Unit[],
   kind: AlignKind,
   gridSize: number,
   bbox: (e: CircuitElm) => Rect | null,
-): Map<CircuitElm, Offset> {
-  const out = new Map<CircuitElm, Offset>();
+): Map<Unit, Offset> {
+  const out = new Map<Unit, Offset>();
   if (units.length < 2) return out;
-  const rects = units.map((e) => extent(e, bbox));
+  const rects = units.map((u) => unitExtent(u, bbox));
   const horiz = kind === 'left' || kind === 'centre' || kind === 'right';
   const pos = (r: Rect): number =>
     kind === 'left'
@@ -89,15 +155,15 @@ export function alignOffsets(
  * (or, where they overlap, equal steps between centres).
  */
 export function spreadOffsets(
-  units: readonly CircuitElm[],
+  units: readonly Unit[],
   axis: SpreadAxis,
   gridSize: number,
   bbox: (e: CircuitElm) => Rect | null,
-): Map<CircuitElm, Offset> {
-  const out = new Map<CircuitElm, Offset>();
+): Map<Unit, Offset> {
+  const out = new Map<Unit, Offset>();
   if (units.length < 3) return out;
   const items = units.map((e) => {
-    const r = extent(e, bbox);
+    const r = unitExtent(e, bbox);
     const lo = axis === 'x' ? r.x1 : r.y1;
     const hi = axis === 'x' ? r.x2 : r.y2;
     return { e, lo, hi, mid: (lo + hi) / 2 };
@@ -107,7 +173,7 @@ export function spreadOffsets(
   const last = items[items.length - 1];
   const sizes = items.reduce((s, it) => s + (it.hi - it.lo), 0);
   const gap = (last.hi - first.lo - sizes) / (items.length - 1);
-  const set = (e: CircuitElm, d: number): void => {
+  const set = (e: Unit, d: number): void => {
     if (d !== 0) out.set(e, axis === 'x' ? { dx: d, dy: 0 } : { dx: 0, dy: d });
   };
   if (gap >= 0) {

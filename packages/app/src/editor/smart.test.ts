@@ -282,6 +282,27 @@ describe('align and spread', () => {
     expect(parts(circuit).map((e) => e.x)).toEqual([0, 160, 320]);
   });
 
+  it('takes the rails and grounds on a part along', () => {
+    // two op-amps with rails straight on their inputs, one further right and lower
+    const AMP = (x: number, y: number): string =>
+      `a ${x} ${y} ${x + 64} ${y} 8 15 -15 1000000 0 0 100000\n` +
+      `R ${x} ${y - 16} ${x - 48} ${y - 16} 0 0 40 6 0 0 0.5\n` +
+      `R ${x} ${y + 16} ${x - 48} ${y + 16} 0 0 40 5 0 0 0.5\n` +
+      `r ${x + 64} ${y} ${x + 64} ${y + 64} 0 1000\ng ${x + 64} ${y + 64} ${x + 64} ${y + 96} 0 0\n`;
+    const { circuit, ed } = setup(AMP(160, 96) + AMP(400, 256));
+    const amps = circuit.elements.filter((e) => e.getClassName() === 'OpAmpElm');
+    for (const a of amps) a.selected = true;
+    const sig = connectivity(circuit.elements);
+    expect(ed.align('left')).toBe('moved');
+    expect(amps.map((a) => a.x)).toEqual([160, 160]);
+    expect(connectivity(circuit.elements)).toBe(sig);
+    // everything selected: each op-amp with its rails, resistor and ground lines up as one
+    ed.history.undo();
+    ed.selectAll();
+    expect(ed.align('top')).toBe('moved');
+    expect(connectivity(circuit.elements)).toBe(sig);
+  });
+
   it('refuses a move that would join two parts', () => {
     const { circuit, ed } = setup('r 0 0 64 0 0 1000\nr 64 64 128 64 0 1000\n');
     ed.selectAll();
