@@ -76,6 +76,10 @@ export const EXTRA_KEYS = [
   'Reorder',
   'Drag to reorder, or use the arrow keys.',
   'Quick pick wheel',
+  'Tidy up',
+  'Tidied up. Wires: {before} → {after}. Parts moved: {parts}.',
+  'Already tidy.',
+  'Tidy up left the circuit as it was: it would have changed a connection.',
 ] as const;
 
 export const EXTRA: Record<string, readonly string[]> = {
@@ -150,6 +154,10 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Reordena',
     'Arrossega per reordenar, o fes servir les tecles de fletxa.',
     'Roda de selecció ràpida',
+    'Endreça',
+    'Endreçat. Fils: {before} → {after}. Peces mogudes: {parts}.',
+    'Ja està endreçat.',
+    'Endreça ha deixat el circuit com estava: hauria canviat una connexió.',
   ],
   csx: [
     'O aplikaci Perun',
@@ -222,6 +230,10 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Přeuspořádat',
     'Přetažením změníte pořadí, nebo použijte šipky.',
     'Kolečko rychlého výběru',
+    'Uklidit',
+    'Uklizeno. Vodiče: {before} → {after}. Přesunuté součástky: {parts}.',
+    'Už je uklizeno.',
+    'Úklid nechal obvod beze změny: změnil by se některý spoj.',
   ],
   da: [
     'Om Perun',
@@ -294,6 +306,10 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Omarranger',
     'Træk for at omarrangere, eller brug piletasterne.',
     'Hurtigvalgshjul',
+    'Ryd op',
+    'Ryddet op. Ledninger: {before} → {after}. Flyttede komponenter: {parts}.',
+    'Allerede ryddeligt.',
+    'Ryd op lod kredsløbet være: det ville have ændret en forbindelse.',
   ],
   de: [
     'Über Perun',
@@ -366,6 +382,10 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Neu anordnen',
     'Zum Neuanordnen ziehen oder die Pfeiltasten verwenden.',
     'Schnellauswahlrad',
+    'Aufräumen',
+    'Aufgeräumt. Leitungen: {before} → {after}. Verschobene Bauteile: {parts}.',
+    'Schon aufgeräumt.',
+    'Aufräumen hat die Schaltung unverändert gelassen: Es hätte eine Verbindung geändert.',
   ],
   es: [
     'Acerca de Perun',
@@ -438,6 +458,10 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Reordenar',
     'Arrastra para reordenar o usa las teclas de flecha.',
     'Rueda de selección rápida',
+    'Ordenar',
+    'Ordenado. Cables: {before} → {after}. Componentes movidos: {parts}.',
+    'Ya está ordenado.',
+    'Ordenar dejó el circuito como estaba: habría cambiado una conexión.',
   ],
   fi: [
     'Tietoja Perunista',
@@ -510,6 +534,10 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Järjestä',
     'Järjestä vetämällä tai nuolinäppäimillä.',
     'Pikavalintakiekko',
+    'Siisti',
+    'Siistitty. Johtimet: {before} → {after}. Siirretyt osat: {parts}.',
+    'Jo siisti.',
+    'Siistiminen jätti piirin ennalleen: se olisi muuttanut kytkentää.',
   ],
   fr: [
     'À propos de Perun',
@@ -582,6 +610,10 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Réorganiser',
     'Faites glisser pour réorganiser, ou utilisez les flèches.',
     'Roue de sélection rapide',
+    'Ranger',
+    'Rangé. Fils : {before} → {after}. Composants déplacés : {parts}.',
+    'Déjà rangé.',
+    'Le rangement a laissé le circuit tel quel : il aurait modifié une connexion.',
   ],
   it: [
     'Informazioni su Perun',
@@ -654,6 +686,10 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Riordina',
     'Trascina per riordinare, o usa i tasti freccia.',
     'Ruota di selezione rapida',
+    'Riordina',
+    'Riordinato. Fili: {before} → {after}. Componenti spostati: {parts}.',
+    'Già in ordine.',
+    'Riordina ha lasciato il circuito com’era: avrebbe cambiato un collegamento.',
   ],
   ja: [
     'Perun について',
@@ -726,6 +762,10 @@ export const EXTRA: Record<string, readonly string[]> = {
     '並べ替え',
     'ドラッグするか矢印キーで並べ替えます。',
     'クイック選択ホイール',
+    '整理',
+    '整理しました。配線: {before} → {after}。移動した部品: {parts}。',
+    'すでに整理されています。',
+    '整理を取りやめました: 接続が変わってしまうためです。',
   ],
   kr: [
     'Perun 정보',
@@ -798,6 +838,10 @@ export const EXTRA: Record<string, readonly string[]> = {
     '순서 변경',
     '끌어서 순서를 바꾸거나 화살표 키를 사용하세요.',
     '빠른 선택 휠',
+    '정리',
+    '정리했습니다. 전선: {before} → {after}. 옮긴 부품: {parts}.',
+    '이미 정리되어 있습니다.',
+    '정리하지 않았습니다: 연결이 바뀌게 됩니다.',
   ],
   nb: [
     'Om Perun',
@@ -870,6 +914,10 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Endre rekkefølge',
     'Dra for å endre rekkefølge, eller bruk piltastene.',
     'Hurtigvalghjul',
+    'Rydd opp',
+    'Ryddet. Ledninger: {before} → {after}. Flyttede komponenter: {parts}.',
+    'Allerede ryddig.',
+    'Rydd opp lot kretsen være som den var: den ville ha endret en tilkobling.',
   ],
   pl: [
     'O aplikacji Perun',
@@ -942,6 +990,10 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Zmień kolejność',
     'Przeciągnij, aby zmienić kolejność, lub użyj strzałek.',
     'Koło szybkiego wyboru',
+    'Uporządkuj',
+    'Uporządkowano. Przewody: {before} → {after}. Przesunięte elementy: {parts}.',
+    'Już uporządkowane.',
+    'Porządkowanie zostawiło obwód bez zmian: zmieniłoby jakieś połączenie.',
   ],
   pt: [
     'Sobre o Perun',
@@ -1014,6 +1066,10 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Reordenar',
     'Arraste para reordenar ou use as teclas de seta.',
     'Roda de seleção rápida',
+    'Arrumar',
+    'Arrumado. Fios: {before} → {after}. Componentes movidos: {parts}.',
+    'Já está arrumado.',
+    'Arrumar deixou o circuito como estava: teria mudado uma ligação.',
   ],
   ru: [
     'О Perun',
@@ -1086,6 +1142,10 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Упорядочить',
     'Перетащите, чтобы изменить порядок, или используйте стрелки.',
     'Колесо быстрого выбора',
+    'Навести порядок',
+    'Порядок наведён. Провода: {before} → {after}. Сдвинуто деталей: {parts}.',
+    'Уже всё аккуратно.',
+    'Схема оставлена как была: иначе изменилось бы соединение.',
   ],
   zh: [
     '关于 Perun',
@@ -1158,6 +1218,10 @@ export const EXTRA: Record<string, readonly string[]> = {
     '重新排序',
     '拖动或使用方向键重新排序。',
     '快速选择轮盘',
+    '整理',
+    '已整理。导线：{before} → {after}。移动的元件：{parts}。',
+    '已经很整齐了。',
+    '未进行整理：否则会改变连接。',
   ],
   'zh-tw': [
     '關於 Perun',
@@ -1230,6 +1294,10 @@ export const EXTRA: Record<string, readonly string[]> = {
     '重新排序',
     '拖曳或使用方向鍵重新排序。',
     '快速選擇輪盤',
+    '整理',
+    '已整理。導線：{before} → {after}。移動的元件：{parts}。',
+    '已經很整齊了。',
+    '整理未進行：否則會改變連接。',
   ],
 };
 

@@ -20,6 +20,7 @@ import {
 } from '@perun/elements';
 import type { Circuit } from '@perun/format';
 import { History } from './History.ts';
+import { connectivity, tidy, type TidyResult } from './tidy.ts';
 import { WireFollow } from './wireFollow.ts';
 
 export const MouseMode = {
@@ -1012,6 +1013,42 @@ export class Editor {
     });
     this.host.circuitChanged();
     return true;
+  }
+
+  /**
+   * Tidy up the selection, or the whole circuit when nothing is selected (not in upstream):
+   * straighten wires, remove kinks and nudge parts into line. What connects to what never
+   * changes; if a check after the tidy finds it did, the circuit is put back. Null: put back.
+   */
+  tidyUp(): TidyResult | null {
+    const only = this.countSelected() > 0 ? new Set(this.selectedElements()) : null;
+    // wires a scope plots stay, so the scope keeps its trace
+    const keep = new Set<CircuitElm>();
+    for (const s of [...this.circuit.scopes.scopes, ...this.circuit.undockedScopes()])
+      for (const p of s.plots) if (p.elm !== null) keep.add(p.elm);
+    const saved = this.circuit.dumpXml();
+    const before = connectivity(this.elements);
+    this.history.begin('Tidy up');
+    const result = tidy(this.circuit.elements, {
+      gridSize: this.circuit.sim.gridSize,
+      bbox: (e) => this.host.bbox(e),
+      only,
+      keep,
+    });
+    if (result.changed && connectivity(this.elements) !== before) {
+      this.history.cancel();
+      this.forgetElements();
+      this.host.restore(saved);
+      return null;
+    }
+    if (result.changed) {
+      this.history.touch();
+      this.forgetElements();
+    }
+    this.history.commit();
+    this.host.circuitChanged();
+    this.host.selectionChanged();
+    return result;
   }
 
   /** Split the wire under the mouse at the grid point nearest (gx, gy). */

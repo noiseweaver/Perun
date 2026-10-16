@@ -301,6 +301,12 @@ export function AppBar() {
           <Item label="Mirror Y" icon="flip" turned onSelect={() => ed.mirrorY()} />
           <Item label="Rotate CCW" icon="rotateLeft" onSelect={() => ed.rotateCCW()} />
           <Item label="Rotate CW" icon="rotateRight" onSelect={() => ed.rotateCW()} />
+          <Item
+            label="Tidy up"
+            icon="tidy"
+            testId="menu-tidy-up"
+            onSelect={() => controller.tidyUp()}
+          />
           <Menu.Separator className="menu-separator" />
           <Item label="Centre Circuit" icon="fit" onSelect={() => controller.fit()} />
         </AppMenu>
