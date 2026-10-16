@@ -653,6 +653,13 @@ export class MosfetElm extends CircuitElm {
       this.model = models[ei.choice?.selected ?? 0];
       this.modelName = this.model.name;
       this.setLastModelName(this.modelName);
+      // a named part brings its own polarity (not in upstream, audioParts.ts)
+      const part = this.model.part;
+      if (part !== null && part.pnp !== this.pnp) {
+        this.pnp = part.pnp;
+        this.flags =
+          part.pnp === -1 ? this.flags | MosfetElm.FLAG_PNP : this.flags & ~MosfetElm.FLAG_PNP;
+      }
       this.setup();
       ei.newDialog = true;
     } else {

@@ -688,6 +688,15 @@ export class TransistorElm extends CircuitElm {
       const models = this.models ?? modelsFor(this.sim).transistor.getModelList();
       this.model = models[ei.choice?.selected ?? 0];
       this.modelName = this.model.name;
+      // a named part brings its own beta and polarity (not in upstream, audioParts.ts)
+      const part = this.model.part;
+      if (part !== null) {
+        this.beta = part.beta;
+        if (this.pnp !== part.pnp) {
+          this.pnp = part.pnp;
+          this.setPoints();
+        }
+      }
       this.setup();
       ei.newDialog = true;
       return;

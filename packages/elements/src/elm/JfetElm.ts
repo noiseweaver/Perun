@@ -9,6 +9,7 @@
 import type { ElementType } from '../CircuitElm.ts';
 import { elementType } from '../CircuitElm.ts';
 import type { EditInfo } from '../edit/EditInfo.ts';
+import type { DiodeModel } from '../models/DiodeModel.ts';
 import { modelsFor } from '../models/ModelLibrary.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import { Diode } from './Diode.ts';
@@ -29,7 +30,17 @@ export class JfetElm extends MosfetElm {
   private setupDiode(): void {
     this.noDiagonal = true;
     this.diode = new Diode(this);
-    this.diode.setup(modelsFor(this.sim).diode.getDefaultModel());
+    this.diode.setup(this.gateDiodeModel());
+  }
+
+  /** Upstream's default diode, or the model's own gate junction (not in upstream, see gateSatCur). */
+  protected gateDiodeModel(): DiodeModel {
+    return this.model?.gateDiodeModel() ?? modelsFor(this.sim).diode.getDefaultModel();
+  }
+
+  override setup(): void {
+    super.setup();
+    this.diode.setup(this.gateDiodeModel());
   }
 
   override initNew(): void {
@@ -123,7 +134,7 @@ export class PJfetElm extends JfetElm {
     this.initMosfet(true);
     this.diode = new Diode(this);
     this.noDiagonal = true;
-    this.diode.setup(modelsFor(this.sim).diode.getDefaultModel());
+    this.diode.setup(this.gateDiodeModel());
   }
 }
 

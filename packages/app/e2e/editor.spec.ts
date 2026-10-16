@@ -528,6 +528,28 @@ test('a diode gets a new model from the model dialog', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Edit Model' })).toBeVisible();
 });
 
+test('an op-amp gets its own model from the model dialog', async ({ page }) => {
+  await open(page, '$ 1 0.000005 10.2 50 5 50 5e-11\n409 208 224 400 224 0 0.6 0 0.0231 0\n');
+  await clickCircuit(page, 304, 224);
+  await page.getByRole('button', { name: 'Create New Model' }).click();
+  const dialog = page.getByTestId('model-dialog');
+  await expect(dialog).toBeVisible();
+  await expect(page.getByRole('dialog')).toContainText('Edit Op-Amp Model');
+  await dialog.getByLabel('Model Name').fill('my fuzz op-amp');
+  await dialog.getByLabel('Slew Rate (V/usec)').fill('5');
+  await page.getByTestId('model-dialog-ok').click();
+  await expect(dialog).toHaveCount(0);
+  const model = await page.evaluate(() => {
+    const e = window.perun?.controller.circuit.elements[0] as unknown as {
+      model: { name: string; slewRate: number } | null;
+    };
+    return e.model === null ? null : [e.model.name, e.model.slewRate];
+  });
+  expect(model).toEqual(['my fuzz op-amp', 5]);
+  await expect(page.getByTestId('field-0').locator('option:checked')).toHaveText('my fuzz op-amp');
+  await expect(page.getByRole('button', { name: 'Edit Model' })).toBeVisible();
+});
+
 test.describe('drag to select on a touch screen', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 

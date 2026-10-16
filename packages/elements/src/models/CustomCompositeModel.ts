@@ -215,6 +215,7 @@ export class CustomCompositeModel {
       root.appendChild(child);
       if (child.name === 'dm') models.diode.undumpModelXml(cr);
       else if (child.name === 'rlm') models.relay.undumpModelXml(cr);
+      else if (child.name === 'om') models.opamp.undumpModelXml(cr);
       else if (child.name === 'tm') models.transistor.undumpModelXml(cr);
       else if (child.name === 'mm') models.mosfet.undumpModelXml(cr);
       else if (child.name === 'ccm') models.composite.undumpModelXml(cr, sim);

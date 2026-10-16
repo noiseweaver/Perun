@@ -6,6 +6,7 @@ import { CustomCompositeModels } from './CustomCompositeModel.ts';
 import { CustomLogicModels } from './CustomLogicModel.ts';
 import { DiodeModels } from './DiodeModel.ts';
 import { MosfetModels } from './MosfetModel.ts';
+import { OpAmpModels } from './OpAmpModel.ts';
 import { RelayModels } from './RelayModel.ts';
 import { TransistorModels } from './TransistorModel.ts';
 
@@ -19,6 +20,8 @@ export class ModelLibrary {
   readonly transistor = new TransistorModels();
   readonly mosfet = new MosfetModels();
   readonly relay = new RelayModels();
+  /** Behavioural op-amp models (not in upstream). */
+  readonly opamp = new OpAmpModels();
   readonly composite = new CustomCompositeModels();
   readonly customLogic = new CustomLogicModels();
   /**
@@ -38,6 +41,7 @@ export class ModelLibrary {
     this.transistor.clearDumpedFlags();
     this.mosfet.clearDumpedFlags();
     this.relay.clearDumpedFlags();
+    this.opamp.clearDumpedFlags();
     this.composite.clearDumpedFlags();
     this.customLogic.clearDumpedFlags();
   }

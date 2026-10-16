@@ -12,6 +12,8 @@ import { unescapeToken } from '../escape.ts';
 import { parseJavaDouble, parseJavaInt } from '../java.ts';
 import type { StringTokenizer } from '../StringTokenizer.ts';
 import type { XmlAttrReader, XmlDocWriter } from '../xml.ts';
+import { DiodeModel } from './DiodeModel.ts';
+import { JFET_PARTS, type JfetPart, MOSFET_PARTS, type MosfetPart } from './audioParts.ts';
 
 /** Java `String.compareTo` order on model names (UTF-16 code units), for the model lists. */
 function compareNames(a: { name: string }, b: { name: string }): number {
@@ -34,6 +36,14 @@ export class MosfetModel implements Editable {
   capGS = 0;
   /** Gate-drain capacitance (F), 0 = disabled. */
   capGD = 0;
+  /**
+   * JFET gate junction saturation current (A); 0 = upstream's default diode. Not in upstream
+   * (docs/deviations/audio-part-library.md): saved as an extra attribute CircuitJS1 ignores.
+   */
+  gateSatCur = 0;
+  /** A named part's polarity (audioParts.ts), which picking the part applies. Not saved. */
+  part: { pnp: number } | null = null;
+  private gateDiodeCache: DiodeModel | null = null;
   showBulk = true;
   /** Draw as a simple digital-logic symbol (only if !showBulk). */
   digitalSymbol = false;
@@ -68,6 +78,7 @@ export class MosfetModel implements Editable {
     m.lambda = copy.lambda;
     m.capGS = copy.capGS;
     m.capGD = copy.capGD;
+    m.gateSatCur = copy.gateSatCur;
     m.showBulk = copy.showBulk;
     m.digitalSymbol = copy.digitalSymbol;
     m.bodyDiode = copy.bodyDiode;
@@ -78,6 +89,36 @@ export class MosfetModel implements Editable {
 
   isJfet(): boolean {
     return (this.flags & MosfetModel.FLAG_JFET) !== 0;
+  }
+
+  /** A named JFET (audioParts.ts). Upstream's beta is SPICE's KP, twice SPICE's JFET BETA. */
+  static ofJfetPart(p: JfetPart): MosfetModel {
+    const m = new MosfetModel(p.description, p.vto, 2 * p.beta).setJfet();
+    m.lambda = p.lambda;
+    m.capGS = p.cgs;
+    m.capGD = p.cgd;
+    m.gateSatCur = p.is;
+    m.showBulk = m.bodyDiode = false;
+    m.part = { pnp: p.pnp ? -1 : 1 };
+    return m;
+  }
+
+  /** A named MOSFET (audioParts.ts), N-channel with its body diode. */
+  static ofMosfetPart(p: MosfetPart): MosfetModel {
+    const m = new MosfetModel(p.description, p.vto, p.kp);
+    m.lambda = p.lambda;
+    m.capGS = p.cgs;
+    m.capGD = p.cgd;
+    m.part = { pnp: 1 };
+    return m;
+  }
+
+  /** The JFET gate junction for gateSatCur (emission coefficient 1), or null for the default. */
+  gateDiodeModel(): DiodeModel | null {
+    if (this.gateSatCur <= 0) return null;
+    if (this.gateDiodeCache?.saturationCurrent !== this.gateSatCur)
+      this.gateDiodeCache = new DiodeModel(this.gateSatCur, 0, 1, 0, null);
+    return this.gateDiodeCache;
   }
 
   /** Name and description, as the model choice lists them. */
@@ -127,6 +168,7 @@ export class MosfetModel implements Editable {
     if (this.lambda !== 0) w.dumpAttr('la', this.lambda);
     if (this.capGS !== 0) w.dumpAttr('cgs', this.capGS);
     if (this.capGD !== 0) w.dumpAttr('cgd', this.capGD);
+    if (this.gateSatCur !== 0) w.dumpAttr('gis', this.gateSatCur);
     w.dumpAttr('sb', this.showBulk ? 1 : 0);
     w.dumpAttr('dsy', this.digitalSymbol ? 1 : 0);
     w.dumpAttr('bd', this.bodyDiode ? 1 : 0);
@@ -158,7 +200,9 @@ export class MosfetModel implements Editable {
     }
     if (n === idx++) return new EditInfo('Lambda', this.lambda).setDimensionless().setNewColumn();
     if (n === idx++) return new EditInfo('Gate-Source Capacitance (Cgs)', this.capGS);
-    if (n === idx) return new EditInfo('Gate-Drain Capacitance (Cgd)', this.capGD);
+    if (n === idx++) return new EditInfo('Gate-Drain Capacitance (Cgd)', this.capGD);
+    if (this.isJfet() && n === idx)
+      return new EditInfo('Gate Saturation Current (IS), 0 = default', this.gateSatCur);
     return null;
   }
 
@@ -195,6 +239,8 @@ export class MosfetModel implements Editable {
     if (n === idx) this.lambda = ei.value >= 0 ? ei.value : this.lambda;
     else if (n === idx + 1) this.capGS = ei.value >= 0 ? ei.value : this.capGS;
     else if (n === idx + 2) this.capGD = ei.value >= 0 ? ei.value : this.capGD;
+    else if (n === idx + 3 && this.isJfet())
+      this.gateSatCur = ei.value >= 0 ? ei.value : this.gateSatCur;
   }
 
   pickName(): void {
@@ -211,6 +257,7 @@ export class MosfetModel implements Editable {
     this.lambda = r.parseDoubleAttr('la', this.lambda);
     this.capGS = r.parseDoubleAttr('cgs', this.capGS);
     this.capGD = r.parseDoubleAttr('cgd', this.capGD);
+    this.gateSatCur = r.parseDoubleAttr('gis', this.gateSatCur);
     this.showBulk = r.parseIntAttr('sb', this.showBulk ? 1 : 0) !== 0;
     this.digitalSymbol = r.parseIntAttr('dsy', this.digitalSymbol ? 1 : 0) !== 0;
     this.bodyDiode = r.parseIntAttr('bd', this.bodyDiode ? 1 : 0) !== 0;
@@ -239,6 +286,17 @@ export class MosfetModels {
     const jfetDefault = new MosfetModel('default-jfet', -4, 0.00125).setJfet();
     jfetDefault.showBulk = jfetDefault.bodyDiode = false;
     this.addDefaultModel('default-jfet', jfetDefault);
+
+    // named JFETs, not in upstream (audioParts.ts)
+    for (const p of JFET_PARTS) this.addPartModel(p.name, MosfetModel.ofJfetPart(p));
+    for (const p of MOSFET_PARTS) this.addPartModel(p.name, MosfetModel.ofMosfetPart(p));
+  }
+
+  /** Read-only like a default model, but saved into the circuit so CircuitJS1 can open it. */
+  private addPartModel(name: string, mm: MosfetModel): void {
+    this.modelMap.set(name, mm);
+    mm.readOnly = true;
+    mm.name = name;
   }
 
   private addDefaultModel(name: string, mm: MosfetModel): void {
