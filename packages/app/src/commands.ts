@@ -225,6 +225,8 @@ export function installShortcuts(): () => void {
     }
     if (e.key === ' ') {
       ed.setSelectMode();
+      // and a search box for a part at the mouse (not upstream)
+      controller.openPartSearchAtPointer();
       return done();
     }
     // keyboard selection: step through the elements

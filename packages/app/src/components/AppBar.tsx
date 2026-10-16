@@ -20,6 +20,7 @@ import { VALUE_SIZES, updateSettings, useApp, type CircuitDisplay } from '../sto
 import { openBode } from './BodeDialog.tsx';
 import { openDcPanel } from './DcPanel.tsx';
 import { openSweep } from './SweepDialog.tsx';
+import { ALIGN_ACTIONS } from './alignActions.ts';
 import { CategoryIcon } from './CategoryIcon.tsx';
 import { CircuitsSheet } from './CircuitsSheet.tsx';
 import { Icon, MenuIcon, type IconName } from './Icon.tsx';
@@ -301,6 +302,23 @@ export function AppBar() {
           <Item label="Mirror Y" icon="flip" turned onSelect={() => ed.mirrorY()} />
           <Item label="Rotate CCW" icon="rotateLeft" onSelect={() => ed.rotateCCW()} />
           <Item label="Rotate CW" icon="rotateRight" onSelect={() => ed.rotateCW()} />
+          <OptionsSub
+            label="Align"
+            icon="alignLeft"
+            testId="menu-align"
+            disabled={editor.alignCount < 2}
+          >
+            {ALIGN_ACTIONS.map((a) => (
+              <Item
+                key={a.testId}
+                label={a.label}
+                icon={a.icon}
+                testId={`menu-${a.testId}`}
+                disabled={editor.alignCount < (a.spread ? 3 : 2)}
+                onSelect={a.run}
+              />
+            ))}
+          </OptionsSub>
           <Item
             label="Tidy up"
             icon="tidy"
@@ -394,6 +412,30 @@ export function AppBar() {
             onCheckedChange={(v) => updateSettings({ wiresFollow: v })}
             title={t('Hold Alt while dragging to leave the wires behind')}
             testId="menu-wires-follow"
+          />
+          <CheckItem
+            label="Drop parts onto wires"
+            icon="splice"
+            checked={settings.spliceOnDrop}
+            onCheckedChange={(v) => updateSettings({ spliceOnDrop: v })}
+            title={t('A part dropped along a wire takes the place of the wire between its ends')}
+            testId="menu-splice"
+          />
+          <CheckItem
+            label="Alignment guides"
+            icon="guides"
+            checked={settings.smartGuides}
+            onCheckedChange={(v) => updateSettings({ smartGuides: v })}
+            title={t('Lines show what a dragged part lines up with')}
+            testId="menu-guides"
+          />
+          <CheckItem
+            label="Route new wires round parts"
+            icon="route"
+            checked={settings.routeWires}
+            onCheckedChange={(v) => updateSettings({ routeWires: v })}
+            title={t('Hold Alt while drawing for a straight wire')}
+            testId="menu-route-wires"
           />
           {/* the strip under the canvas is a phone's; elsewhere the palette has the quick picks */}
           {strip && (
@@ -661,7 +703,13 @@ function ThemeMenu({ themeInput }: { themeInput: RefObject<HTMLInputElement | nu
  * A submenu of Options. On a phone a submenu beside its menu runs off the screen, so there its
  * items unfold inside the menu instead.
  */
-function OptionsSub(props: { label: string; icon: IconName; testId: string; children: ReactNode }) {
+function OptionsSub(props: {
+  label: string;
+  icon: IconName;
+  testId: string;
+  disabled?: boolean;
+  children: ReactNode;
+}) {
   const narrow = useNarrow();
   const [open, setOpen] = useState(false);
   if (narrow)
@@ -669,6 +717,7 @@ function OptionsSub(props: { label: string; icon: IconName; testId: string; chil
       <>
         <Menu.Item
           className="menu-item"
+          disabled={props.disabled ?? false}
           data-testid={props.testId}
           aria-expanded={open}
           onSelect={(e) => {
@@ -685,7 +734,11 @@ function OptionsSub(props: { label: string; icon: IconName; testId: string; chil
     );
   return (
     <Menu.Sub>
-      <Menu.SubTrigger className="menu-item" data-testid={props.testId}>
+      <Menu.SubTrigger
+        className="menu-item"
+        disabled={props.disabled ?? false}
+        data-testid={props.testId}
+      >
         <MenuIcon name={props.icon} />
         {t(props.label)}
         <Icon name="chevronRight" className="icon menu-trailing" />

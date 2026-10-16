@@ -43,6 +43,12 @@ export interface UserSettings {
   wheelEdit: boolean;
   /** Wire ends on a dragged part's posts move with it (not in upstream; Alt detaches). */
   wiresFollow: boolean;
+  /** A two-post part dropped along a wire splices into it (not in upstream). */
+  spliceOnDrop: boolean;
+  /** Alignment guides while dragging (not in upstream). */
+  smartGuides: boolean;
+  /** A wire being drawn finds its way round parts (not in upstream; Alt draws it straight). */
+  routeWires: boolean;
   /** The quick pick bar: the rail beside the canvas and the strip under it on phones. */
   quickPickBar: boolean;
   /** Q, a right-button flick or a long press on empty canvas opens the radial wheel. */
@@ -94,6 +100,8 @@ export interface EditorState {
   revision: number;
   /** A drag on the canvas is moving something: the phone property sheet steps aside. */
   moving: boolean;
+  /** Selected parts that Align and Spread would move (everything but wires). */
+  alignCount: number;
 }
 
 /** The rewind timeline: the frames kept of the last seconds of the run, and the one shown. */
@@ -247,6 +255,9 @@ function loadSettings(): UserSettings {
     fields: NO_FIELDS,
     wheelEdit: true,
     wiresFollow: true,
+    spliceOnDrop: true,
+    smartGuides: true,
+    routeWires: true,
     quickPickBar: true,
     quickPickWheel: true,
     valueSize: 0.875,
@@ -282,6 +293,9 @@ function loadSettings(): UserSettings {
       fields: readFields(s) ?? defaults.fields,
       wheelEdit: typeof s.wheelEdit === 'boolean' ? s.wheelEdit : defaults.wheelEdit,
       wiresFollow: typeof s.wiresFollow === 'boolean' ? s.wiresFollow : defaults.wiresFollow,
+      spliceOnDrop: typeof s.spliceOnDrop === 'boolean' ? s.spliceOnDrop : defaults.spliceOnDrop,
+      smartGuides: typeof s.smartGuides === 'boolean' ? s.smartGuides : defaults.smartGuides,
+      routeWires: typeof s.routeWires === 'boolean' ? s.routeWires : defaults.routeWires,
       quickPickBar: typeof s.quickPickBar === 'boolean' ? s.quickPickBar : defaults.quickPickBar,
       quickPickWheel:
         typeof s.quickPickWheel === 'boolean' ? s.quickPickWheel : defaults.quickPickWheel,
@@ -398,6 +412,7 @@ export const useApp = create<AppState>(() => ({
     canPaste: false,
     revision: 0,
     moving: false,
+    alignCount: 0,
   },
   paletteOpen: initialPaletteOpen(),
   toast: null,

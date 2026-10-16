@@ -81,6 +81,7 @@ import {
   type EditorHost,
   type Modifiers,
 } from './editor/Editor.ts';
+import { alignUnits, type AlignKind, type SpreadAxis } from './editor/align.ts';
 import { ScopeRecorder } from './analysis/scopeRecord.ts';
 import { History, type StateRoots } from './rewind/history.ts';
 import { download } from './download.ts';
@@ -95,6 +96,8 @@ import {
   wheelItems,
   type WheelVia,
 } from './radialWheel.ts';
+import { closePartSearch, openPartSearch } from './partSearch.ts';
+import { paletteGroups } from './editor/catalog.ts';
 import {
   showToast,
   shownTheme,
@@ -230,7 +233,7 @@ export class SimController {
     });
     this.circuit.read('');
     this.editor = new Editor(this.circuit, this.makeHost());
-    this.editor.wiresFollow = useApp.getState().settings.wiresFollow;
+    this.applyEditSettings(useApp.getState().settings);
     this.annotations.onChange = () => this.publishTeach();
     this.editor.history.onChange = () => this.publishEditor();
     const stored = readClipboard();
@@ -508,6 +511,15 @@ export class SimController {
     }
   }
 
+  /** The editing switches in Options. */
+  private applyEditSettings(s: AppState['settings']): void {
+    const ed = this.editor;
+    ed.wiresFollow = s.wiresFollow;
+    ed.spliceOnDrop = s.spliceOnDrop;
+    ed.smartGuides = s.smartGuides;
+    ed.routeWires = s.routeWires;
+  }
+
   private onStore(s: AppState, prev: AppState): void {
     const theme = shownTheme(s);
     if (theme !== shownTheme(prev)) {
@@ -516,8 +528,7 @@ export class SimController {
       // X-Y plot images are drawn in theme colors as the simulation runs
       this.circuit.scopes.resetGraphs();
     }
-    if (s.settings.wiresFollow !== prev.settings.wiresFollow)
-      this.editor.wiresFollow = s.settings.wiresFollow;
+    if (s.settings !== prev.settings) this.applyEditSettings(s.settings);
     const o = this.circuit.options;
     // only changes made through the UI; a load sets the store from the circuit, not the reverse
     if (s.speed !== prev.speed) o.speed = s.speed;
@@ -839,6 +850,8 @@ export class SimController {
     if (r) {
       r.hovered = ed.mouseElm ?? this.scopeHoverElm ?? this.sliderHoverElm;
       r.pending = ed.dragElm;
+      r.pendingExtras = ed.dragExtras;
+      r.guides = ed.guides;
       r.selectionRect = ed.selectedArea;
     }
     const next: EditorState = {
@@ -852,6 +865,7 @@ export class SimController {
       canPaste: ed.hasClipboard,
       revision: prev.revision + (propertiesChanged ? 1 : 0),
       moving: ed.isMoving,
+      alignCount: alignUnits(sel, this.circuit.elements).length,
     };
     if (
       next.addClass !== prev.addClass ||
@@ -863,7 +877,8 @@ export class SimController {
       next.canRedo !== prev.canRedo ||
       next.canPaste !== prev.canPaste ||
       next.revision !== prev.revision ||
-      next.moving !== prev.moving
+      next.moving !== prev.moving ||
+      next.alignCount !== prev.alignCount
     )
       useApp.setState({ editor: next });
   }
@@ -1792,6 +1807,27 @@ export class SimController {
           parts: r.partsMoved,
         }),
       );
+    this.publishEditor();
+  }
+
+  /** Line the selected parts up (Edit > Align, the property panel's align buttons). */
+  align(kind: AlignKind): void {
+    this.alignToast(this.editor.align(kind));
+  }
+
+  /** Spread the selected parts out evenly. */
+  spread(axis: SpreadAxis): void {
+    this.alignToast(this.editor.spread(axis));
+  }
+
+  private alignToast(r: 'moved' | 'unchanged' | 'refused' | 'none'): void {
+    if (r === 'refused')
+      showToast(
+        t(
+          'Nothing moved: lining these up would have put parts on top of each other or changed a connection.',
+        ),
+      );
+    else if (r === 'unchanged') showToast(t('Already lined up.'));
     this.publishEditor();
   }
 
@@ -3338,6 +3374,81 @@ export class SimController {
     if (w === null) return;
     this.editor.placeAt(className, w.gx, w.gy, vertical);
     this.publishEditor();
+  }
+
+  /**
+   * Space: the part search at the mouse (not upstream), or in the middle of the canvas. False
+   * when it can't open (a subcircuit's parts are being looked at).
+   */
+  openPartSearchAtPointer(): boolean {
+    const r = this.renderer;
+    if (!r || this.viewStack.length > 0) return false;
+    const rect = r.canvas.getBoundingClientRect();
+    let m = lastPointer ?? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    let at = this.clientToCircuit(m.x, m.y);
+    if (at === null) {
+      m = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      at = this.clientToCircuit(m.x, m.y);
+    }
+    if (at === null) return false;
+    closeWheel();
+    this.editor.leave();
+    openPartSearch({ x: m.x, y: m.y, gx: at.x, gy: at.y, replace: null });
+    this.publishEditor();
+    return true;
+  }
+
+  /** The part search at a circuit point (the empty-canvas menu's search button). */
+  openPartSearchAt(gx: number, gy: number): void {
+    const r = this.renderer;
+    if (!r) return;
+    const rect = r.canvas.getBoundingClientRect();
+    const p = r.viewport.toScreen(gx, gy);
+    openPartSearch({ x: rect.left + p.x, y: rect.top + p.y, gx, gy, replace: null });
+  }
+
+  /** The radial wheel's search button: the search where the wheel opened. */
+  searchFromWheel(): void {
+    const w = useWheel.getState().wheel;
+    closeWheel();
+    if (w === null) return;
+    openPartSearch({ x: w.x, y: w.y, gx: w.gx, gy: w.gy, replace: null });
+  }
+
+  /** A part picked in the search goes where the search opened. */
+  placeFromSearch(className: string, gx: number, gy: number): void {
+    closePartSearch();
+    this.editor.placeAt(className, gx, gy, false);
+    this.publishEditor();
+  }
+
+  /** Replace with…: the search, listing only parts that fit this one's posts. */
+  openReplace(e: CircuitElm): void {
+    const r = this.renderer;
+    if (!r) return;
+    const b = viewFor(e)?.bbox(e);
+    const p = b ? r.viewport.toScreen((b.x1 + b.x2) / 2, b.y2) : { x: 0, y: 0 };
+    const rect = r.canvas.getBoundingClientRect();
+    openPartSearch({
+      x: rect.left + p.x,
+      y: rect.top + p.y + 12,
+      gx: e.x,
+      gy: e.y,
+      replace: e,
+    });
+  }
+
+  /** The palette classes that could take this part's place. */
+  replacements(e: CircuitElm): string[] {
+    const classes = paletteGroups().flatMap((g) => g.items.map((it) => it.className));
+    for (const name of useApp.getState().subcircuitModels)
+      classes.push(`CustomCompositeElm:${name}`);
+    return this.editor.replacementsFor(e, classes);
+  }
+
+  replaceWith(e: CircuitElm, className: string): void {
+    this.editor.replaceWith(e, className);
+    this.publishEditor(true);
   }
 
   clientToCircuit(clientX: number, clientY: number): { x: number; y: number } | null {

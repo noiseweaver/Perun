@@ -242,6 +242,17 @@ function Wheel({ wheel }: { wheel: WheelState }) {
         {litItem !== undefined ? tItem(litItem.label) : ''}
       </div>
       <div className="radial-wheel-actions" style={{ top: d + 32 }}>
+        <button
+          type="button"
+          className="radial-wheel-action"
+          aria-label={t('Search components')}
+          title={t('Search components')}
+          data-testid="wheel-search"
+          onClick={act(() => controller.searchFromWheel())}
+        >
+          <Icon name="search" size={20} />
+        </button>
+        <span className="radial-wheel-actions-divider" aria-hidden />
         {/* undo and redo leave the wheel open, to step back or forward more than once */}
         <button
           type="button"

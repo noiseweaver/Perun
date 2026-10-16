@@ -302,6 +302,36 @@ textarea,
   background: color-mix(in srgb, var(--ui-text) 10%, transparent);
 }
 
+/* the wheel's favorites in a row at the top of the empty-canvas menu */
+.menu-quick {
+  display: grid;
+  grid-template-columns: repeat(5, 44px);
+  justify-content: center;
+  gap: 2px;
+  padding: 0 8px;
+}
+
+.menu-quick-item {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 40px;
+  border-radius: var(--md-shape-full);
+  color: var(--ui-text-muted);
+  outline: none;
+  cursor: default;
+}
+
+.menu-quick-item[data-highlighted] {
+  color: var(--ui-text);
+  background: color-mix(in srgb, var(--ui-text) 10%, transparent);
+}
+
+.menu-quick-item canvas {
+  max-width: 40px;
+  max-height: 32px;
+}
+
 .menu-trailing {
   margin-left: auto;
   color: var(--ui-text-muted);
@@ -1926,6 +1956,24 @@ kbd,
   grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
   gap: 4px;
   margin: 8px 0 4px;
+}
+
+/* align and spread: a row of small icon buttons under the actions */
+.inspector-align {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  justify-items: center;
+  gap: 2px;
+  margin: 0 0 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--ui-border);
+}
+
+/* eight in a row on the narrowest panel */
+.inspector-align .icon-button {
+  width: 100%;
+  max-width: 36px;
+  height: 36px;
 }
 
 /* an inspector action: icon on a tonal circle with a short caption under it */
@@ -4450,4 +4498,73 @@ ul.theme-contrast {
   height: 24px;
   margin: 0 2px;
   background: var(--ui-border);
+}
+
+/* the part search at the pointer (Space, the wheel's search button, Replace with…) */
+.part-search {
+  position: fixed;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: var(--md-surface-container-high);
+  border-radius: var(--md-shape-m);
+  box-shadow: var(--md-elevation-2);
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--ui-text);
+  animation: radial-wheel-in 120ms var(--md-motion);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .part-search {
+    animation: none;
+  }
+}
+
+.part-search-field {
+  flex: none;
+  background: var(--md-surface-container-highest);
+  box-shadow: inset 0 0 0 1px var(--ui-border);
+}
+
+.part-search-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.part-search-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 8px;
+  border-radius: var(--md-shape-s);
+  cursor: pointer;
+}
+
+.part-search-item[aria-selected='true'] {
+  background: color-mix(in srgb, var(--ui-text) 10%, transparent);
+}
+
+.part-search-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.part-search-key {
+  font-family: var(--mono-font);
+  font-size: 12px;
+  color: var(--ui-text-muted);
+}
+
+.part-search-empty {
+  padding: 8px;
+  color: var(--ui-text-muted);
 }

@@ -19,7 +19,18 @@ import {
   type Rect,
 } from '@perun/elements';
 import type { Circuit } from '@perun/format';
+import {
+  alignOffsets,
+  alignUnits,
+  type Unit,
+  spreadOffsets,
+  type AlignKind,
+  type Offset,
+  type SpreadAxis,
+} from './align.ts';
+import { NO_GUIDES, alignmentGuides, type Guides } from './guides.ts';
 import { History } from './History.ts';
+import { RouteGrid, hasBody, leadDir, reverse, type Pt } from './route.ts';
 import { connectivity, tidy, type TidyResult } from './tidy.ts';
 import { WireFollow } from './wireFollow.ts';
 
@@ -116,6 +127,20 @@ export class Editor {
   private followDx = 0;
   private followDy = 0;
   private followDetached = false;
+  /** A two-post part dropped along a wire takes the place of the wire between its posts. */
+  spliceOnDrop = true;
+  /** Show alignment guides while dragging. */
+  smartGuides = true;
+  /** A wire being drawn finds its way round parts (Alt: straight, as upstream). */
+  routeWires = true;
+  /** Alignment guides for the current drag. */
+  guides: Guides = NO_GUIDES;
+  /** The rest of the wire being drawn when it is routed: its first leg is `dragElm`. */
+  dragExtras: WireElm[] = [];
+  /** The routing grid for the wire being drawn (the circuit doesn't change meanwhile). */
+  private routeGrid: RouteGrid | null = null;
+  /** Which way the pointer first moved when drawing a wire. */
+  private drawDir: number | null = null;
 
   constructor(
     readonly circuit: Circuit,
@@ -176,6 +201,7 @@ export class Editor {
    */
   paletteDragMove(className: string, pos: { x: number; y: number } | null, vertical: boolean) {
     if (pos === null) {
+      this.guides = NO_GUIDES;
       if (this.dragElm !== null) {
         this.dragElm = null;
         this.host.selectionChanged();
@@ -191,6 +217,7 @@ export class Editor {
     }
     this.dragElm?.dragPlace(ax, ay, vertical);
     this.mouseElm = null;
+    this.updateGuides();
     this.host.selectionChanged();
   }
 
@@ -198,14 +225,18 @@ export class Editor {
   paletteDragEnd(): CircuitElm | null {
     const de = this.dragElm;
     this.dragElm = null;
+    this.guides = NO_GUIDES;
     if (de === null || de.creationFailed()) {
       this.host.selectionChanged();
       return null;
     }
     this.history.record('Add', () => {
-      this.splitWireAt(de.x, de.y);
-      this.splitWireAt(de.x2, de.y2);
+      if (!this.spliceIntoWire(de)) {
+        this.splitWireAt(de.x, de.y);
+        this.splitWireAt(de.x2, de.y2);
+      }
       this.elements.push(de);
+      this.joinLeads([de]);
       for (const e of this.elements) e.selected = e === de;
     });
     this.host.placed?.(this.paletteDragClass);
@@ -267,6 +298,9 @@ export class Editor {
     this.heldSwitchElm = null;
     this.mouseDragging = false;
     this.selectedArea = null;
+    this.guides = NO_GUIDES;
+    this.dragExtras = [];
+    this.routeGrid = null;
   }
 
   /** Called after the app loads a different circuit. */
@@ -391,6 +425,9 @@ export class Editor {
     this.moved = false;
     this.follow = undefined;
     this.followDx = this.followDy = 0;
+    this.dragExtras = [];
+    this.routeGrid = null;
+    this.drawDir = null;
 
     let mode: MouseMode = this.mouseMode;
     if (grab !== null) mode = grab.post >= 0 ? MouseMode.DRAG_POST : MouseMode.SELECT;
@@ -481,6 +518,7 @@ export class Editor {
     if (this.dragElm !== null) {
       this.dragElm.drag(gx, gy);
       this.mouseElm = null;
+      this.routeDrawnWire(mods.alt);
     }
     let success = true;
     let changed = false;
@@ -535,6 +573,7 @@ export class Editor {
       }
     }
     if (this.selectedArea !== null) this.moved = true;
+    this.updateGuides();
   }
 
   /** Button released (upstream onMouseUp and endDrag). */
@@ -568,9 +607,14 @@ export class Editor {
   }
 
   private endDrag(): void {
+    const draggedSelection = this.tempMouseMode === MouseMode.DRAG_SELECTED && this.moved;
+    const draggedPost =
+      this.tempMouseMode === MouseMode.DRAG_POST && this.moved ? this.mouseElm : null;
+    const wiresFollowed = this.follow !== null && this.follow !== undefined;
     this.mouseDragging = false;
     this.tempMouseMode = this.mouseMode;
     this.selectedArea = null;
+    this.guides = NO_GUIDES;
     let circuitChanged = false;
     if (this.follow) {
       this.follow.finish();
@@ -593,13 +637,27 @@ export class Editor {
       this.host.circuitChanged();
     }
     const de = this.dragElm;
+    const extras = this.dragExtras;
     this.dragElm = null;
+    this.dragExtras = [];
+    this.routeGrid = null;
     if (de !== null) {
       if (de.creationFailed()) {
         this.history.cancel();
-      } else {
+      } else if (de instanceof WireElm && extras.length > 0) {
+        // a wire drawn round parts: its legs meet nothing but each other
+        const last = extras[extras.length - 1];
         this.splitWireAt(de.x, de.y);
-        this.splitWireAt(de.x2, de.y2);
+        this.splitWireAt(last.x2, last.y2);
+        this.elements.push(de, ...extras);
+        for (const w of [de, ...extras]) this.wireDraggingDone(w);
+        circuitChanged = true;
+        this.host.placed?.(this.dragClass);
+      } else {
+        if (!this.spliceIntoWire(de)) {
+          this.splitWireAt(de.x, de.y);
+          this.splitWireAt(de.x2, de.y2);
+        }
         this.elements.push(de);
         // a routed wire goes round posts instead of connecting to them
         if (de instanceof WireElm && !(de instanceof RoutedWireElm)) this.wireDraggingDone(de);
@@ -607,6 +665,21 @@ export class Editor {
         this.host.placed?.(this.dragClass);
       }
     }
+    // a loose part dragged onto a wire splices in too
+    if (draggedSelection && !wiresFollowed) {
+      const sel = this.selectedElements();
+      if (sel.length === 1 && this.spliceIntoWire(sel[0])) circuitChanged = true;
+    }
+    // a post left on a long part's lead joins it there
+    const touched: CircuitElm[] =
+      de !== null && !de.creationFailed()
+        ? [de, ...extras].filter((e) => this.elements.includes(e))
+        : draggedSelection
+          ? this.selectedElements()
+          : draggedPost !== null
+            ? [draggedPost]
+            : [];
+    if (this.joinLeads(touched)) circuitChanged = true;
     if (circuitChanged) {
       this.history.touch();
       this.host.circuitChanged();
@@ -793,6 +866,346 @@ export class Editor {
       }
     }
     if (first) this.elements.splice(this.elements.indexOf(w), 1);
+  }
+
+  // ---- smart editing (not in upstream) -------------------------------------------------------
+
+  /**
+   * A two-post part lying along a wire, both posts on it, takes the wire's place between them:
+   * the wire is cut at the posts and the piece in between goes, so the part is in series instead
+   * of shorted out. Nothing happens if anything else joins the wire between the posts.
+   */
+  private spliceIntoWire(part: CircuitElm): boolean {
+    if (!this.spliceOnDrop || part instanceof WireElm || part.getPostCount() !== 2) return false;
+    const a = part.getPost(0);
+    const b = part.getPost(1);
+    const horiz = a.y === b.y;
+    if ((!horiz && a.x !== b.x) || (a.x === b.x && a.y === b.y)) return false;
+    const line = horiz ? a.y : a.x;
+    const lo = horiz ? Math.min(a.x, b.x) : Math.min(a.y, b.y);
+    const hi = horiz ? Math.max(a.x, b.x) : Math.max(a.y, b.y);
+    /** Where a point lies along the part's line, or null if it is off the line. */
+    const along = (x: number, y: number): number | null =>
+      horiz ? (y === line ? x : null) : x === line ? y : null;
+    const spans: [number, number][] = [];
+    const onLine: WireElm[] = [];
+    for (const e of this.elements) {
+      if (!(e instanceof WireElm) || e instanceof RoutedWireElm) continue;
+      const t0 = along(e.x, e.y);
+      const t1 = along(e.x2, e.y2);
+      if (t0 === null || t1 === null) continue;
+      const s0 = Math.min(t0, t1);
+      const s1 = Math.max(t0, t1);
+      if (s1 <= lo || s0 >= hi) continue;
+      onLine.push(e);
+      spans.push([s0, s1]);
+    }
+    if (onLine.length === 0) return false;
+    // the wires must run the whole way between the posts
+    spans.sort((p, q) => p[0] - q[0]);
+    let reach = lo;
+    for (const [s0, s1] of spans) {
+      if (s0 > reach) return false;
+      reach = Math.max(reach, s1);
+    }
+    if (reach < hi) return false;
+    // and nothing else may join them in between
+    const wires = new Set<CircuitElm>(onLine);
+    for (const e of this.elements) {
+      if (e === part || wires.has(e)) continue;
+      for (let i = 0; i !== e.getPostCount(); i++) {
+        const p = e.getPost(i);
+        const t = along(p.x, p.y);
+        if (t !== null && t > lo && t < hi) return false;
+      }
+    }
+    this.splitWireAt(a.x, a.y);
+    this.splitWireAt(b.x, b.y);
+    this.circuit.elements = this.elements.filter((e) => {
+      if (!(e instanceof WireElm) || e instanceof RoutedWireElm) return true;
+      const t0 = along(e.x, e.y);
+      const t1 = along(e.x2, e.y2);
+      return t0 === null || t1 === null || Math.min(t0, t1) < lo || Math.max(t0, t1) > hi;
+    });
+    return true;
+  }
+
+  /**
+   * A post that lands on a long part's lead, between one of its posts and its body, would be a
+   * bad connection. Instead the part is shortened about its body so that its post is there, and
+   * wires fill the rest of its leads out to where its posts were. Only parts or posts that were
+   * just placed or moved count (not upstream).
+   */
+  private joinLeads(touched: readonly CircuitElm[]): boolean {
+    if (!this.spliceOnDrop || touched.length === 0) return false;
+    const moved = new Set(touched);
+    let changed = false;
+    for (const part of [...this.elements]) {
+      if (part instanceof WireElm || part.getPostCount() !== 2) continue;
+      const leads = part.routingLeads();
+      const a = part.getPost(0);
+      const b = part.getPost(1);
+      if (leads === null || (a.x !== b.x && a.y !== b.y)) continue;
+      if (a.x !== part.x || a.y !== part.y || b.x !== part.x2 || b.y !== part.y2) continue;
+      // twice the body's centre, which stays put
+      const cx2 = a.x + b.x;
+      const cy2 = a.y + b.y;
+      let best: { x: number; y: number; side: 0 | 1 } | null = null;
+      let bestD = Infinity;
+      for (const e of this.elements) {
+        if (e === part || (!moved.has(part) && !moved.has(e))) continue;
+        for (let i = 0; i !== e.getPostCount(); i++) {
+          const p = e.getPost(i);
+          if ((p.x === a.x && p.y === a.y) || (p.x === b.x && p.y === b.y)) continue;
+          const side = onSpan(a, leads[0], p) ? 0 : onSpan(leads[1], b, p) ? 1 : null;
+          if (side === null) continue;
+          // the point nearest the body sets the new length
+          const d = Math.abs(2 * p.x - cx2) + Math.abs(2 * p.y - cy2);
+          if (d < bestD) {
+            bestD = d;
+            best = { x: p.x, y: p.y, side };
+          }
+        }
+      }
+      if (best === null) continue;
+      const mirror = { x: cx2 - best.x, y: cy2 - best.y };
+      const [p0, p1] = best.side === 0 ? [best, mirror] : [mirror, best];
+      const old = [
+        { x: a.x, y: a.y },
+        { x: b.x, y: b.y },
+      ];
+      part.x = p0.x;
+      part.y = p0.y;
+      part.x2 = p1.x;
+      part.y2 = p1.y;
+      part.setPoints();
+      const fills: WireElm[] = [];
+      for (const [from, to] of [
+        [old[0], p0],
+        [p1, old[1]],
+      ]) {
+        if (from.x === to.x && from.y === to.y) continue;
+        const w = constructElement('WireElm', from.x, from.y, this.circuit.sim);
+        if (!(w instanceof WireElm)) continue;
+        w.drag(to.x, to.y);
+        this.elements.push(w);
+        fills.push(w);
+      }
+      // other posts that were on the leads are on the new wires now: join them there too
+      for (const w of fills)
+        for (const e of this.elements)
+          for (let i = 0; i !== e.getPostCount(); i++) {
+            const p = e.getPost(i);
+            if (pointOnSegmentInterior(w.x, w.y, w.x2, w.y2, p.x, p.y)) this.splitWireAt(p.x, p.y);
+          }
+      changed = true;
+    }
+    return changed;
+  }
+
+  /**
+   * The wire being drawn finds its way round parts, with no bend or end on anything but its own
+   * two ends. Alt draws it straight, as upstream does.
+   */
+  private routeDrawnWire(straight: boolean): void {
+    const w = this.dragElm;
+    this.dragExtras = [];
+    if (!(w instanceof WireElm) || w instanceof RoutedWireElm || !this.routeWires || straight)
+      return;
+    const start = { x: w.x, y: w.y };
+    const end = { x: w.x2, y: w.y2 };
+    if (start.x === end.x && start.y === end.y) {
+      this.drawDir = null;
+      return;
+    }
+    if (this.drawDir === null) {
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      this.drawDir = Math.abs(dx) >= Math.abs(dy) ? (dx > 0 ? 0 : 2) : dy > 0 ? 1 : 3;
+    }
+    const bbox = (e: CircuitElm): Rect | null => this.host.bbox(e);
+    let grid = this.routeGrid;
+    if (grid === null || !grid.covers(end)) {
+      grid = this.routeGrid = new RouteGrid(this.elements, {
+        gridSize: this.circuit.sim.gridSize,
+        bbox,
+        extent: [start, end],
+        margin: 12,
+      });
+    }
+    // straight across or down and clear of parts: as upstream, joining what it passes over
+    if (grid.clearOfBodies(start, end)) return;
+    const lead = (p: Pt): number | null => {
+      for (const e of this.elements) {
+        if (!hasBody(e)) continue;
+        for (let i = 0; i !== e.getPostCount(); i++) {
+          const q = e.getPost(i);
+          if (q.x !== p.x || q.y !== p.y) continue;
+          const b = bbox(e);
+          return b === null ? null : leadDir(p, b);
+        }
+      }
+      return null;
+    };
+    const route = grid.route(start, [end], {
+      startDir: lead(start) ?? this.drawDir,
+      arriveDir: (p) => {
+        const d = lead(p);
+        return d === null ? null : reverse(d);
+      },
+    });
+    // straight, or no way round: the wire as dragged
+    if (route === null || route.length <= 2) return;
+    w.x2 = route[1].x;
+    w.y2 = route[1].y;
+    w.setPoints();
+    for (let i = 1; i + 1 < route.length; i++) {
+      const leg = constructElement('WireElm', route[i].x, route[i].y, this.circuit.sim);
+      if (!(leg instanceof WireElm)) continue;
+      leg.x2 = route[i + 1].x;
+      leg.y2 = route[i + 1].y;
+      leg.setPoints();
+      leg.allocNodes();
+      this.dragExtras.push(leg);
+    }
+  }
+
+  /** Lines from what is being dragged to the posts it lines up with. */
+  private updateGuides(): void {
+    this.guides = NO_GUIDES;
+    if (!this.smartGuides) return;
+    const moving: Pt[] = [];
+    const still = new Set<CircuitElm>();
+    const de = this.dragElm;
+    if (de !== null) {
+      if (de.x === de.x2 && de.y === de.y2) return;
+      // a wire or part being drawn out keeps its start; one from the palette moves whole
+      const drawing = this.mouseDragging && this.tempMouseMode === MouseMode.ADD_ELM;
+      for (let i = 0; i !== de.getPostCount(); i++) {
+        const p = de.getPost(i);
+        if (!drawing || p.x !== de.x || p.y !== de.y) moving.push({ x: p.x, y: p.y });
+      }
+      for (const x of this.dragExtras) moving.push({ x: x.x2, y: x.y2 });
+    } else if (this.mouseDragging && this.tempMouseMode === MouseMode.DRAG_SELECTED) {
+      for (const e of this.elements) {
+        if (!e.selected) continue;
+        still.add(e);
+        for (let i = 0; i !== e.getPostCount(); i++) {
+          const p = e.getPost(i);
+          moving.push({ x: p.x, y: p.y });
+        }
+      }
+      if (this.follow) for (const w of this.follow.wires()) still.add(w);
+    } else if (
+      this.mouseDragging &&
+      this.tempMouseMode === MouseMode.DRAG_POST &&
+      this.mouseElm !== null &&
+      this.draggingPost >= 0 &&
+      this.draggingPost < this.mouseElm.getPostCount()
+    ) {
+      const p = this.mouseElm.getPost(this.draggingPost);
+      moving.push({ x: p.x, y: p.y });
+      still.add(this.mouseElm);
+    } else return;
+    const fixed: Pt[] = [];
+    for (const e of this.elements) {
+      if (still.has(e)) continue;
+      for (let i = 0; i !== e.getPostCount(); i++) {
+        const p = e.getPost(i);
+        fixed.push({ x: p.x, y: p.y });
+      }
+    }
+    this.guides = alignmentGuides(moving, fixed);
+  }
+
+  /** Can the selection be lined up (two parts or more) or spread out (three or more)? */
+  alignable(): { align: boolean; spread: boolean } {
+    const n = alignUnits(this.selectedElements(), this.elements).length;
+    return { align: n >= 2, spread: n >= 3 };
+  }
+
+  /** Line the selected parts up along an edge or centre. */
+  align(kind: AlignKind): 'moved' | 'unchanged' | 'refused' | 'none' {
+    const units = alignUnits(this.selectedElements(), this.elements);
+    if (units.length < 2) return 'none';
+    const bbox = (e: CircuitElm): Rect | null => this.host.bbox(e);
+    return this.moveUnits('Align', alignOffsets(units, kind, this.circuit.sim.gridSize, bbox));
+  }
+
+  /** Spread the selected parts out evenly across or down. */
+  spread(axis: SpreadAxis): 'moved' | 'unchanged' | 'refused' | 'none' {
+    const units = alignUnits(this.selectedElements(), this.elements);
+    if (units.length < 3) return 'none';
+    const bbox = (e: CircuitElm): Rect | null => this.host.bbox(e);
+    return this.moveUnits('Spread', spreadOffsets(units, axis, this.circuit.sim.gridSize, bbox));
+  }
+
+  /**
+   * Move parts by their own offsets, one undo step, their wires following each. If that would
+   * change what connects to what (a post landing on another), nothing moves.
+   */
+  private moveUnits(label: string, offsets: Map<Unit, Offset>): 'moved' | 'unchanged' | 'refused' {
+    if (offsets.size === 0) return 'unchanged';
+    const saved = this.circuit.dumpXml();
+    const before = connectivity(this.elements);
+    const selected = new Set(this.selectedElements());
+    this.history.begin(label);
+    let moved = false;
+    let blocked = false;
+    for (const [unit, { dx, dy }] of offsets) {
+      if (!unit.every((e) => e.allowMove(dx, dy, this.elements))) {
+        blocked = true;
+        break;
+      }
+      // each unit takes its own wires along
+      const mine = new Set(unit);
+      for (const ce of this.elements) ce.selected = mine.has(ce);
+      const follow = this.wiresFollow ? WireFollow.start(this.elements) : null;
+      // a part staying put with a post straight on one of ours gets a wire to where it went
+      const bridges: { x: number; y: number }[] = [];
+      for (const e of unit)
+        for (let i = 0; i !== e.getPostCount(); i++) {
+          const p = e.getPost(i);
+          const held = this.elements.some((o) => {
+            if (mine.has(o) || o instanceof WireElm) return false;
+            for (let k = 0; k !== o.getPostCount(); k++) {
+              const q = o.getPost(k);
+              if (q.x === p.x && q.y === p.y) return true;
+            }
+            return false;
+          });
+          if (held && !bridges.some((b) => b.x === p.x && b.y === p.y))
+            bridges.push({ x: p.x, y: p.y });
+        }
+      for (const e of unit) e.move(dx, dy);
+      follow?.apply(dx, dy, true);
+      follow?.finish();
+      for (const b of bridges) {
+        const w = constructElement('WireElm', b.x, b.y, this.circuit.sim);
+        if (!(w instanceof WireElm)) continue;
+        w.drag(b.x + dx, b.y + dy);
+        this.elements.push(w);
+      }
+      moved = true;
+    }
+    for (const ce of this.elements) ce.selected = selected.has(ce);
+    if (!moved && !blocked) {
+      this.history.cancel();
+      return 'unchanged';
+    }
+    // one part would land on another, or a post on a post: none of it
+    if (blocked || connectivity(this.elements) !== before) {
+      this.history.cancel();
+      this.forgetElements();
+      this.host.restore(saved);
+      this.host.selectionChanged();
+      return 'refused';
+    }
+    this.history.touch();
+    this.history.commit();
+    this.host.circuitChanged();
+    this.host.selectionChanged();
+    return 'moved';
   }
 
   // ---- commands (upstream CommandManager) ----------------------------------------------------
@@ -1051,6 +1464,61 @@ export class Editor {
     return result;
   }
 
+  /** A part of this class built where `e` is, or null if it can't be. */
+  private buildLike(e: CircuitElm, className: string): CircuitElm | null {
+    const n = constructElement(className, e.x, e.y, this.circuit.sim);
+    if (n === null) return null;
+    n.x2 = e.x2;
+    n.y2 = e.y2;
+    n.setPoints();
+    return n;
+  }
+
+  /**
+   * Which of these classes could take the part's place (not in upstream): built on the same two
+   * points, its posts land exactly where the part's are, so every connection stays.
+   */
+  replacementsFor(e: CircuitElm, classes: readonly string[]): string[] {
+    if (e instanceof WireElm || e.getPostCount() === 0) return [];
+    const posts = (x: CircuitElm): string => {
+      const out: string[] = [];
+      for (let i = 0; i !== x.getPostCount(); i++) {
+        const p = x.getPost(i);
+        out.push(`${p.x},${p.y}`);
+      }
+      return out.sort().join(';');
+    };
+    const want = posts(e);
+    return classes.filter((c) => {
+      try {
+        const n = this.buildLike(e, c);
+        return n !== null && !(n instanceof WireElm) && posts(n) === want;
+      } catch {
+        return false;
+      }
+    });
+  }
+
+  /** Swap a part for one of another class in the same place (Replace with…). One undo step. */
+  replaceWith(e: CircuitElm, className: string): CircuitElm | null {
+    const i = this.elements.indexOf(e);
+    if (i < 0) return null;
+    const n = this.buildLike(e, className);
+    if (n === null) return null;
+    this.history.record('Replace', () => {
+      n.selected = e.selected;
+      this.elements[i] = n;
+      // scopes watching the old part watch the new one
+      for (const sc of [...this.circuit.scopes.scopes, ...this.circuit.undockedScopes()])
+        for (const p of sc.plots) if (p.elm === e) p.elm = n;
+      if (this.mouseElm === e) this.mouseElm = null;
+    });
+    this.host.placed?.(className);
+    this.host.circuitChanged();
+    this.host.selectionChanged();
+    return n;
+  }
+
   /** Split the wire under the mouse at the grid point nearest (gx, gy). */
   splitWire(gx: number, gy: number): void {
     this.history.record('Split wire', () => this.splitWireAt(this.snapGrid(gx), this.snapGrid(gy)));
@@ -1104,6 +1572,17 @@ function pointsRect(e: CircuitElm): Rect {
     x2: Math.max(e.x, e.x2),
     y2: Math.max(e.y, e.y2),
   };
+}
+
+/** Is p on the axis-aligned segment from a to b, ends included? */
+function onSpan(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  p: { x: number; y: number },
+): boolean {
+  if (a.x === b.x) return p.x === a.x && p.y >= Math.min(a.y, b.y) && p.y <= Math.max(a.y, b.y);
+  if (a.y === b.y) return p.y === a.y && p.x >= Math.min(a.x, b.x) && p.x <= Math.max(a.x, b.x);
+  return false;
 }
 
 /** Upstream CircuitElm.pointOnSegmentInterior: strictly inside an axis-aligned segment. */

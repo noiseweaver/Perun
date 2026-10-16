@@ -114,6 +114,13 @@ export class CircuitRenderer {
   stopElm: CircuitElm | null = null;
   /** Element being placed (not in the circuit yet); drawn on top with all its posts. */
   pending: CircuitElm | null = null;
+  /** More of what is being placed: the legs of a wire routed round parts. */
+  pendingExtras: readonly CircuitElm[] = [];
+  /** Alignment guides while dragging: lines, and the posts they line up with. */
+  guides: { lines: readonly Rect[]; marks: readonly { x: number; y: number }[] } = {
+    lines: [],
+    marks: [],
+  };
   /** Rubber band selection in circuit coordinates. */
   selectionRect: Rect | null = null;
   /** Elements the scope under the mouse shows; drawn highlighted (upstream scopePlotRoles). */
@@ -348,6 +355,8 @@ export class CircuitRenderer {
     // first drag some (MOSFET) have no post geometry yet
     const pend = this.pending;
     if (pend !== null && (pend.x !== pend.x2 || pend.y !== pend.y2)) this.drawElement(pend, frame);
+    if (pend !== null) for (const e of this.pendingExtras) this.drawElement(e, frame);
+    if (this.guides.lines.length > 0) this.drawGuides();
     if (pend !== null) this.lastPending = pend;
     if (this.selectionRect !== null) this.drawSelectionRect(this.selectionRect);
     for (const fx of this.effects)
@@ -365,6 +374,31 @@ export class CircuitRenderer {
     c.beginPath();
     c.arc(x + 0.5, y + 0.5, (4 + 16 * k) / scale, 0, 2 * Math.PI);
     c.stroke();
+    c.restore();
+  }
+
+  /** Thin dashed lines in the selection colour, with a small ring on each post lined up with. */
+  private drawGuides(): void {
+    const c = this.ctx;
+    const s = this.viewport.scale;
+    c.save();
+    c.strokeStyle = this.palette.selection;
+    c.globalAlpha = 0.85;
+    c.lineWidth = 1 / s;
+    c.setLineDash([3 / s, 3 / s]);
+    c.beginPath();
+    for (const g of this.guides.lines) {
+      c.moveTo(g.x1 + 0.5, g.y1 + 0.5);
+      c.lineTo(g.x2 + 0.5, g.y2 + 0.5);
+    }
+    c.stroke();
+    c.setLineDash([]);
+    c.lineWidth = 1.5 / s;
+    for (const m of this.guides.marks) {
+      c.beginPath();
+      c.arc(m.x + 0.5, m.y + 0.5, 6 / s, 0, 2 * Math.PI);
+      c.stroke();
+    }
     c.restore();
   }
 
