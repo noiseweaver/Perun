@@ -251,7 +251,22 @@ export function arrange(elements: readonly CircuitElm[], o: ArrangeOptions): Arr
   if (parts.length < 2) return { ...result, failure: 'empty' };
   if (parts.length > ARRANGE_MAX_PARTS) return { ...result, failure: 'too big' };
 
-  const saved: Saved[] = [...parts, ...decor].map((e) => ({
+  // wires that touch no part (stray bits) are kept as they are and moved under the circuit
+  const strays = new Sets();
+  for (const w of wires) {
+    const p0 = w.getPost(0);
+    const p1 = w.getPost(1);
+    strays.union(key(p0.x, p0.y), key(p1.x, p1.y));
+  }
+  const attached = new Set<string>();
+  for (const e of parts)
+    for (let i = 0; i !== e.getPostCount(); i++) {
+      const p = e.getPost(i);
+      attached.add(strays.find(key(p.x, p.y)));
+    }
+  const loose: CircuitElm[] = wires.filter((w) => !attached.has(strays.find(key(w.x, w.y))));
+
+  const saved: Saved[] = [...parts, ...decor, ...loose].map((e) => ({
     e,
     x: e.x,
     y: e.y,
@@ -798,7 +813,16 @@ export function arrange(elements: readonly CircuitElm[], o: ArrangeOptions): Arr
     made = attempt(pad);
     if (made !== null) {
       const firstWire = elements.findIndex((e) => e instanceof WireElm);
-      const kept = elements.filter((e) => !(e instanceof WireElm));
+      const kept = elements.filter((e) => !(e instanceof WireElm) || loose.includes(e));
+      if (loose.length > 0) {
+        const laid = [...parts, ...made].reduce<Rect | null>(
+          (r, e) => union(r, e instanceof WireElm ? postsBox(e) : (o.bbox(e) ?? postsBox(e))),
+          null,
+        );
+        const top = Math.min(...loose.map((w) => Math.min(w.y, w.y2)));
+        const dy = laid === null ? 0 : Math.max(0, snapUp(laid.y2 + 3 * gs - top));
+        for (const w of loose) place(w, w.x, w.y + dy, w.x2, w.y2 + dy);
+      }
       const at =
         firstWire < 0
           ? kept.length
@@ -810,6 +834,7 @@ export function arrange(elements: readonly CircuitElm[], o: ArrangeOptions): Arr
     }
     // back to the turned parts for the next try
     for (const s of turned) place(s.e, s.x, s.y, s.x2, s.y2);
+    for (const s of saved) if (loose.includes(s.e)) place(s.e, s.x, s.y, s.x2, s.y2);
   }
   if (made === null) {
     putBack();
@@ -849,6 +874,10 @@ export function arrange(elements: readonly CircuitElm[], o: ArrangeOptions): Arr
     place(s.e, now.x, now.y, now.x2, now.y2);
   }
   for (const w of wires) {
+    if (loose.includes(w)) {
+      result.wireFor.set(w, w);
+      continue;
+    }
     let stand: WireElm | null = null;
     for (const p of [w.getPost(0), w.getPost(1)]) {
       const r = oldPost.get(key(p.x, p.y));
@@ -861,5 +890,5 @@ export function arrange(elements: readonly CircuitElm[], o: ArrangeOptions): Arr
     }
     result.wireFor.set(w, stand);
   }
-  return { ...result, elements: list, wiresAfter: newWires.length };
+  return { ...result, elements: list, wiresAfter: newWires.length + loose.length };
 }

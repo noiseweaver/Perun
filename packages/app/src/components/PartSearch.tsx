@@ -81,7 +81,9 @@ function SearchBox({ search }: { search: PartSearchState }) {
   };
 
   const left = Math.min(Math.max(EDGE, search.x - WIDTH / 2), window.innerWidth - WIDTH - EDGE);
-  const top = Math.min(Math.max(EDGE, search.y - 24), window.innerHeight - 120);
+  // the whole list fits on screen: near the bottom it opens upwards
+  const tall = 72 + SHOWN * 44;
+  const top = Math.max(EDGE, Math.min(search.y - 24, window.innerHeight - tall - EDGE));
   return (
     <div
       ref={root}

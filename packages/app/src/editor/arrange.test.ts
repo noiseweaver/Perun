@@ -62,6 +62,20 @@ describe('arrange circuit', () => {
     expect(byClass(circuit, 'ResistorElm')[0].x).toBe(160);
   });
 
+  it('keeps a stray wire, moved under the circuit', () => {
+    const { circuit, ed } = setup(
+      'r 0 0 64 0 0 1000\nr 64 0 64 64 0 1000\ng 64 64 64 96 0 0\nw 0 0 0 -32 0\n' +
+        'w 0 32 160 32 0\n',
+    );
+    const stray = circuit.elements[4];
+    expect(ed.arrange().failure).toBeNull();
+    expect(circuit.elements).toContain(stray);
+    expect(Math.abs(stray.x2 - stray.x)).toBe(160);
+    const parts = circuit.elements.filter((e) => !(e instanceof WireElm));
+    const bottom = Math.max(...parts.map((e) => Math.max(e.y, e.y2)));
+    expect(stray.y).toBeGreaterThan(bottom);
+  });
+
   it('keeps every connection in every bundled example it can arrange', () => {
     const dirs = [
       new URL(

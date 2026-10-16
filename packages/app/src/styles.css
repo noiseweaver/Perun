@@ -1930,13 +1930,20 @@ kbd,
 
 /* align and spread: a row of small icon buttons under the actions */
 .inspector-align {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  justify-items: center;
   gap: 2px;
   margin: 0 0 4px;
   padding-top: 4px;
   border-top: 1px solid var(--ui-border);
+}
+
+/* eight in a row on the narrowest panel */
+.inspector-align .icon-button {
+  width: 100%;
+  max-width: 36px;
+  height: 36px;
 }
 
 /* an inspector action: icon on a tonal circle with a short caption under it */
