@@ -122,6 +122,35 @@ describe('tidy up', () => {
     ]);
   });
 
+  it('turns a part drawn at a slant to lie along the grid, and drops a loose stub', () => {
+    const { circuit, ed } = setup(
+      'v 0 192 0 0 0 1 40 5 0 0 0.5\nw 0 0 96 0 0\nr 96 0 160 0 0 180\nw 160 0 256 0 0\n' +
+        'w 256 0 272 96 0\nl 272 96 288 160 0 1 0\nw 288 160 304 256 0\nw 304 256 0 256 0\n' +
+        'w 0 192 0 256 0\nw 0 256 -48 256 0\n',
+    );
+    const sig = connectivity(circuit.elements);
+    const r = ed.tidyUp();
+    expect(r?.changed).toBe(true);
+    expect(connectivity(circuit.elements)).toBe(sig);
+    const l = circuit.elements.find((e) => e.getClassName() === 'InductorElm') as CircuitElm;
+    expect(l.x).toBe(l.x2);
+    expect(Math.abs(l.y2 - l.y)).toBe(64);
+    for (const [x, y, x2, y2] of wires(circuit)) expect(x === x2 || y === y2).toBe(true);
+    expect(wires(circuit).some(([x, , x2]) => Math.min(x, x2) < 0)).toBe(false);
+    expect(bodyCrossings(circuit.elements)).toBe(0);
+    expect(ed.tidyUp()?.changed).toBe(false);
+  });
+
+  it('leaves a part at 45 degrees and a stub pointing at a label as they are', () => {
+    const { circuit, ed } = setup(
+      'r 0 -64 0 0 0 1000\nw 0 0 0 64 0\nd 0 64 64 128 2 default\nw 64 128 64 192 0\n' +
+        'r 64 192 64 256 0 1000\n' +
+        'r 128 0 192 0 0 1000\nw 192 0 192 -64 0\nx 180 -80 240 -77 4 16 control\n',
+    );
+    expect(ed.tidyUp()?.changed).toBe(false);
+    expect(wires(circuit)).toHaveLength(3);
+  });
+
   it('only touches the selection when there is one', () => {
     const { circuit, ed } = setup(
       'r 0 0 64 0 0 1000\nw 64 0 96 0 0\nw 96 0 128 0 0\nr 128 0 192 0 0 1000\n' +
