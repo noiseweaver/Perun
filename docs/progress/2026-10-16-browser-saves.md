@@ -31,9 +31,15 @@ and renaming a circuit by editing the title at the top left.
   e2e `my-circuits.spec.ts`.
 - No simulation or file format change, so no deviation entry.
 
+- Follow-up (after #62 merged): the name has a fixed slot (`clamp(140px, 12vw, 220px)`), so a
+  long name no longer pushes the menus right; it ends in an ellipsis and the tooltip has all of
+  it. The slot stays narrow enough that Options' submenus still open rightwards at 1280 px wide
+  in French (a wider slot flipped them left and broke `i18n.spec.ts`). Phones were already
+  steady (the name takes the free space there).
+
 ## Next
 
-- Gady tries it in the preview artifact.
+- Gady tries the steady title bar in the preview artifact.
 
 ## Open issues
 

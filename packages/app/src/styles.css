@@ -197,8 +197,10 @@ textarea,
   flex: 0 1 auto;
   align-items: center;
   gap: 6px;
+  /* a fixed slot, so the menus after it stay put whatever the name's length (a long name ends
+     in an ellipsis; the full name shows when renaming) */
+  width: clamp(140px, 12vw, 220px);
   min-width: 0;
-  max-width: 40%;
   /* the title's own padding (hover and edit) brings its text to 8px from the logo */
   margin: 0 8px 0 2px;
 }
@@ -239,7 +241,7 @@ textarea,
 
 .app-bar-title-input {
   width: 100%;
-  min-width: 8em;
+  min-width: 0;
   padding: 2px 6px;
   font-family: inherit;
   color: var(--ui-text);
@@ -2370,7 +2372,7 @@ textarea.field-input {
 
   .app-bar-title-row {
     flex: 1 1 auto;
-    max-width: none;
+    width: auto;
     margin: 0 4px 0 -2px;
   }
 

@@ -164,7 +164,8 @@ function CircuitTitle({ title }: { title: string }) {
           <button
             type="button"
             className="app-bar-title-button"
-            title={t('Rename')}
+            // the name may end in an ellipsis in its fixed slot: the tooltip has all of it
+            title={`${shown}\n${t('Rename')}`}
             onClick={() => setEditing(shown)}
           >
             {shown}
