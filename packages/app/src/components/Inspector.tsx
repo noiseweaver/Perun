@@ -22,6 +22,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { controller } from '../SimController.ts';
 import { useApp } from '../store.ts';
 import { useNarrow } from './useNarrow.ts';
+import { ALIGN_ACTIONS } from './alignActions.ts';
 import { Icon, type IconName } from './Icon.tsx';
 import { FormulaCard } from './FormulaCard.tsx';
 import { FormulaLinks } from './FormulaLinks.tsx';
@@ -462,6 +463,30 @@ function ActionButton(props: {
   );
 }
 
+/** Align and spread, when two parts or more are selected. */
+function AlignRow() {
+  const n = useApp((s) => s.editor.alignCount);
+  if (n < 2) return null;
+  return (
+    <div className="inspector-align" role="group" aria-label={t('Align')} data-testid="align-row">
+      {ALIGN_ACTIONS.map((a) => (
+        <button
+          key={a.testId}
+          type="button"
+          className="icon-button icon-button-small"
+          aria-label={t(a.label)}
+          title={t(a.label)}
+          disabled={a.spread && n < 3}
+          data-testid={a.testId}
+          onClick={a.run}
+        >
+          <Icon name={a.icon} size={20} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** Rotate, mirror and delete for the selection. */
 function SelectionActions({ elm }: { elm: CircuitElm | null }) {
   const ed = controller.editor;
@@ -707,6 +732,7 @@ export function Inspector() {
       {selected !== null && <LiveHeader elm={selected} />}
       {selected !== null && <FormulaCard elm={selected} />}
       <SelectionActions elm={selected} />
+      <AlignRow />
       {selected !== null && (
         <form className="inspector-fields" onSubmit={(e) => e.preventDefault()}>
           {infos.length === 0 && <p className="inspector-empty">{t('No properties to edit.')}</p>}

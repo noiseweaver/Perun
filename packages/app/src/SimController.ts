@@ -81,6 +81,8 @@ import {
   type EditorHost,
   type Modifiers,
 } from './editor/Editor.ts';
+import { ARRANGE_MAX_PARTS } from './editor/arrange.ts';
+import { alignUnits, type AlignKind, type SpreadAxis } from './editor/align.ts';
 import { ScopeRecorder } from './analysis/scopeRecord.ts';
 import { History, type StateRoots } from './rewind/history.ts';
 import { download } from './download.ts';
@@ -230,7 +232,7 @@ export class SimController {
     });
     this.circuit.read('');
     this.editor = new Editor(this.circuit, this.makeHost());
-    this.editor.wiresFollow = useApp.getState().settings.wiresFollow;
+    this.applyEditSettings(useApp.getState().settings);
     this.annotations.onChange = () => this.publishTeach();
     this.editor.history.onChange = () => this.publishEditor();
     const stored = readClipboard();
@@ -505,6 +507,15 @@ export class SimController {
     }
   }
 
+  /** The editing switches in Options. */
+  private applyEditSettings(s: AppState['settings']): void {
+    const ed = this.editor;
+    ed.wiresFollow = s.wiresFollow;
+    ed.spliceOnDrop = s.spliceOnDrop;
+    ed.smartGuides = s.smartGuides;
+    ed.routeWires = s.routeWires;
+  }
+
   private onStore(s: AppState, prev: AppState): void {
     const theme = shownTheme(s);
     if (theme !== shownTheme(prev)) {
@@ -513,8 +524,7 @@ export class SimController {
       // X-Y plot images are drawn in theme colors as the simulation runs
       this.circuit.scopes.resetGraphs();
     }
-    if (s.settings.wiresFollow !== prev.settings.wiresFollow)
-      this.editor.wiresFollow = s.settings.wiresFollow;
+    if (s.settings !== prev.settings) this.applyEditSettings(s.settings);
     const o = this.circuit.options;
     // only changes made through the UI; a load sets the store from the circuit, not the reverse
     if (s.speed !== prev.speed) o.speed = s.speed;
@@ -836,6 +846,8 @@ export class SimController {
     if (r) {
       r.hovered = ed.mouseElm ?? this.scopeHoverElm ?? this.sliderHoverElm;
       r.pending = ed.dragElm;
+      r.pendingExtras = ed.dragExtras;
+      r.guides = ed.guides;
       r.selectionRect = ed.selectedArea;
     }
     const next: EditorState = {
@@ -849,6 +861,7 @@ export class SimController {
       canPaste: ed.hasClipboard,
       revision: prev.revision + (propertiesChanged ? 1 : 0),
       moving: ed.isMoving,
+      alignCount: alignUnits(sel).length,
     };
     if (
       next.addClass !== prev.addClass ||
@@ -860,7 +873,8 @@ export class SimController {
       next.canRedo !== prev.canRedo ||
       next.canPaste !== prev.canPaste ||
       next.revision !== prev.revision ||
-      next.moving !== prev.moving
+      next.moving !== prev.moving ||
+      next.alignCount !== prev.alignCount
     )
       useApp.setState({ editor: next });
   }
@@ -1789,6 +1803,42 @@ export class SimController {
           parts: r.partsMoved,
         }),
       );
+    this.publishEditor();
+  }
+
+  /** Edit > Arrange circuit, with a toast saying how it went. */
+  arrange(): void {
+    const r = this.editor.arrange();
+    if (r.failure === 'too big')
+      showToast(tf('Arrange circuit works on up to {n} parts.', { n: ARRANGE_MAX_PARTS }));
+    else if (r.failure === 'empty') showToast(t('Nothing to arrange.'));
+    else if (r.failure !== null)
+      showToast(t('Arrange circuit left the circuit as it was: it could not wire it all.'));
+    else
+      showToast(
+        tf('Arranged {parts} parts. Wires: {before} → {after}.', {
+          parts: r.parts,
+          before: r.wiresBefore,
+          after: r.wiresAfter,
+        }),
+      );
+    this.publishEditor();
+  }
+
+  /** Line the selected parts up (Edit > Align, the property panel's align buttons). */
+  align(kind: AlignKind): void {
+    this.alignToast(this.editor.align(kind));
+  }
+
+  /** Spread the selected parts out evenly. */
+  spread(axis: SpreadAxis): void {
+    this.alignToast(this.editor.spread(axis));
+  }
+
+  private alignToast(r: 'moved' | 'unchanged' | 'refused' | 'none'): void {
+    if (r === 'refused')
+      showToast(t('Nothing moved: lining these up would have changed a connection.'));
+    else if (r === 'unchanged') showToast(t('Already lined up.'));
     this.publishEditor();
   }
 

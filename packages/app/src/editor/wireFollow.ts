@@ -102,6 +102,16 @@ export class WireFollow {
     }
   }
 
+  /** The wires that follow, with the corners they grew. */
+  wires(): WireElm[] {
+    const out: WireElm[] = [];
+    for (const a of this.attached) {
+      out.push(a.wire);
+      if (a.corner !== null) out.push(a.corner);
+    }
+    return out;
+  }
+
   /** The move is over: wires that shrank to nothing go. */
   finish(): void {
     for (const a of this.attached) {
