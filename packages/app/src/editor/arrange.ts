@@ -225,6 +225,11 @@ function union(a: Rect | null, b: Rect | null): Rect | null {
   };
 }
 
+/** Do two rectangles share more than an edge? */
+function overlap(a: Rect, b: Rect): boolean {
+  return a.x1 < b.x2 && b.x1 < a.x2 && a.y1 < b.y2 && b.y1 < a.y2;
+}
+
 function postsBox(e: CircuitElm): Rect | null {
   let r: Rect | null = null;
   for (let i = 0; i !== e.getPostCount(); i++) {
@@ -498,6 +503,12 @@ export function arrange(elements: readonly CircuitElm[], o: ArrangeOptions): Arr
   }
   const placeTerminals = (b: Block): void => {
     const count = new Map<number, number>();
+    /** Where this part's terminals are so far, so the next one doesn't land on them. */
+    const taken: Rect[] = [];
+    const clashes = (t: CircuitElm): boolean => {
+      const r = union(o.bbox(t), postsBox(t));
+      return r !== null && taken.some((q) => overlap(q, r));
+    };
     for (const { t, host } of b.terminals) {
       const k = count.get(host) ?? 0;
       count.set(host, k + 1);
@@ -514,13 +525,20 @@ export function arrange(elements: readonly CircuitElm[], o: ArrangeOptions): Arr
         Math.round(Math.hypot((s?.x2 ?? 0) - (s?.x ?? 0), (s?.y2 ?? 0) - (s?.y ?? 0)) / gs) * gs,
       );
       // pointing the way it likes, unless that is back at the part
-      const dir = d === reverse(want) ? d : want;
-      place(t, px, py, px + DX[dir] * len, py + DY[dir] * len);
-      const q = t.getPost(0);
-      if ((q.x !== px || q.y !== py) && s !== undefined) {
-        place(t, s.x, s.y, s.x2, s.y2);
-        t.move(px - q.x, py - q.y);
-      }
+      const put = (dir: number): void => {
+        place(t, px, py, px + DX[dir] * len, py + DY[dir] * len);
+        const q = t.getPost(0);
+        if ((q.x !== px || q.y !== py) && s !== undefined) {
+          place(t, s.x, s.y, s.x2, s.y2);
+          t.move(px - q.x, py - q.y);
+        }
+      };
+      put(d === reverse(want) ? d : want);
+      // sideways it would run into a terminal beside it (two rails on an op-amp's inputs):
+      // straight on instead
+      if (clashes(t)) put(d);
+      const r = union(o.bbox(t), postsBox(t));
+      if (r !== null) taken.push(r);
     }
   };
 
@@ -611,7 +629,54 @@ export function arrange(elements: readonly CircuitElm[], o: ArrangeOptions): Arr
   const topPost = (b: Block): number => postsBox(b.e)?.y1 ?? b.e.y;
   const bottomPost = (b: Block): number => postsBox(b.e)?.y2 ?? b.e.y;
 
+  // parts joined only through ground or a supply rail are separate circuits: each gets its own
+  // columns, one under another in the order they were
+  const island = new Map<Block, number>();
+  const islandTop: number[] = [];
+  for (const b of [...blocks].sort((a, c) => a.oy - c.oy || a.ox - c.ox)) {
+    if (island.has(b)) continue;
+    const id = islandTop.length;
+    islandTop.push(b.oy);
+    const stack = [b];
+    island.set(b, id);
+    while (stack.length > 0) {
+      const cur = stack.pop();
+      if (cur === undefined) break;
+      for (const nb of neighbours(cur))
+        if (!island.has(nb)) {
+          island.set(nb, id);
+          stack.push(nb);
+        }
+    }
+  }
+  const islandLayers = islandTop.map((_, id) =>
+    Array.from(layers, (l) => (l ?? []).filter((b) => island.get(b) === id)).filter(
+      (l) => l.length > 0,
+    ),
+  );
+
   const attempt = (pad: number): CircuitElm[] | null => {
+    let top = 0;
+    for (const ls of islandLayers) {
+      const placed = layIsland(ls, pad);
+      if (placed === null) continue;
+      const dx = -snapDown(placed.x1);
+      const dy = top - snapDown(placed.y1);
+      for (const l of ls) for (const b of l) moveBlock(b, dx, dy);
+      top += snapUp(placed.y2 - placed.y1) + 2 * pad;
+    }
+    // where the circuit was
+    const placed = blocks.reduce<Rect | null>((r, b) => union(r, footprint(b)), null);
+    if (placed !== null && oldBox !== null) {
+      const dx = snapDown(oldBox.x1 - placed.x1);
+      const dy = snapDown(oldBox.y1 - placed.y1);
+      for (const b of blocks) moveBlock(b, dx, dy);
+    }
+    return route();
+  };
+
+  /** Lay one circuit's columns out; returns what it covers. */
+  const layIsland = (layers: Block[][], pad: number): Rect | null => {
     const cols = Array.from(layers, (layer) => {
       const bs = layer ?? [];
       for (const b of bs) placeTerminals(b);
@@ -681,14 +746,7 @@ export function arrange(elements: readonly CircuitElm[], o: ArrangeOptions): Arr
       const dy = r.anchor === 'top' ? -topPost(r.b) : groundLine - bottomPost(r.b);
       moveBlock(r.b, r.x, dy);
     }
-    // where the circuit was
-    const placed = blocks.reduce<Rect | null>((r, b) => union(r, footprint(b)), null);
-    if (placed !== null && oldBox !== null) {
-      const dx = snapDown(oldBox.x1 - placed.x1);
-      const dy = snapDown(oldBox.y1 - placed.y1);
-      for (const b of blocks) moveBlock(b, dx, dy);
-    }
-    return route();
+    return layers.flat().reduce<Rect | null>((r, b) => union(r, footprint(b)), null);
   };
 
   /** Wire every net; null if one can't be wired. */

@@ -76,6 +76,17 @@ describe('arrange circuit', () => {
     expect(stray.y).toBeGreaterThan(bottom);
   });
 
+  it('arranges an op-amp with a rail on each input', () => {
+    // the two rails used to point up into each other
+    const { circuit, ed } = setup(
+      'a 160 880 224 880 8 15 -15 1000000 0 0 100000\nR 160 864 112 864 0 0 40 6 0 0 0.5\n' +
+        'R 160 896 112 896 0 0 40 5 0 0 0.5\nr 224 880 224 944 0 1000\ng 224 944 224 976 0 0\n',
+    );
+    const sig = electricalSignature(circuit.elements);
+    expect(ed.arrange().failure).toBeNull();
+    expect(electricalSignature(circuit.elements)).toBe(sig.replace(/\|\d+$/, '|0'));
+  });
+
   it('keeps every connection in every bundled example it can arrange', () => {
     const dirs = [
       new URL(
