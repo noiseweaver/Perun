@@ -232,7 +232,13 @@ test('self-heating warms a resistor live, with its heat path in its properties',
   await expect(rth).toHaveValue('250');
   await rth.fill('1');
   await rth.press('Enter');
-  await expect.poll(async () => parseFloat((await temp.textContent()) ?? '99')).toBeLessThan(30);
+  // within a few degrees of the ambient, which is still ramping up towards 40 °C
+  const ambient = page.getByTestId('sim-temperature-readout');
+  const reading = async (l: typeof temp): Promise<number> =>
+    parseFloat(((await l.textContent()) ?? '').replace(/^T =/, '').trim() || 'NaN');
+  await expect
+    .poll(async () => (await reading(temp)) - (await reading(ambient)), { timeout: 15_000 })
+    .toBeLessThan(3);
   expect(await page.evaluate(() => window.perun?.controller.saveText())).toContain('rth="1"');
   // a parameter can't drive it
   await rth.fill('{R}');

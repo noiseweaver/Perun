@@ -31,7 +31,7 @@ import {
 import { NO_GUIDES, alignmentGuides, type Guides } from './guides.ts';
 import { History } from './History.ts';
 import { RouteGrid, hasBody, leadDir, reverse, type Pt } from './route.ts';
-import { connectivity, tidy, type TidyResult } from './tidy.ts';
+import { connectivity, keepsConnections, tidy, type TidyResult } from './tidy.ts';
 import { WireFollow } from './wireFollow.ts';
 
 export const MouseMode = {
@@ -1448,7 +1448,7 @@ export class Editor {
       only,
       keep,
     });
-    if (result.changed && connectivity(this.elements) !== before) {
+    if (result.changed && !keepsConnections(before, connectivity(this.elements))) {
       this.history.cancel();
       this.forgetElements();
       this.host.restore(saved);

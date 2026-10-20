@@ -7,7 +7,7 @@ import { WireElm, viewFor, type CircuitElm } from '@perun/elements';
 import { Circuit, readCircuit } from '@perun/format';
 import { describe, expect, it } from 'vitest';
 import { Editor, type EditorHost } from './Editor.ts';
-import { connectivity, tidy, type TidyOptions } from './tidy.ts';
+import { connectivity, keepsConnections, tidy, type TidyOptions } from './tidy.ts';
 
 const HEAD = '$ 1 5.0E-6 10 50 5.0\n';
 
@@ -122,6 +122,91 @@ describe('tidy up', () => {
     ]);
   });
 
+  it('turns a part drawn at a slant to lie along the grid, and drops a loose stub', () => {
+    const { circuit, ed } = setup(
+      'v 0 192 0 0 0 1 40 5 0 0 0.5\nw 0 0 96 0 0\nr 96 0 160 0 0 180\nw 160 0 256 0 0\n' +
+        'w 256 0 272 96 0\nl 272 96 288 160 0 1 0\nw 288 160 304 256 0\nw 304 256 0 256 0\n' +
+        'w 0 192 0 256 0\nw 0 256 -48 256 0\n',
+    );
+    const sig = connectivity(circuit.elements);
+    const r = ed.tidyUp();
+    expect(r?.changed).toBe(true);
+    expect(connectivity(circuit.elements)).toBe(sig);
+    const l = circuit.elements.find((e) => e.getClassName() === 'InductorElm') as CircuitElm;
+    expect(l.x).toBe(l.x2);
+    expect(Math.abs(l.y2 - l.y)).toBe(64);
+    for (const [x, y, x2, y2] of wires(circuit)) expect(x === x2 || y === y2).toBe(true);
+    expect(wires(circuit).some(([x, , x2]) => Math.min(x, x2) < 0)).toBe(false);
+    expect(bodyCrossings(circuit.elements)).toBe(0);
+    expect(ed.tidyUp()?.changed).toBe(false);
+  });
+
+  it('stands slanted resistors upright, moving the labels and parts joined to them', () => {
+    const { circuit, ed } = setup(
+      'v 0 512 0 0 0 0 40 10 0 0 0.5\nw 0 0 208 0 0\nw 208 0 512 0 0\n' +
+        'r 208 0 208 224 0 10000\nO 208 224 272 224 1 0\nw 208 224 224 336 0\n' +
+        'r 224 336 240 432 0 10000\nw 240 432 256 512 0\nw 0 512 256 512 0\nw 256 512 496 512 0\n' +
+        'r 512 0 480 112 0 10000\nO 480 112 544 112 1 0\nr 480 112 480 224 0 10000\n' +
+        'O 480 224 544 224 1 0\nr 480 224 496 352 0 10000\nO 496 352 560 352 1 0\n' +
+        'r 496 352 496 512 0 10000\n',
+    );
+    const sig = connectivity(circuit.elements);
+    expect(ed.tidyUp()?.changed).toBe(true);
+    expect(connectivity(circuit.elements)).toBe(sig);
+    for (const e of circuit.elements)
+      if (e.getClassName() === 'ResistorElm') expect(e.x === e.x2 || e.y === e.y2).toBe(true);
+    // every wire straight, no jogs
+    for (const [x, y, x2, y2] of wires(circuit)) expect(x === x2 || y === y2).toBe(true);
+    expect(wires(circuit)).toHaveLength(6);
+    expect(bodyCrossings(circuit.elements)).toBe(0);
+    expect(ed.tidyUp()?.changed).toBe(false);
+  });
+
+  it('turns a slanted ground upright so the wire beside it can run straight', () => {
+    const { circuit, ed } = setup(
+      'i 0 320 0 0 0 0.01\nw 0 0 96 0 0\nr 96 0 96 320 0 600\n' +
+        'w 0 320 96 352 0\nw 96 352 96 320 0\ng 0 320 16 384 0 0\n',
+    );
+    const sig = connectivity(circuit.elements);
+    expect(ed.tidyUp()?.changed).toBe(true);
+    expect(connectivity(circuit.elements)).toBe(sig);
+    const gnd = circuit.elements.find((e) => e.getClassName() === 'GroundElm') as CircuitElm;
+    expect([gnd.x, gnd.y, gnd.x2, gnd.y2]).toEqual([0, 320, 0, 384]);
+    expect(wires(circuit)).toContainEqual([0, 320, 96, 320]);
+    expect(ed.tidyUp()?.changed).toBe(false);
+  });
+
+  it('squares a loop with a long slanted inductor across it, pushing the switch along', () => {
+    const { circuit, ed } = setup(
+      'w 0 0 64 0 0\nr 64 0 96 0 0 516.4\nw 96 0 160 0 0\nw 160 0 192 0 0\n' +
+        's 192 0 224 0 0 1 false\nw 224 0 272 0 0\nv 272 272 272 0 0 0 40 10 0 0 0.5\n' +
+        'w 0 0 0 272 0\nw 0 272 80 272 0\nc 80 272 128 272 0 1.5e-5 0 0.001\n' +
+        'w 128 272 208 272 0\nl 160 0 208 272 0 1 0\nw 208 272 224 272 0\n' +
+        'r 224 272 256 272 0 100\nw 256 272 272 272 0\n',
+    );
+    const sig = connectivity(circuit.elements);
+    expect(ed.tidyUp()?.changed).toBe(true);
+    expect(connectivity(circuit.elements)).toBe(sig);
+    for (const e of circuit.elements) expect(e.x === e.x2 || e.y === e.y2).toBe(true);
+    const l = circuit.elements.find((e) => e.getClassName() === 'InductorElm') as CircuitElm;
+    const sw = circuit.elements.find((e) => e.getClassName() === 'SwitchElm') as CircuitElm;
+    expect(l.x).toBe(l.x2);
+    // the switch keeps clear of the inductor's top
+    expect(Math.min(sw.x, sw.x2)).toBeGreaterThan(l.x);
+    expect(bodyCrossings(circuit.elements)).toBe(0);
+    expect(ed.tidyUp()?.changed).toBe(false);
+  });
+
+  it('leaves a part at 45 degrees and a stub pointing at a label as they are', () => {
+    const { circuit, ed } = setup(
+      'r 0 -64 0 0 0 1000\nw 0 0 0 64 0\nd 0 64 64 128 2 default\nw 64 128 64 192 0\n' +
+        'r 64 192 64 256 0 1000\n' +
+        'r 128 0 192 0 0 1000\nw 192 0 192 -64 0\nx 180 -80 240 -77 4 16 control\n',
+    );
+    expect(ed.tidyUp()?.changed).toBe(false);
+    expect(wires(circuit)).toHaveLength(3);
+  });
+
   it('only touches the selection when there is one', () => {
     const { circuit, ed } = setup(
       'r 0 0 64 0 0 1000\nw 64 0 96 0 0\nw 96 0 128 0 0\nr 128 0 192 0 0 1000\n' +
@@ -173,5 +258,64 @@ describe('tidy up', () => {
     console.log({ tidied, before, after });
     expect(tidied).toBeGreaterThan(40);
     expect(after).toBeLessThan(before);
+  }, 120_000);
+
+  it('squares up most bundled examples again after a point is dragged off its row or column', () => {
+    const dir = fileURLToPath(
+      new URL(
+        '../../../../reference/circuitjs1/src/com/lushprojects/circuitjs1/public/circuits/',
+        import.meta.url,
+      ),
+    );
+    // parts drawn at a slant, other than at 45 degrees
+    const slants = (els: readonly CircuitElm[]): number =>
+      els.filter((e) => {
+        const dx = Math.abs(e.x2 - e.x);
+        const dy = Math.abs(e.y2 - e.y);
+        return (e instanceof WireElm || e.getPostCount() === 2) && dx && dy && dx !== dy;
+      }).length;
+    let seed = 12345;
+    const random = (): number => (seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31;
+    let tried = 0;
+    let squared = 0;
+    for (const f of readdirSync(dir)
+      .filter((x) => x.endsWith('.txt'))
+      .sort()) {
+      const c = readCircuit(readFileSync(dir + f, 'utf8'));
+      const was = slants(c.elements);
+      const sig = connectivity(c.elements);
+      // points where only wires and level or upright two-post parts meet, a part among them
+      const at = new Map<string, { e: CircuitElm; n: number }[]>();
+      for (const e of c.elements)
+        for (let n = 0; n !== e.getPostCount(); n++) {
+          const p = e.getPost(n);
+          const k = `${p.x},${p.y}`;
+          at.set(k, [...(at.get(k) ?? []), { e, n }]);
+        }
+      const points = [...at.values()].filter(
+        (l) =>
+          l.some(({ e }) => !(e instanceof WireElm)) &&
+          l.every(
+            ({ e, n }) =>
+              e.getPostCount() === 2 &&
+              (e.x === e.x2 || e.y === e.y2) &&
+              e.getPost(n).x === (n === 0 ? e.x : e.x2) &&
+              e.getPost(n).y === (n === 0 ? e.y : e.y2),
+          ),
+      );
+      if (points.length === 0) continue;
+      const drag = points[Math.floor(random() * points.length)];
+      const d = (1 + Math.floor(random() * 3)) * c.sim.gridSize * (random() < 0.5 ? -1 : 1);
+      const sideways = random() < 0.5;
+      for (const { e, n } of drag) e.movePoint(n, sideways ? d : 0, sideways ? 0 : d);
+      const dragged = connectivity(c.elements);
+      if (dragged !== sig || slants(c.elements) <= was) continue;
+      tried++;
+      tidy(c.elements, opts(c));
+      expect(keepsConnections(dragged, connectivity(c.elements)), f).toBe(true);
+      if (slants(c.elements) <= was) squared++;
+    }
+    expect(tried).toBeGreaterThan(200);
+    expect(squared / tried).toBeGreaterThan(0.9);
   }, 120_000);
 });
