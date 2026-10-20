@@ -264,7 +264,10 @@ function addLeads(leads: Map<string, Pt[]>, ps: readonly Pt[], box: Rect): void 
   }
 }
 
-/** A route's wires and bends, plus a bend for each end that meets a part's lead sideways. */
+/**
+ * A route's wires and bends, plus a bend (with its wire, as a bend costs two) for each end that
+ * meets a part's lead sideways.
+ */
 function routeCost(route: readonly Pt[], w: World): number {
   let c = cost(route);
   const n = route.length;
@@ -276,7 +279,7 @@ function routeCost(route: readonly Pt[], w: World): number {
     const k = key(p.x, p.y);
     const ds = w.junctions.has(k) ? undefined : w.leads.get(k);
     const d = dir(p, q);
-    if (ds !== undefined && !ds.some((x) => x.x === d.x && x.y === d.y)) c++;
+    if (ds !== undefined && !ds.some((x) => x.x === d.x && x.y === d.y)) c += 2;
   }
   return c;
 }

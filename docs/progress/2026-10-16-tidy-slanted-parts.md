@@ -39,6 +39,9 @@ circuit with a slanted inductor, slanted wires and a dangling stub that Tidy up 
 - Kept as drawn: parts and wires at exactly 45 degrees (bridges, X crossovers in relayxor and
   jkff). A slanted run that can't become an L gets a route round parts with at most three corners
   and not much longer than it was. Wires out to a loose end move with their point.
+- A wire meeting a part's lead sideways now counts as a full bend, so a square U-shaped wire
+  between two parts no longer becomes an L that drags a part into the corner (Gady's inductor
+  loop kept its resistor and capacitor where they were). 63 bundled examples still tidy.
 - Rollback rule: tidy is undone if any net changes or more posts land on a wire's middle; fewer
   is allowed (`keepsConnections`).
 - Stress test (in `tidy.test.ts`): one point of each bundled example dragged 1 to 3 grid steps
@@ -54,5 +57,3 @@ circuit with a slanted inductor, slanted wires and a dangling stub that Tidy up 
 
 - A slanted part whose squared position would land on a neighbour stays slanted (a few percent of
   the stress test, more when several points are dragged).
-- A U-shaped wire between two parts can still become an L, moving a part into the corner (old
-  reroute behaviour).
