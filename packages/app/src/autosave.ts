@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 
+import { embedConfig } from './embedConfig.ts';
 import { controller } from './SimController.ts';
 import { useApp } from './store.ts';
 
@@ -14,6 +15,10 @@ const SAVE_EVERY_MS = 3000;
 export interface LastCircuit {
   text: string;
   title: string;
+  /** The circuit's save in My circuits, if it has one. */
+  savedAs?: { id: string; name: string } | null;
+  /** It had changes not saved anywhere. */
+  unsaved?: boolean;
 }
 
 export function readLastCircuit(): LastCircuit | null {
@@ -21,9 +26,20 @@ export function readLastCircuit(): LastCircuit | null {
     const raw = localStorage.getItem(LAST_CIRCUIT_KEY);
     if (raw === null) return null;
     const v = JSON.parse(raw) as Partial<LastCircuit>;
-    return typeof v.text === 'string' && v.text !== '' && typeof v.title === 'string'
-      ? { text: v.text, title: v.title }
-      : null;
+    if (typeof v.text !== 'string' || v.text === '' || typeof v.title !== 'string') return null;
+    const sa = v.savedAs;
+    return {
+      text: v.text,
+      title: v.title,
+      savedAs:
+        typeof sa === 'object' &&
+        sa !== null &&
+        typeof sa.id === 'string' &&
+        typeof sa.name === 'string'
+          ? { id: sa.id, name: sa.name }
+          : null,
+      unsaved: v.unsaved === true,
+    };
   } catch {
     return null;
   }
@@ -41,8 +57,8 @@ export function saveLastCircuit(): void {
   } catch {
     return;
   }
-  const title = useApp.getState().title;
-  const value = JSON.stringify({ text, title });
+  const { title, savedAs } = useApp.getState();
+  const value = JSON.stringify({ text, title, savedAs, unsaved: controller.unsavedChanges });
   if (value === lastSaved) return;
   try {
     localStorage.setItem(LAST_CIRCUIT_KEY, value);
@@ -50,6 +66,26 @@ export function saveLastCircuit(): void {
   } catch {
     // storage full or disabled: the circuit lasts for this page
   }
+}
+
+let leaving = false;
+
+/** The app reloads itself (an update, the crash screen): no question first. */
+export function allowLeave(): void {
+  leaving = true;
+}
+
+/**
+ * Closing or reloading the page while the circuit has changes not saved anywhere asks first
+ * (Options > Warn before closing with unsaved changes). Browsers show their own wording, and only
+ * once the page has been clicked or typed in; iPhone and iPad Safari never ask.
+ */
+function warnBeforeLeaving(e: BeforeUnloadEvent): void {
+  if (leaving || embedConfig !== null || !controller.unsavedChanges) return;
+  if (!useApp.getState().settings.warnUnsaved) return;
+  e.preventDefault();
+  // browsers from before preventDefault counted (Chrome before 119) ask when this is set
+  e.returnValue = true;
 }
 
 /** Save while the app runs and whenever it goes to the background. Returns a stop function. */
@@ -62,9 +98,11 @@ export function installAutosave(): () => void {
   };
   document.addEventListener('visibilitychange', onHide);
   window.addEventListener('pagehide', saveLastCircuit);
+  window.addEventListener('beforeunload', warnBeforeLeaving);
   return () => {
     window.clearInterval(timer);
     document.removeEventListener('visibilitychange', onHide);
     window.removeEventListener('pagehide', saveLastCircuit);
+    window.removeEventListener('beforeunload', warnBeforeLeaving);
   };
 }

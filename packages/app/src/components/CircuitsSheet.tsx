@@ -4,6 +4,8 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import type { ExampleItem, ExampleMenu } from '../examples.ts';
+import { openDialog } from '../commands.ts';
+import { embedConfig } from '../embedConfig.ts';
 import { openExample } from '../startup.ts';
 import { CategoryIcon } from './CategoryIcon.tsx';
 import { Icon } from './Icon.tsx';
@@ -218,7 +220,30 @@ export function CircuitsSheet(props: {
           </label>
           <div ref={body} className="circuits-sheet-body" key={q === '' ? 'tree' : 'search'}>
             {q === '' ? (
-              <Items menu={props.root} depth={0} pick={pick} />
+              <>
+                {embedConfig === null && (
+                  <ul className="sheet-list">
+                    <li className="sheet-category">
+                      <button
+                        type="button"
+                        className="sheet-row sheet-group"
+                        data-testid="circuits-sheet-mine"
+                        onClick={() => {
+                          props.onClose();
+                          openDialog('myCircuits');
+                        }}
+                      >
+                        <span className="category-icon" aria-hidden>
+                          <Icon name="save" />
+                        </span>
+                        <span className="sheet-row-title">{t('My circuits')}</span>
+                        <Icon name="chevronRight" className="icon sheet-chevron" />
+                      </button>
+                    </li>
+                  </ul>
+                )}
+                <Items menu={props.root} depth={0} pick={pick} />
+              </>
             ) : found.length === 0 ? (
               <p className="inspector-empty circuits-sheet-empty">{t('No circuits match.')}</p>
             ) : (

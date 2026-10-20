@@ -179,6 +179,7 @@ test('save downloads the circuit and export link reopens it', async ({ page }) =
   await open(page, LOOP);
   await page.getByTestId('file-menu').click();
   await page.getByTestId('menu-save').click();
+  await page.getByTestId('save-target-file').click();
   await page.getByTestId('save-name').fill('loop');
   const download = page.waitForEvent('download');
   await page.getByTestId('save-ok').click();

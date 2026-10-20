@@ -53,6 +53,8 @@ export interface UserSettings {
   quickPickBar: boolean;
   /** Q, a right-button flick or a long press on empty canvas opens the radial wheel. */
   quickPickWheel: boolean;
+  /** Closing the page with changes not saved anywhere asks first (autosave.ts). */
+  warnUnsaved: boolean;
   /** Font for text boxes; a display choice, not saved with circuits. */
   textFont: TextFont;
   /** Interface language: `auto` (the browser's) or an upstream catalog code (i18n.ts). */
@@ -122,6 +124,10 @@ export type TeachTool = 'pencil' | 'laser' | 'eraser';
 
 export interface AppState {
   title: string;
+  /** The circuit changed since it was opened or saved (a dot beside the title). */
+  unsaved: boolean;
+  /** The circuit on screen is this one of My circuits: Ctrl+S saves over it. */
+  savedAs: { id: string; name: string } | null;
   running: boolean;
   /** Simulation speed slider, 0..259 (upstream scale, in quarter notches or finer). */
   speed: number;
@@ -155,6 +161,7 @@ export interface AppState {
   /** Open dialog (commands.ts DialogKind). */
   dialog:
     | 'save'
+    | 'myCircuits'
     | 'exportLink'
     | 'exportText'
     | 'importText'
@@ -260,6 +267,7 @@ function loadSettings(): UserSettings {
     routeWires: true,
     quickPickBar: true,
     quickPickWheel: true,
+    warnUnsaved: true,
     valueSize: 0.875,
     textFont: { family: 'default', bold: false, italic: false },
     language: 'auto',
@@ -299,6 +307,7 @@ function loadSettings(): UserSettings {
       quickPickBar: typeof s.quickPickBar === 'boolean' ? s.quickPickBar : defaults.quickPickBar,
       quickPickWheel:
         typeof s.quickPickWheel === 'boolean' ? s.quickPickWheel : defaults.quickPickWheel,
+      warnUnsaved: typeof s.warnUnsaved === 'boolean' ? s.warnUnsaved : defaults.warnUnsaved,
       valueSize: VALUE_SIZES.some((v) => v.scale === s.valueSize)
         ? (s.valueSize as number)
         : defaults.valueSize,
@@ -384,6 +393,8 @@ const initialSettings = loadSettings();
 
 export const useApp = create<AppState>(() => ({
   title: '',
+  unsaved: false,
+  savedAs: null,
   running: true,
   speed: 117,
   currentSpeed: 50,

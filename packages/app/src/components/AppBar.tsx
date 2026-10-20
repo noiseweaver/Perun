@@ -14,6 +14,8 @@ import * as Menu from '@radix-ui/react-dropdown-menu';
 import { Fragment, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { ExampleMenu } from '../examples.ts';
 import { openDialog } from '../commands.ts';
+import { renameCurrent } from '../browserSaves.ts';
+import { embedConfig } from '../embedConfig.ts';
 import { controller } from '../SimController.ts';
 import { openExample } from '../startup.ts';
 import { VALUE_SIZES, updateSettings, useApp, type CircuitDisplay } from '../store.ts';
@@ -102,11 +104,78 @@ function AppMenu(props: {
         <TriggerFace label={props.label} icon={props.icon} />
       </Menu.Trigger>
       <Menu.Portal>
-        <Menu.Content className="menu-content" sideOffset={4} align="start">
+        {/* a menu taller than the window scrolls; it can take focus so the keyboard reaches it
+            (arrow keys still move between items) */}
+        <Menu.Content className="menu-content" sideOffset={4} align="start" tabIndex={0}>
           {props.children}
         </Menu.Content>
       </Menu.Portal>
     </Menu.Root>
+  );
+}
+
+/**
+ * The circuit's name. Clicking it edits it in place (renaming the circuit's save in My circuits
+ * too); a dot after it says the circuit has changes not saved anywhere.
+ */
+function CircuitTitle({ title }: { title: string }) {
+  const unsaved = useApp((s) => s.unsaved);
+  const [editing, setEditing] = useState<string | null>(null);
+  // an example's title is in the catalogs, as in the Circuits menu
+  const shown = t(title);
+  const finish = (keep: boolean): void => {
+    if (editing === null) return;
+    if (keep) renameCurrent(editing);
+    setEditing(null);
+  };
+  const dot = unsaved && embedConfig === null && (
+    <span
+      className="app-bar-unsaved"
+      role="img"
+      aria-label={t('Unsaved changes')}
+      title={t('Unsaved changes')}
+      data-testid="unsaved-dot"
+    />
+  );
+  if (editing !== null)
+    return (
+      <div className="app-bar-title-row">
+        <input
+          className="app-bar-title app-bar-title-input"
+          value={editing}
+          autoFocus
+          aria-label={t('Circuit name')}
+          data-testid="circuit-title-input"
+          onFocus={(e) => e.currentTarget.select()}
+          onChange={(e) => setEditing(e.target.value)}
+          onBlur={() => finish(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') finish(true);
+            else if (e.key === 'Escape') finish(false);
+          }}
+        />
+        {dot}
+      </div>
+    );
+  return (
+    <div className="app-bar-title-row">
+      <h1 className="app-bar-title" data-testid="circuit-title">
+        {embedConfig === null ? (
+          <button
+            type="button"
+            className="app-bar-title-button"
+            // the name may end in an ellipsis in its fixed slot: the tooltip has all of it
+            title={`${shown}\n${t('Rename')}`}
+            onClick={() => setEditing(shown)}
+          >
+            {shown}
+          </button>
+        ) : (
+          shown
+        )}
+      </h1>
+      {dot}
+    </div>
   );
 }
 
@@ -147,10 +216,7 @@ export function AppBar() {
           <path d="M2 12h4l2-5 4 10 4-10 2 5h4" strokeWidth="2" strokeLinejoin="round" />
         </svg>
       </div>
-      <h1 className="app-bar-title" data-testid="circuit-title">
-        {/* an example's title is in the catalogs, as in the Circuits menu */}
-        {t(title)}
-      </h1>
+      <CircuitTitle title={title} />
       <nav className="app-bar-menus" aria-label={t('Menus')}>
         <AppMenu label="File" icon="folderOpen" testId="file-menu">
           <Item label="New blank circuit" icon="noteAdd" onSelect={() => controller.newCircuit()} />
@@ -160,6 +226,14 @@ export function AppBar() {
             hint={`${MOD}O`}
             onSelect={() => fileInput.current?.click()}
           />
+          {embedConfig === null && (
+            <Item
+              label="My circuits…"
+              icon="save"
+              testId="menu-my-circuits"
+              onSelect={() => openDialog('myCircuits')}
+            />
+          )}
           <Item label="Open link…" icon="link" onSelect={() => setLinkOpen(true)} />
           <Item label="Import from text…" icon="upload" onSelect={() => openDialog('importText')} />
           <Menu.Separator className="menu-separator" />
@@ -355,6 +429,14 @@ export function AppBar() {
               testId="circuits-search-open"
               onSelect={() => setSheetOpen(true)}
             />
+            {embedConfig === null && (
+              <Item
+                label="My circuits…"
+                icon="save"
+                testId="circuits-my-circuits"
+                onSelect={() => openDialog('myCircuits')}
+              />
+            )}
             <Menu.Separator className="menu-separator" />
             {examples && <ExampleItems menu={examples.root} />}
           </AppMenu>
@@ -487,6 +569,18 @@ export function AppBar() {
             checked={settings.conventionalCurrent}
             onCheckedChange={(v) => updateSettings({ conventionalCurrent: v })}
           />
+          {embedConfig === null && (
+            <CheckItem
+              label="Warn before closing with unsaved changes"
+              icon="save"
+              checked={settings.warnUnsaved}
+              onCheckedChange={(v) => updateSettings({ warnUnsaved: v })}
+              title={t(
+                'Closing or reloading the page asks first while the circuit has changes not saved anywhere',
+              )}
+              testId="menu-warn-unsaved"
+            />
+          )}
           <OptionsSub label="Default text box font" icon="textFields" testId="menu-text-font">
             <Menu.RadioGroup
               value={settings.textFont.family}
