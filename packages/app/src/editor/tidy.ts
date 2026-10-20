@@ -8,18 +8,25 @@ import {
   type CircuitElm,
   type Rect,
 } from '@perun/elements';
+import { RouteGrid } from './route.ts';
+import { square } from './square.ts';
 
 /**
- * Not in upstream: "Tidy up" straightens wires, removes kinks and nudges parts into line, without
- * changing what connects to what. It only ever replaces or removes plain wires and moves or turns
- * parts on the grid; the circuit file format is unchanged.
+ * Not in upstream: "Tidy up" squares a circuit up and straightens its wires, without changing what
+ * connects to what. It only ever replaces or removes plain wires and moves or turns parts on the
+ * grid; the circuit file format is unchanged.
+ *
+ * First the whole circuit is put into rows and columns (square.ts): every two-post part and every
+ * nearly straight wire run becomes level or upright, each point staying as near as it can to where
+ * it was. What it can't settle there is handled one piece at a time below.
  *
  * A chain is a run of wires through bare joints (exactly two wire ends, no part's post). Its ends
  * (anchors) are part posts, junctions of three or more wires, or loose ends. Each chain is
  * redrawn as the simplest route between its anchors that is clear of everything else: a straight
- * wire, or an L with one bend. Parts whose posts only meet chains may then move a few grid steps
- * if that lets their wires be simpler. A two-post part drawn at an odd slant is turned to lie
- * along the grid first, and a wire with a loose end (joining nothing, pointing at nothing) goes.
+ * wire, or an L with one bend, or for a slanted one a short way round. Parts whose posts only meet
+ * chains may then move a few grid steps if that lets their wires be simpler. A two-post part still
+ * at an odd slant is turned to lie along the grid first, and a wire with a loose end (joining
+ * nothing, pointing at nothing) goes.
  */
 
 export interface TidyOptions {
@@ -95,6 +102,24 @@ function cost(route: readonly Pt[]): number {
     if (i > 0) c += 1;
   }
   return c;
+}
+
+/** Does any wire of the route slant (at 45 degrees too, unless `diagonal` is false)? */
+function slanted(route: readonly Pt[], diagonal = true): boolean {
+  for (let i = 0; i + 1 < route.length; i++) {
+    const dx = Math.abs(route[i + 1].x - route[i].x);
+    const dy = Math.abs(route[i + 1].y - route[i].y);
+    if (dx !== 0 && dy !== 0 && (diagonal || dx !== dy)) return true;
+  }
+  return false;
+}
+
+/** How far the route runs, along the grid. */
+function length(route: readonly Pt[]): number {
+  let n = 0;
+  for (let i = 0; i + 1 < route.length; i++)
+    n += Math.abs(route[i + 1].x - route[i].x) + Math.abs(route[i + 1].y - route[i].y);
+  return n;
 }
 
 function segments(route: readonly Pt[]): Seg[] {
@@ -297,8 +322,10 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
   const isFree = (e: CircuitElm): e is WireElm =>
     e instanceof WireElm && !(e instanceof RoutedWireElm) && mayChange(e) && !o.keep.has(e);
 
+  const wiresBefore = elements.filter(isFree).length;
+  // first square everything up into rows and columns; what follows tidies the wires between
+  const squared = square(elements, o);
   const free = elements.filter(isFree);
-  const wiresBefore = free.length;
   const fixed = elements.filter((e) => !isFree(e) && e.getPostCount() > 0);
 
   // ---- chains --------------------------------------------------------------------------------
@@ -404,7 +431,7 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
     chains.push({ wires, flags: wires[0].flags, route, changed: false, removed: false });
   }
 
-  let changed = zeroLength.length > 0 || dead.size > 0;
+  let changed = squared.changed || zeroLength.length > 0 || dead.size > 0;
 
   // a chain whose wires don't all look the same (current or voltage shown) stays as it is
   const movable = (c: Chain): boolean => c.wires.every((w) => w.flags === c.flags);
@@ -564,6 +591,23 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
       if (base.segs.some((s) => crossesBox(s, box))) return null;
       if (base.pts.some((p) => inside(p, box))) return null;
     }
+    // nor on each other: two points onto one, or two bodies that weren't on each other now are
+    // (unless they meet at a post)
+    const onto = new Map<string, string>();
+    for (const [k, p] of to) {
+      const was = onto.get(key(p.x, p.y));
+      if (was !== undefined && was !== k) return null;
+      onto.set(key(p.x, p.y), k);
+    }
+    for (let i = 0; i < moves.length; i++)
+      for (let j = i + 1; j < moves.length; j++) {
+        const [m, n] = [moves[i], moves[j]];
+        if (!boxesOverlap(m.box, n.box)) continue;
+        if (m.newPs.some((p) => n.newPs.some((q) => same(p, q)))) continue;
+        const bm = boxOf.get(m.e);
+        const bn = boxOf.get(n.e);
+        if (bm === undefined || bn === undefined || !boxesOverlap(bm, bn)) return null;
+      }
     const w: World = {
       points: new Set(base.points),
       pts: [...base.pts],
@@ -648,7 +692,7 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
     return unit;
   };
 
-  const moved = new Set<CircuitElm>();
+  const moved = new Set<CircuitElm>(squared.parts);
 
   // ---- turn one-post parts upright ----------------------------------------------------------
 
@@ -822,18 +866,44 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
     for (const f of all) moved.add(f);
   }
 
+  /** A route round parts on the grid, keeping off everything but its own ends. */
+  const around = (a: Pt, b: Pt, c: Chain): Pt[] | null => {
+    const grid = new RouteGrid(fixed, { gridSize: g, bbox: o.bbox, extent: [a, b], margin: 12 });
+    for (const d of live())
+      if (d !== c) for (const sg of segments(d.route)) grid.addWire(sg.ax, sg.ay, sg.bx, sg.by);
+    const r = grid.route(a, [b]);
+    return r === null ? null : simplify(r);
+  };
+
   // ---- reroute each chain --------------------------------------------------------------------
 
-  for (const c of live()) {
-    if (!movable(c)) continue;
-    const a = c.route[0];
-    const b = c.route[c.route.length - 1];
-    const w = world(new Set([c]), none);
-    const r = bestRoute(a, b, c.route, w);
-    if (r !== null && routeCost(r, w) < routeCost(c.route, w)) {
-      c.route = r;
-      c.changed = true;
-      changed = true;
+  // again until nothing changes: a route that moved can clear the way for another
+  for (let again = true, pass = 0; again && pass < 4; pass++) {
+    again = false;
+    for (const c of live()) {
+      if (!movable(c)) continue;
+      const a = c.route[0];
+      const b = c.route[c.route.length - 1];
+      const w = world(new Set([c]), none);
+      // a route that slants or runs through a part has to change
+      const bad =
+        slanted(c.route) || segments(c.route).some((s) => w.boxes.some((bx) => crossesBox(s, bx)));
+      let r = bestRoute(a, b, c.route, w);
+      // no straight wire or L will do for a slanted run: find a way round, as a newly drawn wire
+      // does, unless that takes more than three corners or a long way round. A wire at 45 degrees
+      // was drawn that way (two crossing over as an X are clearer left crossed).
+      if (r === null && slanted(c.route, false)) {
+        const by = around(a, b, c);
+        if (by !== null && by.length <= 5 && length(by) <= length(c.route) + 4 * g) r = by;
+      }
+      const differs =
+        r !== null && (r.length !== c.route.length || r.some((p, i) => !same(p, c.route[i])));
+      if (r !== null && differs && (bad || routeCost(r, w) < routeCost(c.route, w))) {
+        c.route = r;
+        c.changed = true;
+        changed = true;
+        again = true;
+      }
     }
   }
 
@@ -956,6 +1026,16 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
   elements.push(...out);
   const wiresAfter = elements.filter(isFree).length;
   return { wiresBefore, wiresAfter, partsMoved, changed };
+}
+
+/**
+ * Does `after` connect what `before` did? The same nets, and no more posts on a wire's middle (one
+ * fewer only looks less joined; it never was).
+ */
+export function keepsConnections(before: string, after: string): boolean {
+  const [nb, bb] = before.split('|');
+  const [na, ba] = after.split('|');
+  return na === nb && Number(ba) <= Number(bb);
 }
 
 /**

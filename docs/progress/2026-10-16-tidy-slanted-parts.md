@@ -1,4 +1,4 @@
-# 2026-10-16: Tidy up handles slanted parts and loose stubs
+# 2026-10-16: Tidy up squares circuits into rows and columns
 
 Branch `claude/project-thread-2yctz2` (restarted from main after PR #59). Gady reported a
 circuit with a slanted inductor, slanted wires and a dangling stub that Tidy up called
@@ -27,6 +27,23 @@ circuit with a slanted inductor, slanted wires and a dangling stub that Tidy up 
   just beyond a post (a ground's box reaches 3 units above its post) is pulled in to the post, so a
   wire may leave the post along it.
 - No bundled example has an odd-slanted part; the one labelled stub (555int) stays.
+- 2026-10-20, rethink after a fourth circuit (a loop with a long slanted inductor) also stayed
+  "Already tidy": the separate fixes each covered one shape. Tidy up now starts with
+  `square.ts`, which puts the whole circuit into rows and columns at once. Every two-post part
+  and every nearly straight wire run ties its two ends to one row or column, parts with fixed
+  geometry keep their offsets, each row and column goes to the grid line nearest where its points
+  were, order is kept, and parts keep their length (so a part in the way is pushed along). Anything
+  that would newly touch (points, a point on a wire, wires on each other, a wire through a part,
+  parts on each other) is pulled apart the way it was apart and placed again; if that can't
+  settle, square changes nothing. The old stages then tidy what's left.
+- Kept as drawn: parts and wires at exactly 45 degrees (bridges, X crossovers in relayxor and
+  jkff). A slanted run that can't become an L gets a route round parts with at most three corners
+  and not much longer than it was. Wires out to a loose end move with their point.
+- Rollback rule: tidy is undone if any net changes or more posts land on a wire's middle; fewer
+  is allowed (`keepsConnections`).
+- Stress test (in `tidy.test.ts`): one point of each bundled example dragged 1 to 3 grid steps
+  off its row or column, then tidied. 236 of 241 come back fully square, and none changes a
+  connection. The bundled examples themselves are unchanged by `square.ts`.
 - Tests in `tidy.test.ts`.
 
 ## Next
@@ -35,4 +52,7 @@ circuit with a slanted inductor, slanted wires and a dangling stub that Tidy up 
 
 ## Open issues
 
-- None known.
+- A slanted part whose squared position would land on a neighbour stays slanted (a few percent of
+  the stress test, more when several points are dragged).
+- A U-shaped wire between two parts can still become an L, moving a part into the corner (old
+  reroute behaviour).
