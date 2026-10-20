@@ -21,6 +21,11 @@ circuit with a slanted inductor, slanted wires and a dangling stub that Tidy up 
 - Junctions slide: a wire junction (no part's post) may move along its wires so a wire leaving it
   runs straight, when that makes fewer wires and bends. 12 bundled examples come out a little
   tidier for it (e.g. the diff amp's emitters join in one straight line).
+- 2026-10-20, Gady's switch circuit: a ground drawn at a slant stayed, and so did the slanted wire
+  beside it. One-post parts (ground, rail, label) now turn about their post to point along the
+  grid, the way nearest to how they point, redrawing their own wires round them. A box edge lying
+  just beyond a post (a ground's box reaches 3 units above its post) is pulled in to the post, so a
+  wire may leave the post along it.
 - No bundled example has an odd-slanted part; the one labelled stub (555int) stays.
 - Tests in `tidy.test.ts`.
 

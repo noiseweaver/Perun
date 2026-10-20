@@ -172,6 +172,23 @@ const shift = (b: Rect, dx: number, dy: number): Rect => ({
   y2: b.y2 + dy,
 });
 
+/**
+ * A part's body for keeping wires and other parts out: its hit box, with an edge that lies just
+ * beyond a post pulled in to the post (a ground's box reaches a little above its post), so a wire
+ * may leave the post along that edge.
+ */
+function body(b: Rect | null, ps: readonly Pt[]): Rect | null {
+  if (b === null) return null;
+  const r = { ...b };
+  for (const p of ps) {
+    if (p.y > r.y1 && p.y - r.y1 <= 3 && p.y < r.y2) r.y1 = p.y;
+    if (p.y < r.y2 && r.y2 - p.y <= 3 && p.y > r.y1) r.y2 = p.y;
+    if (p.x > r.x1 && p.x - r.x1 <= 3 && p.x < r.x2) r.x1 = p.x;
+    if (p.x < r.x2 && r.x2 - p.x <= 3 && p.x > r.x1) r.x2 = p.x;
+  }
+  return r;
+}
+
 /** Posts of an element. */
 function posts(e: CircuitElm): Pt[] {
   const out: Pt[] = [];
@@ -442,7 +459,7 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
   const boxOf = new Map<CircuitElm, Rect>();
   for (const e of fixed) {
     if (e instanceof WireElm) continue;
-    const b = o.bbox(e);
+    const b = body(o.bbox(e), posts(e));
     if (b !== null) boxOf.set(e, b);
   }
 
@@ -590,7 +607,7 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
   const settle = (es: Iterable<CircuitElm>, attached: readonly Chain[], routes: Pt[][]): void => {
     reindex();
     for (const e of es) {
-      const b = o.bbox(e);
+      const b = body(o.bbox(e), posts(e));
       if (b !== null) boxOf.set(e, b);
     }
     attached.forEach((c, i) => {
@@ -631,12 +648,62 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
     return unit;
   };
 
+  const moved = new Set<CircuitElm>();
+
+  // ---- turn one-post parts upright ----------------------------------------------------------
+
+  // A ground, rail or label drawn at a slant turns about its post to point along the grid, the
+  // way nearest to how it points now, where its body lands clear of everything else.
+  for (const e of fixed) {
+    const box = boxOf.get(e);
+    if (e instanceof WireElm || !mayChange(e) || box === undefined || e.getPostCount() !== 1)
+      continue;
+    const [p] = posts(e);
+    const dx = e.x2 - e.x;
+    const dy = e.y2 - e.y;
+    if (dx === 0 || dy === 0) continue;
+    const len = Math.max(g, Math.round(Math.hypot(dx, dy) / g) * g);
+    const ways = [
+      { x: Math.sign(dx), y: 0 },
+      { x: 0, y: Math.sign(dy) },
+      { x: -Math.sign(dx), y: 0 },
+      { x: 0, y: -Math.sign(dy) },
+    ].sort((a, b) => b.x * dx + b.y * dy - (a.x * dx + a.y * dy));
+    const old = [e.x2, e.y2] as const;
+    const ghosts = new Set((fixedPosts.get(key(p.x, p.y)) ?? []).filter((x) => x !== e));
+    // its own wires may be redrawn round it
+    const attached = attachedTo(new Set([key(p.x, p.y)]));
+    if (!attached.every(movable)) continue;
+    const base = world(new Set(attached), new Set([e]), ghosts);
+    let done = false;
+    for (const u of ways) {
+      e.x2 = e.x + u.x * len;
+      e.y2 = e.y + u.y * len;
+      e.setPoints();
+      const [q] = posts(e);
+      const b = body(o.bbox(e), [q]);
+      const placed =
+        same(p, q) && b !== null
+          ? place([{ e, newPs: [q], box: b }], new Map(), attached, base)
+          : null;
+      if (placed !== null) {
+        settle([e], attached, placed.routes);
+        moved.add(e);
+        done = true;
+        break;
+      }
+    }
+    if (!done) {
+      [e.x2, e.y2] = old;
+      e.setPoints();
+    }
+  }
+
   // ---- straighten slanted parts ----------------------------------------------------------------
 
   // A two-post part drawn at an odd slant turns to lie along the grid, about where it was, and its
   // wires follow; parts joined straight onto a post that moves (another part, a label) go along.
   // One at exactly 45 degrees is left alone: that's how bridges are drawn.
-  const moved = new Set<CircuitElm>();
   for (const e of fixed) {
     const box = boxOf.get(e);
     if (e instanceof WireElm || !mayChange(e) || box === undefined || e.getPostCount() !== 2)
@@ -719,7 +786,7 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
         const to = new Map<string, Pt>();
         ps.forEach((p, i) => to.set(key(p.x, p.y), newPs[i]));
         set(q);
-        const myBox = o.bbox(e);
+        const myBox = body(o.bbox(e), posts(e));
         set(old);
         if (myBox === null) continue;
         const moves: Move[] = [{ e, newPs, box: myBox }];

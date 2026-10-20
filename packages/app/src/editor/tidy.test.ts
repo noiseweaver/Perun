@@ -162,6 +162,20 @@ describe('tidy up', () => {
     expect(ed.tidyUp()?.changed).toBe(false);
   });
 
+  it('turns a slanted ground upright so the wire beside it can run straight', () => {
+    const { circuit, ed } = setup(
+      'i 0 320 0 0 0 0.01\nw 0 0 96 0 0\nr 96 0 96 320 0 600\n' +
+        'w 0 320 96 352 0\nw 96 352 96 320 0\ng 0 320 16 384 0 0\n',
+    );
+    const sig = connectivity(circuit.elements);
+    expect(ed.tidyUp()?.changed).toBe(true);
+    expect(connectivity(circuit.elements)).toBe(sig);
+    const gnd = circuit.elements.find((e) => e.getClassName() === 'GroundElm') as CircuitElm;
+    expect([gnd.x, gnd.y, gnd.x2, gnd.y2]).toEqual([0, 320, 0, 384]);
+    expect(wires(circuit)).toContainEqual([0, 320, 96, 320]);
+    expect(ed.tidyUp()?.changed).toBe(false);
+  });
+
   it('leaves a part at 45 degrees and a stub pointing at a label as they are', () => {
     const { circuit, ed } = setup(
       'r 0 -64 0 0 0 1000\nw 0 0 0 64 0\nd 0 64 64 128 2 default\nw 64 128 64 192 0\n' +
