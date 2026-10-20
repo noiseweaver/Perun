@@ -14,8 +14,14 @@ circuit with a slanted inductor, slanted wires and a dangling stub that Tidy up 
 - A wire with a loose end (no post, no other wire there) is removed, and the next one if that
   leaves it loose. Kept: a loose end next to a label or part (a pin drawn out to its name, as in
   555int), on another wire's middle, or a wire with a post on its middle.
-- The bundled examples tidy exactly as before (no example has an odd-slanted part; the one
-  labelled stub stays).
+- 2026-10-20, Gady's divider (slanted resistors joined end to end, with voltage labels on their
+  joins): a slanted part whose post is shared with other parts couldn't turn at all. Now the parts
+  and labels joined to a post that moves go with it (up to 12, never back round to the part
+  itself), and parts on a post that stays may touch its new body there.
+- Junctions slide: a wire junction (no part's post) may move along its wires so a wire leaving it
+  runs straight, when that makes fewer wires and bends. 12 bundled examples come out a little
+  tidier for it (e.g. the diff amp's emitters join in one straight line).
+- No bundled example has an odd-slanted part; the one labelled stub (555int) stays.
 - Tests in `tidy.test.ts`.
 
 ## Next

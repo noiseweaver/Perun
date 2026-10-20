@@ -141,6 +141,27 @@ describe('tidy up', () => {
     expect(ed.tidyUp()?.changed).toBe(false);
   });
 
+  it('stands slanted resistors upright, moving the labels and parts joined to them', () => {
+    const { circuit, ed } = setup(
+      'v 0 512 0 0 0 0 40 10 0 0 0.5\nw 0 0 208 0 0\nw 208 0 512 0 0\n' +
+        'r 208 0 208 224 0 10000\nO 208 224 272 224 1 0\nw 208 224 224 336 0\n' +
+        'r 224 336 240 432 0 10000\nw 240 432 256 512 0\nw 0 512 256 512 0\nw 256 512 496 512 0\n' +
+        'r 512 0 480 112 0 10000\nO 480 112 544 112 1 0\nr 480 112 480 224 0 10000\n' +
+        'O 480 224 544 224 1 0\nr 480 224 496 352 0 10000\nO 496 352 560 352 1 0\n' +
+        'r 496 352 496 512 0 10000\n',
+    );
+    const sig = connectivity(circuit.elements);
+    expect(ed.tidyUp()?.changed).toBe(true);
+    expect(connectivity(circuit.elements)).toBe(sig);
+    for (const e of circuit.elements)
+      if (e.getClassName() === 'ResistorElm') expect(e.x === e.x2 || e.y === e.y2).toBe(true);
+    // every wire straight, no jogs
+    for (const [x, y, x2, y2] of wires(circuit)) expect(x === x2 || y === y2).toBe(true);
+    expect(wires(circuit)).toHaveLength(6);
+    expect(bodyCrossings(circuit.elements)).toBe(0);
+    expect(ed.tidyUp()?.changed).toBe(false);
+  });
+
   it('leaves a part at 45 degrees and a stub pointing at a label as they are', () => {
     const { circuit, ed } = setup(
       'r 0 -64 0 0 0 1000\nw 0 0 0 64 0\nd 0 64 64 128 2 default\nw 64 128 64 192 0\n' +

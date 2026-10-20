@@ -446,8 +446,15 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
     if (b !== null) boxOf.set(e, b);
   }
 
-  /** Everything except the given chains and part. */
-  const world = (skip: ReadonlySet<Chain>, without: CircuitElm | null): World => {
+  /**
+   * Everything except the given chains and parts. Ghosts keep their posts and leads but not their
+   * bodies: parts that share a post with one that's moving, whose boxes may touch it there.
+   */
+  const world = (
+    skip: ReadonlySet<Chain>,
+    without: ReadonlySet<CircuitElm>,
+    ghosts: ReadonlySet<CircuitElm> = new Set(),
+  ): World => {
     const points = new Set<string>();
     const pts: Pt[] = [];
     const add = (p: Pt): void => {
@@ -456,7 +463,7 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
       points.add(k);
       pts.push(p);
     };
-    for (const e of fixed) if (e !== without) for (const p of posts(e)) add(p);
+    for (const e of fixed) if (!without.has(e)) for (const p of posts(e)) add(p);
     const segs = [...fixedSegs];
     for (const c of live()) {
       if (skip.has(c)) continue;
@@ -464,9 +471,9 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
       segs.push(...segments(c.route));
     }
     const boxes: Rect[] = [];
-    for (const [e, b] of boxOf) if (e !== without) boxes.push(b);
+    for (const [e, b] of boxOf) if (!without.has(e) && !ghosts.has(e)) boxes.push(b);
     const leads = new Map<string, Pt[]>();
-    for (const [e, b] of boxOf) if (e !== without) addLeads(leads, posts(e), b);
+    for (const [e, b] of boxOf) if (!without.has(e)) addLeads(leads, posts(e), b);
     const wireEnds = new Map<string, number>();
     const count = (p: Pt): void => {
       const k = key(p.x, p.y);
@@ -482,9 +489,10 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
     return { points, pts, segs, boxes, leads, junctions };
   };
 
-  // ---- placing a part somewhere else ---------------------------------------------------------
+  // ---- placing parts and junctions somewhere else --------------------------------------------
 
   const g = o.gridSize;
+  const none = new Set<CircuitElm>();
 
   const reindex = (): void => {
     fixedPosts.clear();
@@ -497,7 +505,7 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
       }
   };
 
-  /** The live chains with an end on one of these posts. */
+  /** The live chains with an end on one of these points. */
   const attachedTo = (psKeys: ReadonlySet<string>): Chain[] =>
     live().filter((c) => {
       const a = c.route[0];
@@ -505,43 +513,57 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
       return psKeys.has(key(a.x, a.y)) || psKeys.has(key(b.x, b.y));
     });
 
+  const chainsCost = (cs: readonly Chain[], w: World): number =>
+    cs.reduce((s, c) => s + routeCost(c.route, w), 0);
+
+  /** A part moving: its posts and body where they would go. */
+  interface Move {
+    e: CircuitElm;
+    newPs: Pt[];
+    box: Rect;
+  }
+
   /**
-   * The routes of the attached chains, and what they cost, if the part's posts `ps` were at `newPs` and its body at
-   * `myBox`, or null if it can't go there: a moved post would land on something, or the body on
-   * another body or a wire.
+   * The routes of the attached chains, and what they cost, if the points in `to` (posts or
+   * junctions, by key) went where it says and the parts in `moves` with them; or null if they
+   * can't: a moved point would land on something, or a body on another body or a wire.
    */
   const place = (
-    ps: readonly Pt[],
-    newPs: readonly Pt[],
-    myBox: Rect,
+    moves: readonly Move[],
+    to: ReadonlyMap<string, Pt>,
     attached: readonly Chain[],
     base: World,
   ): { routes: Pt[][]; cost: number } | null => {
-    const movedPs = newPs.filter((p, i) => !same(p, ps[i]));
-    if (movedPs.some((p) => base.points.has(key(p.x, p.y)))) return null;
-    if (movedPs.some((p) => base.segs.some((s) => onInterior(s, p)))) return null;
-    if (base.boxes.some((b) => boxesOverlap(myBox, b))) return null;
-    if (base.segs.some((s) => crossesBox(s, myBox))) return null;
-    if (base.pts.some((p) => p.x > myBox.x1 && p.x < myBox.x2 && p.y > myBox.y1 && p.y < myBox.y2))
-      return null;
+    const inside = (p: Pt, b: Rect): boolean =>
+      p.x > b.x1 && p.x < b.x2 && p.y > b.y1 && p.y < b.y2;
+    for (const [k, p] of to) {
+      if (key(p.x, p.y) === k) continue;
+      if (base.points.has(key(p.x, p.y))) return null;
+      if (base.segs.some((s) => onInterior(s, p))) return null;
+      if (base.boxes.some((b) => inside(p, b))) return null;
+    }
+    for (const { box } of moves) {
+      if (base.boxes.some((b) => boxesOverlap(box, b))) return null;
+      if (base.segs.some((s) => crossesBox(s, box))) return null;
+      if (base.pts.some((p) => inside(p, box))) return null;
+    }
     const w: World = {
       points: new Set(base.points),
       pts: [...base.pts],
       segs: [...base.segs],
-      boxes: [...base.boxes, myBox],
+      boxes: [...base.boxes, ...moves.map((m) => m.box)],
       leads: new Map([...base.leads].map(([k, v]) => [k, [...v]])),
       junctions: new Set(base.junctions),
     };
-    addLeads(w.leads, newPs, myBox);
-    const to = new Map<string, Pt>();
-    ps.forEach((p, i) => {
-      to.set(key(p.x, p.y), newPs[i]);
-      if (base.junctions.has(key(p.x, p.y))) w.junctions.add(key(newPs[i].x, newPs[i].y));
-    });
-    for (const p of newPs) {
-      w.points.add(key(p.x, p.y));
-      w.pts.push(p);
+    for (const m of moves) {
+      addLeads(w.leads, m.newPs, m.box);
+      for (const p of m.newPs) {
+        if (w.points.has(key(p.x, p.y))) continue;
+        w.points.add(key(p.x, p.y));
+        w.pts.push(p);
+      }
     }
+    for (const [k, p] of to) if (base.junctions.has(k)) w.junctions.add(key(p.x, p.y));
     const mv = (p: Pt): Pt => to.get(key(p.x, p.y)) ?? p;
     // reroute the attached chains one by one
     const routes: Pt[][] = [];
@@ -565,10 +587,12 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
     return { routes, cost: routes.reduce((s, r) => s + routeCost(r, w), 0) };
   };
 
-  const settle = (e: CircuitElm, attached: readonly Chain[], routes: readonly Pt[][]): void => {
+  const settle = (es: Iterable<CircuitElm>, attached: readonly Chain[], routes: Pt[][]): void => {
     reindex();
-    const b = o.bbox(e);
-    if (b !== null) boxOf.set(e, b);
+    for (const e of es) {
+      const b = o.bbox(e);
+      if (b !== null) boxOf.set(e, b);
+    }
     attached.forEach((c, i) => {
       c.route = routes[i];
       c.changed = true;
@@ -576,11 +600,43 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
     changed = true;
   };
 
+  /**
+   * The parts joined post to post with the one at `k` (not `e`), which would move with it: null
+   * if that can't be, because one is a wire that stays, mustn't change, or leads back to `e`.
+   */
+  const unitAt = (k: string, e: CircuitElm): Set<CircuitElm> | null => {
+    const unit = new Set<CircuitElm>();
+    const todo = [k];
+    const seenKeys = new Set(todo);
+    while (todo.length > 0) {
+      const at = todo.pop() ?? '';
+      for (const f of fixedPosts.get(at) ?? []) {
+        if (f === e) {
+          if (at === k) continue;
+          return null;
+        }
+        if (unit.has(f)) continue;
+        if (f instanceof WireElm || !mayChange(f) || !boxOf.has(f)) return null;
+        unit.add(f);
+        if (unit.size > 12) return null;
+        for (const p of posts(f)) {
+          const pk = key(p.x, p.y);
+          if (!seenKeys.has(pk)) {
+            seenKeys.add(pk);
+            todo.push(pk);
+          }
+        }
+      }
+    }
+    return unit;
+  };
+
   // ---- straighten slanted parts ----------------------------------------------------------------
 
   // A two-post part drawn at an odd slant turns to lie along the grid, about where it was, and its
-  // wires follow. One at exactly 45 degrees is left alone: that's how bridges are drawn.
-  const straightened = new Set<CircuitElm>();
+  // wires follow; parts joined straight onto a post that moves (another part, a label) go along.
+  // One at exactly 45 degrees is left alone: that's how bridges are drawn.
+  const moved = new Set<CircuitElm>();
   for (const e of fixed) {
     const box = boxOf.get(e);
     if (e instanceof WireElm || !mayChange(e) || box === undefined || e.getPostCount() !== 2)
@@ -591,9 +647,6 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
     const dx = e.x2 - e.x;
     const dy = e.y2 - e.y;
     if (dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy)) continue;
-    const attached = attachedTo(new Set(ps.map((p) => key(p.x, p.y))));
-    if (!attached.every(movable)) continue;
-    const base = world(new Set(attached), e);
     const len = Math.max(g, Math.round(Math.hypot(dx, dy) / g) * g);
     const lens = [
       ...new Set([len, Math.max(g, Math.round(Math.max(Math.abs(dx), Math.abs(dy)) / g) * g)]),
@@ -602,57 +655,104 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
     const up = (v: number): number => Math.ceil(v / g) * g;
     const cx = (e.x + e.x2) / 2;
     const cy = (e.y + e.y2) / 2;
-    const axes = Math.abs(dy) > Math.abs(dx) ? ['v', 'h'] : ['h', 'v'];
+    const own = attachedTo(new Set(ps.map((p) => key(p.x, p.y))));
     const old = [e.x, e.y, e.x2, e.y2] as const;
     const set = (q: readonly number[]): void => {
       [e.x, e.y, e.x2, e.y2] = q as [number, number, number, number];
       e.setPoints();
     };
-    let best: { q: number[]; routes: Pt[][]; cost: number; shift: number } | null = null;
-    for (const axis of axes) {
-      const ux = axis === 'h' ? Math.sign(dx) : 0;
-      const uy = axis === 'v' ? Math.sign(dy) : 0;
-      const tries: number[][] = [];
+    let best: {
+      q: number[];
+      units: { unit: Set<CircuitElm>; d: Pt }[];
+      attached: Chain[];
+      routes: Pt[][];
+      gain: number;
+      shift: number;
+    } | null = null;
+    for (const axis of Math.abs(dy) > Math.abs(dx) ? ['v', 'h'] : ['h', 'v']) {
+      const h = axis === 'h';
+      const u = h ? Math.sign(dx) : Math.sign(dy);
+      // in line with either post, the middle, or where its wires lead
+      const acrossAt = new Set([
+        h ? p0.y : p0.x,
+        h ? p1.y : p1.x,
+        down(h ? cy : cx),
+        up(h ? cy : cx),
+      ]);
+      for (const c of own)
+        for (const p of [c.route[0], c.route[c.route.length - 1]]) acrossAt.add(h ? p.y : p.x);
+      const tries = new Map<string, number[]>();
       for (const l of lens) {
-        // one post stays, or the part turns about its middle
-        tries.push([p0.x, p0.y, p0.x + ux * l, p0.y + uy * l]);
-        tries.push([p1.x - ux * l, p1.y - uy * l, p1.x, p1.y]);
-        const across = axis === 'h' ? cy : cx;
-        const along = (axis === 'h' ? cx : cy) - ((axis === 'h' ? ux : uy) * l) / 2;
-        for (const a of new Set([down(across), up(across)]))
-          for (const s of new Set([down(along), up(along)]))
-            tries.push(axis === 'h' ? [s, a, s + ux * l, a] : [a, s, a, s + uy * l]);
+        const mid = (h ? cx : cy) - (u * l) / 2;
+        // one post stays where it runs along, or the part turns about its middle
+        for (const s of new Set([h ? p0.x : p0.y, (h ? p1.x : p1.y) - u * l, down(mid), up(mid)]))
+          for (const a of acrossAt) {
+            const q = h ? [s, a, s + u * l, a] : [a, s, a, s + u * l];
+            tries.set(q.join(','), q);
+          }
       }
-      for (const q of tries) {
+      for (const q of tries.values()) {
         const newPs = [
           { x: q[0], y: q[1] },
           { x: q[2], y: q[3] },
         ];
-        // a post shared with something that stays put can't move
-        if (
-          newPs.some(
-            (p, i) =>
-              !same(p, ps[i]) && (fixedPosts.get(key(ps[i].x, ps[i].y)) ?? []).some((x) => x !== e),
-          )
-        )
-          continue;
+        // parts on a post that moves go with it
+        const units: { unit: Set<CircuitElm>; d: Pt }[] = [];
+        const ghosts = new Set<CircuitElm>();
+        let ok = true;
+        ps.forEach((p, i) => {
+          const k = key(p.x, p.y);
+          const others = (fixedPosts.get(k) ?? []).filter((x) => x !== e);
+          if (same(p, newPs[i])) {
+            for (const f of others) ghosts.add(f);
+            return;
+          }
+          if (others.length === 0) return;
+          const unit = unitAt(k, e);
+          if (unit === null) ok = false;
+          else units.push({ unit, d: { x: newPs[i].x - p.x, y: newPs[i].y - p.y } });
+        });
+        if (!ok) continue;
+        const without = new Set<CircuitElm>([e]);
+        for (const { unit } of units) for (const f of unit) without.add(f);
+        if (without.size !== 1 + units.reduce((s, x) => s + x.unit.size, 0)) continue;
+        const to = new Map<string, Pt>();
+        ps.forEach((p, i) => to.set(key(p.x, p.y), newPs[i]));
         set(q);
         const myBox = o.bbox(e);
         set(old);
         if (myBox === null) continue;
-        const placed = place(ps, newPs, myBox, attached, base);
+        const moves: Move[] = [{ e, newPs, box: myBox }];
+        let shiftBy = ps.reduce((s, p, i) => s + Math.hypot(p.x - newPs[i].x, p.y - newPs[i].y), 0);
+        for (const { unit, d } of units)
+          for (const f of unit) {
+            const fPs = posts(f);
+            const fNew = fPs.map((p) => ({ x: p.x + d.x, y: p.y + d.y }));
+            fPs.forEach((p, i) => to.set(key(p.x, p.y), fNew[i]));
+            moves.push({ e: f, newPs: fNew, box: shift(boxOf.get(f) as Rect, d.x, d.y) });
+            shiftBy += fPs.length * Math.hypot(d.x, d.y);
+          }
+        const attached = attachedTo(new Set(to.keys()));
+        if (!attached.every(movable)) continue;
+        const before = chainsCost(attached, world(new Set(attached), none));
+        const placed = place(moves, to, attached, world(new Set(attached), without, ghosts));
         if (placed === null) continue;
-        const { routes, cost } = placed;
-        const moved = ps.reduce((s, p, i) => s + Math.hypot(p.x - newPs[i].x, p.y - newPs[i].y), 0);
-        if (best === null || cost < best.cost || (cost === best.cost && moved < best.shift))
-          best = { q, routes, cost, shift: moved };
+        const gain = before - placed.cost;
+        if (best === null || gain > best.gain || (gain === best.gain && shiftBy < best.shift))
+          best = { q, units, attached, routes: placed.routes, gain, shift: shiftBy };
       }
       if (best !== null) break;
     }
     if (best === null) continue;
     set(best.q);
-    straightened.add(e);
-    settle(e, attached, best.routes);
+    const all = new Set<CircuitElm>([e]);
+    for (const { unit, d } of best.units)
+      for (const f of unit) {
+        f.move(d.x, d.y);
+        all.add(f);
+      }
+    settle(all, best.attached, best.routes);
+    for (const f of all) moved.add(f);
   }
 
   // ---- reroute each chain --------------------------------------------------------------------
@@ -661,7 +761,7 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
     if (!movable(c)) continue;
     const a = c.route[0];
     const b = c.route[c.route.length - 1];
-    const w = world(new Set([c]), null);
+    const w = world(new Set([c]), none);
     const r = bestRoute(a, b, c.route, w);
     if (r !== null && routeCost(r, w) < routeCost(c.route, w)) {
       c.route = r;
@@ -670,9 +770,46 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
     }
   }
 
+  // ---- slide junctions -----------------------------------------------------------------------
+
+  // A junction of wires (no part's post) may slide so a wire leaving it runs straight: a T whose
+  // leg comes in with a jog moves along its bar to meet it.
+  for (let round = 0; round < 100; round++) {
+    let pick: { attached: Chain[]; routes: Pt[][]; gain: number } | null = null;
+    const ends = new Map<string, number>();
+    for (const c of live())
+      for (const p of [c.route[0], c.route[c.route.length - 1]])
+        ends.set(key(p.x, p.y), (ends.get(key(p.x, p.y)) ?? 0) + 1);
+    for (const [k, n] of ends) {
+      if (n < 3 || fixedPosts.has(k)) continue;
+      const attached = attachedTo(new Set([k]));
+      if (!attached.every(movable)) continue;
+      const j = parseKey(k);
+      const base = world(new Set(attached), none);
+      const before = chainsCost(attached, base);
+      const tries = new Map<string, Pt>();
+      for (const c of attached) {
+        const far = same(c.route[0], j) ? c.route[c.route.length - 1] : c.route[0];
+        for (const p of [
+          { x: far.x, y: j.y },
+          { x: j.x, y: far.y },
+        ])
+          if (!same(p, j)) tries.set(key(p.x, p.y), p);
+      }
+      for (const p of tries.values()) {
+        const placed = place([], new Map([[k, p]]), attached, base);
+        if (placed === null) continue;
+        const gain = before - placed.cost;
+        if (gain > 0 && (pick === null || gain > pick.gain))
+          pick = { attached, routes: placed.routes, gain };
+      }
+    }
+    if (pick === null) break;
+    settle([], pick.attached, pick.routes);
+  }
+
   // ---- nudge parts into line -----------------------------------------------------------------
 
-  const moved = new Set<CircuitElm>(straightened);
   const steps: [number, number][] = [];
   // up to two grid steps each way, nearest first, so the smallest move wins a tie
   for (let i = -2; i <= 2; i++)
@@ -698,13 +835,13 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
       if (ps.some((p) => (fixedPosts.get(key(p.x, p.y)) ?? []).some((x) => x !== e))) continue;
       const attached = attachedTo(new Set(ps.map((p) => key(p.x, p.y))));
       if (attached.length === 0 || !attached.every(movable)) continue;
-      const now = world(new Set(attached), null);
-      const before = attached.reduce((s, c) => s + routeCost(c.route, now), 0);
-      const base = world(new Set(attached), e);
+      const before = chainsCost(attached, world(new Set(attached), none));
+      const base = world(new Set(attached), new Set([e]));
       let best: { dx: number; dy: number; routes: Pt[][]; gain: number } | null = null;
       for (const [dx, dy] of steps) {
         const newPs = ps.map((p) => ({ x: p.x + dx, y: p.y + dy }));
-        const placed = place(ps, newPs, shift(box, dx, dy), attached, base);
+        const to = new Map(ps.map((p, i) => [key(p.x, p.y), newPs[i]] as const));
+        const placed = place([{ e, newPs, box: shift(box, dx, dy) }], to, attached, base);
         if (placed === null) continue;
         const gain = before - placed.cost;
         if (gain > 0 && (best === null || gain > best.gain))
@@ -715,7 +852,7 @@ export function tidy(elements: CircuitElm[], o: TidyOptions): TidyResult {
     }
     if (pick === null) break;
     pick.e.move(pick.dx, pick.dy);
-    settle(pick.e, pick.attached, pick.routes);
+    settle([pick.e], pick.attached, pick.routes);
     moved.add(pick.e);
   }
   const partsMoved = moved.size;
