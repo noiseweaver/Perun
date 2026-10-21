@@ -22,9 +22,7 @@ describe('drawing settings', () => {
     // a setting missing from SETTING_USE doesn't compile
     // @ts-expect-error newSetting is not listed
     const _check: Record<keyof UserSettings | 'newSetting', string> = SETTING_USE;
-    expect(Object.keys(SETTING_USE).sort()).toEqual(
-      Object.keys(readSettings(() => null)).sort(),
-    );
+    expect(Object.keys(SETTING_USE).sort()).toEqual(Object.keys(readSettings(() => null)).sort());
   });
 
   it('draws with the user settings and the circuit options', () => {

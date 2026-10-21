@@ -52,8 +52,8 @@ export { showToast } from './store.ts';
 
 /** Upstream's default file name: circuitjs-yyyyMMdd-HHmmss.txt. */
 export function defaultFileName(): string {
-  // in the Obsidian plugin every edit is already in the circuit's own file: Save makes a copy
-  if (embedConfig !== null) return `${useApp.getState().title} copy.circuit`;
+  // in the Obsidian plugin, the circuit's own file
+  if (embedConfig !== null) return `${useApp.getState().title}.circuit`;
   if (controller.lastFileName !== null) return controller.lastFileName;
   const d = new Date();
   const p = (n: number): string => String(n).padStart(2, '0');
@@ -67,7 +67,8 @@ export function defaultFileName(): string {
 export function saveToFile(name: string): void {
   let fname = name.trim() || defaultFileName();
   if (embedConfig !== null) {
-    // a copy in the vault; this tab stays on its own file
+    // every edit is already in the circuit's own file: Save makes a copy (the vault numbers it
+    // if the name is taken)
     if (!fname.includes('.')) fname += '.circuit';
     download(fname, controller.saveText(), 'text/plain');
     return;

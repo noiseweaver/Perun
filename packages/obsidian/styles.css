@@ -135,15 +135,20 @@
 }
 
 /* a .circuit file: the editor fills the tab */
-.workspace-leaf-content[data-type='perun-circuit'] .view-content.perun-editor {
+/* a circuit file's tab and a block's tab */
+.view-content.perun-editor {
   padding: 0;
   overflow: hidden;
 }
 
+/* desktop: keep the editor's bottom row (the time readout) clear of Obsidian's status bar, which
+   floats over the bottom right corner of the main area */
+body:not(.is-mobile) .mod-root .view-content.perun-editor {
+  padding-bottom: calc(var(--status-bar-font-size, 12px) * 2.25);
+}
+
 /* phones and tablets: keep the editor's controls clear of Obsidian's floating navigation bar */
-.is-mobile.is-floating-nav
-  .workspace-leaf-content[data-type='perun-circuit']
-  .view-content.perun-editor {
+.is-mobile.is-floating-nav .view-content.perun-editor {
   padding-bottom: calc(var(--navbar-height) + var(--navbar-bottom-offset));
 }
 

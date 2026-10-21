@@ -40,6 +40,8 @@ export interface Platform {
    * in Obsidian. Rejects when there is no storage.
    */
   records<T extends { id: string }>(database: string, store: string): RecordStore<T>;
+  /** Labels for the buttons that call saveFile (English; the caller translates them). */
+  readonly saveLabels: { readonly file: string; readonly csv: string };
   /** Give the user a file: a download on the web, a file next to the circuit in Obsidian. */
   saveFile(name: string, data: string | Blob, type: string): void;
   /**

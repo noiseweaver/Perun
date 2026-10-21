@@ -57,7 +57,10 @@ function SaveDialog() {
   const [target, setTargetState] = useState<SaveTarget>(
     embedConfig !== null ? 'file' : readSaveTarget,
   );
-  const [fileName, setFileName] = useState(defaultFileName);
+  // in Obsidian, a copy beside the circuit's own file
+  const [fileName, setFileName] = useState(() =>
+    embedConfig !== null ? defaultFileName().replace(/(\.[^.]*)?$/, ' copy$1') : defaultFileName(),
+  );
   const [name, setName] = useState(suggestedName);
   const [saved, setSaved] = useState<SavedCircuit[]>([]);
   const savedAs = useApp((s) => s.savedAs);

@@ -13,6 +13,7 @@ export const webPlatform: Platform = {
     return window.localStorage;
   },
   records: indexedDbRecords,
+  saveLabels: { file: 'Download', csv: 'Download CSV' },
   saveFile(name, data, type) {
     const blob = typeof data === 'string' ? new Blob([data], { type }) : data;
     const url = URL.createObjectURL(blob);

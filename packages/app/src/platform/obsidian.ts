@@ -24,6 +24,7 @@ export function obsidianPlatform(config: EmbedConfig): Platform {
       return window.localStorage;
     },
     records: (database, store) => vaultRecords(storage, database, store),
+    saveLabels: { file: 'Save to vault', csv: 'Save CSV to vault' },
     saveFile(name, data) {
       if (typeof data === 'string') post({ perun: 'file', name, data });
       else
