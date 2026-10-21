@@ -1,23 +1,22 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 
-import { SwitchElm, cardPlotRect, switchRect, type ScopeDefaultsStore } from '@perun/elements';
+import { SwitchElm, switchRect, type ScopeDefaultsStore } from '@perun/elements';
 import { sliderEntries, type SliderEntry } from '@perun/app/sliders';
 import { Circuit, OptionFlag } from '@perun/format';
+import { frameState, type DrawingSettings, type FrameInputs } from '@perun/app/drawing';
+import { StepClock } from '@perun/app/stepClock';
 import {
   CircuitRenderer,
-  DEFAULT_FRAME,
   DEFAULT_SCHEMATIC,
   ScopeRenderer,
-  currentMultiplier,
   schematicSvg,
-  scopeAnchor,
   onMathReady,
+  placeUndocked,
   preloadMathFor,
   type UndockedScopeItem,
 } from '@perun/render';
 import type { Theme } from '@perun/theme';
-import type { DrawSettings } from './settings.ts';
 
 /** Scope settings stay out of anyone's saved scope defaults. */
 const memoryStore: ScopeDefaultsStore = {
@@ -25,9 +24,6 @@ const memoryStore: ScopeDefaultsStore = {
   setItem: () => undefined,
 };
 
-/** Steps per sim.step() call, and the time a frame may spend simulating (as the editor). */
-const MAX_CHUNK = 1000;
-const FRAME_BUDGET_MS = 30;
 /** The circuit's height on screen, in CSS pixels. */
 const MIN_HEIGHT = 140;
 const MAX_HEIGHT = 400;
@@ -47,7 +43,8 @@ export class CircuitPlayer {
   private raf = 0;
   private animating = false;
   private last = 0;
-  private owed = 0;
+  /** The editor's pacing (packages/app/src/stepClock.ts). */
+  private readonly clock = new StepClock();
   private width = 0;
   private height = 0;
   private dpr = 1;
@@ -56,10 +53,10 @@ export class CircuitPlayer {
 
   private readonly text: string;
   private theme: Theme;
-  private draw: DrawSettings;
+  private draw: DrawingSettings;
 
   /** Throws when the circuit text can't be read. */
-  constructor(canvas: HTMLCanvasElement, text: string, theme: Theme, draw: DrawSettings) {
+  constructor(canvas: HTMLCanvasElement, text: string, theme: Theme, draw: DrawingSettings) {
     this.text = text;
     this.theme = theme;
     this.draw = draw;
@@ -143,7 +140,7 @@ export class CircuitPlayer {
     this.circuit.options.currentBar = v;
   }
 
-  setTheme(theme: Theme, draw: DrawSettings): void {
+  setTheme(theme: Theme, draw: DrawingSettings): void {
     this.theme = theme;
     this.draw = draw;
     this.renderer.setTheme(theme);
@@ -190,7 +187,7 @@ export class CircuitPlayer {
     this.circuit.read(this.text);
     this.circuit.scopes.look = this.theme.style.scopeLook;
     this.renderer.setElements(this.circuit.elements);
-    this.owed = 0;
+    this.clock.reset();
     this.frame(performance.now(), false);
   }
 
@@ -201,41 +198,13 @@ export class CircuitPlayer {
     const sim = this.circuit.sim;
     if (step && sim.stopMessage === null) {
       // as the editor's frame loop: the circuit's speed, with a time budget per frame
-      this.owed += (160 * this.circuit.getIterCount() * elapsed) / 1000;
-      if (sim.analyzeFlag && this.owed < 1) this.owed = 1;
-      const begin = performance.now();
-      while (this.owed >= 1) {
-        const k = Math.min(Math.floor(this.owed), MAX_CHUNK);
-        sim.step(k);
-        this.owed -= k;
-        if (sim.stopMessage !== null || sim.pauseRequested) break;
-        if (performance.now() - begin > FRAME_BUDGET_MS) {
-          this.owed = 0;
-          break;
-        }
-      }
-      if (sim.pauseRequested) {
-        sim.pauseRequested = false;
-        this.running = false;
-      }
+      const run = this.clock.advance(sim, 160 * this.circuit.getIterCount(), elapsed);
+      if (run.paused) this.running = false;
     } else if (sim.analyzeFlag) sim.step(0);
 
-    const o = this.circuit.options;
     const ch = this.circuitHeight();
     this.renderer.circuitHeight = ch;
-    this.renderer.render({
-      ...DEFAULT_FRAME,
-      ...this.draw.frame,
-      running: step,
-      currentMult: step
-        ? currentMultiplier(elapsed, o.currentBar, this.draw.conventionalCurrent)
-        : 0,
-      showDots: (o.flags & OptionFlag.DOTS) !== 0,
-      voltageColors: (o.flags & OptionFlag.HIDE_VOLTAGE_COLORS) === 0,
-      showValues: (o.flags & OptionFlag.HIDE_VALUES) === 0,
-      voltageRange: o.voltageRange,
-      gridSize: sim.gridSize,
-    });
+    this.renderer.render(frameState(this.draw, this.inputs(step, elapsed)));
     const mgr = this.circuit.scopes;
     // nothing in a note can be clicked: no card buttons, and every column shown (no tabs)
     mgr.compact = false;
@@ -248,41 +217,43 @@ export class CircuitPlayer {
     }
   }
 
+  /** This frame's state from the circuit's own options (the editor keeps them in its menus). */
+  private inputs(running: boolean, elapsed: number): FrameInputs {
+    const o = this.circuit.options;
+    return {
+      running,
+      elapsed,
+      currentSpeed: o.currentBar,
+      showDots: (o.flags & OptionFlag.DOTS) !== 0,
+      voltageColors: (o.flags & OptionFlag.HIDE_VOLTAGE_COLORS) === 0,
+      showValues: (o.flags & OptionFlag.HIDE_VALUES) === 0,
+      voltageRange: o.voltageRange,
+      gridSize: this.circuit.sim.gridSize,
+    };
+  }
+
   /** Undocked scopes: each card where its rectangle is on screen, with its leader line. */
   private layoutUndocked(): UndockedScopeItem[] {
     const vp = this.renderer.viewport;
     const cards = this.circuit.scopes.look === 'cards';
-    return this.circuit.scopeElms().map((e) => {
-      const b = e.box();
-      const a = vp.toScreen(b.x1, b.y1);
-      const c = vp.toScreen(b.x2, b.y2);
-      const slot = {
-        x: Math.round(a.x),
-        y: Math.round(a.y),
-        width: Math.max(1, Math.round(c.x - a.x)),
-        height: Math.max(1, Math.round(c.y - a.y)),
-      };
-      const s = e.elmScope;
-      s.position = -1;
-      s.slot = slot;
-      const rect = cards ? cardPlotRect(slot, true) : slot;
-      const o = s.rect;
-      if (rect.x !== o.x || rect.y !== o.y || rect.width !== o.width || rect.height !== o.height)
-        s.setRect(rect);
-      const shown = s.getElm();
-      const t = shown !== null ? scopeAnchor(shown, e.leaderPost) : null;
-      return { scope: s, target: t !== null ? vp.toScreen(t.x, t.y) : null, active: false };
-    });
+    return this.circuit
+      .scopeElms()
+      .map((e) => ({ scope: e.elmScope, target: placeUndocked(e, vp, cards), active: false }));
   }
 
   /** A still picture of the circuit as it is now, for printing and PDF export. */
   svg(): string | null {
-    const o = this.circuit.options;
+    const f = frameState(this.draw, this.inputs(false, 0));
     return schematicSvg(this.circuit.elements, this.theme, {
       ...DEFAULT_SCHEMATIC,
-      ...this.draw.frame,
-      showValues: (o.flags & OptionFlag.HIDE_VALUES) === 0,
-      voltageRange: o.voltageRange,
+      showValues: f.showValues,
+      voltageRange: f.voltageRange,
+      euroResistors: f.euroResistors,
+      euroGates: f.euroGates,
+      showOhm: f.showOhm,
+      textFont: f.textFont,
+      junctionDots: f.junctionDots,
+      valueScale: f.valueScale,
     });
   }
 }

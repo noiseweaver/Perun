@@ -11,6 +11,7 @@ import {
   type Debouncer,
   debounce,
 } from 'obsidian';
+import type { DrawingSettings } from '@perun/app/drawing';
 import type { Theme } from '@perun/theme';
 import { CircuitBlock, CircuitEmbed } from './block.ts';
 import type { CircuitWidget } from './widget.ts';
@@ -29,7 +30,6 @@ import {
   drawSettings,
   obsidianThemeId,
   readData,
-  type DrawSettings,
   type PluginData,
 } from './settings.ts';
 
@@ -119,7 +119,7 @@ export default class PerunPlugin extends Plugin {
     return blockTheme(this.data, this.dark);
   }
 
-  draw(): DrawSettings {
+  draw(): DrawingSettings {
     return drawSettings(this.data);
   }
 

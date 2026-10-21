@@ -33,11 +33,11 @@ describe('plugin settings', () => {
       },
     });
     const s = drawSettings(d);
-    expect(s.frame.euroResistors).toBe(true);
-    expect(s.frame.valueScale).toBe(1.25);
+    expect(s.euroResistors).toBe(true);
+    expect(s.valueSize).toBe(1.25);
     expect(s.conventionalCurrent).toBe(true);
-    expect(s.frame.pausedDots).toBe(true);
-    expect(s.frame.textFont).toEqual({ family: 'default', bold: false, italic: false });
+    expect(s.pausedDots).toBe(true);
+    expect(s.textFont).toEqual({ family: 'default', bold: false, italic: false });
   });
 
   it('follows Show current when paused and the default text box font', () => {
@@ -51,7 +51,7 @@ describe('plugin settings', () => {
         },
       }),
     );
-    expect(s.frame.pausedDots).toBe(false);
-    expect(s.frame.textFont).toEqual({ family: 'serif', bold: true, italic: false });
+    expect(s.pausedDots).toBe(false);
+    expect(s.textFont).toEqual({ family: 'serif', bold: true, italic: false });
   });
 });

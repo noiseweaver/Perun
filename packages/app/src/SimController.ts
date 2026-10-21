@@ -32,7 +32,6 @@ import {
   VAL_VOLTAGE,
   VoltageElm,
   cardHitTest,
-  cardPlotRect,
   constructElement,
   getTimeText,
   getUnitText,
@@ -66,9 +65,9 @@ import {
   AnnotationLayer,
   CircuitRenderer,
   ScopeRenderer,
-  currentMultiplier,
   fitScale,
   preloadMathFor,
+  placeUndocked,
   scopeAnchor,
   type FrameState,
   type UndockedScopeItem,
@@ -108,6 +107,8 @@ import {
 } from './store.ts';
 import { t, tf } from './i18n.ts';
 import { platform } from './platform/index.ts';
+import { frameState } from './drawing.ts';
+import { StepClock } from './stepClock.ts';
 
 /** What dropping a dragged docked scope does, as its drop label and undo name say. */
 const SCOPE_DROP_LABELS: Record<ScopeDrop, string> = {
@@ -118,10 +119,6 @@ const SCOPE_DROP_LABELS: Record<ScopeDrop, string> = {
   combine: 'Combine',
 };
 
-/** Simulation time per frame before the frame is cut short (upstream `frameTimeLimit`). */
-const FRAME_BUDGET_MS = 50;
-/** Steps per sim.step() call; small enough to check the clock often. */
-const MAX_CHUNK = 500;
 const STATUS_INTERVAL_MS = 100;
 
 /** The circuit's temperature settings (PLAN.md Phases 15 and 17). */
@@ -157,7 +154,7 @@ export class SimController {
   private zoomPending = 0;
   private zoomAnchor = { x: 0, y: 0 };
   private lastFrame = 0;
-  private stepsOwed = 0;
+  private readonly clock = new StepClock();
   private lastStatus = 0;
   private needsFit = true;
   private unsubscribe: (() => void) | null = null;
@@ -375,7 +372,7 @@ export class SimController {
         smallGrid: (o.flags & OptionFlag.SMALL_GRID) !== 0,
       },
     });
-    this.stepsOwed = 0;
+    this.clock.reset();
     this.lastFrame = 0;
     this.renderer?.setElements(this.circuit.elements);
     this.editor.circuitReplaced();
@@ -395,7 +392,7 @@ export class SimController {
     this.circuit.reset();
     // upstream resetAction clears every scope too (scopeManager.resetGraphs)
     this.circuit.scopes.resetGraphs();
-    this.stepsOwed = 0;
+    this.clock.reset();
     if (this.renderer) {
       this.renderer.stopElm = null;
       this.renderer.resetFields();
@@ -585,30 +582,11 @@ export class SimController {
     } else if (running) {
       this.history.beforeStep();
       const stepsBefore = this.steps;
-      const steprate = 160 * this.circuit.getIterCount();
-      this.stepsOwed += (steprate * elapsed) / 1000;
-      // after loading, resetting or a switch flip, run at least one step so the drawing is current
-      if (sim.analyzeFlag && this.stepsOwed < 1) this.stepsOwed = 1;
-      const start = performance.now();
-      while (this.stepsOwed >= 1) {
-        const k = Math.min(Math.floor(this.stepsOwed), MAX_CHUNK);
-        const done = sim.step(k);
-        this.steps += done;
-        this.stepsOwed -= k;
-        if (sim.stopMessage !== null) break;
-        if (sim.pauseRequested) {
-          // a stop trigger fired: pause, as upstream's setSimRunning(false)
-          sim.pauseRequested = false;
-          this.stepsOwed = 0;
-          running = false;
-          useApp.setState({ running: false });
-          break;
-        }
-        if (performance.now() - start > FRAME_BUDGET_MS) {
-          // the circuit is too slow for this speed: drop the backlog rather than spiral
-          this.stepsOwed = 0;
-          break;
-        }
+      const run = this.clock.advance(sim, 160 * this.circuit.getIterCount(), elapsed);
+      this.steps += run.steps;
+      if (run.paused) {
+        running = false;
+        useApp.setState({ running: false });
       }
       if (this.steps !== stepsBefore) this.history.afterStep(elapsed, sim.t);
       if (sim.stopMessage !== null) {
@@ -624,27 +602,14 @@ export class SimController {
     const r = this.renderer;
     if (r) {
       const o = this.circuit.options;
-      const frame: FrameState = {
+      const frame = frameState(state.settings, {
         running,
-        currentMult: currentMultiplier(
-          elapsed,
-          state.currentSpeed,
-          state.settings.conventionalCurrent,
-        ),
-        showDots: state.display.showDots,
-        pausedDots: state.settings.pausedDots,
-        voltageColors: state.display.voltageColors,
-        showValues: state.display.showValues,
+        elapsed,
+        currentSpeed: state.currentSpeed,
+        ...state.display,
         voltageRange: o.voltageRange,
-        euroResistors: state.settings.euroResistors,
-        euroGates: state.settings.euroGates,
-        showOhm: state.settings.showOhm,
-        textFont: state.settings.textFont,
-        junctionDots: state.settings.junctionDots,
-        fields: state.settings.fields,
         gridSize: sim.gridSize,
-        valueScale: state.settings.valueSize,
-      };
+      });
       r.circuitHeight = this.circuitHeight();
       r.render(frame);
       this.drawScopes();
@@ -929,28 +894,13 @@ export class SimController {
     const ed = this.editor;
     const items: UndockedScopeItem[] = [];
     for (const e of this.circuit.scopeElms()) {
-      const b = e.box();
-      const a = vp.toScreen(b.x1, b.y1);
-      const c = vp.toScreen(b.x2, b.y2);
-      const slot = {
-        x: Math.round(a.x),
-        y: Math.round(a.y),
-        width: Math.max(1, Math.round(c.x - a.x)),
-        height: Math.max(1, Math.round(c.y - a.y)),
-      };
+      const target = placeUndocked(e, vp, cards);
       const s = e.elmScope;
-      s.position = -1;
-      s.slot = slot;
       s.canvasSelected = e.selected;
-      const rect = cards ? cardPlotRect(slot, true) : slot;
-      const o = s.rect;
-      if (rect.x !== o.x || rect.y !== o.y || rect.width !== o.width || rect.height !== o.height)
-        s.setRect(rect);
       const shown = s.getElm();
-      const t = shown !== null ? scopeAnchor(shown, e.leaderPost) : null;
       const item: UndockedScopeItem = {
         scope: s,
-        target: t !== null ? vp.toScreen(t.x, t.y) : null,
+        target,
         active:
           e.selected ||
           e === this.hoverUndocked ||

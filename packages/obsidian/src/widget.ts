@@ -5,12 +5,12 @@ import { Component, SliderComponent, setIcon, setTooltip } from 'obsidian';
 import type { SwitchElm } from '@perun/elements';
 import type { Theme } from '@perun/theme';
 import { CircuitPlayer } from './player.ts';
-import type { DrawSettings } from './settings.ts';
+import type { DrawingSettings } from '@perun/app/drawing';
 
 /** What a circuit in a note needs from the plugin. */
 export interface WidgetHost {
   theme(): Theme;
-  draw(): DrawSettings;
+  draw(): DrawingSettings;
   widgets: Set<CircuitWidget>;
 }
 
