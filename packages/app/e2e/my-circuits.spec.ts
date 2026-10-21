@@ -67,6 +67,8 @@ test('saves circuits in the browser, reopens, renames and deletes them', async (
   await board.getByTestId('my-circuit-more').click();
   await page.getByTestId('my-circuit-duplicate').click();
   await expect(names).toHaveText(['Empty board (copy)', 'Empty board', 'Tank']);
+  // the last menu has to be shut first: a click while it closes only closes it
+  await expect(page.getByRole('menu')).toHaveCount(0);
   await board.getByTestId('my-circuit-more').click();
   await page.getByTestId('my-circuit-delete').click();
   await page.getByTestId('my-circuit-delete-ok').click();
