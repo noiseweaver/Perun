@@ -264,6 +264,35 @@ test('Options > Visualizations > Heat shows a legend entry and saves nothing', a
   expect(await page.evaluate(() => window.perun?.controller.saveText())).toBe(before);
 });
 
+test('Options > Visualizations > Show legend hides the legend and is remembered', async ({
+  page,
+}) => {
+  await open(page, HEATER);
+  await page.getByRole('button', { name: 'Options' }).click();
+  await page.getByTestId('menu-visualizations').click();
+  const heat = page.getByTestId('menu-vis-heat');
+  await expect(heat).toBeVisible();
+  await heat.dispatchEvent('click');
+  await expect(page.getByTestId('field-legend')).toBeVisible();
+  const legend = page.getByTestId('menu-vis-legend');
+  await expect(legend).toHaveAttribute('data-state', 'checked');
+  await legend.dispatchEvent('click');
+  await expect(legend).toHaveAttribute('data-state', 'unchecked');
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('field-legend')).toHaveCount(0);
+  // the overlay itself stays on
+  expect(await page.evaluate(() => window.perun?.controller.lastFrameState?.fields.heat)).toBe(
+    true,
+  );
+  await page.reload();
+  await expect(page.getByTestId('circuit-canvas')).toBeVisible();
+  await page.waitForFunction(() => (window.perun?.controller.frames ?? 0) > 2);
+  expect(await page.evaluate(() => window.perun?.controller.lastFrameState?.fields.heat)).toBe(
+    true,
+  );
+  await expect(page.getByTestId('field-legend')).toHaveCount(0);
+});
+
 test('a temperature sweep of the matched-pair VCO reads its frequency and pitch', async ({
   page,
 }) => {

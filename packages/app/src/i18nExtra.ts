@@ -124,6 +124,7 @@ export const EXTRA_KEYS = [
   'Circuit name',
   'Warn before closing with unsaved changes',
   'Closing or reloading the page asks first while the circuit has changes not saved anywhere',
+  'Show legend',
 ] as const;
 
 export const EXTRA: Record<string, readonly string[]> = {
@@ -246,6 +247,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Nom del circuit',
     'Avisa abans de tancar amb canvis sense desar',
     'Tancar o tornar a carregar la pàgina demana confirmació mentre el circuit té canvis que no s’han desat enlloc',
+    'Mostra la llegenda',
   ],
   csx: [
     'O aplikaci Perun',
@@ -366,6 +368,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Název obvodu',
     'Upozornit před zavřením s neuloženými změnami',
     'Zavření nebo znovunačtení stránky se nejdřív zeptá, dokud má obvod změny, které nejsou nikde uložené',
+    'Zobrazit legendu',
   ],
   da: [
     'Om Perun',
@@ -486,6 +489,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Kredsløbets navn',
     'Advar før lukning med ikke-gemte ændringer',
     'Lukning eller genindlæsning af siden spørger først, mens kredsløbet har ændringer, der ikke er gemt nogen steder',
+    'Vis signaturforklaring',
   ],
   de: [
     'Über Perun',
@@ -606,6 +610,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Name der Schaltung',
     'Vor dem Schließen bei ungespeicherten Änderungen warnen',
     'Schließen oder Neuladen der Seite fragt erst nach, solange die Schaltung Änderungen hat, die nirgends gespeichert sind',
+    'Legende anzeigen',
   ],
   es: [
     'Acerca de Perun',
@@ -726,6 +731,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Nombre del circuito',
     'Avisar antes de cerrar con cambios sin guardar',
     'Cerrar o recargar la página pide confirmación mientras el circuito tenga cambios que no estén guardados en ningún sitio',
+    'Mostrar leyenda',
   ],
   fi: [
     'Tietoja Perunista',
@@ -846,6 +852,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Piirin nimi',
     'Varoita ennen sulkemista, jos muutoksia ei ole tallennettu',
     'Sivun sulkeminen tai uudelleenlataus kysyy ensin, kun piirissä on muutoksia, joita ei ole tallennettu mihinkään',
+    'Näytä selite',
   ],
   fr: [
     'À propos de Perun',
@@ -966,6 +973,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Nom du circuit',
     'Avertir avant de fermer avec des modifications non enregistrées',
     'Fermer ou recharger la page demande d’abord confirmation tant que le circuit a des modifications enregistrées nulle part',
+    'Afficher la légende',
   ],
   it: [
     'Informazioni su Perun',
@@ -1086,6 +1094,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Nome del circuito',
     'Avvisa prima di chiudere con modifiche non salvate',
     'Chiudere o ricaricare la pagina chiede prima conferma finché il circuito ha modifiche non salvate da nessuna parte',
+    'Mostra legenda',
   ],
   ja: [
     'Perun について',
@@ -1206,6 +1215,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '回路の名前',
     '未保存の変更があるとき閉じる前に確認',
     '回路にどこにも保存されていない変更があるとき、ページを閉じたり再読み込みしたりする前に確認します',
+    '凡例を表示',
   ],
   kr: [
     'Perun 정보',
@@ -1326,6 +1336,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '회로 이름',
     '저장하지 않은 변경 사항이 있으면 닫기 전에 경고',
     '회로에 어디에도 저장되지 않은 변경 사항이 있으면 페이지를 닫거나 새로 고치기 전에 먼저 묻습니다',
+    '범례 표시',
   ],
   nb: [
     'Om Perun',
@@ -1446,6 +1457,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Kretsens navn',
     'Advar før lukking med ulagrede endringer',
     'Lukking eller ny innlasting av siden spør først mens kretsen har endringer som ikke er lagret noe sted',
+    'Vis tegnforklaring',
   ],
   pl: [
     'O aplikacji Perun',
@@ -1566,6 +1578,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Nazwa obwodu',
     'Ostrzegaj przed zamknięciem z niezapisanymi zmianami',
     'Zamknięcie lub ponowne załadowanie strony najpierw pyta, gdy obwód ma zmiany niezapisane nigdzie',
+    'Pokaż legendę',
   ],
   pt: [
     'Sobre o Perun',
@@ -1686,6 +1699,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Nome do circuito',
     'Avisar antes de fechar com alterações não salvas',
     'Fechar ou recarregar a página pede confirmação enquanto o circuito tiver alterações que não foram salvas em lugar nenhum',
+    'Mostrar legenda',
   ],
   ru: [
     'О Perun',
@@ -1806,6 +1820,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Название схемы',
     'Предупреждать перед закрытием при несохранённых изменениях',
     'Закрытие или перезагрузка страницы сначала спрашивает, пока в схеме есть изменения, нигде не сохранённые',
+    'Показывать легенду',
   ],
   zh: [
     '关于 Perun',
@@ -1926,6 +1941,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '电路名称',
     '关闭前提醒未保存的更改',
     '电路有尚未保存到任何地方的更改时，关闭或重新加载页面前会先询问',
+    '显示图例',
   ],
   'zh-tw': [
     '關於 Perun',
@@ -2046,6 +2062,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '電路名稱',
     '關閉前提醒未儲存的變更',
     '電路有尚未儲存到任何地方的變更時，關閉或重新載入頁面前會先詢問',
+    '顯示圖例',
   ],
 };
 

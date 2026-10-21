@@ -55,6 +55,8 @@ export interface UserSettings {
   quickPickWheel: boolean;
   /** Closing the page with changes not saved anywhere asks first (autosave.ts). */
   warnUnsaved: boolean;
+  /** The key to the visualizations that are on, at the canvas's top right (FieldLegend). */
+  fieldLegend: boolean;
   /** Font for text boxes; a display choice, not saved with circuits. */
   textFont: TextFont;
   /** Interface language: `auto` (the browser's) or an upstream catalog code (i18n.ts). */
@@ -268,6 +270,7 @@ function loadSettings(): UserSettings {
     quickPickBar: true,
     quickPickWheel: true,
     warnUnsaved: true,
+    fieldLegend: true,
     valueSize: 0.875,
     textFont: { family: 'default', bold: false, italic: false },
     language: 'auto',
@@ -308,6 +311,7 @@ function loadSettings(): UserSettings {
       quickPickWheel:
         typeof s.quickPickWheel === 'boolean' ? s.quickPickWheel : defaults.quickPickWheel,
       warnUnsaved: typeof s.warnUnsaved === 'boolean' ? s.warnUnsaved : defaults.warnUnsaved,
+      fieldLegend: typeof s.fieldLegend === 'boolean' ? s.fieldLegend : defaults.fieldLegend,
       valueSize: VALUE_SIZES.some((v) => v.scale === s.valueSize)
         ? (s.valueSize as number)
         : defaults.valueSize,

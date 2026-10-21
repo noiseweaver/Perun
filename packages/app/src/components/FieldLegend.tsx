@@ -97,14 +97,16 @@ function Swatch({ kind, theme }: { kind: keyof FieldOptions; theme: Theme }): Re
 
 /**
  * A small key to the visualizations that are on (Options > Visualizations), in the column of
- * cards at the canvas's top right (the palette tab has the left edge). It folds to its header.
+ * cards at the canvas's top right (the palette tab has the left edge). It folds to its header, and
+ * Options > Visualizations > Show legend hides it.
  */
 export function FieldLegend() {
   const fields = useApp((s) => s.settings.fields);
+  const on = useApp((s) => s.settings.fieldLegend);
   const theme = useApp(shownTheme);
   const [folded, setFolded] = useState(false);
   const shown = VISUALIZATIONS.filter((v) => fields[v.key]);
-  if (shown.length === 0) return null;
+  if (!on || shown.length === 0) return null;
   return (
     <section
       className="field-legend"
