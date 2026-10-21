@@ -35,7 +35,19 @@ export type EmbedMessage =
   /** app to host: the circuit was edited; store this text */
   | { perun: 'changed'; text: string }
   /** app to host: a setting the app keeps in local storage changed (null: removed) */
-  | { perun: 'storage'; key: string; value: string | null };
+  | { perun: 'storage'; key: string; value: string | null }
+  /** app to host: keep this file (an export, a copy of the circuit) in the vault */
+  | { perun: 'file'; name: string; data: string | ArrayBuffer }
+  /** app to host: a key with Ctrl, Cmd or Alt that the app doesn't use, for the host's hotkeys */
+  | {
+      perun: 'key';
+      key: string;
+      code: string;
+      ctrlKey: boolean;
+      metaKey: boolean;
+      altKey: boolean;
+      shiftKey: boolean;
+    };
 
 export function isEmbedMessage(data: unknown): data is EmbedMessage {
   return (

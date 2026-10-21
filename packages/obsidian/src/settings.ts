@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 
+import type { TextFont } from '@perun/elements';
 import { DEFAULT_FRAME, type FrameState } from '@perun/render';
 import { DEFAULT_THEME_ID, builtinTheme, parseTheme, type Theme } from '@perun/theme';
 
@@ -48,6 +49,8 @@ interface StoredSettings {
   conventionalCurrent?: unknown;
   junctionDots?: unknown;
   valueSize?: unknown;
+  pausedDots?: unknown;
+  textFont?: unknown;
 }
 
 function storedSettings(data: PluginData): StoredSettings {
@@ -89,9 +92,23 @@ export function blockTheme(data: PluginData, dark: boolean): Theme {
 export interface DrawSettings {
   frame: Pick<
     FrameState,
-    'euroResistors' | 'euroGates' | 'showOhm' | 'junctionDots' | 'valueScale'
+    | 'euroResistors'
+    | 'euroGates'
+    | 'showOhm'
+    | 'junctionDots'
+    | 'valueScale'
+    | 'pausedDots'
+    | 'textFont'
   >;
   conventionalCurrent: boolean;
+}
+
+/** The editor's default text box font (as packages/app/src/store.ts reads it). */
+function textFont(v: unknown): TextFont {
+  if (typeof v !== 'object' || v === null) return DEFAULT_FRAME.textFont;
+  const f = v as Partial<Record<keyof TextFont, unknown>>;
+  const family = f.family === 'serif' || f.family === 'mono' ? f.family : 'default';
+  return { family, bold: f.bold === true, italic: f.italic === true };
 }
 
 export function drawSettings(data: PluginData): DrawSettings {
@@ -105,6 +122,9 @@ export function drawSettings(data: PluginData): DrawSettings {
       junctionDots: bool(s.junctionDots, DEFAULT_FRAME.junctionDots),
       // the editor's default value size (Options > Value text size)
       valueScale: typeof s.valueSize === 'number' ? s.valueSize : 0.875,
+      // Options > Show current when paused, and Options > Default text box font
+      pausedDots: bool(s.pausedDots, DEFAULT_FRAME.pausedDots),
+      textFont: textFont(s.textFont),
     },
     conventionalCurrent: bool(s.conventionalCurrent, true),
   };

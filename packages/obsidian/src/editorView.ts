@@ -28,6 +28,8 @@ export interface EditorHost {
   themeId(): string | null;
   storage(): Record<string, string>;
   setStorage(key: string, value: string | null): void;
+  /** Keep a file the editor exported (or a copy of the circuit) in `folder` of the vault. */
+  saveFile(folder: string, name: string, data: string | ArrayBuffer): Promise<void>;
   editors: Set<{ restyle(): void }>;
 }
 
@@ -42,11 +44,19 @@ class EditorFrame {
   private readonly parent: HTMLElement;
   private readonly host: EditorHost;
   private readonly onChanged: (text: string) => void;
+  private readonly folder: () => string;
 
-  constructor(parent: HTMLElement, host: EditorHost, onChanged: (text: string) => void) {
+  /** `folder` is where exports go: the circuit's own folder. */
+  constructor(
+    parent: HTMLElement,
+    host: EditorHost,
+    onChanged: (text: string) => void,
+    folder: () => string,
+  ) {
     this.parent = parent;
     this.host = host;
     this.onChanged = onChanged;
+    this.folder = folder;
   }
 
   /** The window's message handler (registered by the view, so it goes when the view does). */
@@ -57,7 +67,26 @@ class EditorFrame {
       this.shown = m.text;
       this.onChanged(m.text);
     } else if (m?.perun === 'storage') this.host.setStorage(m.key, m.value);
+    else if (m?.perun === 'file') void this.host.saveFile(this.folder(), m.name, m.data);
+    else if (m?.perun === 'key') this.hotkey(m);
   };
+
+  /** A key the app didn't use: Obsidian's hotkeys see it as if pressed outside the frame. */
+  private hotkey(m: Extract<EmbedMessage, { perun: 'key' }>): void {
+    const { key, code, ctrlKey, metaKey, altKey, shiftKey } = m;
+    (this.frame ?? document.body).dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key,
+        code,
+        ctrlKey,
+        metaKey,
+        altKey,
+        shiftKey,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+  }
 
   /** Show `data` unless the app already has it on screen. */
   show(data: string, title: string, force = false): void {
@@ -109,10 +138,15 @@ export class CircuitEditorView extends TextFileView {
   constructor(leaf: WorkspaceLeaf, host: EditorHost) {
     super(leaf);
     this.host = host;
-    this.editor = new EditorFrame(this.contentEl, host, (text) => {
-      this.data = text;
-      this.requestSave();
-    });
+    this.editor = new EditorFrame(
+      this.contentEl,
+      host,
+      (text) => {
+        this.data = text;
+        this.requestSave();
+      },
+      () => this.file?.parent?.path ?? '/',
+    );
   }
 
   override getViewType(): string {
@@ -179,10 +213,20 @@ export class BlockEditorView extends ItemView {
   constructor(leaf: WorkspaceLeaf, host: EditorHost) {
     super(leaf);
     this.host = host;
-    this.editor = new EditorFrame(this.contentEl, host, (text) => {
-      this.pending = text;
-      this.writeSoon();
-    });
+    this.editor = new EditorFrame(
+      this.contentEl,
+      host,
+      (text) => {
+        this.pending = text;
+        this.writeSoon();
+      },
+      // next to the note the block is in
+      () => {
+        const path = this.state?.path ?? '';
+        const slash = path.lastIndexOf('/');
+        return slash < 0 ? '/' : path.slice(0, slash);
+      },
+    );
   }
 
   override getViewType(): string {

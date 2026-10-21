@@ -20,6 +20,7 @@ import {
   type Theme,
 } from '@perun/theme';
 import { copyText, download, openDialog } from './commands.ts';
+import { embedConfig } from './embedConfig.ts';
 import {
   ACTIVE_THEME_KEY,
   USER_THEME_PREFIX,
@@ -80,11 +81,69 @@ async function withStore<T>(
   }
 }
 
+/**
+ * Inside the Obsidian plugin the library is kept in local storage, which there is the plugin's
+ * data in the vault: it syncs with the vault and circuits in notes can use it. The frame's
+ * IndexedDB belongs to Obsidian itself, shared by every vault and kept on this device only.
+ */
+const EMBED_LIBRARY_KEY = 'circuitjs-next.themeLibrary';
+
+function readEmbedLibrary(): unknown[] | null {
+  try {
+    const raw = localStorage.getItem(EMBED_LIBRARY_KEY);
+    if (raw === null) return null;
+    const v = JSON.parse(raw) as unknown;
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeEmbedLibrary(rows: unknown[]): void {
+  try {
+    localStorage.setItem(EMBED_LIBRARY_KEY, JSON.stringify(rows));
+  } catch {
+    // kept for this page only
+  }
+}
+
+const rowId = (row: unknown): unknown => (row as { id?: unknown } | null)?.id;
+
+/** Every saved theme, as stored (validated by the caller). */
+async function allRows(): Promise<unknown[]> {
+  if (embedConfig === null)
+    return ((await withStore('readonly', (s) => s.getAll())) ?? []) as unknown[];
+  let rows = readEmbedLibrary();
+  if (rows === null) {
+    // the first time: themes saved in an earlier version of the plugin come along
+    rows = ((await withStore('readonly', (s) => s.getAll())) ?? []) as unknown[];
+    writeEmbedLibrary(rows);
+  }
+  return rows;
+}
+
+async function putRow(entry: SavedTheme): Promise<void> {
+  if (embedConfig === null) {
+    await withStore('readwrite', (s) => s.put(entry));
+    return;
+  }
+  const rows = (await allRows()).filter((r) => rowId(r) !== entry.id);
+  writeEmbedLibrary([...rows, entry]);
+}
+
+async function deleteRow(id: string): Promise<void> {
+  if (embedConfig === null) {
+    await withStore('readwrite', (s) => s.delete(id));
+    return;
+  }
+  writeEmbedLibrary((await allRows()).filter((r) => rowId(r) !== id));
+}
+
 /** Read the library. Entries are validated again: storage is not trusted any more than a file. */
 export async function loadLibrary(): Promise<void> {
-  const rows = (await withStore('readonly', (s) => s.getAll())) ?? [];
+  const rows = await allRows();
   const library: SavedTheme[] = [];
-  for (const row of rows as unknown[]) {
+  for (const row of rows) {
     const r = row as Partial<SavedTheme> | null;
     if (typeof r?.id !== 'string') continue;
     const parsed = parseTheme(r.theme);
@@ -139,13 +198,13 @@ export async function saveTheme(theme: Theme, id: string | null = null): Promise
     theme,
     saved: existing?.saved ?? Date.now(),
   };
-  await withStore('readwrite', (s) => s.put(entry));
+  await putRow(entry);
   setLibrary(existing ? library.map((t) => (t.id === entry.id ? entry : t)) : [...library, entry]);
   return entry.id;
 }
 
 export async function deleteTheme(id: string): Promise<void> {
-  await withStore('readwrite', (s) => s.delete(id));
+  await deleteRow(id);
   const s = useApp.getState();
   if (s.settings.themeId === USER_THEME_PREFIX + id) selectTheme(DEFAULT_THEME_ID);
   setLibrary(s.library.filter((t) => t.id !== id));

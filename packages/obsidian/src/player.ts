@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 
-import { cardPlotRect, type ScopeDefaultsStore } from '@perun/elements';
+import { SwitchElm, cardPlotRect, switchRect, type ScopeDefaultsStore } from '@perun/elements';
 import { sliderEntries, type SliderEntry } from '@perun/app/sliders';
 import { Circuit, OptionFlag } from '@perun/format';
 import {
@@ -33,6 +33,8 @@ const MIN_HEIGHT = 140;
 const MAX_HEIGHT = 400;
 /** Height of the scope strip, when the circuit has scopes. */
 const SCOPE_HEIGHT = 160;
+/** Distance (CSS px) round a switch that still counts as clicking it, for fingers. */
+const SWITCH_PAD = 4;
 
 /**
  * One circuit running on its own canvas: the engine and renderer without the editor, for a
@@ -89,6 +91,35 @@ export class CircuitPlayer {
     if (b !== null && b.x2 > b.x1) h = Math.round((width * (b.y2 - b.y1)) / (b.x2 - b.x1));
     h = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, h));
     return h + (this.hasScopes ? SCOPE_HEIGHT : 0);
+  }
+
+  /** The records the circuit text had that couldn't be read and were left out. */
+  get skipped(): number {
+    return this.circuit.issues.length;
+  }
+
+  /**
+   * The switch (toggle, push button, logic input) at a point on the canvas in CSS pixels, found
+   * by the rectangle the editor flips it by (upstream doSwitch), or null.
+   */
+  switchAt(x: number, y: number): SwitchElm | null {
+    const vp = this.renderer.viewport;
+    const p = vp.toCircuit(x, y);
+    const pad = SWITCH_PAD / Math.max(vp.scale, 1e-6);
+    for (const e of this.circuit.elements) {
+      if (!(e instanceof SwitchElm)) continue;
+      const r = switchRect(e);
+      if (p.x >= r.x1 - pad && p.x <= r.x2 + pad && p.y >= r.y1 - pad && p.y <= r.y2 + pad)
+        return e;
+    }
+    return null;
+  }
+
+  /** Flip a switch (a push button: press or let go) and analyze the circuit again. */
+  toggle(s: SwitchElm): void {
+    s.toggle();
+    this.circuit.sim.analyzeFlag = true;
+    if (!this.animating) this.frame(performance.now(), false);
   }
 
   /** The circuit's sliders, as the editor's slider panel shows them. */

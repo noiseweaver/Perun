@@ -78,13 +78,17 @@ function SaveDialog() {
   const replaces = clash !== undefined && clash.id !== savedAs?.id;
   return (
     <Shell
-      title={t('Save circuit')}
+      title={embedConfig !== null ? t('Save a copy') : t('Save circuit')}
       description={
-        browser
+        embedConfig !== null
           ? t(
-              'Keeps the circuit in this browser on this device. Open it again from File > My circuits.',
+              'Every change is already saved in this circuit’s file. Save a copy in the vault, next to it:',
             )
-          : t("Downloads the circuit in CircuitJS's file format.")
+          : browser
+            ? t(
+                'Keeps the circuit in this browser on this device. Open it again from File > My circuits.',
+              )
+            : t("Downloads the circuit in CircuitJS's file format.")
       }
     >
       <form
@@ -142,7 +146,11 @@ function SaveDialog() {
             </button>
           </Dialog.Close>
           <button type="submit" className="button button-primary" data-testid="save-ok">
-            {browser && replaces ? t('Replace') : t('Save')}
+            {embedConfig !== null
+              ? t('Save a copy')
+              : browser && replaces
+                ? t('Replace')
+                : t('Save')}
           </button>
         </div>
       </form>

@@ -36,5 +36,22 @@ describe('plugin settings', () => {
     expect(s.frame.euroResistors).toBe(true);
     expect(s.frame.valueScale).toBe(1.25);
     expect(s.conventionalCurrent).toBe(true);
+    expect(s.frame.pausedDots).toBe(true);
+    expect(s.frame.textFont).toEqual({ family: 'default', bold: false, italic: false });
+  });
+
+  it('follows Show current when paused and the default text box font', () => {
+    const s = drawSettings(
+      readData({
+        storage: {
+          'circuitjs-next.settings.v2': JSON.stringify({
+            pausedDots: false,
+            textFont: { family: 'serif', bold: true, italic: 'yes' },
+          }),
+        },
+      }),
+    );
+    expect(s.frame.pausedDots).toBe(false);
+    expect(s.frame.textFont).toEqual({ family: 'serif', bold: true, italic: false });
   });
 });

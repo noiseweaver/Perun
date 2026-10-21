@@ -238,9 +238,9 @@ export function AppBar() {
           <Item label="Import from text…" icon="upload" onSelect={() => openDialog('importText')} />
           <Menu.Separator className="menu-separator" />
           <Item
-            label="Save…"
+            label={embedConfig !== null ? 'Save a copy…' : 'Save…'}
             icon="save"
-            hint={`${MOD}S`}
+            {...(embedConfig === null && { hint: `${MOD}S` })}
             testId="menu-save"
             onSelect={() => openDialog('save')}
           />

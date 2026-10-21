@@ -153,3 +153,16 @@
   height: 100%;
   border: none;
 }
+
+/* a switch, push button or logic input under the pointer can be clicked */
+.perun-canvas.is-over-switch {
+  cursor: pointer;
+}
+
+/* records the circuit text had that couldn't be read (the editor's "skipped" notice) */
+.perun-skipped {
+  padding: var(--size-4-1) var(--size-4-2);
+  border-top: var(--border-width) solid var(--background-modifier-border);
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}

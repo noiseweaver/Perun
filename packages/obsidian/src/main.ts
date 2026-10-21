@@ -7,7 +7,6 @@ import {
   PluginSettingTab,
   Setting,
   TFile,
-  normalizePath,
   type App,
   type Debouncer,
   debounce,
@@ -23,6 +22,7 @@ import {
   EXTENSION,
   VIEW_TYPE,
 } from './editorView.ts';
+import { freePath, safeFileName } from './files.ts';
 import {
   DEFAULT_DATA,
   blockTheme,
@@ -137,6 +137,23 @@ export default class PerunPlugin extends Plugin {
     this.saveSoon();
   }
 
+  /** Write a file the editor exported into `folder`, under a name no other file has yet. */
+  async saveFile(folder: string, name: string, data: string | ArrayBuffer): Promise<void> {
+    const dir = folder === '/' || folder === '' ? '' : `${folder}/`;
+    const path = freePath(
+      (p) => this.app.vault.getAbstractFileByPath(p) !== null,
+      dir,
+      safeFileName(name),
+    );
+    try {
+      if (typeof data === 'string') await this.app.vault.create(path, data);
+      else await this.app.vault.createBinary(path, data);
+      new Notice(`Saved ${path}`);
+    } catch (e) {
+      new Notice(`Couldn't save ${path}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
   async setFollowObsidian(on: boolean): Promise<void> {
     this.data.followObsidian = on;
     await this.saveData(this.data);
@@ -163,9 +180,11 @@ export default class PerunPlugin extends Plugin {
       folder ??
       this.app.fileManager.getNewFileParent(this.app.workspace.getActiveFile()?.path ?? '').path;
     const dir = parent === '/' ? '' : `${parent}/`;
-    let path = normalizePath(`${dir}Circuit.${EXTENSION}`);
-    for (let n = 1; this.app.vault.getAbstractFileByPath(path) !== null; n++)
-      path = normalizePath(`${dir}Circuit ${n}.${EXTENSION}`);
+    const path = freePath(
+      (p) => this.app.vault.getAbstractFileByPath(p) !== null,
+      dir,
+      `Circuit.${EXTENSION}`,
+    );
     try {
       const file = await this.app.vault.create(path, BLANK_CIRCUIT);
       await this.app.workspace.getLeaf(true).openFile(file);
