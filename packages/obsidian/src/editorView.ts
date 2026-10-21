@@ -71,10 +71,17 @@ class EditorFrame {
     else if (m?.perun === 'key') this.hotkey(m);
   };
 
-  /** A key the app didn't use: Obsidian's hotkeys see it as if pressed outside the frame. */
+  /**
+   * A key the app didn't use: Obsidian's hotkeys see it as if pressed outside the frame. Obsidian
+   * skips keys while the frame has focus, so the frame lets go of it for the key, and takes it
+   * back unless the hotkey moved focus somewhere (the command palette, say).
+   */
   private hotkey(m: Extract<EmbedMessage, { perun: 'key' }>): void {
     const { key, code, ctrlKey, metaKey, altKey, shiftKey } = m;
-    (this.frame ?? document.body).dispatchEvent(
+    const frame = this.frame;
+    const focused = frame !== null && document.activeElement === frame;
+    if (focused) frame.blur();
+    (frame ?? document.body).dispatchEvent(
       new KeyboardEvent('keydown', {
         key,
         code,
@@ -86,6 +93,7 @@ class EditorFrame {
         cancelable: true,
       }),
     );
+    if (focused && document.activeElement === document.body) frame.focus();
   }
 
   /** Show `data` unless the app already has it on screen. */
