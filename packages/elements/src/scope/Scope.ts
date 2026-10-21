@@ -510,6 +510,11 @@ export class Scope {
     if (this.plot2d.enabled) this.plot2d.timeStep();
   }
 
+  /** Not in upstream: a shown plot is ringing at the step rate (`ScopePlot.ringing`). */
+  isRinging(): boolean {
+    return this.visiblePlots.some((p) => p.ringing);
+  }
+
   setMaxScale(s: boolean): void {
     // call the toggle first for its side effects, then set the value explicitly
     this.toggleMaxScale();
