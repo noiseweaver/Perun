@@ -52,53 +52,8 @@ export function startEmbedded(config: EmbedConfig): void {
     post({ perun: 'changed', text });
   };
   window.setInterval(flush, WATCH_MS);
-  passKeysToHost();
   document.addEventListener('visibilitychange', flush);
   window.addEventListener('pagehide', flush);
-}
-
-/** Keys a text field keeps for itself even with Ctrl or Cmd. */
-const TEXT_KEYS = new Set([
-  'a',
-  'c',
-  'v',
-  'x',
-  'y',
-  'z',
-  'arrowleft',
-  'arrowright',
-  'arrowup',
-  'arrowdown',
-  'home',
-  'end',
-  'backspace',
-  'delete',
-]);
-
-/**
- * A focused frame keeps every key from the host page, so the host's own hotkeys (Obsidian's
- * command palette, quick switcher, tab keys) would stop working while the editor has focus.
- * A key with Ctrl, Cmd or Alt that the app didn't use goes to the host.
- */
-function passKeysToHost(): void {
-  window.addEventListener('keydown', (e) => {
-    if (!(e.ctrlKey || e.metaKey || e.altKey)) return;
-    if (e.key === 'Control' || e.key === 'Meta' || e.key === 'Alt' || e.key === 'Shift') return;
-    if (TEXT_KEYS.has(e.key.toLowerCase())) return;
-    // after every handler has seen it: a key the app used is marked
-    window.setTimeout(() => {
-      if (e.defaultPrevented) return;
-      post({
-        perun: 'key',
-        key: e.key,
-        code: e.code,
-        ctrlKey: e.ctrlKey,
-        metaKey: e.metaKey,
-        altKey: e.altKey,
-        shiftKey: e.shiftKey,
-      });
-    }, 0);
-  });
 }
 
 /** Whether the app runs inside a host page's frame. */

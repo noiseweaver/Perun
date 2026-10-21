@@ -3,6 +3,8 @@
 // Not in upstream: circuits saved by name in this browser (File > My circuits). Upstream keeps
 // only one "Recover Auto-Save" slot in local storage.
 
+import { platform } from './platform/index.ts';
+
 /** A circuit saved in this browser. */
 export interface SavedCircuit {
   id: string;
@@ -19,72 +21,25 @@ export interface SavedCircuit {
 const DB_NAME = 'circuitjs-next.circuits';
 const STORE = 'circuits';
 
-let dbPromise: Promise<IDBDatabase> | null = null;
-
-function openDb(): Promise<IDBDatabase> {
-  dbPromise ??= new Promise<IDBDatabase>((resolve, reject) => {
-    if (typeof indexedDB === 'undefined') {
-      reject(new Error('This browser has no storage for circuits'));
-      return;
-    }
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = () => {
-      req.result.createObjectStore(STORE, { keyPath: 'id' });
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error ?? new Error("Couldn't open this browser's storage"));
-    req.onblocked = () => reject(new Error("This browser's storage is busy in another tab"));
-  });
-  // a failure (private mode, storage off) is tried again next time
-  dbPromise.catch(() => {
-    dbPromise = null;
-  });
-  return dbPromise;
-}
-
-function request<T>(
-  mode: IDBTransactionMode,
-  run: (store: IDBObjectStore) => IDBRequest<T>,
-): Promise<T> {
-  return openDb().then(
-    (db) =>
-      new Promise<T>((resolve, reject) => {
-        const tx = db.transaction(STORE, mode);
-        const req = run(tx.objectStore(STORE));
-        let result: T;
-        req.onsuccess = () => {
-          result = req.result;
-        };
-        tx.oncomplete = () => resolve(result);
-        tx.onerror = () => reject(tx.error ?? req.error ?? new Error('Storage error'));
-        tx.onabort = () => reject(tx.error ?? new Error('Storage full'));
-      }),
-  );
-}
+/** Where the saves live: IndexedDB (the vault in Obsidian). */
+const records = platform.records<SavedCircuit>(DB_NAME, STORE);
 
 /** Every saved circuit, last changed first. */
 export async function listCircuits(): Promise<SavedCircuit[]> {
-  const all = await request<SavedCircuit[]>(
-    'readonly',
-    (s) => s.getAll() as IDBRequest<SavedCircuit[]>,
-  );
-  return sortNewestFirst(all);
+  return sortNewestFirst(await records.getAll());
 }
 
 export function getCircuit(id: string): Promise<SavedCircuit | undefined> {
-  return request<SavedCircuit | undefined>(
-    'readonly',
-    (s) => s.get(id) as IDBRequest<SavedCircuit | undefined>,
-  );
+  return records.get(id);
 }
 
 export async function putCircuit(c: SavedCircuit): Promise<void> {
-  await request('readwrite', (s) => s.put(c));
+  await records.put(c);
   notify();
 }
 
 export async function deleteCircuit(id: string): Promise<void> {
-  await request('readwrite', (s) => s.delete(id));
+  await records.delete(id);
   notify();
 }
 

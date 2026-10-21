@@ -15,8 +15,9 @@ export interface EmbedConfig {
   /** The public web app, the base of exported links and of the license files. */
   siteUrl: string;
   /**
-   * The app's local storage (settings, palette state), kept by the host so it travels with the
-   * vault. The host page swaps it in for window.localStorage before the app starts.
+   * The app's stored data (settings, palette state, saved models and themes), kept by the host so
+   * it travels with the vault. The app reads and writes it through `platform.storage`
+   * (platform/obsidian.ts), which sends each change back.
    */
   storage: Record<string, string>;
 }

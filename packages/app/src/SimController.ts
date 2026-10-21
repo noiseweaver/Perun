@@ -107,6 +107,7 @@ import {
   type TeachTool,
 } from './store.ts';
 import { t, tf } from './i18n.ts';
+import { platform } from './platform/index.ts';
 
 /** What dropping a dragged docked scope does, as its drop label and undo name say. */
 const SCOPE_DROP_LABELS: Record<ScopeDrop, string> = {
@@ -260,10 +261,10 @@ export class SimController {
       };
       const lib = modelsFor(this.circuit.sim).composite;
       try {
-        lib.storage = window.localStorage;
+        lib.storage = platform.storage;
         lib.loadModelsFromStorage(this.circuit.sim);
         const opamps = modelsFor(this.circuit.sim).opamp;
-        opamps.storage = window.localStorage;
+        opamps.storage = platform.storage;
         opamps.loadModelsFromStorage();
       } catch {
         // storage disabled: models last for the session
@@ -3576,14 +3577,14 @@ const SWIPE_MIN = 40;
 const scopeDefaultsStore: ScopeDefaultsStore = {
   getItem(key) {
     try {
-      return localStorage.getItem(key);
+      return platform.storage.getItem(key);
     } catch {
       return null;
     }
   },
   setItem(key, value) {
     try {
-      localStorage.setItem(key, value);
+      platform.storage.setItem(key, value);
     } catch {
       // storage disabled: the defaults last for this page
     }
@@ -3595,7 +3596,7 @@ const CLIPBOARD_KEY = 'circuitClipboard';
 
 function writeClipboard(s: string): void {
   try {
-    localStorage.setItem(CLIPBOARD_KEY, s);
+    platform.deviceStorage.setItem(CLIPBOARD_KEY, s);
   } catch {
     // storage disabled: the clipboard lasts for this page
   }
@@ -3603,7 +3604,7 @@ function writeClipboard(s: string): void {
 
 function readClipboard(): string | null {
   try {
-    return localStorage.getItem(CLIPBOARD_KEY);
+    return platform.deviceStorage.getItem(CLIPBOARD_KEY);
   } catch {
     return null;
   }

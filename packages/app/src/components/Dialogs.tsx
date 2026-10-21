@@ -39,13 +39,14 @@ import { ParamsDialog } from './ParamsDialog.tsx';
 import { SubcircuitDialog, SubcircuitManagerDialog } from './SubcircuitDialog.tsx';
 import { ThemeEditorDialog, ThemesDialog } from './ThemeDialogs.tsx';
 import { t } from '../i18n.ts';
+import { platform } from '../platform/index.ts';
 
 type SaveTarget = 'browser' | 'file';
 const SAVE_TARGET_KEY = 'circuitjs-next.saveTarget';
 
 function readSaveTarget(): SaveTarget {
   try {
-    return localStorage.getItem(SAVE_TARGET_KEY) === 'file' ? 'file' : 'browser';
+    return platform.storage.getItem(SAVE_TARGET_KEY) === 'file' ? 'file' : 'browser';
   } catch {
     return 'browser';
   }
@@ -67,7 +68,7 @@ function SaveDialog() {
   const setTarget = (v: SaveTarget): void => {
     setTargetState(v);
     try {
-      localStorage.setItem(SAVE_TARGET_KEY, v);
+      platform.storage.setItem(SAVE_TARGET_KEY, v);
     } catch {
       // remembered for this dialog only
     }

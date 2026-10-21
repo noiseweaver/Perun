@@ -13,6 +13,7 @@ import { ALL_FIELDS, NO_FIELDS, type FieldOptions } from '@perun/render';
 import type { LoadIssue } from '@perun/format';
 import { create } from 'zustand';
 import type { ExampleList } from './examples.ts';
+import { platform } from './platform/index.ts';
 
 /** Options > Value text size: how big component values are drawn, against upstream's 12 px. */
 export const VALUE_SIZES = [
@@ -22,7 +23,7 @@ export const VALUE_SIZES = [
   { scale: 1.25, label: 'Extra large' },
 ] as const;
 
-/** Display settings that belong to the user, not the circuit (kept in localStorage). */
+/** Display settings that belong to the user, not the circuit (kept in platform.storage). */
 export interface UserSettings {
   /** A built-in theme id, or `user:` and the id of a theme in the library (themes.ts). */
   themeId: string;
@@ -273,10 +274,10 @@ function loadSettings(): UserSettings {
     language: 'auto',
   };
   try {
-    let raw = localStorage.getItem(SETTINGS_KEY);
+    let raw = platform.storage.getItem(SETTINGS_KEY);
     let fromV1 = false;
     if (raw === null) {
-      raw = localStorage.getItem(SETTINGS_KEY_V1);
+      raw = platform.storage.getItem(SETTINGS_KEY_V1);
       fromV1 = true;
     }
     if (raw === null) return defaults;
@@ -339,7 +340,7 @@ function readTextFont(v: unknown): TextFont | null {
 
 export function saveSettings(s: UserSettings): void {
   try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+    platform.storage.setItem(SETTINGS_KEY, JSON.stringify(s));
   } catch {
     // private mode or storage disabled: settings last for this page only
   }
@@ -348,7 +349,7 @@ export function saveSettings(s: UserSettings): void {
 /** Prefix of library theme ids in `settings.themeId`. */
 export const USER_THEME_PREFIX = 'user:';
 /**
- * The active library theme, kept in localStorage too so the first frame already has it (the
+ * The active library theme, kept in platform.storage too so the first frame already has it (the
  * library itself loads from IndexedDB a moment later).
  */
 export const ACTIVE_THEME_KEY = 'circuitjs-next.activeTheme';
@@ -361,7 +362,7 @@ export function themeFor(themeId: string, library: readonly SavedTheme[]): Theme
   const saved = library.find((t) => t.id === id);
   if (saved) return saved.theme;
   try {
-    const cached = JSON.parse(localStorage.getItem(ACTIVE_THEME_KEY) ?? 'null') as {
+    const cached = JSON.parse(platform.storage.getItem(ACTIVE_THEME_KEY) ?? 'null') as {
       id?: unknown;
       theme?: unknown;
     } | null;
@@ -383,7 +384,7 @@ function initialPaletteOpen(): boolean {
   // phones, and phones on their side
   if (window.innerWidth < 720 || window.innerHeight < 560) return false;
   try {
-    return localStorage.getItem(PALETTE_KEY) !== 'false';
+    return platform.storage.getItem(PALETTE_KEY) !== 'false';
   } catch {
     return true;
   }
@@ -454,7 +455,7 @@ export function setPaletteOpen(open: boolean): void {
   useApp.setState({ paletteOpen: open });
   if (window.innerWidth < 720) return;
   try {
-    localStorage.setItem(PALETTE_KEY, String(open));
+    platform.storage.setItem(PALETTE_KEY, String(open));
   } catch {
     // storage disabled: the choice lasts for this page
   }

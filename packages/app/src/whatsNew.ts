@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Perun contributors
 
 import { useApp } from './store.ts';
+import { platform } from './platform/index.ts';
 
 /** Release notes, newest first. The text is English and goes through `t` when shown. */
 export const RELEASES: { version: string; notes: string[] }[] = [
@@ -29,7 +30,7 @@ const SEEN_KEY = 'circuitjs-next.seenVersion';
  */
 export function checkUpdated(
   version: string,
-  storage: Pick<Storage, 'getItem' | 'setItem'> = localStorage,
+  storage: Pick<Storage, 'getItem' | 'setItem'> = platform.storage,
 ): boolean {
   let seen: string | null;
   try {

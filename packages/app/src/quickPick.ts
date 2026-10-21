@@ -7,6 +7,7 @@
 
 import { create } from 'zustand';
 import { paletteItem, type PaletteItem } from './editor/catalog.ts';
+import { platform } from './platform/index.ts';
 
 const FAVORITES_KEY = 'circuitjs-next.paletteFavorites';
 const RECENTS_KEY = 'circuitjs-next.paletteRecents';
@@ -45,7 +46,7 @@ interface QuickPickState {
 
 function load(key: string, fallback: readonly string[]): string[] {
   try {
-    const raw = localStorage.getItem(key);
+    const raw = platform.storage.getItem(key);
     if (raw === null) return [...fallback];
     const list: unknown = JSON.parse(raw);
     return Array.isArray(list) ? list.filter((x): x is string => typeof x === 'string') : [];
@@ -56,7 +57,7 @@ function load(key: string, fallback: readonly string[]): string[] {
 
 function save(key: string, list: string[]): void {
   try {
-    localStorage.setItem(key, JSON.stringify(list));
+    platform.storage.setItem(key, JSON.stringify(list));
   } catch {
     // storage disabled: the list lasts for this page
   }
@@ -70,7 +71,7 @@ export const useQuickPick = create<QuickPickState>(() => ({
 
 function loadFlag(key: string): boolean {
   try {
-    return localStorage.getItem(key) === 'true';
+    return platform.storage.getItem(key) === 'true';
   } catch {
     return false;
   }
@@ -80,7 +81,7 @@ function loadFlag(key: string): boolean {
 export function setBarFolded(bar: QuickPickBar, folded: boolean): void {
   useQuickPick.setState((s) => ({ folded: { ...s.folded, [bar]: folded } }));
   try {
-    localStorage.setItem(FOLDED_KEYS[bar], String(folded));
+    platform.storage.setItem(FOLDED_KEYS[bar], String(folded));
   } catch {
     // storage disabled: the choice lasts for this page
   }
