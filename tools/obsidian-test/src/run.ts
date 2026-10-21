@@ -309,6 +309,42 @@ async function run(page: Page): Promise<void> {
     await pause(2000);
   });
 
+  await check(page, 'An editor in a new window writes edits to the file', async () => {
+    await page.locator('.nav-file-title[data-path="Clipper.circuit"]').click({ button: 'right' });
+    await page.locator('.menu-item', { hasText: 'Open in new window' }).click();
+    let frame: Frame | undefined;
+    let win: Page | undefined;
+    for (let i = 0; i < 40 && frame === undefined; i++) {
+      await pause(500);
+      for (const p of page.context().pages()) {
+        if (p === page) continue;
+        for (const f of p.frames()) {
+          if (f === p.mainFrame()) continue;
+          if (
+            (await f
+              .locator('[data-testid=circuit-canvas]')
+              .count()
+              .catch(() => 0)) > 0
+          ) {
+            frame = f;
+            win = p;
+          }
+        }
+      }
+    }
+    assert(frame !== undefined && win !== undefined, "the new window didn't open the editor");
+    await pause(1500);
+    const before = await page.evaluate(() => app.vault.adapter.read('Clipper.circuit'));
+    await focusEditor(win, frame);
+    await win.keyboard.press('Control+a');
+    await win.keyboard.press('Delete');
+    const after = await changed(page, 'Clipper.circuit', before, 8000);
+    assert(after !== before, 'the file did not change');
+    await win.keyboard.press('Control+z');
+    await changed(page, 'Clipper.circuit', after, 8000);
+    await win.close();
+  });
+
   await check(page, 'No errors in the console', async () => {
     assert(errors.length === 0, errors.slice(0, 3).join(' | '));
   });

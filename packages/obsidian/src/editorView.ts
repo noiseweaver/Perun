@@ -30,7 +30,17 @@ export interface EditorHost {
   setStorage(key: string, value: string | null): void;
   /** Keep a file the editor exported (or a copy of the circuit) in `folder` of the vault. */
   saveFile(folder: string, name: string, data: string | ArrayBuffer): Promise<void>;
-  editors: Set<{ restyle(): void }>;
+  editors: Set<EditorTab>;
+}
+
+/** An open editor tab, as the plugin sees it. */
+export interface EditorTab {
+  restyle(): void;
+  /**
+   * A message posted in one of Obsidian's windows (the main one or a popout: the frame posts to
+   * the window it is in). The plugin listens in every window and hands each message to every tab.
+   */
+  onMessage(e: MessageEvent<unknown>): void;
 }
 
 /**
@@ -59,7 +69,7 @@ class EditorFrame {
     this.folder = folder;
   }
 
-  /** The window's message handler (registered by the view, so it goes when the view does). */
+  /** The frame's messages (others pass by). */
   readonly onMessage = (e: MessageEvent<unknown>): void => {
     if (this.frame === null || e.source !== this.frame.contentWindow) return;
     const m = e.data as EmbedMessage | null;
@@ -79,9 +89,11 @@ class EditorFrame {
   private hotkey(m: Extract<EmbedMessage, { perun: 'key' }>): void {
     const { key, code, ctrlKey, metaKey, altKey, shiftKey } = m;
     const frame = this.frame;
-    const focused = frame !== null && document.activeElement === frame;
+    // the frame's own window's document: a popout window has its own
+    const doc = frame?.ownerDocument ?? document;
+    const focused = frame !== null && doc.activeElement === frame;
     if (focused) frame.blur();
-    (frame ?? document.body).dispatchEvent(
+    (frame ?? doc.body).dispatchEvent(
       new KeyboardEvent('keydown', {
         key,
         code,
@@ -93,7 +105,7 @@ class EditorFrame {
         cancelable: true,
       }),
     );
-    if (focused && document.activeElement === document.body) frame.focus();
+    if (focused && doc.activeElement === doc.body) frame.focus();
   }
 
   /** Show `data` unless the app already has it on screen. */
@@ -139,7 +151,7 @@ class EditorFrame {
  * A .circuit file in a tab: the whole Perun app in a frame. The file holds the circuit as the app
  * saves it (XML); each edit in the app comes back here and Obsidian writes it to the file.
  */
-export class CircuitEditorView extends TextFileView {
+export class CircuitEditorView extends TextFileView implements EditorTab {
   private readonly host: EditorHost;
   private readonly editor: EditorFrame;
 
@@ -172,7 +184,10 @@ export class CircuitEditorView extends TextFileView {
   override async onOpen(): Promise<void> {
     this.contentEl.addClass('perun-editor');
     this.host.editors.add(this);
-    this.registerDomEvent(window, 'message', this.editor.onMessage);
+  }
+
+  onMessage(e: MessageEvent<unknown>): void {
+    this.editor.onMessage(e);
   }
 
   override async onClose(): Promise<void> {
@@ -210,7 +225,7 @@ interface BlockState {
  * A ```circuit code block of a note in the editor, in a tab. Each edit is written back into the
  * block (found by its text, so lines added above it meanwhile don't matter).
  */
-export class BlockEditorView extends ItemView {
+export class BlockEditorView extends ItemView implements EditorTab {
   private state: BlockState | null = null;
   private readonly host: EditorHost;
   private readonly editor: EditorFrame;
@@ -253,7 +268,10 @@ export class BlockEditorView extends ItemView {
   override async onOpen(): Promise<void> {
     this.contentEl.addClass('perun-editor');
     this.host.editors.add(this);
-    this.registerDomEvent(window, 'message', this.editor.onMessage);
+  }
+
+  onMessage(e: MessageEvent<unknown>): void {
+    this.editor.onMessage(e);
   }
 
   override async onClose(): Promise<void> {

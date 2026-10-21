@@ -21,6 +21,7 @@ import {
   BlockEditorView,
   CircuitEditorView,
   EXTENSION,
+  type EditorTab,
   VIEW_TYPE,
 } from './editorView.ts';
 import { freePath, safeFileName } from './files.ts';
@@ -52,7 +53,7 @@ const BLOCK_LANGUAGE = 'circuit';
 export default class PerunPlugin extends Plugin {
   data: PluginData = { ...DEFAULT_DATA, storage: {} };
   readonly widgets = new Set<CircuitWidget>();
-  readonly editors = new Set<{ restyle(): void }>();
+  readonly editors = new Set<EditorTab>();
   private saveSoon: Debouncer<[], Promise<void>> = debounce(() => this.saveData(this.data), 1000);
 
   override async onload(): Promise<void> {
@@ -86,6 +87,15 @@ export default class PerunPlugin extends Plugin {
         );
       }),
     );
+
+    // an editor's frame posts to the window it is in: the main one, or a popout (Open in new
+    // window, or a tab dragged out)
+    const listen = (win: Window): void =>
+      this.registerDomEvent(win, 'message', (e) => {
+        for (const tab of this.editors) tab.onMessage(e);
+      });
+    listen(window);
+    this.registerEvent(this.app.workspace.on('window-open', (_w, win) => listen(win)));
 
     // Obsidian switched between light and dark
     this.registerEvent(this.app.workspace.on('css-change', () => this.restyle()));

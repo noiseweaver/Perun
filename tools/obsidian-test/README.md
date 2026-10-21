@@ -8,6 +8,7 @@ vault in [vault/](vault/) with the plugin turned on, and checks that:
 - an embedded `![[Clipper.circuit]]` shows,
 - the editor tab opens and an edit is written to the file,
 - Ctrl+P opens Obsidian's command palette while the editor has focus,
+- an editor opened in a new window writes its edits to the file,
 - Export image saves a file into the vault, and Options are kept in the plugin's data,
 - the phone layout shows a note and the editor,
 - nothing is logged as an error.

@@ -26,10 +26,14 @@ time. Gady agreed to the five-step plan, with the real-Obsidian test run only wh
   undocked scopes with render's `placeUndocked`. `SETTING_USE` in drawing.ts must name every user
   setting as `drawn` or `editor`, so a new setting fails the typecheck until someone decides.
 - Step 3, `tools/obsidian-test/`: downloads Obsidian, opens a test vault with the plugin, and
-  checks 10 things (block runs, switch click, embed, editor edit written to the file, Ctrl+P,
-  export into the vault, settings in plugin data, phone layout, no console errors). All 10 pass.
+  checks 11 things (block runs, switch click, embed, editor edit written to the file, Ctrl+P,
+  export into the vault, settings in plugin data, phone layout, no console errors). All 11 pass.
   It found one more bug on its first run: Obsidian ignores keys while the frame has focus, so
   the plugin now lets go of focus for a passed-on hotkey.
+- An editor opened in a new window (Open in new window, or a tab dragged out) never reached the
+  plugin: its frame posts to the popout's window, and the plugin only listened in the main one,
+  so edits, settings and theme choices made there were lost. The plugin now listens in every
+  window (`window-open`), and the Obsidian test has an 11th check for it.
 - Step 4, `.github/workflows/release-obsidian.yml`: a manual Release Obsidian plugin button.
   Builds with the version (PERUN_PLUGIN_VERSION into dist/manifest.json), runs `pnpm check` and
   the Obsidian test, and publishes a GitHub release (main.js, manifest.json, styles.css) only if
