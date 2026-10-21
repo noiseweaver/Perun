@@ -78,7 +78,8 @@ export class Inductor {
       sim.stampNonLinear(n0);
       sim.stampNonLinear(n1);
     } else {
-      if (this.isTrapezoidal()) this.compResistance = (2 * this.inductance) / sim.timeStep;
+      if (this.sim.trapezoidal(this.isTrapezoidal()))
+        this.compResistance = (2 * this.inductance) / sim.timeStep;
       else this.compResistance = this.inductance / sim.timeStep;
       sim.stampResistor(n0, n1, this.compResistance);
     }
@@ -94,10 +95,12 @@ export class Inductor {
     if (this.saturationCurrent > 0) {
       // recompute companion resistance from current-dependent inductance
       const lEff = this.calcEffectiveInductance(this.current);
-      if (this.isTrapezoidal()) this.compResistance = (2 * lEff) / this.sim.timeStep;
+      if (this.sim.trapezoidal(this.isTrapezoidal()))
+        this.compResistance = (2 * lEff) / this.sim.timeStep;
       else this.compResistance = lEff / this.sim.timeStep;
     }
-    if (this.isTrapezoidal()) this.curSourceValue = voltdiff / this.compResistance + this.current;
+    if (this.sim.trapezoidal(this.isTrapezoidal()))
+      this.curSourceValue = voltdiff / this.compResistance + this.current;
     else this.curSourceValue = this.current;
   }
 

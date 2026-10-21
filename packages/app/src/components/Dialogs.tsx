@@ -32,6 +32,7 @@ import { BodeDialog } from './BodeDialog.tsx';
 import { SweepDialog } from './SweepDialog.tsx';
 import { ExportImageDialog, PartsListDialog, ScopeCsvDialog } from './ExportDialogs.tsx';
 import { Shell } from './DialogShell.tsx';
+import { SolverSection } from './SolverSection.tsx';
 import { ScopePropertiesDialog } from './ScopeDialog.tsx';
 import { SliderDialog } from './SliderDialog.tsx';
 import { ModelDialog } from './ModelDialog.tsx';
@@ -321,6 +322,14 @@ function SimSettingsDialog() {
   const [rampTo, setRampTo] = useState(() => String(sim.temperatureRamp?.to ?? 85));
   const [rampOver, setRampOver] = useState(() => shortTime(sim.temperatureRamp?.duration ?? 0.1));
   const [heating, setHeating] = useState(sim.selfHeating);
+  const [integration, setIntegration] = useState(sim.integration);
+  const [solverType, setSolverType] = useState(sim.solverType);
+  // opened from a scope card's "Solver ringing?" notice
+  const [guide] = useState(() => {
+    const g = controller.solverGuideRequested;
+    controller.solverGuideRequested = false;
+    return g;
+  });
   const stepValue = readTime(step);
   const minValue = adjust ? readTime(min) : sim.minTimeStep;
   const tempValue = readTemperature(temp);
@@ -335,6 +344,7 @@ function SimSettingsDialog() {
   return (
     <Shell
       title={t('Simulation settings')}
+      className="sim-settings-dialog"
       description={t('A smaller time step is more accurate but makes the simulation run slower.')}
     >
       <form
@@ -342,11 +352,17 @@ function SimSettingsDialog() {
         onSubmit={(e) => {
           e.preventDefault();
           if (!ok) return;
-          controller.setTimeStep(stepValue, adjust, minValue, {
-            temperature: tempValue,
-            ramp: ramp ? { to: rampToValue, duration: rampOverValue } : null,
-            selfHeating: heating,
-          });
+          controller.setTimeStep(
+            stepValue,
+            adjust,
+            minValue,
+            {
+              temperature: tempValue,
+              ramp: ramp ? { to: rampToValue, duration: rampOverValue } : null,
+              selfHeating: heating,
+            },
+            { integration, solverType },
+          );
           openDialog(null);
         }}
       >
@@ -358,7 +374,7 @@ function SimSettingsDialog() {
             id="sim-time-step"
             className="text-input field-input"
             value={step}
-            autoFocus
+            autoFocus={!guide}
             spellCheck={false}
             onChange={(e) => setStep(e.target.value)}
             data-testid="sim-time-step"
@@ -487,6 +503,13 @@ function SimSettingsDialog() {
             )}
           </span>
         )}
+        <SolverSection
+          integration={integration}
+          solverType={solverType}
+          onIntegration={setIntegration}
+          onSolverType={setSolverType}
+          guide={guide}
+        />
         <div className="dialog-buttons">
           <Dialog.Close asChild>
             <button type="button" className="button">

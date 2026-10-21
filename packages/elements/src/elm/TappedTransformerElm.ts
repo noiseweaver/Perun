@@ -153,7 +153,7 @@ export class TappedTransformerElm extends CircuitElm {
     a[5] = a[7] = (m1 * m1 - l1 * m2) / (l2 - m2);
     const det = l1 * (l2 + m2) - 2 * m1 * m1;
     for (let i = 0; i !== 9; i++)
-      a[i] *= (this.isTrapezoidal() ? sim.timeStep / 2 : sim.timeStep) / det;
+      a[i] *= (this.sim.trapezoidal(this.isTrapezoidal()) ? sim.timeStep / 2 : sim.timeStep) / det;
     sim.stampConductance(n[0], n[1], a[0]);
     sim.stampVCCurrentSource(n[0], n[1], n[2], n[3], a[1]);
     sim.stampVCCurrentSource(n[0], n[1], n[3], n[4], a[2]);
@@ -177,7 +177,7 @@ export class TappedTransformerElm extends CircuitElm {
     this.computeVoltDiffs();
     for (let i = 0; i !== 3; i++) {
       this.curSourceValue[i] = this.currents[i];
-      if (this.isTrapezoidal())
+      if (this.sim.trapezoidal(this.isTrapezoidal()))
         for (let j = 0; j !== 3; j++)
           this.curSourceValue[i] += this.a[i * 3 + j] * this.voltdiff[j];
     }

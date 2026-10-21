@@ -302,7 +302,7 @@ export class CustomTransformerElm extends CircuitElm {
     invertMatrix(xform, coilCount);
     const sim = this.sim;
     const nodes = this.nodes;
-    const ts = this.isTrapezoidal() ? sim.timeStep / 2 : sim.timeStep;
+    const ts = this.sim.trapezoidal(this.isTrapezoidal()) ? sim.timeStep / 2 : sim.timeStep;
     for (let i = 0; i !== coilCount; i++)
       for (let j = 0; j !== coilCount; j++) {
         // multiply in dt/2 (or dt for backward euler)
@@ -320,7 +320,7 @@ export class CustomTransformerElm extends CircuitElm {
     const xform = this.xformMatrix as number[][];
     for (let i = 0; i !== this.coilCount; i++) {
       let val = this.coilCurrents[i];
-      if (this.isTrapezoidal())
+      if (this.sim.trapezoidal(this.isTrapezoidal()))
         for (let j = 0; j !== this.coilCount; j++) {
           const n = this.coilNodes[j];
           const voltdiff = this.volts[n] - this.volts[n + 1];

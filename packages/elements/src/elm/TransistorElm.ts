@@ -9,7 +9,7 @@
 // GNU General Public License as published by the Free Software Foundation, either version 2 of the
 // License, or (at your option) any later version. See LICENSE.
 
-import type { Point } from '@perun/engine';
+import { IntegrationMethod, type Point } from '@perun/engine';
 import { CircuitElm, elementType, type ElementType } from '../CircuitElm.ts';
 import { EditInfo } from '../edit/EditInfo.ts';
 import { unescapeToken } from '../escape.ts';
@@ -280,7 +280,9 @@ export class TransistorElm extends CircuitElm {
 
   /**
    * Junction capacitance companion model for this time step, trapezoidal like CapacitorElm.
-   * Total capacitance is depletion (CJE/CJC) plus diffusion (TF*gm, TR*gm).
+   * Total capacitance is depletion (CJE/CJC) plus diffusion (TF*gm, TR*gm). Backward Euler, as
+   * upstream's MOSFET gate capacitances, when the circuit's integration method damps them (not in
+   * upstream, docs/deviations/integration-method.md).
    */
   override startIteration(): void {
     // a ramp or self-heating moves the temperature between steps (not in upstream)
@@ -290,6 +292,7 @@ export class TransistorElm extends CircuitElm {
     const vt = this.vt;
     const hasBEcap = model.junctionCapBE > 0 || model.transitTimeF > 0;
     const hasBCcap = model.junctionCapBC > 0 || model.transitTimeR > 0;
+    const damp = sim.integration !== IntegrationMethod.PER_PART;
     if (hasBEcap && sim.timeStep > 0) {
       const vjBE = this.pnp * this.capVoltBE; // physical junction voltage
       let cje = calcJunctionCap(
@@ -303,9 +306,9 @@ export class TransistorElm extends CircuitElm {
         const vtn = vt * model.emissionCoeffF;
         cje += (model.transitTimeF * this.csat * Math.exp(vjBE / vtn)) / vtn;
       }
-      this.geqBE = (2 * cje) / sim.timeStep;
+      this.geqBE = ((damp ? 1 : 2) * cje) / sim.timeStep;
       if (this.geqBE < 1e-20) this.geqBE = this.ceqBE = this.capCurBE = 0;
-      else this.ceqBE = -this.geqBE * this.capVoltBE - this.capCurBE;
+      else this.ceqBE = -this.geqBE * this.capVoltBE - (damp ? 0 : this.capCurBE);
     }
     if (hasBCcap && sim.timeStep > 0) {
       const vjBC = this.pnp * this.capVoltBC; // physical junction voltage
@@ -321,9 +324,9 @@ export class TransistorElm extends CircuitElm {
           (model.transitTimeR * this.csat * Math.exp(vjBC / (vt * model.emissionCoeffR))) /
           (vt * model.emissionCoeffR);
       }
-      this.geqBC = (2 * cjc) / sim.timeStep;
+      this.geqBC = ((damp ? 1 : 2) * cjc) / sim.timeStep;
       if (this.geqBC < 1e-20) this.geqBC = this.ceqBC = this.capCurBC = 0;
-      else this.ceqBC = -this.geqBC * this.capVoltBC - this.capCurBC;
+      else this.ceqBC = -this.geqBC * this.capVoltBC - (damp ? 0 : this.capCurBC);
     }
   }
 

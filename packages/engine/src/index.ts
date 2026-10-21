@@ -15,6 +15,7 @@ export { JavaRandom } from './JavaRandom.ts';
 export { luFactorDense, luSolveDense, invertMatrix } from './lu.ts';
 export {
   Simulation,
+  IntegrationMethod,
   SolverType,
   SPARSE_THRESHOLD,
   WireSegment,

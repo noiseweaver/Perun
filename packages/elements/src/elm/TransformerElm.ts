@@ -184,7 +184,9 @@ export class TransformerElm extends CircuitElm {
 
   computeCoefficients(l1: number, l2: number, m: number): void {
     const deti = 1 / (l1 * l2 - m * m);
-    const ts = this.isTrapezoidal() ? this.sim.timeStep / 2 : this.sim.timeStep;
+    const ts = this.sim.trapezoidal(this.isTrapezoidal())
+      ? this.sim.timeStep / 2
+      : this.sim.timeStep;
     this.a1 = l2 * deti * ts;
     this.a2 = -m * deti * ts;
     this.a3 = -m * deti * ts;
@@ -238,7 +240,7 @@ export class TransformerElm extends CircuitElm {
     }
     const voltdiff1 = this.volts[0] - this.volts[2];
     const voltdiff2 = this.volts[1] - this.volts[3];
-    if (this.isTrapezoidal()) {
+    if (this.sim.trapezoidal(this.isTrapezoidal())) {
       this.curSourceValue1 = voltdiff1 * this.a1 + voltdiff2 * this.a2 + this.currents[0];
       this.curSourceValue2 = voltdiff1 * this.a3 + voltdiff2 * this.a4 + this.currents[1];
     } else {

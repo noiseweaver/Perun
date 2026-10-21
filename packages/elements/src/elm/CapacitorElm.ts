@@ -167,7 +167,8 @@ export class CapacitorElm extends CircuitElm {
     // companion model (Norton equivalent): a current source in parallel with a resistor.
     // Trapezoidal is more accurate than backward Euler but can oscillate if RC is small
     // relative to the timestep.
-    if (this.isTrapezoidal()) this.compResistance = sim.timeStep / (2 * capacitance);
+    if (this.sim.trapezoidal(this.isTrapezoidal()))
+      this.compResistance = sim.timeStep / (2 * capacitance);
     else this.compResistance = sim.timeStep / capacitance;
     sim.stampResistor(this.nodes[0], this.nodes[this.capNode2], this.compResistance);
     sim.stampRightSide(this.nodes[0]);
@@ -177,7 +178,7 @@ export class CapacitorElm extends CircuitElm {
   }
 
   override startIteration(): void {
-    if (this.isTrapezoidal())
+    if (this.sim.trapezoidal(this.isTrapezoidal()))
       this.curSourceValue = -this.voltdiff / this.compResistance - this.current;
     else this.curSourceValue = -this.voltdiff / this.compResistance;
   }

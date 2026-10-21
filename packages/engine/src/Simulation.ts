@@ -66,6 +66,20 @@ export const SolverType = { AUTO: 0, DENSE: 1, SPARSE: 2 } as const;
 export type SolverType = (typeof SolverType)[keyof typeof SolverType];
 
 /**
+ * How capacitors, inductors and transistor junction capacitances integrate over a timestep
+ * (not in upstream, docs/deviations/integration-method.md). PER_PART is upstream: each part's
+ * own "Trapezoidal Approximation" setting, and trapezoidal transistor junctions.
+ * BACKWARD_EULER uses backward Euler for all of them. DAMP_SEMICONDUCTORS uses it for transistor
+ * junction capacitances only (upstream already does this for MOSFET gate capacitances).
+ */
+export const IntegrationMethod = {
+  PER_PART: 0,
+  BACKWARD_EULER: 1,
+  DAMP_SEMICONDUCTORS: 2,
+} as const;
+export type IntegrationMethod = (typeof IntegrationMethod)[keyof typeof IntegrationMethod];
+
+/**
  * A row of `n` zeros stored as doubles from the start. `new Array(n).fill(0)` starts out holding
  * small integers and only some rows ever get a fraction, so loops over the matrix would see rows
  * of two kinds and run several times slower.
@@ -137,6 +151,8 @@ export class Simulation {
    * ambient temperature (elements' `thermal`). Off by default.
    */
   selfHeating = false;
+  /** Not in upstream (docs/deviations/integration-method.md); see `IntegrationMethod`. */
+  integration: IntegrationMethod = IntegrationMethod.PER_PART;
   /**
    * Set by an element whose stamped values went stale (a resistor whose temperature moved): the
    * matrices are stamped again before the next timestep. Never set at the default temperature.
@@ -943,6 +959,14 @@ export class Simulation {
       this.analyzeFlag = true;
     }
     return done;
+  }
+
+  /**
+   * Whether a part whose own setting is `partTrapezoidal` integrates with the trapezoidal rule;
+   * backward Euler otherwise. Only the circuit's integration method can override the part.
+   */
+  trapezoidal(partTrapezoidal: boolean): boolean {
+    return partTrapezoidal && this.integration !== IntegrationMethod.BACKWARD_EULER;
   }
 
   /** Upstream `runCircuit` with the wall-clock budget replaced by a step count. */

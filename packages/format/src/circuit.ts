@@ -42,6 +42,7 @@ import {
   type ScopeManager,
   type XmlDocWriter,
   unescapeToken,
+  IntegrationMethod,
   NOMINAL_TEMPERATURE,
   formatParamList,
   parseParamList,
@@ -122,6 +123,13 @@ const clamp = (v: number, min: number, max: number): number => Math.min(Math.max
 /** An exception's own message, without Java's class-name prefix. */
 function errorText(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
+}
+
+/** A saved integration method; anything unknown reads as upstream's per-part setting. */
+function readIntegrationMethod(v: number): IntegrationMethod {
+  return v === IntegrationMethod.BACKWARD_EULER || v === IntegrationMethod.DAMP_SEMICONDUCTORS
+    ? v
+    : IntegrationMethod.PER_PART;
 }
 
 function parseRamp(s: string | null): { to: number; duration: number } | null {
@@ -253,6 +261,7 @@ export class Circuit {
     sim.temperature = NOMINAL_TEMPERATURE;
     sim.temperatureRamp = null;
     sim.selfHeating = false;
+    sim.integration = IntegrationMethod.PER_PART;
     this.params = [];
     this.elements = [];
     this.hint = { type: -1, item1: 0, item2: 0 };
@@ -560,6 +569,8 @@ export class Circuit {
       // also not in upstream: the ambient ramp ("to duration") and self-heating, saved when set
       sim.temperatureRamp = parseRamp(r.parseStringAttr('tramp', null));
       sim.selfHeating = r.parseIntAttr('heat', 0) !== 0;
+      // also not in upstream (docs/deviations/integration-method.md), saved when not per part
+      sim.integration = readIntegrationMethod(r.parseIntAttr('im', 0));
       this.params = parseParamList(r.parseStringAttr('prm', null));
       this.setGrid();
     }
@@ -741,6 +752,7 @@ export class Circuit {
     const ramp = sim.temperatureRamp;
     if (ramp !== null) w.dumpAttr('tramp', `${String(ramp.to)} ${String(ramp.duration)}`);
     if (sim.selfHeating) w.dumpAttr('heat', 1);
+    if (sim.integration !== IntegrationMethod.PER_PART) w.dumpAttr('im', sim.integration);
     if (this.params.length > 0) w.dumpAttr('prm', formatParamList(this.params));
 
     modelsFor(sim).clearDumpedFlags();
