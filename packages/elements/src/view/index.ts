@@ -99,6 +99,8 @@ import {
   unijunctionView,
 } from './composites.ts';
 import { CustomCompositeElm } from '../elm/CustomCompositeElm.ts';
+import { VactrolElm } from '../elm/VactrolElm.ts';
+import { vactrolView } from './vactrol.ts';
 import {
   capacitorView,
   groundView,
@@ -253,6 +255,7 @@ const VIEWS: [AnyCtor, ElementView<never>][] = [
   [NortonAmpElm, nortonAmpView],
   [DarlingtonElm, darlingtonView],
   [CrystalElm, crystalView],
+  [VactrolElm, vactrolView],
   [CustomCompositeElm, subcircuitView],
   [TextElm, textView],
   [LEDElm, ledView],

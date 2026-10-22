@@ -4,6 +4,7 @@
 import type { Simulation } from '@perun/engine';
 import type { CircuitElm } from './CircuitElm.ts';
 import type { StringTokenizer } from './StringTokenizer.ts';
+import type { XmlElement } from './xmldoc.ts';
 
 /**
  * The element registry's constructors, for composite elements that build their parts by class
@@ -26,6 +27,9 @@ export const elementFactory = {
     throw new Error('element registry not loaded');
   },
   classNameForXmlTag(_tag: string): string | undefined {
+    throw new Error('element registry not loaded');
+  },
+  classNameForXmlRecord(_elem: XmlElement): string | undefined {
     throw new Error('element registry not loaded');
   },
 };
