@@ -112,7 +112,7 @@ export abstract class CompositeElm extends CircuitElm {
         this.loadNestedModel(new AttrReader(childElem));
         continue;
       }
-      const className = elementFactory.classNameForXmlTag(tagName);
+      const className = elementFactory.classNameForXmlRecord(childElem);
       if (className === undefined) continue;
       // skip parts that are only needed for display. A ground with coordinates came from a newer
       // dump where it is only visual; old-style dumps have none and need it for simulation.
