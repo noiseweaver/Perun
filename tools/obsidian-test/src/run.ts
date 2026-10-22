@@ -42,6 +42,8 @@ interface ObsidianApp {
       openFile(file: unknown): Promise<void>;
       setViewState(state: unknown): Promise<void>;
     };
+    getLeavesOfType(type: string): { view: unknown }[];
+    getActiveFile(): { path: string } | null;
   };
   vault: {
     getAbstractFileByPath(path: string): unknown;
@@ -49,7 +51,13 @@ interface ObsidianApp {
     adapter: { read(path: string): Promise<string> };
   };
   plugins: {
-    plugins: Record<string, { data?: { storage: Record<string, string> } }>;
+    plugins: Record<
+      string,
+      {
+        data?: { storage: Record<string, string>; followObsidian: boolean };
+        newCircuit?(folder: string): Promise<void>;
+      }
+    >;
     enablePlugin(id: string): Promise<void>;
   };
   emulateMobile(on: boolean): void;
@@ -200,8 +208,9 @@ async function run(page: Page): Promise<void> {
       .click({ timeout: 10000 })
       .catch(() => undefined);
     // the trust button loads it; turn it on by hand only if it hasn't come up after a while
+    // (Obsidian reloads its window when the vault is trusted: an evaluate then may fail)
     const loaded = (): Promise<boolean> =>
-      page.evaluate(() => app.plugins.plugins['perun'] !== undefined);
+      page.evaluate(() => app.plugins.plugins['perun'] !== undefined).catch(() => false);
     for (let i = 0; i < 20 && !(await loaded()); i++) await pause(500);
     if (!(await loaded())) await page.evaluate(() => app.plugins.enablePlugin('perun'));
     assert(await loaded(), 'not loaded');
@@ -297,6 +306,78 @@ async function run(page: Page): Promise<void> {
       () => app.plugins.plugins['perun']?.data?.storage['circuitjs-next.settings.v2'] ?? '{}',
     );
     assert((JSON.parse(settings) as { euroResistors?: boolean }).euroResistors === true, settings);
+  });
+
+  await check(page, 'A theme picked in one editor reaches the other tabs', async () => {
+    assert(editor !== null, 'no editor');
+    await page.evaluate(() => app.plugins.plugins['perun']?.newCircuit?.('/'));
+    await pause(3000);
+    // back in Clipper's tab, pick a theme there
+    await page.evaluate(() =>
+      app.workspace.getLeaf(false).openFile(app.vault.getAbstractFileByPath('Clipper.circuit')),
+    );
+    await pause(1500);
+    const backgrounds = async (): Promise<string[]> => {
+      const out: string[] = [];
+      for (const f of page.frames()) {
+        if (f === page.mainFrame()) continue;
+        if (
+          (await f
+            .locator('[data-testid=circuit-canvas]')
+            .count()
+            .catch(() => 0)) === 0
+        )
+          continue;
+        out.push(await f.evaluate(() => getComputedStyle(document.body).backgroundColor));
+      }
+      return out;
+    };
+    const light = await backgrounds();
+    assert(light.length === 2, `${light.length} editors open, not 2`);
+    const frame = await openEditor(page);
+    await frame.getByRole('button', { name: 'Options', exact: true }).click();
+    await frame.getByTestId('menu-theme').click();
+    await frame.getByTestId('theme-dracula').click();
+    await pause(1500);
+    const dark = await backgrounds();
+    assert(
+      dark.every((b) => b === dark[0]) && dark[0] !== light[0],
+      `backgrounds ${dark.join(', ')}`,
+    );
+    assert(
+      (await page.evaluate(() => app.plugins.plugins['perun']?.data?.followObsidian)) === false,
+      "picking a theme didn't stop following Obsidian",
+    );
+    // and back to Obsidian's
+    await frame.getByRole('button', { name: 'Options', exact: true }).click();
+    await frame.getByTestId('menu-theme').click();
+    await frame.getByTestId('menu-theme-follow').click();
+    await pause(1500);
+    const again = await backgrounds();
+    assert(
+      again.every((b) => b === light[0]),
+      `backgrounds ${again.join(', ')}`,
+    );
+  });
+
+  await check(page, 'Opening a circuit that is open in another tab goes to that tab', async () => {
+    // Clipper and Circuit are open; from Circuit's tab, open Clipper again
+    await page.evaluate(() =>
+      app.workspace.getLeaf(false).openFile(app.vault.getAbstractFileByPath('Circuit.circuit')),
+    );
+    await pause(1000);
+    await page.locator('.nav-file-title[data-path="Clipper.circuit"]').click();
+    await pause(2500);
+    const open = await page.evaluate(() =>
+      app.workspace
+        .getLeavesOfType('perun-circuit')
+        .map((l) => (l.view as { file?: { path: string } }).file?.path ?? ''),
+    );
+    assert(open.length === 2 && open.includes('Circuit.circuit'), `tabs: ${open.join(', ')}`);
+    assert(
+      (await page.evaluate(() => app.workspace.getActiveFile()?.path)) === 'Clipper.circuit',
+      "Clipper's tab isn't the active one",
+    );
   });
 
   await check(page, 'Phone layout: a note and the editor', async () => {

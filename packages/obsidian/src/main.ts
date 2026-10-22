@@ -10,7 +10,9 @@ import {
   type App,
   type Debouncer,
   debounce,
+  type WorkspaceLeaf,
 } from 'obsidian';
+import { ACTIVE_THEME_KEY, SETTINGS_KEY } from '@perun/app/settings';
 import type { DrawingSettings } from '@perun/app/drawing';
 import type { Theme } from '@perun/theme';
 import { CircuitBlock, CircuitEmbed } from './block.ts';
@@ -50,6 +52,12 @@ const BLOCK_LANGUAGE = 'circuit';
  * Perun in Obsidian: ```circuit code blocks run live in notes, and .circuit files open the full
  * editor in a tab.
  */
+/** A tab's back and forward history (not in Obsidian's published API). */
+interface LeafHistory {
+  backHistory: unknown[];
+  back(): Promise<void>;
+}
+
 export default class PerunPlugin extends Plugin {
   data: PluginData = { ...DEFAULT_DATA, storage: {} };
   readonly widgets = new Set<CircuitWidget>();
@@ -141,10 +149,43 @@ export default class PerunPlugin extends Plugin {
     return { ...this.data.storage };
   }
 
-  setStorage(key: string, value: string | null): void {
+  setStorage(key: string, value: string | null, from: object): void {
+    if ((this.data.storage[key] ?? null) === value) return;
     const { [key]: _old, ...rest } = this.data.storage;
     this.data.storage = value === null ? rest : { ...rest, [key]: value };
     this.saveSoon();
+    for (const tab of this.editors) tab.stored(key, value, from);
+    // circuits in notes draw with the editor's theme and symbol settings
+    if (key === SETTINGS_KEY || key === ACTIVE_THEME_KEY) for (const w of this.widgets) w.restyle();
+  }
+
+  setFollow(on: boolean): void {
+    void this.setFollowObsidian(on);
+  }
+
+  /**
+   * A circuit was opened in `leaf`. When another tab among the same tabs has it open already, go
+   * there instead, and `leaf` goes back to what it showed before (or closes, if it was a new tab).
+   * A split or a new window still gets its own editor: that's asked for on purpose.
+   */
+  openedFile(leaf: WorkspaceLeaf, file: TFile): void {
+    if (!this.data.reuseTabs) return;
+    const other = this.app.workspace
+      .getLeavesOfType(VIEW_TYPE)
+      .find(
+        (l) =>
+          l !== leaf &&
+          l.parent === leaf.parent &&
+          (l.view as CircuitEditorView).file?.path === file.path,
+      );
+    if (other === undefined) return;
+    // after Obsidian has finished opening the file
+    window.setTimeout(() => {
+      const history = (leaf as unknown as { history?: LeafHistory }).history;
+      if (history !== undefined && history.backHistory.length > 0) void history.back();
+      else leaf.detach();
+      this.app.workspace.setActiveLeaf(other, { focus: true });
+    }, 0);
   }
 
   /** Write a file the editor exported into `folder`, under a name no other file has yet. */
@@ -162,6 +203,11 @@ export default class PerunPlugin extends Plugin {
     } catch (e) {
       new Notice(`Couldn't save ${path}: ${e instanceof Error ? e.message : String(e)}`);
     }
+  }
+
+  async setReuseTabs(on: boolean): Promise<void> {
+    this.data.reuseTabs = on;
+    await this.saveData(this.data);
   }
 
   async setFollowObsidian(on: boolean): Promise<void> {
@@ -218,12 +264,20 @@ class PerunSettingTab extends PluginSettingTab {
     new Setting(el)
       .setName("Match Obsidian's light and dark mode")
       .setDesc(
-        "Circuits use Perun's Obsidian Dark or Obsidian Light theme. Turn off to use the theme you pick in the circuit editor.",
+        "Circuits use Perun's Obsidian Dark or Obsidian Light theme. Picking a theme in the circuit editor turns this off (Options > Theme turns it on again).",
       )
       .addToggle((t) =>
         t
           .setValue(this.plugin.data.followObsidian)
           .onChange((on) => void this.plugin.setFollowObsidian(on)),
+      );
+    new Setting(el)
+      .setName('Switch to a circuit that is already open')
+      .setDesc(
+        'Opening a circuit that is open in another tab goes to that tab, instead of opening it a second time.',
+      )
+      .addToggle((t) =>
+        t.setValue(this.plugin.data.reuseTabs).onChange((on) => void this.plugin.setReuseTabs(on)),
       );
   }
 }

@@ -7,7 +7,8 @@ import {
   activeLibraryId,
   editTheme,
   importThemeFile,
-  selectTheme,
+  chooseTheme,
+  setFollowsHost,
   userThemeId,
 } from '../themes.ts';
 import * as Menu from '@radix-ui/react-dropdown-menu';
@@ -743,9 +744,22 @@ function Item(props: {
 function ThemeMenu({ themeInput }: { themeInput: RefObject<HTMLInputElement | null> }) {
   const themeId = useApp((s) => s.settings.themeId);
   const library = useApp((s) => s.library);
+  const followsHost = useApp((s) => s.followsHost);
   return (
     <OptionsSub label="Theme" icon="palette" testId="menu-theme">
-      <Menu.RadioGroup value={themeId} onValueChange={selectTheme}>
+      {followsHost !== null && (
+        <>
+          <CheckItem
+            label="Match Obsidian's light and dark mode"
+            icon="gradient"
+            checked={followsHost}
+            onCheckedChange={setFollowsHost}
+            testId="menu-theme-follow"
+          />
+          <Menu.Separator className="menu-separator" />
+        </>
+      )}
+      <Menu.RadioGroup value={themeId} onValueChange={chooseTheme}>
         {Object.entries(BUILTIN_THEMES).map(([id, th]) => (
           <Fragment key={id}>
             {/* the themes after editor and app palettes follow the app's own */}

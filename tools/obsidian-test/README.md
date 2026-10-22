@@ -10,6 +10,8 @@ vault in [vault/](vault/) with the plugin turned on, and checks that:
 - Ctrl+P opens Obsidian's command palette while the editor has focus,
 - an editor opened in a new window writes its edits to the file,
 - Export image saves a file into the vault, and Options are kept in the plugin's data,
+- a theme picked in one editor reaches the other open editors (and Match Obsidian brings
+  Obsidian's back), and opening a circuit that is already open goes to its tab,
 - the phone layout shows a note and the editor,
 - nothing is logged as an error.
 

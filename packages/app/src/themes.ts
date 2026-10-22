@@ -125,6 +125,21 @@ export function selectTheme(themeId: string): void {
   cacheActive();
 }
 
+/** The user picked a theme: in Obsidian it then stops following Obsidian's light and dark mode. */
+export function chooseTheme(themeId: string): void {
+  if (useApp.getState().followsHost === true) setFollowsHost(false);
+  selectTheme(themeId);
+}
+
+/** Follow Obsidian's light and dark mode, or not (the plugin then sends its theme). */
+export function setFollowsHost(on: boolean): void {
+  useApp.setState({ followsHost: on });
+  platform.followsHost?.(on);
+}
+
+/** The library's place in the plugin's data (Obsidian). */
+export const LIBRARY = { database: DB_NAME, store: STORE } as const;
+
 export const userThemeId = (id: string): string => USER_THEME_PREFIX + id;
 
 export function isBuiltin(themeId: string): boolean {
@@ -147,7 +162,7 @@ export async function importThemeFile(file: File): Promise<void> {
     return;
   }
   const id = await saveTheme(r.theme);
-  selectTheme(userThemeId(id));
+  chooseTheme(userThemeId(id));
   showToast(`Theme “${r.theme.meta.name}” added`);
 }
 
@@ -183,7 +198,7 @@ export async function keepPreview(use: boolean): Promise<void> {
   if (p === null) return;
   const id = await saveTheme(p.theme);
   useApp.setState({ preview: null });
-  if (use) selectTheme(userThemeId(id));
+  if (use) chooseTheme(userThemeId(id));
   showToast(use ? `Using “${p.theme.meta.name}”` : `“${p.theme.meta.name}” saved to your themes`);
 }
 

@@ -36,6 +36,8 @@ export const webPlatform: Platform = {
     return () => window.removeEventListener('beforeunload', onLeave);
   },
   start() {},
+  takeStored: () => false,
+  followsHost: null,
 };
 
 const databases = new Map<string, Promise<IDBDatabase>>();

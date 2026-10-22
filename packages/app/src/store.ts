@@ -11,6 +11,7 @@ import {
 } from '@perun/theme';
 import type { LoadIssue } from '@perun/format';
 import { create } from 'zustand';
+import { embedConfig } from './embedConfig.ts';
 import type { ExampleList } from './examples.ts';
 import { platform } from './platform/index.ts';
 import {
@@ -174,6 +175,11 @@ export interface AppState {
   /** The user's theme (settings.themeId resolved). */
   theme: Theme;
   /**
+   * In the Obsidian plugin, whether the theme follows Obsidian's light and dark mode (picking a
+   * theme stops it); null on the web.
+   */
+  followsHost: boolean | null;
+  /**
    * A theme shown in place of the user's without being chosen: one from a link, or one being
    * edited. Never saved on its own (PLAN.md section 6).
    */
@@ -313,6 +319,7 @@ export const useApp = create<AppState>(() => ({
   dcPanel: false,
   dialog: null,
   theme: themeFor(initialSettings.themeId, []),
+  followsHost: embedConfig === null ? null : embedConfig.themeId !== null,
   preview: null,
   library: [],
   editing: null,
@@ -327,6 +334,12 @@ export function setPaletteOpen(open: boolean): void {
   } catch {
     // storage disabled: the choice lasts for this page
   }
+}
+
+/** Read the settings again (another editor tab in Obsidian changed them). */
+export function reloadSettings(): void {
+  const settings = loadSettings();
+  useApp.setState({ settings, theme: themeFor(settings.themeId, useApp.getState().library) });
 }
 
 export function updateSettings(patch: Partial<UserSettings>): void {

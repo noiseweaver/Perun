@@ -27,7 +27,12 @@ export interface EditorHost {
   /** The built-in theme to use, or null for the theme chosen in the editor. */
   themeId(): string | null;
   storage(): Record<string, string>;
-  setStorage(key: string, value: string | null): void;
+  /** An editor changed a stored value: keep it, and tell the other open editors (not `from`). */
+  setStorage(key: string, value: string | null, from: object): void;
+  /** The user turned following Obsidian's light and dark mode on or off in an editor. */
+  setFollow(on: boolean): void;
+  /** A circuit file was opened in `leaf` (it may be open in another tab already). */
+  openedFile(leaf: WorkspaceLeaf, file: TFile): void;
   /** Keep a file the editor exported (or a copy of the circuit) in `folder` of the vault. */
   saveFile(folder: string, name: string, data: string | ArrayBuffer): Promise<void>;
   editors: Set<EditorTab>;
@@ -41,6 +46,8 @@ export interface EditorTab {
    * the window it is in). The plugin listens in every window and hands each message to every tab.
    */
   onMessage(e: MessageEvent<unknown>): void;
+  /** Another editor (`from`) changed a stored value. */
+  stored(key: string, value: string | null, from: object): void;
 }
 
 /**
@@ -76,7 +83,8 @@ class EditorFrame {
     if (m?.perun === 'changed') {
       this.shown = m.text;
       this.onChanged(m.text);
-    } else if (m?.perun === 'storage') this.host.setStorage(m.key, m.value);
+    } else if (m?.perun === 'storage') this.host.setStorage(m.key, m.value, this);
+    else if (m?.perun === 'follow') this.host.setFollow(m.on);
     else if (m?.perun === 'file') void this.host.saveFile(this.folder(), m.name, m.data);
     else if (m?.perun === 'key') this.hotkey(m);
   };
@@ -137,7 +145,12 @@ class EditorFrame {
 
   restyle(): void {
     const id = this.host.themeId();
-    if (id !== null) this.post({ perun: 'theme', themeId: id });
+    this.post(id !== null ? { perun: 'theme', themeId: id } : { perun: 'follow', on: false });
+  }
+
+  /** Pass on a value another editor stored, so every open editor has the same settings. */
+  share(key: string, value: string | null, from: object): void {
+    if (from !== this) this.post({ perun: 'storage', key, value });
   }
 
   destroy(): void {
@@ -186,8 +199,17 @@ export class CircuitEditorView extends TextFileView implements EditorTab {
     this.host.editors.add(this);
   }
 
+  override async onLoadFile(file: TFile): Promise<void> {
+    await super.onLoadFile(file);
+    this.host.openedFile(this.leaf, file);
+  }
+
   onMessage(e: MessageEvent<unknown>): void {
     this.editor.onMessage(e);
+  }
+
+  stored(key: string, value: string | null, from: object): void {
+    this.editor.share(key, value, from);
   }
 
   override async onClose(): Promise<void> {
@@ -272,6 +294,10 @@ export class BlockEditorView extends ItemView implements EditorTab {
 
   onMessage(e: MessageEvent<unknown>): void {
     this.editor.onMessage(e);
+  }
+
+  stored(key: string, value: string | null, from: object): void {
+    this.editor.share(key, value, from);
   }
 
   override async onClose(): Promise<void> {

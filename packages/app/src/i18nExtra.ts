@@ -130,6 +130,7 @@ export const EXTRA_KEYS = [
   'Saved: every change goes into the vault as you make it',
   'Save to vault',
   'Save CSV to vault',
+  "Match Obsidian's light and dark mode",
 ] as const;
 
 export const EXTRA: Record<string, readonly string[]> = {
@@ -258,6 +259,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Desat: cada canvi va a la caixa forta a mesura que el fas',
     'Desa a la caixa forta',
     'Desa el CSV a la caixa forta',
+    'Segueix el mode clar i fosc d’Obsidian',
   ],
   csx: [
     'O aplikaci Perun',
@@ -384,6 +386,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Uloženo: každá změna jde do trezoru hned, jak ji uděláte',
     'Uložit do trezoru',
     'Uložit CSV do trezoru',
+    'Řídit se světlým a tmavým režimem Obsidianu',
   ],
   da: [
     'Om Perun',
@@ -510,6 +513,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Gemt: hver ændring gemmes i boksen, mens du laver den',
     'Gem i boksen',
     'Gem CSV i boksen',
+    'Følg Obsidians lyse og mørke tilstand',
   ],
   de: [
     'Über Perun',
@@ -636,6 +640,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Gespeichert: Jede Änderung landet sofort im Vault',
     'Im Vault speichern',
     'CSV im Vault speichern',
+    'Hellen und dunklen Modus von Obsidian übernehmen',
   ],
   es: [
     'Acerca de Perun',
@@ -762,6 +767,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Guardado: cada cambio va a la bóveda a medida que lo haces',
     'Guardar en la bóveda',
     'Guardar CSV en la bóveda',
+    'Seguir el modo claro y oscuro de Obsidian',
   ],
   fi: [
     'Tietoja Perunista',
@@ -888,6 +894,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Tallennettu: jokainen muutos menee holviin heti',
     'Tallenna holviin',
     'Tallenna CSV holviin',
+    'Seuraa Obsidianin vaaleaa ja tummaa tilaa',
   ],
   fr: [
     'À propos de Perun',
@@ -1014,6 +1021,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Enregistré : chaque modification va dans le coffre au fur et à mesure',
     'Enregistrer dans le coffre',
     'Enregistrer le CSV dans le coffre',
+    'Suivre le mode clair ou sombre d’Obsidian',
   ],
   it: [
     'Informazioni su Perun',
@@ -1140,6 +1148,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Salvato: ogni modifica va nel vault mentre la fai',
     'Salva nel vault',
     'Salva CSV nel vault',
+    'Segui la modalità chiara e scura di Obsidian',
   ],
   ja: [
     'Perun について',
@@ -1266,6 +1275,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '保存済み: 変更はそのたびに保管庫に保存されます',
     '保管庫に保存',
     'CSV を保管庫に保存',
+    'Obsidian のライト/ダークモードに合わせる',
   ],
   kr: [
     'Perun 정보',
@@ -1392,6 +1402,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '저장됨: 모든 변경 사항이 바로 볼트에 저장됩니다',
     '볼트에 저장',
     'CSV를 볼트에 저장',
+    'Obsidian의 라이트/다크 모드 따르기',
   ],
   nb: [
     'Om Perun',
@@ -1518,6 +1529,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Lagret: hver endring lagres i hvelvet mens du gjør den',
     'Lagre i hvelvet',
     'Lagre CSV i hvelvet',
+    'Følg Obsidians lyse og mørke modus',
   ],
   pl: [
     'O aplikacji Perun',
@@ -1644,6 +1656,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Zapisano: każda zmiana trafia do sejfu od razu',
     'Zapisz w sejfie',
     'Zapisz CSV w sejfie',
+    'Dopasuj do jasnego i ciemnego trybu Obsidiana',
   ],
   pt: [
     'Sobre o Perun',
@@ -1770,6 +1783,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Guardado: cada alteração vai para o cofre à medida que a faz',
     'Guardar no cofre',
     'Guardar CSV no cofre',
+    'Seguir o modo claro e escuro do Obsidian',
   ],
   ru: [
     'О Perun',
@@ -1896,6 +1910,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Сохранено: каждое изменение сразу попадает в хранилище',
     'Сохранить в хранилище',
     'Сохранить CSV в хранилище',
+    'Следовать светлому и тёмному режиму Obsidian',
   ],
   zh: [
     '关于 Perun',
@@ -2022,6 +2037,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '已保存：每次更改都会随时保存到仓库',
     '保存到仓库',
     '将 CSV 保存到仓库',
+    '跟随 Obsidian 的浅色和深色模式',
   ],
   'zh-tw': [
     '關於 Perun',
@@ -2148,6 +2164,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '已儲存：每次變更都會隨時儲存到儲存庫',
     '儲存到儲存庫',
     '將 CSV 儲存到儲存庫',
+    '跟隨 Obsidian 的淺色與深色模式',
   ],
 };
 

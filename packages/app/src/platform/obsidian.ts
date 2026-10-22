@@ -35,11 +35,18 @@ export function obsidianPlatform(config: EmbedConfig): Platform {
     },
     askBeforeLeaving: () => () => undefined,
     start: passKeysToHost,
+    takeStored: storage.take,
+    followsHost: (on) => post({ perun: 'follow', on }),
   };
 }
 
+/** Where `records(database, store)` keeps its list in the plugin's data. */
+export const recordsKey = (database: string, store: string): string => `${database}/${store}`;
+
 /** Storage over the plugin's copy, telling the plugin about each change. */
-function vaultStorage(initial: Record<string, string>): KeyValueStore {
+function vaultStorage(
+  initial: Record<string, string>,
+): KeyValueStore & { take(key: string, value: string | null): boolean } {
   const data = new Map<string, string>(Object.entries(initial).map(([k, v]) => [k, String(v)]));
   return {
     get length() {
@@ -59,6 +66,12 @@ function vaultStorage(initial: Record<string, string>): KeyValueStore {
       if (!data.delete(k)) return;
       post({ perun: 'storage', key: k, value: null });
     },
+    take(k, v) {
+      if (v === null) return data.delete(k);
+      if (data.get(k) === v) return false;
+      data.set(k, v);
+      return true;
+    },
   };
 }
 
@@ -72,7 +85,7 @@ function vaultRecords<T extends { id: string }>(
   database: string,
   store: string,
 ): RecordStore<T> {
-  const key = `${database}/${store}`;
+  const key = recordsKey(database, store);
   const read = (): T[] | null => {
     const raw = storage.getItem(key);
     if (raw === null) return null;

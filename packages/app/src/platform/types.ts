@@ -51,4 +51,14 @@ export interface Platform {
   askBeforeLeaving(ask: () => boolean): () => void;
   /** Start what this platform does for the whole page (Obsidian: its hotkeys keep working). */
   start(): void;
+  /**
+   * Another copy of the app changed a stored value (another editor tab in Obsidian): keep it
+   * without sending it on. False when nothing changed.
+   */
+  takeStored(key: string, value: string | null): boolean;
+  /**
+   * Whether the theme follows the host's light and dark mode (Obsidian), told to the host; null
+   * where there is no host.
+   */
+  readonly followsHost: ((on: boolean) => void) | null;
 }

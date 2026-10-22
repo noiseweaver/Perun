@@ -14,11 +14,13 @@ import { DEFAULT_THEME_ID, builtinTheme, parseTheme, type Theme } from '@perun/t
 export interface PluginData {
   /** Use Perun's Obsidian Dark and Light themes, following Obsidian's mode. */
   followObsidian: boolean;
+  /** Opening a circuit that is open in another tab goes to that tab. */
+  reuseTabs: boolean;
   /** The editor's stored data (its settings), see EmbedConfig.storage. */
   storage: Record<string, string>;
 }
 
-export const DEFAULT_DATA: PluginData = { followObsidian: true, storage: {} };
+export const DEFAULT_DATA: PluginData = { followObsidian: true, reuseTabs: true, storage: {} };
 
 export function readData(raw: unknown): PluginData {
   const d = (typeof raw === 'object' && raw !== null ? raw : {}) as Partial<PluginData>;
@@ -28,6 +30,7 @@ export function readData(raw: unknown): PluginData {
   }
   return {
     followObsidian: typeof d.followObsidian === 'boolean' ? d.followObsidian : true,
+    reuseTabs: typeof d.reuseTabs === 'boolean' ? d.reuseTabs : true,
     storage,
   };
 }

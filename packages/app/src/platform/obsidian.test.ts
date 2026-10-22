@@ -30,6 +30,18 @@ const config = (storage: Record<string, string>): EmbedConfig => ({
 afterEach(() => vi.unstubAllGlobals());
 
 describe('the app in the Obsidian plugin', () => {
+  it("takes another tab's changes without sending them back", () => {
+    const f = frame();
+    const p = obsidianPlatform(config({ a: '1' }));
+    expect(p.takeStored('a', '1')).toBe(false);
+    expect(p.takeStored('a', '2')).toBe(true);
+    expect(p.takeStored('b', null)).toBe(false);
+    expect(p.takeStored('a', null)).toBe(true);
+    expect(p.storage.getItem('a')).toBeNull();
+    p.followsHost?.(false);
+    expect(f.posted).toEqual([{ perun: 'follow', on: false }]);
+  });
+
   it("keeps the app's data in the plugin, and the clipboard on the device", () => {
     const f = frame();
     const p = obsidianPlatform(config({ a: '1' }));

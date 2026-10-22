@@ -36,8 +36,10 @@ Circuits in your notes, running live, and the full Perun editor for circuit file
   renamed to `.circuit` and opened.
 
 - **Themes.** Circuits use Perun's Obsidian Dark and Obsidian Light themes and switch with
-  Obsidian. Settings > Perun > Match Obsidian's light and dark mode turns that off, and blocks
-  then use the theme picked in the editor. The editor's settings (Options menu) are kept in the
+  Obsidian. Picking another theme in the editor (Options > Theme) turns that off, and every
+  editor and block then uses the picked theme; Match Obsidian's light and dark mode, at the top of
+  Options > Theme or in Settings > Perun, turns it on again. Opening a circuit that is already open
+  among the same tabs switches to that tab (Settings > Perun to turn off). The editor's settings (Options menu) are kept in the
   plugin's data in the vault, so they travel with it; circuit blocks follow its symbol settings
   (European resistors and gates, value size).
 

@@ -7,9 +7,10 @@ import { blockTheme, drawSettings, obsidianThemeId, readData } from './settings.
 
 describe('plugin settings', () => {
   it('reads damaged data as the defaults', () => {
-    expect(readData(null)).toEqual({ followObsidian: true, storage: {} });
+    expect(readData(null)).toEqual({ followObsidian: true, reuseTabs: true, storage: {} });
     expect(readData({ followObsidian: 'no', storage: { a: 1, b: 'x' } })).toEqual({
       followObsidian: true,
+      reuseTabs: true,
       storage: { b: 'x' },
     });
   });

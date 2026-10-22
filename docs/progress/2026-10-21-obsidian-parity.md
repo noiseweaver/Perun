@@ -26,14 +26,24 @@ time. Gady agreed to the five-step plan, with the real-Obsidian test run only wh
   undocked scopes with render's `placeUndocked`. `SETTING_USE` in drawing.ts must name every user
   setting as `drawn` or `editor`, so a new setting fails the typecheck until someone decides.
 - Step 3, `tools/obsidian-test/`: downloads Obsidian, opens a test vault with the plugin, and
-  checks 11 things (block runs, switch click, embed, editor edit written to the file, Ctrl+P,
-  export into the vault, settings in plugin data, phone layout, no console errors). All 11 pass.
+  checks 13 things (block runs, switch click, embed, editor edit written to the file, Ctrl+P,
+  export into the vault, settings in plugin data, a theme reaching other tabs, switching to an
+  open tab, phone layout, a new window, no console errors). All 13 pass.
   It found one more bug on its first run: Obsidian ignores keys while the frame has focus, so
   the plugin now lets go of focus for a passed-on hotkey.
 - An editor opened in a new window (Open in new window, or a tab dragged out) never reached the
   plugin: its frame posts to the popout's window, and the plugin only listened in the main one,
   so edits, settings and theme choices made there were lost. The plugin now listens in every
-  window (`window-open`), and the Obsidian test has an 11th check for it.
+  window (`window-open`), and the Obsidian test has a check for it.
+- New tabs opened in the default theme (Gady): with Match Obsidian's light and dark mode on, every
+  new editor took Obsidian's theme over the one picked in the editor, and open editors never saw
+  each other's changes (each frame had its own copy of the settings). Now picking a theme in the
+  editor turns following off (Options > Theme and the Themes dialog have a Match Obsidian's light
+  and dark mode switch to turn it on again), and the plugin passes every stored change on to the
+  other open editors, which apply settings and the theme library at once.
+- Opening a circuit that is already open among the same tabs switches to that tab (the reused
+  tab goes back, a new one closes). A split or a new window still opens its own editor. Plugin
+  setting "Switch to a circuit that is already open", on by default.
 - Step 4, `.github/workflows/release-obsidian.yml`: a manual Release Obsidian plugin button.
   Builds with the version (PERUN_PLUGIN_VERSION into dist/manifest.json), runs `pnpm check` and
   the Obsidian test, and publishes a GitHub release (main.js, manifest.json, styles.css) only if
