@@ -35,6 +35,8 @@ export interface UserSettings {
   junctionDots: boolean;
   /** Keep current dots on screen, standing still, while the simulation is paused (upstream hides them). */
   pausedDots: boolean;
+  /** How fast the simulation runs against real time, in the bottom bar and the Speed popover. */
+  realTimeReadout: boolean;
   /** Options > Visualizations: field, charge and energy overlays. */
   fields: FieldOptions;
   /** Size of component value text on the canvas, as a fraction of 12 px (VALUE_SIZES). */
@@ -72,6 +74,15 @@ export interface CircuitDisplay {
 export interface SimStatus {
   t: number;
   timeStep: number;
+  /** The time step the circuit asks for (timeStep is below it while the adaptive step backs off). */
+  maxTimeStep: number;
+  /**
+   * Simulated seconds per real second over the last second of running, or null while paused,
+   * replaying a recorded frame, or not running long enough to tell.
+   */
+  realTime: number | null;
+  /** Some frame in that second ran out of time and dropped steps: the computer can't keep up. */
+  behind: boolean;
   /** Ambient temperature in °C now (27 is the default; a ramp moves it). */
   temperature: number;
   /** A ramp or self-heating is on, so the temperature readout shows even at 27 °C. */
@@ -259,6 +270,7 @@ function loadSettings(): UserSettings {
     conventionalCurrent: true,
     junctionDots: false,
     pausedDots: true,
+    realTimeReadout: true,
     fields: NO_FIELDS,
     wheelEdit: true,
     wiresFollow: true,
@@ -298,6 +310,8 @@ function loadSettings(): UserSettings {
           : defaults.conventionalCurrent,
       junctionDots: typeof s.junctionDots === 'boolean' ? s.junctionDots : defaults.junctionDots,
       pausedDots: typeof s.pausedDots === 'boolean' ? s.pausedDots : defaults.pausedDots,
+      realTimeReadout:
+        typeof s.realTimeReadout === 'boolean' ? s.realTimeReadout : defaults.realTimeReadout,
       fields: readFields(s) ?? defaults.fields,
       wheelEdit: typeof s.wheelEdit === 'boolean' ? s.wheelEdit : defaults.wheelEdit,
       wiresFollow: typeof s.wiresFollow === 'boolean' ? s.wiresFollow : defaults.wiresFollow,
@@ -403,6 +417,9 @@ export const useApp = create<AppState>(() => ({
   status: {
     t: 0,
     timeStep: 5e-6,
+    maxTimeStep: 5e-6,
+    realTime: null,
+    behind: false,
     temperature: 27,
     thermal: false,
     selfHeating: false,
