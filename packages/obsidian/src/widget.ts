@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 
-import { Component, SliderComponent, setIcon, setTooltip } from 'obsidian';
+import { Component, setIcon, setTooltip } from 'obsidian';
 import type { SwitchElm } from '@perun/elements';
 import type { Theme } from '@perun/theme';
 import { CircuitPlayer } from './player.ts';
@@ -231,12 +231,25 @@ function slider(
   onInput: (v: number) => void,
 ): HTMLElement {
   const row = parent.createDiv({ cls: 'perun-control' });
-  row.createSpan({ cls: 'perun-control-label', text: label });
-  new SliderComponent(row)
-    .setLimits(min, max, 1)
-    .setInstant(true)
-    .setValue(value)
-    .onChange(onInput)
-    .sliderEl.setAttribute('aria-label', label);
+  row.createSpan({ cls: 'perun-control-label', text: label, attr: { title: label } });
+  // a plain range input in Obsidian's slider style: Obsidian's SliderComponent (since 1.13 or so)
+  // adds its own value readout next to the slider, which broke the row's layout
+  const input = row.createEl('input', {
+    cls: 'slider perun-control-slider',
+    type: 'range',
+    attr: { min, max, step: 1, 'aria-label': label },
+  });
+  // Obsidian's slider style fills the track up to the thumb by this ratio
+  const fill = (): void =>
+    input.style.setProperty(
+      '--slider-fill-ratio',
+      String((Number(input.value) - min) / (max - min)),
+    );
+  input.value = String(value);
+  fill();
+  input.addEventListener('input', () => {
+    fill();
+    onInput(Number(input.value));
+  });
   return row.createSpan({ cls: 'perun-control-value' });
 }

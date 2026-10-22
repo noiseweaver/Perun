@@ -251,6 +251,44 @@ async function run(page: Page): Promise<void> {
     assert((await canvasImage(page, 1)) !== before, "the click didn't change the circuit");
   });
 
+  await check(page, 'The Controls panel lines up each slider with its name', async () => {
+    const block = page.locator('.perun-block').last();
+    await block.scrollIntoViewIfNeeded();
+    // a circuit with sliders opens with the panel open
+    if ((await block.locator('.perun-controls.is-open').count()) === 0)
+      await block.getByRole('button', { name: 'Controls' }).click();
+    await pause(500);
+    const rows = await block.locator('.perun-control').evaluateAll((els) =>
+      els.map((row) => {
+        const box = (sel: string): DOMRect =>
+          row.querySelector(sel)?.getBoundingClientRect() ?? new DOMRect();
+        const l = box('.perun-control-label');
+        const s = box('.perun-control-slider');
+        const v = box('.perun-control-value');
+        return { label: l, slider: s, value: v };
+      }),
+    );
+    // three circuit sliders and the two speeds
+    assert(rows.length === 5, `${rows.length} rows`);
+    const mid = (r: DOMRect): number => r.y + r.height / 2;
+    for (const r of rows) {
+      assert(
+        Math.abs(mid(r.label) - mid(r.slider)) < 6,
+        'a name and its slider are on different lines',
+      );
+      assert(
+        r.label.right <= r.slider.left && r.slider.right <= r.value.left,
+        'columns out of order',
+      );
+      assert(r.slider.width > 40, 'a slider is squashed');
+    }
+    assert(
+      rows.every((r) => Math.abs(r.slider.left - (rows[0]?.slider.left ?? 0)) < 1),
+      "the sliders don't line up",
+    );
+    await page.screenshot({ path: join(outDir, 'controls.png') });
+  });
+
   await check(page, 'An embedded circuit file shows', async () => {
     const embed = page.locator('.perun-embed .perun-canvas:visible').first();
     await embed.scrollIntoViewIfNeeded();

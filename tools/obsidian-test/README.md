@@ -5,6 +5,7 @@ Obsidian's Linux build the first time (cached in `~/.cache/perun-obsidian-test`)
 vault in [vault/](vault/) with the plugin turned on, and checks that:
 
 - the plugin loads, a circuit block runs, and clicking a switch in a note changes the circuit,
+- the Controls panel lines each slider up with its name,
 - an embedded `![[Clipper.circuit]]` shows,
 - the editor tab opens and an edit is written to the file,
 - Ctrl+P opens Obsidian's command palette while the editor has focus,

@@ -26,9 +26,9 @@ time. Gady agreed to the five-step plan, with the real-Obsidian test run only wh
   undocked scopes with render's `placeUndocked`. `SETTING_USE` in drawing.ts must name every user
   setting as `drawn` or `editor`, so a new setting fails the typecheck until someone decides.
 - Step 3, `tools/obsidian-test/`: downloads Obsidian, opens a test vault with the plugin, and
-  checks 13 things (block runs, switch click, embed, editor edit written to the file, Ctrl+P,
+  checks 14 things (block runs, switch click, the Controls panel, embed, editor edit written to the file, Ctrl+P,
   export into the vault, settings in plugin data, a theme reaching other tabs, switching to an
-  open tab, phone layout, a new window, no console errors). All 13 pass.
+  open tab, phone layout, a new window, no console errors). All 14 pass.
   It found one more bug on its first run: Obsidian ignores keys while the frame has focus, so
   the plugin now lets go of focus for a passed-on hotkey.
 - An editor opened in a new window (Open in new window, or a tab dragged out) never reached the
@@ -44,6 +44,11 @@ time. Gady agreed to the five-step plan, with the real-Obsidian test run only wh
 - Opening a circuit that is already open among the same tabs switches to that tab (the reused
   tab goes back, a new one closes). A split or a new window still opens its own editor. Plugin
   setting "Switch to a circuit that is already open", on by default.
+- The Controls panel under circuits in notes was scrambled (Gady): Obsidian's SliderComponent now
+  adds its own number next to each slider, which threw the panel's grid out. The panel uses plain
+  range inputs in Obsidian's slider style, one grid row each, and the Obsidian test checks that
+  every slider lines up with its name. (The print rules had been duplicated by mistake, which
+  could print an open panel; tidied.)
 - Step 4, `.github/workflows/release-obsidian.yml`: a manual Release Obsidian plugin button.
   Builds with the version (PERUN_PLUGIN_VERSION into dist/manifest.json), runs `pnpm check` and
   the Obsidian test, and publishes a GitHub release (main.js, manifest.json, styles.css) only if
