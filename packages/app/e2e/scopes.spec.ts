@@ -526,6 +526,29 @@ test('the simulation speed can be typed in steps per second', async ({ page }) =
   await expect.poll(speed).toBeCloseTo(Math.log(1000 / 16) * 24 + 61, 2);
 });
 
+test('the speed against real time shows beside the time and under the speed slider', async ({
+  page,
+}) => {
+  await page.goto('/?startCircuit=lrc.txt');
+  await ready(page);
+  const readout = page.getByTestId('pace-readout');
+  await expect(readout).toHaveText(/^ *[\d.]+k?× slower *$/);
+  // measured over a second of running, it settles on what the speed and time step ask for
+  const asked = await page.evaluate(() => {
+    const c = window.perun?.controller.circuit;
+    return c ? 160 * c.getIterCount() * c.sim.maxTimeStep : 0;
+  });
+  await page.getByTestId('speed-button').click();
+  const field = page.getByTestId('pace-field');
+  await expect(field).toContainText(`${(asked * 100).toPrecision(3)} %`);
+  await expect(field).toContainText('× slower');
+  await page.keyboard.press('Escape');
+  // Options can hide it
+  await page.getByTestId('options-menu').click();
+  await page.getByTestId('menu-real-time').click();
+  await expect(readout).toHaveCount(0);
+});
+
 test('a spectrum finds its peak, and the cursor snaps to it', async ({ page }) => {
   await page.goto('/?startCircuit=lrc.txt');
   await ready(page);
