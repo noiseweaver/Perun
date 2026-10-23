@@ -38,6 +38,8 @@ test('Edit > Tidy up straightens the wires and can be undone', async ({ page }) 
   await page.getByTestId('menu-tidy-up').click();
   await expect(page.getByTestId('toast')).toHaveText('Already tidy.');
 
+  // Ctrl+Z goes to the canvas only once the menu has shut
+  await expect(page.getByTestId('menu-tidy-up')).toBeHidden();
   await page.keyboard.press('Control+z');
-  expect(await wireCount(page)).toBe(6);
+  await expect.poll(() => wireCount(page)).toBe(6);
 });
