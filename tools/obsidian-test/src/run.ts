@@ -19,8 +19,11 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, type Browser, type Frame, type Locator, type Page } from '@playwright/test';
 
-/** The Obsidian version tested against; raise it on purpose, after trying the new one. */
-const OBSIDIAN_VERSION = '1.14.4';
+/**
+ * The Obsidian version tested against; raise it on purpose, after trying the new one.
+ * `OBSIDIAN_VERSION=1.6.7 pnpm obsidian:test` tries another (for the manifest's minAppVersion).
+ */
+const OBSIDIAN_VERSION = process.env['OBSIDIAN_VERSION'] ?? '1.14.4';
 const PORT = 9333;
 
 const here = fileURLToPath(new URL('.', import.meta.url));
