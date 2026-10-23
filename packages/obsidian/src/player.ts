@@ -251,6 +251,7 @@ export class CircuitPlayer {
       euroResistors: f.euroResistors,
       euroGates: f.euroGates,
       showOhm: f.showOhm,
+      tidyPots: f.tidyPots,
       textFont: f.textFont,
       junctionDots: f.junctionDots,
       valueScale: f.valueScale,

@@ -564,6 +564,16 @@ export function AppBar() {
             onCheckedChange={(v) => updateSettings({ showOhm: v })}
           />
           <CheckItem
+            label="Tidy potentiometers"
+            icon="pot"
+            checked={settings.tidyPots}
+            onCheckedChange={(v) => updateSettings({ tidyPots: v })}
+            title={t(
+              'Values on the side away from the wiper, and an arrow that stays clear of the pins. Off: drawn as in CircuitJS',
+            )}
+            testId="menu-tidy-pots"
+          />
+          <CheckItem
             label="Junction dots"
             icon="junction"
             checked={settings.junctionDots}

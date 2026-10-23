@@ -27,6 +27,11 @@ export interface UserSettings {
   euroGates: boolean;
   showOhm: boolean;
   conventionalCurrent: boolean;
+  /**
+   * Potentiometers drawn tidily (not in upstream): values on the side away from the wiper, in
+   * fixed-width text, and a solid arrow that stays off the ends of the body.
+   */
+  tidyPots: boolean;
   /** Mark every connection: a dot where two ends meet, a larger one where three or more do. */
   junctionDots: boolean;
   /** Keep current dots on screen, standing still, while the simulation is paused (upstream hides them). */
@@ -85,6 +90,7 @@ export function readSettings(get: (key: string) => string | null): UserSettings 
     euroResistors: false,
     euroGates: false,
     showOhm: false,
+    tidyPots: true,
     conventionalCurrent: true,
     junctionDots: false,
     pausedDots: true,
@@ -122,6 +128,7 @@ export function readSettings(get: (key: string) => string | null): UserSettings 
         typeof s.euroResistors === 'boolean' ? s.euroResistors : defaults.euroResistors,
       euroGates: typeof s.euroGates === 'boolean' ? s.euroGates : defaults.euroGates,
       showOhm: typeof s.showOhm === 'boolean' ? s.showOhm : defaults.showOhm,
+      tidyPots: typeof s.tidyPots === 'boolean' ? s.tidyPots : defaults.tidyPots,
       conventionalCurrent:
         typeof s.conventionalCurrent === 'boolean'
           ? s.conventionalCurrent

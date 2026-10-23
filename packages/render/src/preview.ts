@@ -44,6 +44,7 @@ export function drawPreview(
     showValues: false,
     euroResistors: false,
     showOhm: false,
+    tidyPots: true,
     dotCount: () => 0,
   };
   view.drawBehind?.(e, dc);

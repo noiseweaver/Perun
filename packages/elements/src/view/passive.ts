@@ -24,7 +24,7 @@ import {
   type ElementView,
 } from './common.ts';
 import { calcLeads, distance, interp, interp2, pt, rectOf, unionRect } from './geometry.ts';
-import type { Ink, Pt } from './Painter.ts';
+import type { DrawContext, Ink, Pt, TextStyle } from './Painter.ts';
 import { getFixedUnitText, getShortUnitText, OHM } from './units.ts';
 
 export const wireView: ElementView<WireElm> = {
@@ -215,25 +215,50 @@ export const inductorView: ElementView<InductorElm> = {
   bbox: (e) => elementBox(e, 8),
 };
 
-function potGeometry(e: PotElm) {
+function potGeometry(e: PotElm, tidy: boolean, hs: number) {
   const { point1, point2, dn, offset } = e;
   const bodyLen = 32;
   const [lead1, lead2] = calcLeads(point1, point2, dn, bodyLen);
-  const soff = Math.trunc((e.position - 0.5) * bodyLen);
+  // tidy: the wiper stops 4 short of each end of the body, so it never runs into the leads
+  const soff = Math.trunc((e.position - 0.5) * (tidy ? bodyLen - 8 : bodyLen));
   const s = Math.sign(offset);
   const corner2 = interp(point1, point2, soff / dn + 0.5, offset);
-  const arrowPoint = interp(point1, point2, soff / dn + 0.5, 8 * s);
+  // tidy: the arrow's tip touches the body (the zigzag's peaks, or the box's side)
+  const arrowPoint = interp(point1, point2, soff / dn + 0.5, (tidy ? hs : 8) * s);
   const midpoint = interp(point1, point2, soff / dn + 0.5);
   const clen = Math.abs(offset) - 8;
   const [arrow1, arrow2] = interp2(corner2, arrowPoint, (clen - 8) / clen, 8);
   return { lead1, lead2, corner2, arrowPoint, midpoint, arrow1, arrow2 };
 }
 
+/**
+ * A pot's resistance with one decimal, always the same width (owner's rule), so it never shifts
+ * as the wiper moves: five places for the number, one for the prefix. A resistance is never
+ * negative, so no place for a sign.
+ */
+export function potValueText(v: number, unit: string): string {
+  const scales: [number, string][] = [
+    [1e9, 'G'],
+    [1e6, 'M'],
+    [1e3, 'k'],
+    [1, ' '],
+    [1e-3, 'm'],
+  ];
+  // 999.96 would round to 1000.0: say 1.0 of the next prefix instead
+  const [k, prefix] = scales.find(([k]) => v >= k * 0.99995) ?? [1e-3, 'm'];
+  return `${(v / k).toFixed(1).padStart(5)}${prefix}${unit}`;
+}
+
 export const potView: ElementView<PotElm> = {
   draw(e, ctx) {
     const p = ctx.painter;
-    const { lead1, lead2, corner2, arrowPoint, midpoint, arrow1, arrow2 } = potGeometry(e);
+    const tidy = ctx.tidyPots === true;
     const hs = ctx.euroResistors ? 6 : 8;
+    const { lead1, lead2, corner2, arrowPoint, midpoint, arrow1, arrow2 } = potGeometry(
+      e,
+      tidy,
+      hs,
+    );
     const v1 = volt(e, 0);
     const v2 = volt(e, 1);
     const v3 = volt(e, 2);
@@ -270,9 +295,18 @@ export const potView: ElementView<PotElm> = {
     }
     const w = vInk(v3);
     p.line(e.post3, corner2, w);
-    p.line(corner2, arrowPoint, w);
-    p.line(arrow1, arrowPoint, w);
-    p.line(arrow2, arrowPoint, w);
+    if (tidy) {
+      // a solid head, so even the shortest wiper (one grid step out) reads as an arrow
+      const len = distance(corner2, arrowPoint);
+      const head = Math.min(7, len);
+      const [b1, b2] = interp2(arrowPoint, corner2, head / len, 4);
+      if (len > head) p.line(corner2, interp(arrowPoint, corner2, head / len), w);
+      p.fillPolygon([arrowPoint, b1, b2], w);
+    } else {
+      p.line(corner2, arrowPoint, w);
+      p.line(arrow1, arrowPoint, w);
+      p.line(arrow2, arrowPoint, w);
+    }
     const c1 = ctx.dotCount(0, e.current1);
     const c2 = ctx.dotCount(1, e.current2);
     const c3 = ctx.dotCount(2, e.current3);
@@ -281,63 +315,101 @@ export const potView: ElementView<PotElm> = {
     p.dots(e.post3, corner2, c3);
     p.dots(corner2, midpoint, addCurCount(c3, distance(e.post3, corner2)));
 
-    if (ctx.showValues && e.resistance1 > 0 && e.hasFlag(PotElm.FLAG_SHOW_VALUES)) {
-      // vertical pot with the wiper on the left, horizontal with the wiper on top
-      const reverseY = e.post3.x < lead1.x && lead1.x === lead2.x;
-      const reverseX = e.post3.y < lead1.y && lead1.x !== lead2.x;
-      // swap the texts when the leads run right to left or bottom to top
-      const rev =
-        (lead1.x === lead2.x && lead1.y < lead2.y) || (lead1.y === lead2.y && lead1.x > lead2.x);
-      const unit = ctx.showOhm ? OHM : '';
-      const s1 = getShortUnitText(rev ? e.resistance2 : e.resistance1, unit);
-      const s2 = getShortUnitText(rev ? e.resistance1 : e.resistance2, unit);
-      const ya = Math.trunc(p.fontSize(VALUE_FONT) / 2);
-      let w1 = Math.trunc(p.measureText(s1, VALUE_FONT));
-      if (lead1.x === lead2.x)
-        p.text(
-          s1,
-          pt(
-            !reverseY ? arrowPoint.x + 2 : arrowPoint.x - 2 - w1,
-            Math.max(arrow1.y, arrow2.y) + 5 + ya,
-          ),
-          TEXT,
-          VALUE_FONT,
-        );
-      else
-        p.text(
-          s1,
-          pt(
-            Math.min(arrow1.x, arrow2.x) - 2 - w1,
-            !reverseX ? arrowPoint.y + 4 + ya : arrowPoint.y - 4,
-          ),
-          TEXT,
-          VALUE_FONT,
-        );
-      w1 = Math.trunc(p.measureText(s2, VALUE_FONT));
-      if (lead1.x === lead2.x)
-        p.text(
-          s2,
-          pt(
-            !reverseY ? arrowPoint.x + 2 : arrowPoint.x - 2 - w1,
-            Math.min(arrow1.y, arrow2.y) - 3,
-          ),
-          TEXT,
-          VALUE_FONT,
-        );
-      else
-        p.text(
-          s2,
-          pt(
-            Math.max(arrow1.x, arrow2.x) + 2,
-            !reverseX ? arrowPoint.y + 4 + ya : arrowPoint.y - 4,
-          ),
-          TEXT,
-          VALUE_FONT,
-        );
-    }
+    if (!ctx.showValues || e.resistance1 <= 0 || !e.hasFlag(PotElm.FLAG_SHOW_VALUES)) return;
+    if (tidy) drawTidyPotValues(e, ctx, lead1, lead2, hs);
+    else drawPotValues(e, ctx, lead1, lead2, arrowPoint, arrow1, arrow2);
   },
   bbox: (e) => unionRect(elementBox(e, 8), rectOf([e.post3])),
 };
+
+/**
+ * Both resistances on the side away from the wiper, where no wire leaves, one each side of the
+ * body's centre (each on its own end's half), in fixed-width text that stays put while the wiper
+ * moves.
+ */
+function drawTidyPotValues(e: PotElm, ctx: DrawContext, lead1: Pt, lead2: Pt, hs: number): void {
+  const p = ctx.painter;
+  const unit = ctx.showOhm ? OHM : '';
+  const t1 = potValueText(e.resistance1, unit);
+  const t2 = potValueText(e.resistance2, unit);
+  const tw = p.measureText(t1, VALUE_FONT);
+  const ya = Math.trunc(p.fontSize(VALUE_FONT) / 2);
+  const style: TextStyle = { ...VALUE_FONT, baseline: 'middle' };
+  const centre = interp(lead1, lead2, 0.5);
+  const far = interp(lead1, lead2, 0.5, -Math.sign(e.offset) * (hs + 4));
+  if (lead1.x === lead2.x) {
+    // vertical: stacked, right-aligned on the left or left-aligned on the right
+    const x = far.x < centre.x ? far.x - tw : far.x;
+    const firstUp = e.point1.y < e.point2.y;
+    p.text(firstUp ? t1 : t2, pt(x, centre.y - ya - 1), TEXT, style);
+    p.text(firstUp ? t2 : t1, pt(x, centre.y + ya + 1), TEXT, style);
+  } else {
+    // horizontal: side by side above or below, meeting at the centre
+    const y = far.y + (far.y < centre.y ? -ya : ya);
+    const firstLeft = e.point1.x < e.point2.x;
+    p.text(firstLeft ? t1 : t2, pt(centre.x - 3 - tw, y), TEXT, style);
+    p.text(firstLeft ? t2 : t1, pt(centre.x + 3, y), TEXT, style);
+  }
+}
+
+/** Upstream's values: beside the arrow, on the wiper's side, moving with it. */
+function drawPotValues(
+  e: PotElm,
+  ctx: DrawContext,
+  lead1: Pt,
+  lead2: Pt,
+  arrowPoint: Pt,
+  arrow1: Pt,
+  arrow2: Pt,
+): void {
+  const p = ctx.painter;
+  // vertical pot with the wiper on the left, horizontal with the wiper on top
+  const reverseY = e.post3.x < lead1.x && lead1.x === lead2.x;
+  const reverseX = e.post3.y < lead1.y && lead1.x !== lead2.x;
+  // swap the texts when the leads run right to left or bottom to top
+  const rev =
+    (lead1.x === lead2.x && lead1.y < lead2.y) || (lead1.y === lead2.y && lead1.x > lead2.x);
+  const unit = ctx.showOhm ? OHM : '';
+  const s1 = getShortUnitText(rev ? e.resistance2 : e.resistance1, unit);
+  const s2 = getShortUnitText(rev ? e.resistance1 : e.resistance2, unit);
+  const ya = Math.trunc(p.fontSize(VALUE_FONT) / 2);
+  let w1 = Math.trunc(p.measureText(s1, VALUE_FONT));
+  if (lead1.x === lead2.x)
+    p.text(
+      s1,
+      pt(
+        !reverseY ? arrowPoint.x + 2 : arrowPoint.x - 2 - w1,
+        Math.max(arrow1.y, arrow2.y) + 5 + ya,
+      ),
+      TEXT,
+      VALUE_FONT,
+    );
+  else
+    p.text(
+      s1,
+      pt(
+        Math.min(arrow1.x, arrow2.x) - 2 - w1,
+        !reverseX ? arrowPoint.y + 4 + ya : arrowPoint.y - 4,
+      ),
+      TEXT,
+      VALUE_FONT,
+    );
+  w1 = Math.trunc(p.measureText(s2, VALUE_FONT));
+  if (lead1.x === lead2.x)
+    p.text(
+      s2,
+      pt(!reverseY ? arrowPoint.x + 2 : arrowPoint.x - 2 - w1, Math.min(arrow1.y, arrow2.y) - 3),
+      TEXT,
+      VALUE_FONT,
+    );
+  else
+    p.text(
+      s2,
+      pt(Math.max(arrow1.x, arrow2.x) + 2, !reverseX ? arrowPoint.y + 4 + ya : arrowPoint.y - 4),
+      TEXT,
+      VALUE_FONT,
+    );
+}
 
 /** Upstream `addCurCount`: shift a dot position, leaving the "too fast" marker alone. */
 export const CURRENT_TOO_FAST = 100;

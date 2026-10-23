@@ -34,6 +34,7 @@ export function thumbnail(elements: readonly CircuitElm[]): string | null {
       showValues: false,
       euroResistors: s.settings.euroResistors,
       euroGates: s.settings.euroGates,
+      tidyPots: s.settings.tidyPots,
       textFont: s.settings.textFont,
     };
     const theme = shownTheme(s);
