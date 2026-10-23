@@ -148,6 +148,7 @@ export const EXTRA_KEYS = [
   'How fast the simulation runs compared with real time',
   'Show speed compared with real time',
   'Beside the time readout and under the speed slider',
+  'Show legend',
 ] as const;
 
 export const EXTRA: Record<string, readonly string[]> = {
@@ -294,6 +295,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Com de ràpid va la simulació comparada amb el temps real',
     'Mostra la velocitat comparada amb el temps real',
     'Al costat de la lectura del temps i sota el control lliscant de velocitat',
+    'Mostra la llegenda',
   ],
   csx: [
     'O aplikaci Perun',
@@ -438,6 +440,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Jak rychle běží simulace ve srovnání s reálným časem',
     'Zobrazit rychlost ve srovnání s reálným časem',
     'Vedle údaje o čase a pod posuvníkem rychlosti',
+    'Zobrazit legendu',
   ],
   da: [
     'Om Perun',
@@ -582,6 +585,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Hvor hurtigt simuleringen kører sammenlignet med realtid',
     'Vis hastighed sammenlignet med realtid',
     'Ved siden af tidsvisningen og under hastighedsskyderen',
+    'Vis signaturforklaring',
   ],
   de: [
     'Über Perun',
@@ -726,6 +730,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Wie schnell die Simulation im Vergleich zur Echtzeit läuft',
     'Geschwindigkeit im Vergleich zur Echtzeit anzeigen',
     'Neben der Zeitanzeige und unter dem Geschwindigkeitsregler',
+    'Legende anzeigen',
   ],
   es: [
     'Acerca de Perun',
@@ -870,6 +875,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Lo rápido que va la simulación comparada con el tiempo real',
     'Mostrar la velocidad comparada con el tiempo real',
     'Junto a la lectura del tiempo y bajo el control de velocidad',
+    'Mostrar leyenda',
   ],
   fi: [
     'Tietoja Perunista',
@@ -1014,6 +1020,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Kuinka nopeasti simulaatio etenee reaaliaikaan verrattuna',
     'Näytä nopeus reaaliaikaan verrattuna',
     'Aikalukeman vieressä ja nopeusliukusäätimen alla',
+    'Näytä selite',
   ],
   fr: [
     'À propos de Perun',
@@ -1158,6 +1165,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Vitesse de la simulation par rapport au temps réel',
     'Afficher la vitesse par rapport au temps réel',
     "À côté de l'affichage du temps et sous le curseur de vitesse",
+    'Afficher la légende',
   ],
   it: [
     'Informazioni su Perun',
@@ -1302,6 +1310,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Quanto va veloce la simulazione rispetto al tempo reale',
     'Mostra la velocità rispetto al tempo reale',
     'Accanto alla lettura del tempo e sotto il cursore della velocità',
+    'Mostra legenda',
   ],
   ja: [
     'Perun について',
@@ -1446,6 +1455,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '実時間と比べたシミュレーションの速さ',
     '実時間と比べた速さを表示',
     '時間表示の横と速度スライダーの下',
+    '凡例を表示',
   ],
   kr: [
     'Perun 정보',
@@ -1590,6 +1600,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '실시간과 비교한 시뮬레이션 속도',
     '실시간과 비교한 속도 표시',
     '시간 표시 옆과 속도 슬라이더 아래',
+    '범례 표시',
   ],
   nb: [
     'Om Perun',
@@ -1734,6 +1745,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Hvor fort simuleringen går sammenlignet med sanntid',
     'Vis hastighet sammenlignet med sanntid',
     'Ved siden av tidsvisningen og under hastighetsglidebryteren',
+    'Vis tegnforklaring',
   ],
   pl: [
     'O aplikacji Perun',
@@ -1878,6 +1890,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Jak szybko działa symulacja w porównaniu z czasem rzeczywistym',
     'Pokaż prędkość w porównaniu z czasem rzeczywistym',
     'Obok odczytu czasu i pod suwakiem prędkości',
+    'Pokaż legendę',
   ],
   pt: [
     'Sobre o Perun',
@@ -2022,6 +2035,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Quão rápido a simulação roda comparada com o tempo real',
     'Mostrar a velocidade comparada com o tempo real',
     'Ao lado da leitura do tempo e abaixo do controle de velocidade',
+    'Mostrar legenda',
   ],
   ru: [
     'О Perun',
@@ -2166,6 +2180,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Насколько быстро идёт симуляция по сравнению с реальным временем',
     'Показывать скорость по сравнению с реальным временем',
     'Рядом с показанием времени и под ползунком скорости',
+    'Показывать легенду',
   ],
   zh: [
     '关于 Perun',
@@ -2310,6 +2325,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '模拟相对于实时的运行速度',
     '显示相对于实时的速度',
     '在时间读数旁边和速度滑块下方',
+    '显示图例',
   ],
   'zh-tw': [
     '關於 Perun',
@@ -2454,6 +2470,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '模擬相對於即時的執行速度',
     '顯示相對於即時的速度',
     '在時間讀數旁邊和速度滑桿下方',
+    '顯示圖例',
   ],
 };
 

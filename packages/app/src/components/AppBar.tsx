@@ -868,9 +868,10 @@ function OptionsSub(props: {
   );
 }
 
-/** Options > Visualizations: one switch per field, charge or energy overlay (fields.ts). */
+/** Options > Visualizations: a switch per field or energy overlay (fields.ts), and the legend. */
 function VisualizationsMenu() {
   const fields = useApp((s) => s.settings.fields);
+  const legend = useApp((s) => s.settings.fieldLegend);
   const all = Object.values(fields).every((v) => v);
   return (
     <OptionsSub label="Visualizations" icon="visibility" testId="menu-visualizations">
@@ -897,6 +898,16 @@ function VisualizationsMenu() {
       >
         <Check on={false} /> {t(all ? 'Turn all off' : 'Turn all on')}
       </Menu.Item>
+      <Menu.Separator className="menu-separator" />
+      <Menu.CheckboxItem
+        className="menu-item"
+        checked={legend}
+        onSelect={(e) => e.preventDefault()}
+        onCheckedChange={(v) => updateSettings({ fieldLegend: v })}
+        data-testid="menu-vis-legend"
+      >
+        <Check on={legend} /> {t('Show legend')}
+      </Menu.CheckboxItem>
     </OptionsSub>
   );
 }

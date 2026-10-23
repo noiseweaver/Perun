@@ -34,6 +34,8 @@ export const SETTING_USE = {
   quickPickBar: 'editor',
   quickPickWheel: 'editor',
   warnUnsaved: 'editor',
+  // the legend card is the editor's; notes in Obsidian have none
+  fieldLegend: 'editor',
   valueSize: 'drawn',
   textFont: 'drawn',
   language: 'editor',
