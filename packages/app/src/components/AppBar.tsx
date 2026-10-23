@@ -33,6 +33,7 @@ import { promptInstall } from '../pwa.ts';
 import { t, resolveLanguage, setLanguage } from '../i18n.ts';
 import { VISUALIZATIONS } from '../visualizations.ts';
 import { LANGUAGES } from '@perun/elements';
+import { platform } from '../platform/index.ts';
 
 const FIRST_PALETTE_THEME = 'nord';
 
@@ -722,7 +723,7 @@ export function AppBar() {
   );
 }
 
-const MOD = typeof navigator !== 'undefined' && /Mac|iP/.test(navigator.platform) ? '⌘' : 'Ctrl+';
+const MOD = platform.apple ? '⌘' : 'Ctrl+';
 
 function Item(props: {
   label: string;

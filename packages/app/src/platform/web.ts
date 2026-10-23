@@ -3,9 +3,26 @@
 
 import type { KeyValueStore, Platform, RecordStore } from './types.ts';
 
+/**
+ * What the browser says about the system it runs on. Only the web app asks the browser: inside
+ * Obsidian the plugin answers from Obsidian's Platform API (EmbedConfig.apple).
+ */
+function browserSystem(): { platform: string; userAgent: string; touchPoints: number } {
+  if (typeof navigator === 'undefined') return { platform: '', userAgent: '', touchPoints: 0 };
+  const { platform, userAgent, maxTouchPoints } = navigator;
+  return { platform, userAgent, touchPoints: maxTouchPoints };
+}
+
+/** iPhone and iPad Safari (iPadOS reports itself as a Mac with touch). */
+export function isIosBrowser(): boolean {
+  const { userAgent, touchPoints } = browserSystem();
+  return /iPad|iPhone|iPod/.test(userAgent) || (/Macintosh/.test(userAgent) && touchPoints > 1);
+}
+
 /** The app as its own web page. */
 export const webPlatform: Platform = {
   name: 'web',
+  apple: /Mac|iP/.test(browserSystem().platform),
   get storage(): KeyValueStore {
     return window.localStorage;
   },

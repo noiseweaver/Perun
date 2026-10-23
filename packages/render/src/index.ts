@@ -9,11 +9,14 @@ export { ALL_FIELDS, FieldOverlay, NO_FIELDS, type FieldOptions } from './fields
 export {
   layoutMath,
   loadMath,
+  loadTypeset,
   mathReady,
   onMathReady,
   preloadMathFor,
   type MathLayout,
+  type Typeset,
 } from './math.ts';
+export type { SvgNode } from './mathjax.ts';
 export { COLOR_SCALE_COUNT, Palette } from './palette.ts';
 export { MAX_SCALE, MIN_SCALE, Viewport, fitScale } from './Viewport.ts';
 export { drawPreview } from './preview.ts';

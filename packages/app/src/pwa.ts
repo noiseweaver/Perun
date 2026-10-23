@@ -9,6 +9,7 @@ import { allowLeave } from './autosave.ts';
 import { BASE } from './startup.ts';
 import { controller } from './SimController.ts';
 import { useApp } from './store.ts';
+import { isIosBrowser } from './platform/web.ts';
 
 /** Chrome's install prompt event (not in the DOM typings). */
 interface InstallPromptEvent extends Event {
@@ -26,11 +27,7 @@ export function isStandalone(): boolean {
 }
 
 /** iPhone and iPad Safari, which install only through Share > Add to Home Screen. */
-export function isIos(): boolean {
-  const ua = navigator.userAgent;
-  // iPadOS reports itself as a Mac with touch
-  return /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-}
+export const isIos = isIosBrowser;
 
 /** Show the browser's install prompt (File > Install app…). */
 export async function promptInstall(): Promise<void> {

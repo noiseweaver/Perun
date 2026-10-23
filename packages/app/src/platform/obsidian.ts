@@ -18,6 +18,7 @@ export function obsidianPlatform(config: EmbedConfig): Platform {
   const storage = vaultStorage(config.storage);
   return {
     name: 'obsidian',
+    apple: config.apple,
     storage,
     // the clipboard stays on this device, so copying between editor tabs doesn't rewrite the vault
     get deviceStorage(): KeyValueStore {

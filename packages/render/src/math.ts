@@ -53,7 +53,8 @@ export interface MathLayout {
   readonly error: string | null;
 }
 
-type Typeset = (tex: string) => SvgNode;
+/** MathJax's typesetter: a TeX formula to its SVG tree. */
+export type Typeset = (tex: string) => SvgNode;
 
 let typesetFn: Typeset | null = null;
 let loading: Promise<void> | null = null;
@@ -64,20 +65,36 @@ const CACHE_SIZE = 400;
 
 /** Load MathJax (once). Resolves when formulas can be laid out. */
 export function loadMath(): Promise<void> {
-  loading ??= import('./mathjax.ts').then(
-    (m) => {
-      typesetFn = m.typeset;
-      for (const l of listeners) l();
-      listeners.clear();
-    },
-    (err: unknown) => {
-      // offline before the chunk was ever cached: formulas keep showing their source
-      failed = true;
-      loading = null;
-      console.warn('Perun: could not load MathJax', err);
-    },
-  );
+  loading ??= import('./mathjax.ts')
+    // the Obsidian plugin's editor frame borrows the plugin's MathJax, which may still be loading
+    .then(async (m) => {
+      await m.ready;
+      return m;
+    })
+    .then(
+      (m) => {
+        typesetFn = m.typeset;
+        for (const l of listeners) l();
+        listeners.clear();
+      },
+      (err: unknown) => {
+        // offline before the chunk was ever cached: formulas keep showing their source
+        failed = true;
+        loading = null;
+        console.warn('Perun: could not load MathJax', err);
+      },
+    );
   return loading;
+}
+
+/**
+ * MathJax's typesetter, loaded if need be. The Obsidian plugin hands it to its editor frames, whose
+ * build leaves MathJax out (packages/app/src/embedMathjax.ts).
+ */
+export async function loadTypeset(): Promise<Typeset> {
+  await loadMath();
+  if (typesetFn === null) throw new Error('MathJax did not load');
+  return typesetFn;
 }
 
 /** Start loading MathJax when these elements include a formula box, before it is first drawn. */

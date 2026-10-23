@@ -96,7 +96,7 @@ export function ExportImageDialog() {
     const off = onMathReady(() => setMathLoaded(true));
     preloadMathFor(elements);
     return off;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, for the formulas shown when the dialog opens
   }, []);
   const optsKey = JSON.stringify([opts, themeChoice, selectionOnly, format, pngScale, mathLoaded]);
 
@@ -117,7 +117,7 @@ export function ExportImageDialog() {
         schematicCanvas(c, elements, theme, opts, pngScale) ? c.toDataURL('image/png') : null,
       );
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- optsKey stands for everything the preview draws
   }, [optsKey]);
 
   const save = (): void => {
@@ -360,7 +360,7 @@ function visibleSpan(): number {
 
 /** A time typed with or without its unit ("20 ms", "20m", "0.02"); NaN when it isn't one. */
 function parseTime(text: string): number {
-  const s = text.replace(/\s+/g, '').replace(/(?<=\d|[pnuμµmkMG])s$/, '');
+  const s = text.replace(/\s+/g, '').replace(/([\dpnuμµmkMG])s$/, '$1');
   try {
     return parseUnits(s);
   } catch {

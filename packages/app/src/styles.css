@@ -3181,6 +3181,16 @@ textarea.field-input {
   animation: sheet-up 240ms var(--md-motion);
 }
 
+/* pulled down by a finger: it follows without easing */
+.circuits-sheet.circuits-sheet-dragged {
+  transition: none;
+}
+
+/* let go far or fast enough: it slides away */
+.circuits-sheet.circuits-sheet-away {
+  transform: translateY(100%);
+}
+
 @media (max-height: 559px) and (orientation: landscape) {
   .circuits-sheet {
     top: 8px;

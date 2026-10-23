@@ -3,7 +3,8 @@ name: Release Obsidian plugin
 # Run by hand (Actions > Release Obsidian plugin > Run workflow) when we agree to release. It
 # builds the plugin, tests it in the real Obsidian app (tools/obsidian-test), and publishes a
 # GitHub release with main.js, manifest.json and styles.css only if every check passes. BRAT and
-# Obsidian's plugin list install from these releases.
+# Obsidian's plugin list install from these releases. The release also carries perun-files.json
+# (the editor's example circuits and translations), which the plugin downloads from it once.
 
 on:
   workflow_dispatch:
@@ -80,5 +81,5 @@ jobs:
           V: ${{ steps.version.outputs.version }}
         working-directory: packages/obsidian/dist
         run: |
-          gh release create "$V" main.js manifest.json styles.css \
+          gh release create "$V" main.js manifest.json styles.css perun-files.json \
             --title "Perun for Obsidian $V" --generate-notes --target "$GITHUB_SHA"

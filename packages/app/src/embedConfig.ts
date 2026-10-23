@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 
+import type { Typeset } from '@perun/render';
+
 /**
  * What a host page that runs the app in a frame (the Obsidian plugin, packages/obsidian) tells it
  * before it starts, as `window.perunEmbed`. Null when the app is its own page.
@@ -20,6 +22,8 @@ export interface EmbedConfig {
    * (platform/obsidian.ts), which sends each change back.
    */
   storage: Record<string, string>;
+  /** Whether shortcuts are written with ⌘ (macOS, iPhone, iPad), from Obsidian's Platform API. */
+  apple: boolean;
 }
 
 export const embedConfig: EmbedConfig | null =
@@ -64,4 +68,15 @@ export function isEmbedMessage(data: unknown): data is EmbedMessage {
     data !== null &&
     typeof (data as { perun?: unknown }).perun === 'string'
   );
+}
+
+/**
+ * What the Obsidian plugin hangs on the editor's frame element as `perunHost` (the frame is
+ * same-origin, so the app reaches it through `window.frameElement`).
+ */
+export interface FrameHost {
+  /** The plugin's MathJax, lent to the frame so main.js carries one copy (embedMathjax.ts). */
+  loadTypeset(): Promise<Typeset>;
+  /** One of the app's files left out of the page (an example circuit, a translation), or null. */
+  file(name: string): Promise<string | null>;
 }

@@ -2547,7 +2547,7 @@ export class SimController {
           scopeGesture = e.pointerId;
           // compact: a sideways swipe on the title still switches columns (see move)
           if (m.compact && e.pointerType === 'touch') swipe = { x: p.x, y: p.y, id: e.pointerId };
-          canvas.style.cursor = 'grabbing';
+          setCursor(canvas, 'grabbing');
           try {
             canvas.setPointerCapture(e.pointerId);
           } catch {
@@ -2743,7 +2743,7 @@ export class SimController {
       } catch {
         // the pointer is already gone
       }
-      canvas.style.cursor = 'grabbing';
+      setCursor(canvas, 'grabbing');
       this.publishEditor();
       e.preventDefault();
       return true;
@@ -2966,7 +2966,7 @@ export class SimController {
           this.leaderAt(p.x, p.y, LEADER_GRAB) !== null
         ) {
           if (ed.mouseElm !== null) ed.leave();
-          canvas.style.cursor = 'grab';
+          setCursor(canvas, 'grab');
           this.publishEditor();
           return;
         }
@@ -3083,7 +3083,7 @@ export class SimController {
             this.renderer?.ripple(at.x, at.y);
           }
         }
-        canvas.style.cursor = 'grab';
+        setCursor(canvas, 'grab');
         this.publishEditor();
         return;
       }
@@ -3100,7 +3100,7 @@ export class SimController {
           this.scopeMove = null;
           if (e.type === 'pointerup' && sm.to !== null && sm.where !== null)
             this.dropScope(sm.from, sm.to, sm.where);
-          canvas.style.cursor = 'default';
+          setCursor(canvas, 'default');
         }
         if (swipe !== null && swipe.id === e.pointerId) {
           const p = local(e);
@@ -3484,6 +3484,14 @@ export function shiftInto(lo: number, hi: number, min: number, max: number): num
 }
 
 /** Size of a new undocked scope (circuit units). */
+/**
+ * Sets the canvas cursor. It follows what is under the pointer and the drag in progress, so it is
+ * set on the element rather than through classes.
+ */
+function setCursor(canvas: HTMLElement, cursor: string): void {
+  canvas.style.cursor = cursor;
+}
+
 /** The canvas cursor for a teaching tool. */
 function teachCursor(tool: TeachTool | null): string {
   if (tool !== null) return 'crosshair';

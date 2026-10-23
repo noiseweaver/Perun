@@ -5,9 +5,12 @@
  * Builds the Obsidian plugin into dist/ (main.js, manifest.json, styles.css: what Obsidian loads
  * from .obsidian/plugins/perun/):
  *  1. the app with `vite build --mode embed` (packages/app/dist-embed),
- *  2. that build as one page, generated/editor.html, with the example circuits, translations
- *     and license inlined, since a frame inside Obsidian has no server to fetch them from,
- *  3. the plugin, a CommonJS bundle with the page inside it.
+ *  2. that build as one page, generated/editor.html, with the license and other small files
+ *     inlined, since a frame inside Obsidian has no server to fetch them from,
+ *  3. the plugin, a CommonJS bundle with the page inside it,
+ *  4. dist/perun-files.json: the example circuits and translations, which the plugin hands the
+ *     page on demand (src/appFiles.ts). Kept out of main.js, which would be over the 5 MB that
+ *     Obsidian Sync's Standard plan syncs; the release attaches the file.
  * PERUN_PLUGIN_VERSION, when set, is the version written into dist/manifest.json (the Release
  * Obsidian plugin workflow sets it; Obsidian and BRAT match it against the release's tag).
  */
@@ -16,8 +19,10 @@ import { copyFileSync, mkdirSync, readFileSync, readdirSync, writeFileSync } fro
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'vite';
+import { APP_FILES, type AppFiles } from './src/appFiles.ts';
 import { CONFIG_MARKER, shimScript } from './src/shim.ts';
 
+const MAX_MAIN_JS = 5_000_000;
 const here = fileURLToPath(new URL('.', import.meta.url));
 const appDir = join(here, '../app');
 const embedDir = join(appDir, 'dist-embed');
@@ -36,11 +41,25 @@ const asset = (re: RegExp): string => {
   return readFileSync(join(embedDir, m[1]), 'utf8');
 };
 const js = asset(/<script[^>]+src="\.?\/?(assets\/[^"]+\.js)"/);
-const css = asset(/<link[^>]+href="\.?\/?(assets\/[^"]+\.css)"/);
+// fonts for scripts none of Perun's languages use (Cyrillic and Greek extended, Vietnamese) are
+// left out: other text in those scripts falls back to a system font
+const UNUSED_FONT_RANGES = new Set(['U+460-52F', 'U+1F??', 'U+102-103']);
+const css = asset(/<link[^>]+href="\.?\/?(assets\/[^"]+\.css)"/).replace(
+  /@font-face\{[^}]*\}/g,
+  (face) => {
+    // each subset is known by the first range it covers
+    const first = /unicode-range:([^,;}]*)/.exec(face)?.[1] ?? '';
+    return UNUSED_FONT_RANGES.has(first) ? '' : face;
+  },
+);
 
 const files: Record<string, string> = {};
+const fromPlugin: Record<string, string> = {};
+// example circuits and translations come from perun-files.json; the rest is inlined
+const fromFile = (name: string): boolean =>
+  /^locale_.*\.txt$|^setuplist\.txt$|^circuits\//.test(name);
 const text = (name: string): void => {
-  files[name] = readFileSync(join(embedDir, name), 'utf8');
+  (fromFile(name) ? fromPlugin : files)[name] = readFileSync(join(embedDir, name), 'utf8');
 };
 for (const name of readdirSync(embedDir)) {
   if (name.endsWith('.txt')) text(name);
@@ -51,7 +70,7 @@ const page =
   '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
   '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
   '<meta name="theme-color" content="">' +
-  `<title>Perun</title><style>${css}</style>${CONFIG_MARKER}${shimScript(files)}</head>` +
+  `<title>Perun</title><style>${css}</style>${CONFIG_MARKER}${shimScript(files, Object.keys(fromPlugin))}</head>` +
   // the app is a module script; `</script` inside it would end it early
   `<body><div id="root"></div><script type="module">${js.replace(/<\/script/gi, '<\\/script')}</script></body></html>`;
 mkdirSync(join(here, 'generated'), { recursive: true });
@@ -86,5 +105,13 @@ if (version !== undefined && version !== '') {
   manifest.version = version;
 }
 writeFileSync(join(here, 'dist/manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+const appFiles: AppFiles = { version: manifest.version, files: fromPlugin };
+writeFileSync(join(here, `dist/${APP_FILES}`), JSON.stringify(appFiles));
 const size = readFileSync(join(here, 'dist/main.js')).length;
-console.log(`Obsidian plugin in packages/obsidian/dist (main.js ${(size / 1e6).toFixed(1)} MB)`);
+console.log(`Obsidian plugin in packages/obsidian/dist (main.js ${(size / 1e6).toFixed(2)} MB)`);
+// Obsidian Sync's Standard plan doesn't sync a file over 5 MB, and the plugin list warns about it
+if (size >= MAX_MAIN_JS) {
+  throw new Error(
+    `build.ts: main.js is ${size} bytes, over the ${MAX_MAIN_JS} Obsidian Sync takes`,
+  );
+}

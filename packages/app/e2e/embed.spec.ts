@@ -23,6 +23,7 @@ test.beforeEach(async ({ page }) => {
       title: 'Divider',
       themeId: 'obsidian-light',
       siteUrl: 'https://noiseweaver.github.io/Perun/',
+      apple: false,
       storage: {},
     };
     w.posted = [];
