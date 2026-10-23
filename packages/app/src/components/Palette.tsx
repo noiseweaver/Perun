@@ -9,6 +9,7 @@ import { PaletteButton } from './PaletteButton.tsx';
 import { QuickPick } from './QuickPick.tsx';
 import { toggleFavorite, useQuickPick } from '../quickPick.ts';
 import { t, tGroup, tItem } from '../i18n.ts';
+import { platform } from '../platform/index.ts';
 
 /** The star after a palette row: pins the component to the quick pick, or unpins it. */
 function FavoriteStar({ item, testId }: { item: PaletteItem; testId: string }) {
@@ -34,7 +35,7 @@ const COLLAPSED_KEY = 'circuitjs-next.paletteCollapsed';
 
 function loadCollapsed(): Set<string> {
   try {
-    const raw = localStorage.getItem(COLLAPSED_KEY);
+    const raw = platform.storage.getItem(COLLAPSED_KEY);
     const list: unknown = raw === null ? [] : JSON.parse(raw);
     return new Set(Array.isArray(list) ? list.filter((x) => typeof x === 'string') : []);
   } catch {
@@ -44,7 +45,7 @@ function loadCollapsed(): Set<string> {
 
 function saveCollapsed(c: Set<string>): void {
   try {
-    localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...c]));
+    platform.storage.setItem(COLLAPSED_KEY, JSON.stringify([...c]));
   } catch {
     // storage disabled: the groups stay as they are for this page
   }

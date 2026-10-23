@@ -13,6 +13,7 @@ import { download } from './download.ts';
 import { embedConfig } from './embedConfig.ts';
 import { controller } from './SimController.ts';
 import { showToast, useApp } from './store.ts';
+import { t } from './i18n.ts';
 
 /** Dialogs the commands open; the App renders whichever is set. */
 export type DialogKind =
@@ -51,6 +52,8 @@ export { showToast } from './store.ts';
 
 /** Upstream's default file name: circuitjs-yyyyMMdd-HHmmss.txt. */
 export function defaultFileName(): string {
+  // in the Obsidian plugin, the circuit's own file
+  if (embedConfig !== null) return `${useApp.getState().title}.circuit`;
   if (controller.lastFileName !== null) return controller.lastFileName;
   const d = new Date();
   const p = (n: number): string => String(n).padStart(2, '0');
@@ -63,6 +66,13 @@ export function defaultFileName(): string {
 /** Download the circuit, as upstream "Save As" / "Export as local file" does. */
 export function saveToFile(name: string): void {
   let fname = name.trim() || defaultFileName();
+  if (embedConfig !== null) {
+    // every edit is already in the circuit's own file: Save makes a copy (the vault numbers it
+    // if the name is taken)
+    if (!fname.includes('.')) fname += '.circuit';
+    download(fname, controller.saveText(), 'text/plain');
+    return;
+  }
   if (!fname.includes('.')) fname += '.txt';
   controller.lastFileName = fname;
   download(fname, controller.saveText(), 'text/plain');
@@ -163,8 +173,11 @@ export function installShortcuts(): () => void {
           ed.selectAll();
           return done();
         case 's':
+          // in the Obsidian plugin each edit is written to the file as it is made
+          if (embedConfig !== null)
+            showToast(t('Saved: every change goes into the vault as you make it'));
           // a circuit from My circuits saves over itself; anything else asks where and as what
-          if (!quickSave()) openDialog('save');
+          else if (!quickSave()) openDialog('save');
           return done();
         case 'o':
           document.querySelector<HTMLInputElement>('[data-testid="file-input"]')?.click();

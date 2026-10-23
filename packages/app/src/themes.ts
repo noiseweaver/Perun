@@ -2,7 +2,8 @@
 // Copyright (C) 2026 Perun contributors
 
 /*
- * The theme library and theme sharing (PLAN.md section 6): saved themes live in IndexedDB, theme
+ * The theme library and theme sharing (PLAN.md section 6): saved themes live in IndexedDB (the
+ * vault in Obsidian), theme
  * files are imported and exported as `*.theme.json`, and `theme=` links open as a preview that is
  * only kept when the user applies or saves it.
  */
@@ -20,6 +21,7 @@ import {
   type Theme,
 } from '@perun/theme';
 import { copyText, download, openDialog } from './commands.ts';
+import { platform } from './platform/index.ts';
 import {
   ACTIVE_THEME_KEY,
   USER_THEME_PREFIX,
@@ -32,49 +34,15 @@ import {
 
 // Named before the rename to Perun; kept so saved themes are still found.
 const DB_NAME = 'circuitjs-next';
-const DB_VERSION = 1;
 const STORE = 'themes';
 
-let dbPromise: Promise<IDBDatabase | null> | null = null;
+/** The library's storage (IndexedDB, or the vault in Obsidian). */
+const records = platform.records<SavedTheme>(DB_NAME, STORE);
 
-/** The database, or null where IndexedDB is unavailable (then the library lasts for the page). */
-function db(): Promise<IDBDatabase | null> {
-  dbPromise ??= new Promise((resolve) => {
-    try {
-      const req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = () => {
-        if (!req.result.objectStoreNames.contains(STORE))
-          req.result.createObjectStore(STORE, { keyPath: 'id' });
-      };
-      req.onsuccess = () => {
-        // let another tab (or a test) upgrade or delete the database
-        req.result.onversionchange = () => req.result.close();
-        resolve(req.result);
-      };
-      req.onerror = () => resolve(null);
-      req.onblocked = () => resolve(null);
-    } catch {
-      resolve(null);
-    }
-  });
-  return dbPromise;
-}
-
-function request<T>(r: IDBRequest<T>): Promise<T> {
-  return new Promise((resolve, reject) => {
-    r.onsuccess = () => resolve(r.result);
-    r.onerror = () => reject(r.error ?? new Error('IndexedDB request failed'));
-  });
-}
-
-async function withStore<T>(
-  mode: IDBTransactionMode,
-  fn: (s: IDBObjectStore) => IDBRequest<T>,
-): Promise<T | null> {
-  const d = await db();
-  if (d === null) return null;
+/** Run a storage call; null where storage is unavailable (then the library lasts for the page). */
+async function stored<T>(fn: () => Promise<T>): Promise<T | null> {
   try {
-    return await request(fn(d.transaction(STORE, mode).objectStore(STORE)));
+    return await fn();
   } catch {
     return null;
   }
@@ -82,7 +50,7 @@ async function withStore<T>(
 
 /** Read the library. Entries are validated again: storage is not trusted any more than a file. */
 export async function loadLibrary(): Promise<void> {
-  const rows = (await withStore('readonly', (s) => s.getAll())) ?? [];
+  const rows = (await stored(() => records.getAll())) ?? [];
   const library: SavedTheme[] = [];
   for (const row of rows as unknown[]) {
     const r = row as Partial<SavedTheme> | null;
@@ -111,8 +79,8 @@ function cacheActive(): void {
   try {
     if (s.settings.themeId.startsWith(USER_THEME_PREFIX)) {
       const id = s.settings.themeId.slice(USER_THEME_PREFIX.length);
-      localStorage.setItem(ACTIVE_THEME_KEY, JSON.stringify({ id, theme: s.theme }));
-    } else localStorage.removeItem(ACTIVE_THEME_KEY);
+      platform.storage.setItem(ACTIVE_THEME_KEY, JSON.stringify({ id, theme: s.theme }));
+    } else platform.storage.removeItem(ACTIVE_THEME_KEY);
   } catch {
     // storage disabled
   }
@@ -139,13 +107,13 @@ export async function saveTheme(theme: Theme, id: string | null = null): Promise
     theme,
     saved: existing?.saved ?? Date.now(),
   };
-  await withStore('readwrite', (s) => s.put(entry));
+  await stored(() => records.put(entry));
   setLibrary(existing ? library.map((t) => (t.id === entry.id ? entry : t)) : [...library, entry]);
   return entry.id;
 }
 
 export async function deleteTheme(id: string): Promise<void> {
-  await withStore('readwrite', (s) => s.delete(id));
+  await stored(() => records.delete(id));
   const s = useApp.getState();
   if (s.settings.themeId === USER_THEME_PREFIX + id) selectTheme(DEFAULT_THEME_ID);
   setLibrary(s.library.filter((t) => t.id !== id));
@@ -156,6 +124,21 @@ export function selectTheme(themeId: string): void {
   updateSettings({ themeId });
   cacheActive();
 }
+
+/** The user picked a theme: in Obsidian it then stops following Obsidian's light and dark mode. */
+export function chooseTheme(themeId: string): void {
+  if (useApp.getState().followsHost === true) setFollowsHost(false);
+  selectTheme(themeId);
+}
+
+/** Follow Obsidian's light and dark mode, or not (the plugin then sends its theme). */
+export function setFollowsHost(on: boolean): void {
+  useApp.setState({ followsHost: on });
+  platform.followsHost?.(on);
+}
+
+/** The library's place in the plugin's data (Obsidian). */
+export const LIBRARY = { database: DB_NAME, store: STORE } as const;
 
 export const userThemeId = (id: string): string => USER_THEME_PREFIX + id;
 
@@ -179,7 +162,7 @@ export async function importThemeFile(file: File): Promise<void> {
     return;
   }
   const id = await saveTheme(r.theme);
-  selectTheme(userThemeId(id));
+  chooseTheme(userThemeId(id));
   showToast(`Theme “${r.theme.meta.name}” added`);
 }
 
@@ -215,7 +198,7 @@ export async function keepPreview(use: boolean): Promise<void> {
   if (p === null) return;
   const id = await saveTheme(p.theme);
   useApp.setState({ preview: null });
-  if (use) selectTheme(userThemeId(id));
+  if (use) chooseTheme(userThemeId(id));
   showToast(use ? `Using “${p.theme.meta.name}”` : `“${p.theme.meta.name}” saved to your themes`);
 }
 

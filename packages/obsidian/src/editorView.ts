@@ -27,8 +27,27 @@ export interface EditorHost {
   /** The built-in theme to use, or null for the theme chosen in the editor. */
   themeId(): string | null;
   storage(): Record<string, string>;
-  setStorage(key: string, value: string | null): void;
-  editors: Set<{ restyle(): void }>;
+  /** An editor changed a stored value: keep it, and tell the other open editors (not `from`). */
+  setStorage(key: string, value: string | null, from: object): void;
+  /** The user turned following Obsidian's light and dark mode on or off in an editor. */
+  setFollow(on: boolean): void;
+  /** A circuit file was opened in `leaf` (it may be open in another tab already). */
+  openedFile(leaf: WorkspaceLeaf, file: TFile): void;
+  /** Keep a file the editor exported (or a copy of the circuit) in `folder` of the vault. */
+  saveFile(folder: string, name: string, data: string | ArrayBuffer): Promise<void>;
+  editors: Set<EditorTab>;
+}
+
+/** An open editor tab, as the plugin sees it. */
+export interface EditorTab {
+  restyle(): void;
+  /**
+   * A message posted in one of Obsidian's windows (the main one or a popout: the frame posts to
+   * the window it is in). The plugin listens in every window and hands each message to every tab.
+   */
+  onMessage(e: MessageEvent<unknown>): void;
+  /** Another editor (`from`) changed a stored value. */
+  stored(key: string, value: string | null, from: object): void;
 }
 
 /**
@@ -42,22 +61,60 @@ class EditorFrame {
   private readonly parent: HTMLElement;
   private readonly host: EditorHost;
   private readonly onChanged: (text: string) => void;
+  private readonly folder: () => string;
 
-  constructor(parent: HTMLElement, host: EditorHost, onChanged: (text: string) => void) {
+  /** `folder` is where exports go: the circuit's own folder. */
+  constructor(
+    parent: HTMLElement,
+    host: EditorHost,
+    onChanged: (text: string) => void,
+    folder: () => string,
+  ) {
     this.parent = parent;
     this.host = host;
     this.onChanged = onChanged;
+    this.folder = folder;
   }
 
-  /** The window's message handler (registered by the view, so it goes when the view does). */
+  /** The frame's messages (others pass by). */
   readonly onMessage = (e: MessageEvent<unknown>): void => {
     if (this.frame === null || e.source !== this.frame.contentWindow) return;
     const m = e.data as EmbedMessage | null;
     if (m?.perun === 'changed') {
       this.shown = m.text;
       this.onChanged(m.text);
-    } else if (m?.perun === 'storage') this.host.setStorage(m.key, m.value);
+    } else if (m?.perun === 'storage') this.host.setStorage(m.key, m.value, this);
+    else if (m?.perun === 'follow') this.host.setFollow(m.on);
+    else if (m?.perun === 'file') void this.host.saveFile(this.folder(), m.name, m.data);
+    else if (m?.perun === 'key') this.hotkey(m);
   };
+
+  /**
+   * A key the app didn't use: Obsidian's hotkeys see it as if pressed outside the frame. Obsidian
+   * skips keys while the frame has focus, so the frame lets go of it for the key, and takes it
+   * back unless the hotkey moved focus somewhere (the command palette, say).
+   */
+  private hotkey(m: Extract<EmbedMessage, { perun: 'key' }>): void {
+    const { key, code, ctrlKey, metaKey, altKey, shiftKey } = m;
+    const frame = this.frame;
+    // the frame's own window's document: a popout window has its own
+    const doc = frame?.ownerDocument ?? document;
+    const focused = frame !== null && doc.activeElement === frame;
+    if (focused) frame.blur();
+    (frame ?? doc.body).dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key,
+        code,
+        ctrlKey,
+        metaKey,
+        altKey,
+        shiftKey,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    if (focused && doc.activeElement === doc.body) frame.focus();
+  }
 
   /** Show `data` unless the app already has it on screen. */
   show(data: string, title: string, force = false): void {
@@ -88,7 +145,12 @@ class EditorFrame {
 
   restyle(): void {
     const id = this.host.themeId();
-    if (id !== null) this.post({ perun: 'theme', themeId: id });
+    this.post(id !== null ? { perun: 'theme', themeId: id } : { perun: 'follow', on: false });
+  }
+
+  /** Pass on a value another editor stored, so every open editor has the same settings. */
+  share(key: string, value: string | null, from: object): void {
+    if (from !== this) this.post({ perun: 'storage', key, value });
   }
 
   destroy(): void {
@@ -102,17 +164,22 @@ class EditorFrame {
  * A .circuit file in a tab: the whole Perun app in a frame. The file holds the circuit as the app
  * saves it (XML); each edit in the app comes back here and Obsidian writes it to the file.
  */
-export class CircuitEditorView extends TextFileView {
+export class CircuitEditorView extends TextFileView implements EditorTab {
   private readonly host: EditorHost;
   private readonly editor: EditorFrame;
 
   constructor(leaf: WorkspaceLeaf, host: EditorHost) {
     super(leaf);
     this.host = host;
-    this.editor = new EditorFrame(this.contentEl, host, (text) => {
-      this.data = text;
-      this.requestSave();
-    });
+    this.editor = new EditorFrame(
+      this.contentEl,
+      host,
+      (text) => {
+        this.data = text;
+        this.requestSave();
+      },
+      () => this.file?.parent?.path ?? '/',
+    );
   }
 
   override getViewType(): string {
@@ -130,7 +197,19 @@ export class CircuitEditorView extends TextFileView {
   override async onOpen(): Promise<void> {
     this.contentEl.addClass('perun-editor');
     this.host.editors.add(this);
-    this.registerDomEvent(window, 'message', this.editor.onMessage);
+  }
+
+  override async onLoadFile(file: TFile): Promise<void> {
+    await super.onLoadFile(file);
+    this.host.openedFile(this.leaf, file);
+  }
+
+  onMessage(e: MessageEvent<unknown>): void {
+    this.editor.onMessage(e);
+  }
+
+  stored(key: string, value: string | null, from: object): void {
+    this.editor.share(key, value, from);
   }
 
   override async onClose(): Promise<void> {
@@ -168,7 +247,7 @@ interface BlockState {
  * A ```circuit code block of a note in the editor, in a tab. Each edit is written back into the
  * block (found by its text, so lines added above it meanwhile don't matter).
  */
-export class BlockEditorView extends ItemView {
+export class BlockEditorView extends ItemView implements EditorTab {
   private state: BlockState | null = null;
   private readonly host: EditorHost;
   private readonly editor: EditorFrame;
@@ -179,10 +258,20 @@ export class BlockEditorView extends ItemView {
   constructor(leaf: WorkspaceLeaf, host: EditorHost) {
     super(leaf);
     this.host = host;
-    this.editor = new EditorFrame(this.contentEl, host, (text) => {
-      this.pending = text;
-      this.writeSoon();
-    });
+    this.editor = new EditorFrame(
+      this.contentEl,
+      host,
+      (text) => {
+        this.pending = text;
+        this.writeSoon();
+      },
+      // next to the note the block is in
+      () => {
+        const path = this.state?.path ?? '';
+        const slash = path.lastIndexOf('/');
+        return slash < 0 ? '/' : path.slice(0, slash);
+      },
+    );
   }
 
   override getViewType(): string {
@@ -201,7 +290,14 @@ export class BlockEditorView extends ItemView {
   override async onOpen(): Promise<void> {
     this.contentEl.addClass('perun-editor');
     this.host.editors.add(this);
-    this.registerDomEvent(window, 'message', this.editor.onMessage);
+  }
+
+  onMessage(e: MessageEvent<unknown>): void {
+    this.editor.onMessage(e);
+  }
+
+  stored(key: string, value: string | null, from: object): void {
+    this.editor.share(key, value, from);
   }
 
   override async onClose(): Promise<void> {

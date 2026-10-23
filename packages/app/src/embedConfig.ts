@@ -15,8 +15,9 @@ export interface EmbedConfig {
   /** The public web app, the base of exported links and of the license files. */
   siteUrl: string;
   /**
-   * The app's local storage (settings, palette state), kept by the host so it travels with the
-   * vault. The host page swaps it in for window.localStorage before the app starts.
+   * The app's stored data (settings, palette state, saved models and themes), kept by the host so
+   * it travels with the vault. The app reads and writes it through `platform.storage`
+   * (platform/obsidian.ts), which sends each change back.
    */
   storage: Record<string, string>;
 }
@@ -30,12 +31,32 @@ export const embedConfig: EmbedConfig | null =
 export type EmbedMessage =
   /** host to app: open this circuit (the file changed outside the editor) */
   | { perun: 'load'; text: string; title: string }
-  /** host to app: switch to this built-in theme */
+  /** host to app: switch to this built-in theme (the theme follows the host's light and dark) */
   | { perun: 'theme'; themeId: string }
+  /**
+   * both ways: the theme follows the host's light and dark mode, or not (the user picked a theme,
+   * or turned following on or off in the editor or the plugin's settings)
+   */
+  | { perun: 'follow'; on: boolean }
   /** app to host: the circuit was edited; store this text */
   | { perun: 'changed'; text: string }
-  /** app to host: a setting the app keeps in local storage changed (null: removed) */
-  | { perun: 'storage'; key: string; value: string | null };
+  /**
+   * app to host: a value the app stores changed (null: removed); host to app: another editor tab
+   * changed it
+   */
+  | { perun: 'storage'; key: string; value: string | null }
+  /** app to host: keep this file (an export, a copy of the circuit) in the vault */
+  | { perun: 'file'; name: string; data: string | ArrayBuffer }
+  /** app to host: a key with Ctrl, Cmd or Alt that the app doesn't use, for the host's hotkeys */
+  | {
+      perun: 'key';
+      key: string;
+      code: string;
+      ctrlKey: boolean;
+      metaKey: boolean;
+      altKey: boolean;
+      shiftKey: boolean;
+    };
 
 export function isEmbedMessage(data: unknown): data is EmbedMessage {
   return (

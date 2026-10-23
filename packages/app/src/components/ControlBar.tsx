@@ -13,9 +13,12 @@ import { Icon } from './Icon.tsx';
 import { dismissLoadIssues } from './LoadIssuesDialog.tsx';
 import { t, tf } from '../i18n.ts';
 import {
+  FACTOR_WIDTH,
   SPEED_MAX,
   SPEED_MIN,
   SPEED_STEP,
+  paceOf,
+  percentText,
   speedForSteps,
   stepsPerSecond,
   stepsText,
@@ -131,6 +134,62 @@ function SimSpeedField() {
         onChange={(v) => setSpeed(Math.round(v / SPEED_STEP) * SPEED_STEP)}
         testId="speed-slider"
       />
+    </div>
+  );
+}
+
+/**
+ * How fast the simulation runs against real time: measured over the last second while running,
+ * else what the speed and time step ask for. The measurement wobbles by a step or so a second, so
+ * within 3 % of what was asked it shows that; `behind` says the computer can't keep up.
+ */
+function usePace(): { ratio: number; asked: number; behind: boolean } {
+  const speed = useApp((s) => s.speed);
+  const maxTimeStep = useApp((s) => s.status.maxTimeStep);
+  const realTime = useApp((s) => s.status.realTime);
+  const behind = useApp((s) => s.status.behind);
+  const asked = stepsPerSecond(speed) * maxTimeStep;
+  const off = realTime !== null && Math.abs(realTime - asked) > 0.03 * asked;
+  return { ratio: off ? realTime : asked, asked, behind: off && behind };
+}
+
+/**
+ * "1.21k× slower", "3.20× faster" or "≈ real time", padded to the longest of the three in the
+ * interface language, so the text keeps its width as the speed changes.
+ */
+export function paceText(ratio: number): string {
+  const pace = paceOf(ratio);
+  const slower = (n: string) => tf('{n}× slower', { n });
+  const faster = (n: string) => tf('{n}× faster', { n });
+  const real = t('≈ real time');
+  const blank = ' '.repeat(FACTOR_WIDTH);
+  const width = Math.max(slower(blank).length, faster(blank).length, real.length);
+  const text =
+    pace.kind === 'real'
+      ? real
+      : pace.kind === 'faster'
+        ? faster(pace.factor)
+        : slower(pace.factor);
+  return text.padEnd(width);
+}
+
+/** The speed against real time under the speed slider, as a factor and a percentage. */
+function PaceField() {
+  const { ratio, asked, behind } = usePace();
+  return (
+    <div className="slider-field pace-field" data-testid="pace-field">
+      <span className="slider-label">{t('Compared with real time')}</span>
+      <span className="pace-value">
+        <span className="readout">{paceText(ratio)}</span>
+        <span className="readout">{percentText(ratio)} %</span>
+      </span>
+      {behind && (
+        <span className="pace-note" data-testid="pace-behind">
+          {tf("Your computer can't keep up: the slider asks for {n}.", {
+            n: paceText(asked).trim(),
+          })}
+        </span>
+      )}
     </div>
   );
 }
@@ -251,6 +310,7 @@ function IconButton(props: {
  */
 function SpeedButton() {
   const currentSpeed = useApp((s) => s.currentSpeed);
+  const showPace = useApp((s) => s.settings.realTimeReadout);
   return (
     <Popover.Root>
       <Tooltip.Root>
@@ -287,6 +347,7 @@ function SpeedButton() {
           }}
         >
           <SimSpeedField />
+          {showPace && <PaceField />}
           <LabeledSlider
             label="Current speed"
             min={1}
@@ -326,6 +387,26 @@ export function temperatureText(c: number): string {
   return `T = ${s.padStart(6)} °C`;
 }
 
+/** The speed against real time beside the time readout, in the accent while the computer lags. */
+function PaceReadout() {
+  const { ratio, asked, behind } = usePace();
+  return (
+    <span
+      className={`readout readout-pace ${behind ? 'readout-behind' : ''}`}
+      title={
+        behind
+          ? tf("Your computer can't keep up: the slider asks for {n}.", {
+              n: paceText(asked).trim(),
+            })
+          : t('How fast the simulation runs compared with real time')
+      }
+      data-testid="pace-readout"
+    >
+      {paceText(ratio)}
+    </span>
+  );
+}
+
 /**
  * Bottom bar: run controls, speed sliders, the time readouts and messages (upstream shows these
  * in the canvas info area).
@@ -343,6 +424,7 @@ export function ControlBar() {
     badConnections,
   } = useApp((s) => s.status);
   const skipped = useApp((s) => s.loadIssues.length);
+  const showPace = useApp((s) => s.settings.realTimeReadout);
   const error = useApp((s) => s.error);
   const stopped = stopMessage !== null;
 
@@ -428,6 +510,7 @@ export function ControlBar() {
         <span className="readout readout-time" data-testid="sim-time">
           t = {timeText(simTime)}
         </span>
+        {showPace && <PaceReadout />}
         <button
           type="button"
           className="readout readout-step readout-button"

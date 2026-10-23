@@ -8,6 +8,8 @@
  *  2. that build as one page, generated/editor.html, with the example circuits, translations
  *     and license inlined, since a frame inside Obsidian has no server to fetch them from,
  *  3. the plugin, a CommonJS bundle with the page inside it.
+ * PERUN_PLUGIN_VERSION, when set, is the version written into dist/manifest.json (the Release
+ * Obsidian plugin workflow sets it; Obsidian and BRAT match it against the release's tag).
  */
 
 import { copyFileSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -74,6 +76,15 @@ await build({
     },
   },
 });
-for (const f of ['manifest.json', 'styles.css']) copyFileSync(join(here, f), join(here, 'dist', f));
+copyFileSync(join(here, 'styles.css'), join(here, 'dist/styles.css'));
+const manifest = JSON.parse(readFileSync(join(here, 'manifest.json'), 'utf8')) as {
+  version: string;
+};
+const version = process.env['PERUN_PLUGIN_VERSION'];
+if (version !== undefined && version !== '') {
+  if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error(`build.ts: bad version ${version}`);
+  manifest.version = version;
+}
+writeFileSync(join(here, 'dist/manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 const size = readFileSync(join(here, 'dist/main.js')).length;
 console.log(`Obsidian plugin in packages/obsidian/dist (main.js ${(size / 1e6).toFixed(1)} MB)`);

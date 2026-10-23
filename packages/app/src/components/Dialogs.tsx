@@ -39,13 +39,14 @@ import { ParamsDialog } from './ParamsDialog.tsx';
 import { SubcircuitDialog, SubcircuitManagerDialog } from './SubcircuitDialog.tsx';
 import { ThemeEditorDialog, ThemesDialog } from './ThemeDialogs.tsx';
 import { t } from '../i18n.ts';
+import { platform } from '../platform/index.ts';
 
 type SaveTarget = 'browser' | 'file';
 const SAVE_TARGET_KEY = 'circuitjs-next.saveTarget';
 
 function readSaveTarget(): SaveTarget {
   try {
-    return localStorage.getItem(SAVE_TARGET_KEY) === 'file' ? 'file' : 'browser';
+    return platform.storage.getItem(SAVE_TARGET_KEY) === 'file' ? 'file' : 'browser';
   } catch {
     return 'browser';
   }
@@ -56,7 +57,10 @@ function SaveDialog() {
   const [target, setTargetState] = useState<SaveTarget>(
     embedConfig !== null ? 'file' : readSaveTarget,
   );
-  const [fileName, setFileName] = useState(defaultFileName);
+  // in Obsidian, a copy beside the circuit's own file
+  const [fileName, setFileName] = useState(() =>
+    embedConfig !== null ? defaultFileName().replace(/(\.[^.]*)?$/, ' copy$1') : defaultFileName(),
+  );
   const [name, setName] = useState(suggestedName);
   const [saved, setSaved] = useState<SavedCircuit[]>([]);
   const savedAs = useApp((s) => s.savedAs);
@@ -67,7 +71,7 @@ function SaveDialog() {
   const setTarget = (v: SaveTarget): void => {
     setTargetState(v);
     try {
-      localStorage.setItem(SAVE_TARGET_KEY, v);
+      platform.storage.setItem(SAVE_TARGET_KEY, v);
     } catch {
       // remembered for this dialog only
     }
@@ -78,13 +82,17 @@ function SaveDialog() {
   const replaces = clash !== undefined && clash.id !== savedAs?.id;
   return (
     <Shell
-      title={t('Save circuit')}
+      title={embedConfig !== null ? t('Save a copy') : t('Save circuit')}
       description={
-        browser
+        embedConfig !== null
           ? t(
-              'Keeps the circuit in this browser on this device. Open it again from File > My circuits.',
+              'Every change is already saved in this circuit’s file. Save a copy in the vault, next to it:',
             )
-          : t("Downloads the circuit in CircuitJS's file format.")
+          : browser
+            ? t(
+                'Keeps the circuit in this browser on this device. Open it again from File > My circuits.',
+              )
+            : t("Downloads the circuit in CircuitJS's file format.")
       }
     >
       <form
@@ -142,7 +150,11 @@ function SaveDialog() {
             </button>
           </Dialog.Close>
           <button type="submit" className="button button-primary" data-testid="save-ok">
-            {browser && replaces ? t('Replace') : t('Save')}
+            {embedConfig !== null
+              ? t('Save a copy')
+              : browser && replaces
+                ? t('Replace')
+                : t('Save')}
           </button>
         </div>
       </form>

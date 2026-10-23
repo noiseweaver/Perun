@@ -6,6 +6,7 @@ import { Component, type CSSProperties, type ReactNode } from 'react';
 import { allowLeave, LAST_CIRCUIT_KEY } from '../autosave.ts';
 import { t } from '../i18n.ts';
 import { shownTheme, useApp } from '../store.ts';
+import { platform } from '../platform/index.ts';
 
 /** Theme tokens for the crash screen, which can't count on App having set them. */
 function themeStyle(): CSSProperties {
@@ -24,7 +25,7 @@ function reload(): void {
 /** Forget the circuit autosave would reopen, in case that circuit is what broke the app. */
 function reloadBlank(): void {
   try {
-    localStorage.removeItem(LAST_CIRCUIT_KEY);
+    platform.storage.removeItem(LAST_CIRCUIT_KEY);
   } catch {
     // storage disabled: nothing was kept
   }

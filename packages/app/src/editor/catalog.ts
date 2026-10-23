@@ -164,6 +164,7 @@ const GROUPS: [string, [string, string, string?][]][] = [
       ['CCVSElm', 'Current-Controlled Voltage Source (CCVS)', 'dependent expression'],
       ['CCCSElm', 'Current-Controlled Current Source (CCCS)', 'dependent expression'],
       ['OptocouplerElm', 'Optocoupler', 'opto isolator'],
+      ['VactrolElm', 'Vactrol (LED + LDR)', 'opto resistor ldr photocell lamp compressor tremolo'],
       ['TimeDelayRelayElm', 'Time Delay Relay', 'timer'],
       ['CustomCompositeElm:~LM317-v2', 'LM317', 'regulator'],
       ['CustomCompositeElm:~TL431', 'TL431', 'shunt reference'],

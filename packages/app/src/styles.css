@@ -589,6 +589,11 @@ textarea,
   min-width: 14ch;
 }
 
+/* the speed against real time pads itself to its longest form in the interface language */
+.readout-behind {
+  color: var(--ui-accent);
+}
+
 .readout-button {
   border: 0;
   border-radius: 4px;
@@ -847,6 +852,26 @@ textarea,
 
 .speed-unit {
   font-size: 12px;
+}
+
+/* the speed against real time, under the speed slider */
+.pace-field {
+  gap: 2px;
+}
+
+.pace-value {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2px;
+  color: var(--ui-text);
+}
+
+.pace-note {
+  max-width: 240px;
+  padding-left: 2px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ui-accent);
 }
 
 /* ---- key to the field visualizations (Options > Visualizations) ------------------------- */

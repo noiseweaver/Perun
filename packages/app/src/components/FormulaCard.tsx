@@ -6,12 +6,13 @@ import { useEffect, useState } from 'react';
 import { controller } from '../SimController.ts';
 import { t } from '../i18n.ts';
 import { Icon } from './Icon.tsx';
+import { platform } from '../platform/index.ts';
 
 const OPEN_KEY = 'circuitjs-next.formulaCardOpen';
 
 function readOpen(): boolean {
   try {
-    return localStorage.getItem(OPEN_KEY) !== 'false';
+    return platform.storage.getItem(OPEN_KEY) !== 'false';
   } catch {
     return true;
   }
@@ -29,7 +30,7 @@ export function FormulaCard({ elm }: { elm: CircuitElm }) {
   const setOpen = (o: boolean): void => {
     setOpenState(o);
     try {
-      localStorage.setItem(OPEN_KEY, String(o));
+      platform.storage.setItem(OPEN_KEY, String(o));
     } catch {
       // private mode: remembered for this page only
     }

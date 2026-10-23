@@ -34,3 +34,54 @@ export function stepsText(steps: number): string {
   if (steps < 100) return steps.toFixed(1);
   return String(Math.round(steps));
 }
+
+/** Below this the factor rounds to 1.00 and the simulation reads as running in real time. */
+const REAL_TIME_FACTOR = 1.005;
+
+/**
+ * How simulated time compares with real time, from the simulated seconds per real second:
+ * `factor` is how many times slower or faster, in five characters (FACTOR_WIDTH).
+ */
+export interface Pace {
+  kind: 'slower' | 'faster' | 'real' | 'stopped';
+  factor: string;
+}
+
+/** Characters `Pace.factor` takes: three significant digits and a k, M, G or T ("1.21k"). */
+export const FACTOR_WIDTH = 5;
+
+export function paceOf(ratio: number): Pace {
+  if (!(ratio > 0) || !Number.isFinite(ratio))
+    return { kind: 'stopped', factor: '∞'.padStart(FACTOR_WIDTH) };
+  const f = ratio < 1 ? 1 / ratio : ratio;
+  if (f < REAL_TIME_FACTOR) return { kind: 'real', factor: '1'.padStart(FACTOR_WIDTH) };
+  return { kind: ratio < 1 ? 'slower' : 'faster', factor: factorText(f) };
+}
+
+/** A factor of at least 1 with three significant digits and a prefix, padded to FACTOR_WIDTH. */
+export function factorText(f: number): string {
+  const prefixes = ['', 'k', 'M', 'G', 'T'];
+  let k = 0;
+  // 999.5 would round to "1000": say 1.00k instead
+  while (f >= 999.5 && k < prefixes.length - 1) {
+    f /= 1000;
+    k++;
+  }
+  const num = f < 9.995 ? f.toFixed(2) : f < 99.95 ? f.toFixed(1) : f.toFixed(0);
+  return `${num}${prefixes[k] ?? ''}`.padStart(FACTOR_WIDTH);
+}
+
+/** Characters `percentText` takes, without the % sign ("0.0825", "<0.001", "12345"). */
+export const PERCENT_WIDTH = 7;
+
+/** Simulated time as a percentage of real time, three significant digits, padded to PERCENT_WIDTH. */
+export function percentText(ratio: number): string {
+  const p = ratio * 100;
+  let s: string;
+  if (!(p > 0) || !Number.isFinite(p)) s = '0';
+  else if (p < 0.001) s = '<0.001';
+  else if (p >= 99999.5) s = '>99999';
+  else if (p >= 99.95) s = p.toFixed(0);
+  else s = p.toPrecision(3);
+  return s.padStart(PERCENT_WIDTH);
+}
