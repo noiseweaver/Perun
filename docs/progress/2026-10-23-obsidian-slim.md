@@ -24,6 +24,8 @@ before publishing.
   ask `platform.apple`, which in Obsidian comes from Obsidian's Platform API and on the web from
   the browser (`platform/web.ts`); every ESLint directive says why; one regex lookbehind (older
   iOS can't run them) is gone.
+- A scope test on phones failed about one run in five, on main before this work too: it looked
+  for a scope card before the example circuit had loaded. Its helper now waits for the card.
 
 ## Next
 
@@ -32,7 +34,7 @@ before publishing.
 ## Open issues
 
 - The download path is checked by unit tests only; the Obsidian test installs the file.
-- The scan's warnings stay (it lints every package, tools included): CSS lint on the app's styles, dynamic code in a dependency, and
-  release attestations (a recommendation).
+- The scan's warnings stay (it lints every package, tools included): CSS lint on the app's
+  styles, dynamic code in a dependency, and release attestations (a recommendation).
 
 Obsidian: this is the plugin's own work.

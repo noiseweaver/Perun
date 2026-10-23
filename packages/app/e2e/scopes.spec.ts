@@ -200,7 +200,8 @@ test('hovering an element shows its info', async ({ page }) => {
  */
 const cardPart = async (page: Page, i: number, kind: string, index = 0) => {
   const box = await page.getByTestId('circuit-canvas').boundingBox();
-  const h = await page.evaluate(
+  // waits for the card: a circuit opened by URL may still be loading after the first frames
+  const found = await page.waitForFunction(
     ([i, kind, index]) => {
       const c = window.perun?.controller;
       const n = i as number;
@@ -217,6 +218,7 @@ const cardPart = async (page: Page, i: number, kind: string, index = 0) => {
     },
     [i, kind, index] as const,
   );
+  const h = await found.jsonValue();
   if (!box || !h) throw new Error(`no ${kind} on scope ${i}`);
   return { x: box.x + h.x, y: box.y + h.y };
 };
