@@ -480,6 +480,14 @@ export function AppBar() {
             checked={display.showValues}
             onCheckedChange={(v) => setDisplay({ showValues: v })}
           />
+          <CheckItem
+            label="Show speed compared with real time"
+            icon="speed"
+            checked={settings.realTimeReadout}
+            onCheckedChange={(v) => updateSettings({ realTimeReadout: v })}
+            title={t('Beside the time readout and under the speed slider')}
+            testId="menu-real-time"
+          />
           <Menu.Separator className="menu-separator" />
           <CheckItem
             label="Edit Values With Mouse Wheel"

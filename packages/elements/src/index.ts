@@ -73,7 +73,13 @@ export {
   temperatureOf,
 } from './thermal.ts';
 export type { XmlAttrReader, XmlAttrWriter, XmlDocWriter } from './xml.ts';
-export { ELEMENT_TYPES, classNameForXmlTag, constructElement, createCe } from './registry.ts';
+export {
+  ELEMENT_TYPES,
+  classNameForXmlRecord,
+  classNameForXmlTag,
+  constructElement,
+  createCe,
+} from './registry.ts';
 
 export { CapacitorElm } from './elm/CapacitorElm.ts';
 export { Diode } from './elm/Diode.ts';
@@ -235,6 +241,13 @@ export {
   CustomCompositeElm,
   type SubcircuitHooks,
 } from './elm/CustomCompositeElm.ts';
+export {
+  VACTROL_PRESETS,
+  VactrolElm,
+  vactrolExpressions,
+  vactrolResistance,
+  type VactrolParams,
+} from './elm/VactrolElm.ts';
 export {
   CustomCompositeModel,
   CustomCompositeModels,

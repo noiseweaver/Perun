@@ -28,6 +28,7 @@ import {
   TextElm,
   Simulation,
   StringTokenizer,
+  classNameForXmlRecord,
   classNameForXmlTag,
   constructElement,
   createCe,
@@ -632,7 +633,7 @@ export class Circuit {
 
       const x = elem.getAttribute('x');
       if (x === null) continue;
-      const className = classNameForXmlTag(tag);
+      const className = classNameForXmlRecord(elem);
       if (className === undefined) {
         this.warn('unknown-part', 'unrecognized xml element: ' + tag, tag);
         this.skipElement();

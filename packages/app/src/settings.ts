@@ -31,6 +31,8 @@ export interface UserSettings {
   junctionDots: boolean;
   /** Keep current dots on screen, standing still, while the simulation is paused (upstream hides them). */
   pausedDots: boolean;
+  /** How fast the simulation runs against real time, in the bottom bar and the Speed popover. */
+  realTimeReadout: boolean;
   /** Options > Visualizations: field, charge and energy overlays. */
   fields: FieldOptions;
   /** Size of component value text on the canvas, as a fraction of 12 px (VALUE_SIZES). */
@@ -86,6 +88,7 @@ export function readSettings(get: (key: string) => string | null): UserSettings 
     conventionalCurrent: true,
     junctionDots: false,
     pausedDots: true,
+    realTimeReadout: true,
     fields: NO_FIELDS,
     wheelEdit: true,
     wiresFollow: true,
@@ -125,6 +128,8 @@ export function readSettings(get: (key: string) => string | null): UserSettings 
           : defaults.conventionalCurrent,
       junctionDots: typeof s.junctionDots === 'boolean' ? s.junctionDots : defaults.junctionDots,
       pausedDots: typeof s.pausedDots === 'boolean' ? s.pausedDots : defaults.pausedDots,
+      realTimeReadout:
+        typeof s.realTimeReadout === 'boolean' ? s.realTimeReadout : defaults.realTimeReadout,
       fields: readFields(s) ?? defaults.fields,
       wheelEdit: typeof s.wheelEdit === 'boolean' ? s.wheelEdit : defaults.wheelEdit,
       wiresFollow: typeof s.wiresFollow === 'boolean' ? s.wiresFollow : defaults.wiresFollow,

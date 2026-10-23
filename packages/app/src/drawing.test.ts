@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { SETTING_USE, frameState, type FrameInputs } from './drawing.ts';
 import { readSettings, type UserSettings } from './settings.ts';
 import { StepClock, type SteppedSim } from './stepClock.ts';
@@ -67,8 +67,24 @@ describe('the step clock', () => {
   it('pauses on a stop trigger and forgets the backlog', () => {
     const c = new StepClock();
     const s = sim(600);
-    expect(c.advance(s, 100_000, 10)).toEqual({ steps: 1000, paused: true });
+    expect(c.advance(s, 100_000, 10)).toEqual({ steps: 1000, paused: true, behind: false });
     expect(s.pauseRequested).toBe(false);
     expect(c.advance(s, 0, 10).steps).toBe(0);
+  });
+
+  it('says when a frame runs out of time and drops the backlog', () => {
+    const c = new StepClock();
+    const s = sim();
+    const step = s.step.bind(s);
+    // every chunk takes 60 ms, longer than a frame's budget
+    let now = 0;
+    const clock = vi.spyOn(performance, 'now').mockImplementation(() => now);
+    s.step = (n) => {
+      now += 60;
+      return step(n);
+    };
+    expect(c.advance(s, 100_000, 10)).toEqual({ steps: 500, paused: false, behind: true });
+    expect(c.advance(s, 0, 10).steps).toBe(0);
+    clock.mockRestore();
   });
 });

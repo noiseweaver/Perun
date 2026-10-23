@@ -34,6 +34,15 @@ export interface CircuitDisplay {
 export interface SimStatus {
   t: number;
   timeStep: number;
+  /** The time step the circuit asks for (timeStep is below it while the adaptive step backs off). */
+  maxTimeStep: number;
+  /**
+   * Simulated seconds per real second over the last second of running, or null while paused,
+   * replaying a recorded frame, or not running long enough to tell.
+   */
+  realTime: number | null;
+  /** Some frame in that second ran out of time and dropped steps: the computer can't keep up. */
+  behind: boolean;
   /** Ambient temperature in °C now (27 is the default; a ramp moves it). */
   temperature: number;
   /** A ramp or self-heating is on, so the temperature readout shows even at 27 °C. */
@@ -278,6 +287,9 @@ export const useApp = create<AppState>(() => ({
   status: {
     t: 0,
     timeStep: 5e-6,
+    maxTimeStep: 5e-6,
+    realTime: null,
+    behind: false,
     temperature: 27,
     thermal: false,
     selfHeating: false,

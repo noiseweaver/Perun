@@ -24,6 +24,7 @@ export const SETTING_USE = {
   conventionalCurrent: 'drawn',
   junctionDots: 'drawn',
   pausedDots: 'drawn',
+  realTimeReadout: 'editor',
   fields: 'drawn',
   wheelEdit: 'editor',
   wiresFollow: 'editor',

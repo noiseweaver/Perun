@@ -28,6 +28,8 @@ export interface Advance {
   steps: number;
   /** A stop trigger paused the run (pauseRequested is cleared). */
   paused: boolean;
+  /** The frame ran out of time and dropped the steps it still owed: the computer can't keep up. */
+  behind: boolean;
 }
 
 /** Steps owed between frames: the circuit's speed times the time that passed. */
@@ -50,15 +52,15 @@ export class StepClock {
         // a stop trigger fired: pause, as upstream's setSimRunning(false)
         sim.pauseRequested = false;
         this.owed = 0;
-        return { steps, paused: true };
+        return { steps, paused: true, behind: false };
       }
       if (performance.now() - start > FRAME_BUDGET_MS) {
         // the circuit is too slow for this speed: drop the backlog rather than spiral
         this.owed = 0;
-        break;
+        return { steps, paused: false, behind: true };
       }
     }
-    return { steps, paused: false };
+    return { steps, paused: false, behind: false };
   }
 
   /** Forget the backlog (a new circuit, a reset). */

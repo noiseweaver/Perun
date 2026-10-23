@@ -120,6 +120,8 @@ const SCOPE_DROP_LABELS: Record<ScopeDrop, string> = {
 };
 
 const STATUS_INTERVAL_MS = 100;
+/** Real time the speed against real time is measured over. */
+const PACE_WINDOW_MS = 1000;
 
 /** The circuit's temperature settings (PLAN.md Phases 15 and 17). */
 export interface ThermalSettings {
@@ -156,6 +158,10 @@ export class SimController {
   private lastFrame = 0;
   private readonly clock = new StepClock();
   private lastStatus = 0;
+  /** Real time (ms) and simulated time at each status update while running live (paceOf). */
+  private paceSamples: { now: number; t: number; behind: boolean }[] = [];
+  /** A frame since the last status update dropped steps because it ran out of time. */
+  private fellBehind = false;
   private needsFit = true;
   private unsubscribe: (() => void) | null = null;
   private detachInput: (() => void) | null = null;
@@ -584,6 +590,7 @@ export class SimController {
       const stepsBefore = this.steps;
       const run = this.clock.advance(sim, 160 * this.circuit.getIterCount(), elapsed);
       this.steps += run.steps;
+      if (run.behind) this.fellBehind = true;
       if (run.paused) {
         running = false;
         useApp.setState({ running: false });
@@ -626,10 +633,14 @@ export class SimController {
     if (!force && now - this.lastStatus < STATUS_INTERVAL_MS) return;
     this.lastStatus = now;
     const sim = this.circuit.sim;
+    const pace = this.measurePace(now);
     useApp.setState({
       status: {
         t: sim.t,
         timeStep: sim.timeStep,
+        maxTimeStep: sim.maxTimeStep,
+        realTime: pace.ratio,
+        behind: pace.behind,
         temperature: sim.ambientTemperature(),
         thermal: sim.selfHeating || sim.temperatureRamp !== null,
         selfHeating: sim.selfHeating,
@@ -638,6 +649,28 @@ export class SimController {
       },
     });
     this.publishRewind();
+  }
+
+  /**
+   * Simulated seconds per real second over the last PACE_WINDOW_MS of running live, and whether a
+   * frame in it ran out of time; null while paused or replaying, or until half a window has run.
+   */
+  private measurePace(now: number): { ratio: number | null; behind: boolean } {
+    const samples = this.paceSamples;
+    const t = this.circuit.sim.t;
+    const live = useApp.getState().running && this.rewindIndex < 0;
+    // a reset or a load starts time again
+    if (!live || (samples.length > 0 && t < (samples.at(-1)?.t ?? 0))) samples.length = 0;
+    if (live) samples.push({ now, t, behind: this.fellBehind });
+    this.fellBehind = false;
+    while (samples.length > 0 && now - (samples[0]?.now ?? now) > PACE_WINDOW_MS) samples.shift();
+    const first = samples[0];
+    if (first === undefined || now - first.now < PACE_WINDOW_MS / 2)
+      return { ratio: null, behind: false };
+    return {
+      ratio: (t - first.t) / ((now - first.now) / 1000),
+      behind: samples.some((s, i) => i > 0 && s.behind),
+    };
   }
 
   // ---- rewind and scrub ------------------------------------------------------------------------

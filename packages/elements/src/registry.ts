@@ -143,6 +143,8 @@ import { OpAmpRealElmType } from './elm/OpAmpRealElm.ts';
 import { OptocouplerElmType } from './elm/OptocouplerElm.ts';
 import { AnalogMuxElmType } from './elm/AnalogMuxElm.ts';
 import { CustomTransformerElmType } from './elm/CustomTransformerElm.ts';
+import { VactrolElmType } from './elm/VactrolElm.ts';
+import type { XmlElement } from './xmldoc.ts';
 
 /** Every ported element class. */
 export const ELEMENT_TYPES: readonly ElementType[] = [
@@ -301,6 +303,8 @@ export const ELEMENT_TYPES: readonly ElementType[] = [
   OptocouplerElmType,
   AnalogMuxElmType,
   CustomTransformerElmType,
+  // not in upstream; registered after CustomCompositeElm, so `cc` and 410 stay subcircuits
+  VactrolElmType,
 ];
 
 /** Old class names upstream's constructElement still accepts (saved shortcuts, subcircuits). */
@@ -316,6 +320,7 @@ const xmlDumpTypeMap = new Map<string, string>();
 elementFactory.construct = constructElement;
 elementFactory.createCe = createCe;
 elementFactory.classNameForXmlTag = classNameForXmlTag;
+elementFactory.classNameForXmlRecord = classNameForXmlRecord;
 
 const sampleSim = new Simulation();
 for (const type of ELEMENT_TYPES) {
@@ -355,6 +360,15 @@ export function constructElement(
 /** Class name for an XML tag, or undefined if no ported class uses it. */
 export function classNameForXmlTag(tag: string): string | undefined {
   return xmlDumpTypeMap.get(tag);
+}
+
+/**
+ * Class name for an XML element record. A subcircuit record with the `vac` attribute is a
+ * vactrol (not in upstream, docs/deviations/vactrol.md), which upstream reads as the subcircuit.
+ */
+export function classNameForXmlRecord(elem: XmlElement): string | undefined {
+  if (elem.name === 'cc' && elem.getAttribute('vac') !== null) return 'VactrolElm';
+  return classNameForXmlTag(elem.name);
 }
 
 /** Read a text-format element line, or null for an unknown dump type. Throws on bad fields. */
