@@ -21,3 +21,5 @@ Branch `claude/project-thread-p2yfjg`. Gady asked for "an option to hide the leg
 ## Open issues
 
 - None.
+
+Obsidian: works. Circuit files open the whole app in a frame, where the switch is the same; circuits in notes have no legend card, so the setting is marked `editor` in `SETTING_USE`.
