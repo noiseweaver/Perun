@@ -10,6 +10,8 @@ import {
   type App,
   type Debouncer,
   debounce,
+  normalizePath,
+  requestUrl,
   type WorkspaceLeaf,
 } from 'obsidian';
 import { ACTIVE_THEME_KEY, SETTINGS_KEY } from '@perun/app/settings';
@@ -26,6 +28,7 @@ import {
   type EditorTab,
   VIEW_TYPE,
 } from './editorView.ts';
+import { APP_FILES, loadAppFiles } from './appFiles.ts';
 import { freePath, safeFileName } from './files.ts';
 import {
   DEFAULT_DATA,
@@ -186,6 +189,33 @@ export default class PerunPlugin extends Plugin {
       else leaf.detach();
       this.app.workspace.setActiveLeaf(other, { focus: true });
     }, 0);
+  }
+
+  private appFiles: Promise<Record<string, string>> | null = null;
+
+  /** One of the editor's example circuits or translations (appFiles.ts), or null if unavailable. */
+  async appFile(name: string): Promise<string | null> {
+    const adapter = this.app.vault.adapter;
+    const dir = this.manifest.dir ?? `${this.app.vault.configDir}/plugins/${this.manifest.id}`;
+    this.appFiles ??= loadAppFiles(
+      {
+        exists: (p) => adapter.exists(p),
+        read: (p) => adapter.read(p),
+        write: (p, t) => adapter.write(p, t),
+        download: async (url) => (await requestUrl({ url })).text,
+      },
+      normalizePath(`${dir}/${APP_FILES}`),
+      this.manifest.version,
+    ).catch((err: unknown) => {
+      // offline: the editor shows no examples and English; try again next time
+      this.appFiles = null;
+      throw err;
+    });
+    try {
+      return (await this.appFiles)[name] ?? null;
+    } catch {
+      return null;
+    }
   }
 
   /** Write a file the editor exported into `folder`, under a name no other file has yet. */

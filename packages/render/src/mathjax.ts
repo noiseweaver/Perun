@@ -61,6 +61,9 @@ function toNode(n: LiteElement | LiteText): SvgNode {
   };
 }
 
+/** Resolves when `typeset` can be called (at once here; see packages/app/src/embedMathjax.ts). */
+export const ready: Promise<void> = Promise.resolve();
+
 /** Typeset one display-style formula; the root is MathJax's `<mjx-container>`. */
 export function typeset(tex: string): SvgNode {
   return toNode(doc.convert(tex, { display: true }) as LiteElement);

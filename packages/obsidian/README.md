@@ -45,13 +45,20 @@ Circuits in your notes, running live, and the full Perun editor for circuit file
 
 It works on desktop and on Obsidian for iPhone, iPad and Android.
 
+**Network use.** The editor's example circuits and its translations (about 1.7 MB) aren't inside
+the plugin, which keeps it under the 5 MB Obsidian Sync syncs. The first time an editor needs one,
+the plugin downloads `perun-files.json` once from its own GitHub release
+(`github.com/noiseweaver/Perun/releases`) and keeps it in the plugin's folder. Until then, or
+offline, the editor shows no examples and its menus in English. Nothing else goes over the network,
+and nothing is sent.
+
 ## Install
 
 Until it is in Obsidian's community plugin list, with the
 [BRAT](https://github.com/TfTHacker/obsidian42-brat) plugin: Add beta plugin, `noiseweaver/Perun`.
 BRAT installs the latest release and keeps it up to date. Or by hand:
 
-1. Get `main.js`, `manifest.json` and `styles.css`: from a
+1. Get `main.js`, `manifest.json`, `styles.css` and `perun-files.json`: from a
    [release](https://github.com/noiseweaver/Perun/releases), build them (below), or download
    the `perun-obsidian` artifact from a CI run on GitHub.
 2. Put them in `<your vault>/.obsidian/plugins/perun/`.
@@ -65,9 +72,12 @@ pnpm install
 pnpm --filter @perun/obsidian build    # packages/obsidian/dist
 ```
 
-`build.ts` builds the app with `vite build --mode embed`, puts it into one page with the example
-circuits, translations and license inlined (`generated/editor.html`), and bundles the plugin with
-that page inside (`dist/main.js`, about 8 MB, most of it MathJax for formula boxes).
+`build.ts` builds the app with `vite build --mode embed`, puts it into one page with the license
+inlined (`generated/editor.html`), bundles the plugin with that page inside (`dist/main.js`,
+about 4.8 MB, a third of it MathJax for formula boxes), and writes the example circuits and
+translations to `dist/perun-files.json`. The page carries no MathJax: the plugin lends the editor
+frame its own (packages/app/src/embedMathjax.ts). The build fails if `main.js` reaches 5 MB,
+which Obsidian Sync's Standard plan won't sync.
 
 ## How it works
 

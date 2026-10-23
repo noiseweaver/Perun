@@ -92,7 +92,8 @@ function setUp(): { home: string } {
   cpSync(join(here, '../vault'), vault, { recursive: true });
   const plugin = join(vault, '.obsidian/plugins/perun');
   mkdirSync(plugin, { recursive: true });
-  for (const f of ['main.js', 'manifest.json', 'styles.css'])
+  // perun-files.json as a hand install has it (installed from the list, the plugin downloads it)
+  for (const f of ['main.js', 'manifest.json', 'styles.css', 'perun-files.json'])
     cpSync(join(pluginDir, f), join(plugin, f));
   writeFileSync(join(vault, '.obsidian/community-plugins.json'), '["perun"]');
   const config = join(home, 'config/obsidian');
@@ -359,6 +360,32 @@ async function run(page: Page): Promise<void> {
       `no image among ${files.join(', ')}`,
     );
   });
+
+  await check(
+    page,
+    'The editor gets examples, translations and MathJax from the plugin',
+    async () => {
+      assert(editor !== null, 'no editor');
+      const got = await editor.evaluate(async () => {
+        const size = async (url: string): Promise<number> => {
+          const r = await fetch(url);
+          return r.ok ? (await r.text()).length : 0;
+        };
+        type Host = { loadTypeset(): Promise<(tex: string) => { kind: string }> };
+        const host = (window.frameElement as unknown as { perunHost?: Host } | null)?.perunHost;
+        const typeset = host === undefined ? null : await host.loadTypeset();
+        return {
+          examples: await size('./setuplist.txt'),
+          german: await size('./locale_de.txt'),
+          math: typeset === null ? '' : typeset('x^2').kind,
+        };
+      });
+      assert(
+        got.examples > 0 && got.german > 0 && got.math === 'mjx-container',
+        JSON.stringify(got),
+      );
+    },
+  );
 
   await check(page, "The editor's settings are kept in the plugin's data", async () => {
     assert(editor !== null, 'no editor');

@@ -10,7 +10,8 @@ import {
   type ViewStateResult,
   type WorkspaceLeaf,
 } from 'obsidian';
-import type { EmbedConfig, EmbedMessage } from '@perun/app/embedConfig';
+import type { EmbedConfig, EmbedMessage, FrameHost } from '@perun/app/embedConfig';
+import { loadTypeset } from '@perun/render';
 import { editorSrcdoc } from './frame.ts';
 import { replaceBlock } from './blockText.ts';
 import { SITE_URL } from './settings.ts';
@@ -33,6 +34,8 @@ export interface EditorHost {
   setFollow(on: boolean): void;
   /** A circuit file was opened in `leaf` (it may be open in another tab already). */
   openedFile(leaf: WorkspaceLeaf, file: TFile): void;
+  /** One of the editor's example circuits or translations, or null if unavailable. */
+  appFile(name: string): Promise<string | null>;
   /** Keep a file the editor exported (or a copy of the circuit) in `folder` of the vault. */
   saveFile(folder: string, name: string, data: string | ArrayBuffer): Promise<void>;
   editors: Set<EditorTab>;
@@ -135,6 +138,9 @@ class EditorFrame {
     };
     const frame = this.parent.createEl('iframe', { cls: 'perun-frame' });
     frame.setAttribute('title', 'Perun circuit editor');
+    // the frame borrows the plugin's MathJax and asks it for the files main.js leaves out
+    const host: FrameHost = { loadTypeset, file: (name) => this.host.appFile(name) };
+    Object.assign(frame, { perunHost: host });
     frame.srcdoc = editorSrcdoc(config);
     this.frame = frame;
   }
