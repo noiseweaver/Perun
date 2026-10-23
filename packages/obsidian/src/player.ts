@@ -41,6 +41,8 @@ export class CircuitPlayer {
   private readonly renderer: CircuitRenderer;
   private readonly scopes: ScopeRenderer;
   private raf = 0;
+  /** The window the canvas is in: a note in a popout animates on the popout's frames. */
+  private rafWindow: Window = window;
   private animating = false;
   private last = 0;
   /** The editor's pacing (packages/app/src/stepClock.ts). */
@@ -51,12 +53,14 @@ export class CircuitPlayer {
   /** The simulation advances; when false the last frame stays on screen. */
   running = true;
 
+  private readonly canvas: HTMLCanvasElement;
   private readonly text: string;
   private theme: Theme;
   private draw: DrawingSettings;
 
   /** Throws when the circuit text can't be read. */
   constructor(canvas: HTMLCanvasElement, text: string, theme: Theme, draw: DrawingSettings) {
+    this.canvas = canvas;
     this.text = text;
     this.theme = theme;
     this.draw = draw;
@@ -169,16 +173,19 @@ export class CircuitPlayer {
     this.stop();
     this.animating = animate;
     this.last = 0;
+    // a leaf dragged into another window takes its canvas along, so look it up each time
+    const win = this.canvas.ownerDocument.defaultView ?? window;
+    this.rafWindow = win;
     const loop = (now: number): void => {
-      if (animate) this.raf = requestAnimationFrame(loop);
+      if (animate) this.raf = win.requestAnimationFrame(loop);
       this.frame(now, this.running);
     };
-    this.raf = requestAnimationFrame(loop);
+    this.raf = win.requestAnimationFrame(loop);
   }
 
   stop(): void {
     this.animating = false;
-    cancelAnimationFrame(this.raf);
+    this.rafWindow.cancelAnimationFrame(this.raf);
     this.raf = 0;
   }
 
