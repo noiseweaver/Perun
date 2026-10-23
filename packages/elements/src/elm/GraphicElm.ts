@@ -40,13 +40,13 @@ export abstract class GraphicElm extends CircuitElm {
 /** Where a box's title sits. */
 export type BoxTitlePlace = 'border' | 'center' | 'inside';
 // the names of a box's colors (theme `circuit.boxes`), not colors
-/* eslint-disable local/no-color-literals */
+/* eslint-disable local/no-color-literals -- box color names, not colors */
 /** A box's color: the theme's secondary part color, or one of the theme's box colors. */
 export type BoxColor = 'default' | 'red' | 'orange' | 'green' | 'blue' | 'purple';
 export type BoxBorder = 'dashed' | 'solid' | 'dotted' | 'none';
 const PLACES: readonly BoxTitlePlace[] = ['border', 'center', 'inside'];
 const COLORS: readonly BoxColor[] = ['default', 'red', 'orange', 'green', 'blue', 'purple'];
-/* eslint-enable local/no-color-literals */
+/* eslint-enable local/no-color-literals -- colors are banned again from here */
 const BORDERS: readonly BoxBorder[] = ['dashed', 'solid', 'dotted', 'none'];
 const DEFAULT_TITLE_SIZE = 16;
 /** Average width of a monospace glyph, in em, where no painter can measure the title. */

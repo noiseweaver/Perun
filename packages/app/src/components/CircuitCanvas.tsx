@@ -17,8 +17,9 @@ import { usePartSearch } from '../partSearch.ts';
 import { useQuickPick } from '../quickPick.ts';
 import { wheelItems } from '../radialWheel.ts';
 import { Preview } from './PaletteButton.tsx';
+import { platform } from '../platform/index.ts';
 
-const MOD = typeof navigator !== 'undefined' && /Mac|iP/.test(navigator.platform) ? '⌘' : 'Ctrl+';
+const MOD = platform.apple ? '⌘' : 'Ctrl+';
 
 function Item(props: {
   label: string;

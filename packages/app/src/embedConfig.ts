@@ -22,6 +22,8 @@ export interface EmbedConfig {
    * (platform/obsidian.ts), which sends each change back.
    */
   storage: Record<string, string>;
+  /** Whether shortcuts are written with ⌘ (macOS, iPhone, iPad), from Obsidian's Platform API. */
+  apple: boolean;
 }
 
 export const embedConfig: EmbedConfig | null =

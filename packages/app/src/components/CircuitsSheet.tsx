@@ -115,7 +115,7 @@ function useSwipeToDismiss(
           return;
         }
         state = 'drag';
-        el.style.transition = 'none';
+        el.classList.add('circuits-sheet-dragged');
       }
       e.preventDefault();
       el.style.transform = `translateY(${Math.max(0, dy)}px)`;
@@ -123,11 +123,12 @@ function useSwipeToDismiss(
     const end = (e: TouchEvent): void => {
       if (state === 'drag') {
         const speed = dy / Math.max(1, e.timeStamp - startT);
-        el.style.transition = '';
+        el.classList.remove('circuits-sheet-dragged');
+        el.style.removeProperty('transform');
         if (dy > DISMISS_DISTANCE || speed > DISMISS_SPEED) {
-          el.style.transform = 'translateY(100%)';
+          el.classList.add('circuits-sheet-away');
           window.setTimeout(() => onDismiss.current(), 180);
-        } else el.style.transform = '';
+        }
       }
       state = 'idle';
     };

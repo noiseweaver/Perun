@@ -19,6 +19,11 @@ before publishing.
 - The Obsidian test installs `perun-files.json` too and checks that the editor gets examples,
   translations and MathJax from the plugin (15 checks).
 - The mirror's sync copies every release file, `perun-files.json` included.
+- The plugin list's scan of 1.0.1 failed four rules, all in app code it lints too, now fixed:
+  fixed inline styles move to CSS classes (the circuits sheet) or one cursor helper; shortcut labels
+  ask `platform.apple`, which in Obsidian comes from Obsidian's Platform API and on the web from
+  the browser (`platform/web.ts`); every ESLint directive says why; one regex lookbehind (older
+  iOS can't run them) is gone.
 
 ## Next
 
@@ -27,7 +32,7 @@ before publishing.
 ## Open issues
 
 - The download path is checked by unit tests only; the Obsidian test installs the file.
-- The scan's other warnings stay: CSS lint on the app's styles, dynamic code in a dependency, and
+- The scan's warnings stay (it lints every package, tools included): CSS lint on the app's styles, dynamic code in a dependency, and
   release attestations (a recommendation).
 
 Obsidian: this is the plugin's own work.

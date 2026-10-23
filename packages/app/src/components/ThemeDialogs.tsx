@@ -322,7 +322,7 @@ const COLOR_GROUPS: { title: string; fields: [Path, string][] }[] = [
   {
     title: 'Boxes',
     // the names of a box's colors, not colors
-    /* eslint-disable local/no-color-literals */
+    /* eslint-disable local/no-color-literals -- the names of a box's colors, not colors */
     fields: [
       ['circuit.boxes.red', 'Red'],
       ['circuit.boxes.orange', 'Orange'],
@@ -330,7 +330,7 @@ const COLOR_GROUPS: { title: string; fields: [Path, string][] }[] = [
       ['circuit.boxes.blue', 'Blue'],
       ['circuit.boxes.purple', 'Purple'],
     ],
-    /* eslint-enable local/no-color-literals */
+    /* eslint-enable local/no-color-literals -- colors are banned again from here */
   },
   {
     title: 'Scopes',

@@ -24,6 +24,7 @@ const config = (storage: Record<string, string>): EmbedConfig => ({
   title: 'x',
   themeId: null,
   siteUrl: 'https://example.com/',
+  apple: false,
   storage,
 });
 

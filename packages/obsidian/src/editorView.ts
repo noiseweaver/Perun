@@ -4,6 +4,7 @@
 import {
   ItemView,
   Notice,
+  Platform,
   TFile,
   TextFileView,
   debounce,
@@ -135,6 +136,7 @@ class EditorFrame {
       themeId: this.host.themeId(),
       siteUrl: SITE_URL,
       storage: this.host.storage(),
+      apple: Platform.isMacOS || Platform.isIosApp,
     };
     const frame = this.parent.createEl('iframe', { cls: 'perun-frame' });
     frame.setAttribute('title', 'Perun circuit editor');

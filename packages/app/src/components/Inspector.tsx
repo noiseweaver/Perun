@@ -100,7 +100,7 @@ function NumberField(props: FieldProps) {
     setBound(b);
     setText(shown(b));
     setBindError(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- start over only when the field shows another value
   }, [elm, ei, props.n]);
   const commit = (s: string): void => {
     const expr = bindingText(s);
@@ -679,7 +679,7 @@ export function Inspector() {
     }
     return list;
     // revision: values changed elsewhere (undo, drag); rebuild: a field asked for a new list
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- revision and rebuild aren't read, they ask for a new list
   }, [selected, revision, rebuild]);
 
   useEffect(() => setError(null), [selected]);

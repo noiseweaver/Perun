@@ -519,7 +519,7 @@ function SimSettingsDialog() {
   );
 }
 
-const MOD = typeof navigator !== 'undefined' && /Mac|iP/.test(navigator.platform) ? '⌘' : 'Ctrl+';
+const MOD = platform.apple ? '⌘' : 'Ctrl+';
 
 const EDIT_KEYS: [string, string][] = [
   ['Click', 'Select; shift-click adds or removes'],

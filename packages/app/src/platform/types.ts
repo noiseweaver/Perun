@@ -27,6 +27,8 @@ export interface RecordStore<T extends { id: string }> {
 
 export interface Platform {
   readonly name: 'web' | 'obsidian';
+  /** Whether shortcuts are written with ⌘ (macOS, iPhone, iPad) rather than Ctrl. */
+  readonly apple: boolean;
   /**
    * Small data kept between sessions: settings, favorites, saved models. On the web the
    * browser's local storage; in Obsidian the plugin's data in the vault, so it syncs. Reading it
