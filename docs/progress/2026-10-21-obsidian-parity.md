@@ -67,6 +67,9 @@ time. Gady agreed to the five-step plan, with the real-Obsidian test run only wh
   mouse straight from Theme to an item, and the theme list closed on the way. The list works when
   the mouse moves like a hand, so the test now moves across into the list first, then along it.
   A failed check also names what it was waiting for.
+- The wheel's undo e2e test failed now and then on CI: it measured the Undo button while the
+  wheel was still scaling in, so the right-button flick let go over a wedge. It now waits for the
+  wheel to settle.
 
 ## Open issues
 
