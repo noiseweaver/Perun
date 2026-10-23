@@ -52,15 +52,17 @@ time. Gady agreed to the five-step plan, with the real-Obsidian test run only wh
 - Step 4, `.github/workflows/release-obsidian.yml`: a manual Release Obsidian plugin button.
   Builds with the version (PERUN_PLUGIN_VERSION into dist/manifest.json), runs `pnpm check` and
   the Obsidian test, and publishes a GitHub release (main.js, manifest.json, styles.css) only if
-  everything passes. Not run yet. BRAT can install from those releases (README).
+  everything passes. BRAT can install from those releases (README). First run 2026-10-23:
+  1.0.0 released (https://github.com/noiseweaver/Perun/releases/tag/1.0.0), every check passed on
+  GitHub's runner.
 - Step 5: CLAUDE.md "Works in Obsidian" rule, and progress entries end with an `Obsidian:` line
   (docs/progress/README.md).
 
 ## Next
 
-- Gady tries the plugin zip (project folder `obsidian-plugin/`).
-- When we agree, run Release Obsidian plugin for the first release (1.0.0), then add
-  `noiseweaver/Perun` in BRAT.
+- Gady installs 1.0.0 with BRAT (Add beta plugin, `noiseweaver/Perun`), which also brings later
+  releases.
+- Later releases: Actions > Release Obsidian plugin > Run workflow (empty version = next patch).
 
 - After main brought in the real-time speed readout, the Options menu grew tall enough to
   scroll in the test window, and the theme check's clicks stopped landing: Playwright jumped the
@@ -73,8 +75,6 @@ time. Gady agreed to the five-step plan, with the real-Obsidian test run only wh
 
 ## Open issues
 
-- The first run of the release workflow on GitHub's runners is untested (the Obsidian test passes
-  locally under Xvfb).
 - My circuits and Warn before closing are left out of the plugin on purpose: the vault is where
   circuits live, and every edit is saved.
 - Community plugin list submission still to decide.
