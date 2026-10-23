@@ -6,7 +6,9 @@ and never edits another branch's file or `docs/PROGRESS.md`.
 - Name: `YYYY-MM-DD-short-slug.md` (the date the work started, then a slug from the branch or
   feature), for example `2026-10-08-opamp-supply-rails.md`.
 - Content: a `#` heading with the date, the feature and the branch, then Done, Next and Open,
-  the same as the entries in `docs/PROGRESS.md`.
+  the same as the entries in `docs/PROGRESS.md`. A feature's entry ends with an `Obsidian:` line:
+  works in the plugin, works differently there (how), or left out (why). See CLAUDE.md,
+  "Works in Obsidian".
 - Updating your own entry later in the same branch is fine. To change what an older entry says,
   write a new file that says what changed.
 

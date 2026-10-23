@@ -19,6 +19,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { copyText, defaultFileName, showToast } from '../commands.ts';
 import { download, downloadBlob } from '../download.ts';
+import { platform } from '../platform/index.ts';
 import { MAX_ROWS, plotColumns } from '../analysis/scopeRecord.ts';
 import { partsCsv, partsList } from '../export/partsList.ts';
 import { t } from '../i18n.ts';
@@ -273,7 +274,7 @@ export function ExportImageDialog() {
           data-testid="export-download"
           onClick={save}
         >
-          <Icon name="download" size={18} /> {t('Download')}
+          <Icon name="download" size={18} /> {t(platform.saveLabels.file)}
         </button>
       </div>
     </Shell>
@@ -343,7 +344,7 @@ export function PartsListDialog() {
           data-testid="parts-download"
           onClick={() => download(`${baseName()}-parts.csv`, csv, 'text/csv')}
         >
-          <Icon name="download" size={18} /> {t('Download CSV')}
+          <Icon name="download" size={18} /> {t(platform.saveLabels.csv)}
         </button>
       </div>
     </Shell>
@@ -497,7 +498,7 @@ export function ScopeCsvDialog() {
           data-testid="csv-download"
           onClick={() => rec !== null && download(`${name}-scope.csv`, rec.csv(), 'text/csv')}
         >
-          <Icon name="download" size={18} /> {t('Download CSV')}
+          <Icon name="download" size={18} /> {t(platform.saveLabels.csv)}
         </button>
       </div>
     </Shell>

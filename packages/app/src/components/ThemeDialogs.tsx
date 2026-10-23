@@ -27,7 +27,8 @@ import {
   exportThemeFile,
   keepPreview,
   saveTheme,
-  selectTheme,
+  chooseTheme,
+  setFollowsHost,
   userThemeId,
 } from '../themes.ts';
 import { Shell } from './DialogShell.tsx';
@@ -112,7 +113,7 @@ function ThemeRow(props: { id: string; theme: Theme; saved: SavedTheme | null; a
         type="button"
         className="theme-row-pick"
         aria-pressed={props.active}
-        onClick={() => selectTheme(props.id)}
+        onClick={() => chooseTheme(props.id)}
         title={props.active ? 'In use' : 'Use this theme'}
       >
         <Swatch theme={theme} />
@@ -190,12 +191,25 @@ function ThemeRow(props: { id: string; theme: Theme; saved: SavedTheme | null; a
 export function ThemesDialog() {
   const themeId = useApp((s) => s.settings.themeId);
   const library = useApp((s) => s.library);
+  const followsHost = useApp((s) => s.followsHost);
   return (
     <Shell
       title={t('Themes')}
       description={t('Pick a theme, customize one, or share it as a file or link.')}
       wide
     >
+      {followsHost !== null && (
+        <label className="field field-check">
+          <input
+            type="checkbox"
+            className="checkbox"
+            checked={followsHost}
+            onChange={(e) => setFollowsHost(e.target.checked)}
+            data-testid="themes-follow"
+          />
+          <span>{t("Match Obsidian's light and dark mode")}</span>
+        </label>
+      )}
       <ul className="theme-list" data-testid="theme-list">
         {Object.entries(BUILTIN_THEMES).map(([id, t]) => (
           <ThemeRow key={id} id={id} theme={t} saved={null} active={themeId === id} />
@@ -625,7 +639,7 @@ export function ThemeEditorDialog() {
 
   const save = async (): Promise<void> => {
     const saved = await saveTheme(draft, id);
-    selectTheme(userThemeId(saved));
+    chooseTheme(userThemeId(saved));
     openDialog(null);
   };
 

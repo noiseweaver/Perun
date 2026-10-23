@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 
-import type { CircuitElm, TextFont } from '@perun/elements';
+import type { CircuitElm } from '@perun/elements';
 import {
   BUILTIN_THEMES,
   DEFAULT_THEME_ID,
@@ -9,60 +9,20 @@ import {
   parseTheme,
   type Theme,
 } from '@perun/theme';
-import { ALL_FIELDS, NO_FIELDS, type FieldOptions } from '@perun/render';
 import type { LoadIssue } from '@perun/format';
 import { create } from 'zustand';
+import { embedConfig } from './embedConfig.ts';
 import type { ExampleList } from './examples.ts';
+import { platform } from './platform/index.ts';
+import {
+  ACTIVE_THEME_KEY,
+  SETTINGS_KEY,
+  USER_THEME_PREFIX,
+  readSettings,
+  type UserSettings,
+} from './settings.ts';
 
-/** Options > Value text size: how big component values are drawn, against upstream's 12 px. */
-export const VALUE_SIZES = [
-  { scale: 0.75, label: 'Small' },
-  { scale: 0.875, label: 'Medium' },
-  { scale: 1, label: 'Large' },
-  { scale: 1.25, label: 'Extra large' },
-] as const;
-
-/** Display settings that belong to the user, not the circuit (kept in localStorage). */
-export interface UserSettings {
-  /** A built-in theme id, or `user:` and the id of a theme in the library (themes.ts). */
-  themeId: string;
-  euroResistors: boolean;
-  /** IEC (box) logic gate symbols (upstream "European Gates"). */
-  euroGates: boolean;
-  showOhm: boolean;
-  conventionalCurrent: boolean;
-  /** Mark every connection: a dot where two ends meet, a larger one where three or more do. */
-  junctionDots: boolean;
-  /** Keep current dots on screen, standing still, while the simulation is paused (upstream hides them). */
-  pausedDots: boolean;
-  /** How fast the simulation runs against real time, in the bottom bar and the Speed popover. */
-  realTimeReadout: boolean;
-  /** Options > Visualizations: field, charge and energy overlays. */
-  fields: FieldOptions;
-  /** Size of component value text on the canvas, as a fraction of 12 px (VALUE_SIZES). */
-  valueSize: number;
-  /** The mouse wheel over a resistor, capacitor or inductor steps its value (upstream option). */
-  wheelEdit: boolean;
-  /** Wire ends on a dragged part's posts move with it (not in upstream; Alt detaches). */
-  wiresFollow: boolean;
-  /** A two-post part dropped along a wire splices into it (not in upstream). */
-  spliceOnDrop: boolean;
-  /** Alignment guides while dragging (not in upstream). */
-  smartGuides: boolean;
-  /** A wire being drawn finds its way round parts (not in upstream; Alt draws it straight). */
-  routeWires: boolean;
-  /** The quick pick bar: the rail beside the canvas and the strip under it on phones. */
-  quickPickBar: boolean;
-  /** Q, a right-button flick or a long press on empty canvas opens the radial wheel. */
-  quickPickWheel: boolean;
-  /** Closing the page with changes not saved anywhere asks first (autosave.ts). */
-  warnUnsaved: boolean;
-  /** Font for text boxes; a display choice, not saved with circuits. */
-  textFont: TextFont;
-  /** Interface language: `auto` (the browser's) or an upstream catalog code (i18n.ts). */
-  language: string;
-}
-
+export { ACTIVE_THEME_KEY, USER_THEME_PREFIX, VALUE_SIZES, type UserSettings } from './settings.ts';
 /** Circuit options shown in the Options menu (saved with the circuit). */
 export interface CircuitDisplay {
   showDots: boolean;
@@ -224,6 +184,11 @@ export interface AppState {
   /** The user's theme (settings.themeId resolved). */
   theme: Theme;
   /**
+   * In the Obsidian plugin, whether the theme follows Obsidian's light and dark mode (picking a
+   * theme stops it); null on the web.
+   */
+  followsHost: boolean | null;
+  /**
    * A theme shown in place of the user's without being chosen: one from a link, or one being
    * edited. Never saved on its own (PLAN.md section 6).
    */
@@ -254,118 +219,23 @@ export function shownTheme(s: Pick<AppState, 'theme' | 'preview'>): Theme {
 
 // Storage keys (here and elsewhere) keep the project's old name, circuitjs-next, so settings,
 // themes and the last circuit saved before the rename to Perun are still found.
-const SETTINGS_KEY = 'circuitjs-next.settings.v2';
-/**
- * Version 1 saved the default theme (Classic) along with any other setting, so its theme is not
- * a choice the user made. Its other settings carry over; the theme starts at the new default.
- */
-const SETTINGS_KEY_V1 = 'circuitjs-next.settings';
-
 function loadSettings(): UserSettings {
-  const defaults: UserSettings = {
-    themeId: DEFAULT_THEME_ID,
-    euroResistors: false,
-    euroGates: false,
-    showOhm: false,
-    conventionalCurrent: true,
-    junctionDots: false,
-    pausedDots: true,
-    realTimeReadout: true,
-    fields: NO_FIELDS,
-    wheelEdit: true,
-    wiresFollow: true,
-    spliceOnDrop: true,
-    smartGuides: true,
-    routeWires: true,
-    quickPickBar: true,
-    quickPickWheel: true,
-    warnUnsaved: true,
-    valueSize: 0.875,
-    textFont: { family: 'default', bold: false, italic: false },
-    language: 'auto',
-  };
-  try {
-    let raw = localStorage.getItem(SETTINGS_KEY);
-    let fromV1 = false;
-    if (raw === null) {
-      raw = localStorage.getItem(SETTINGS_KEY_V1);
-      fromV1 = true;
+  return readSettings((key) => {
+    try {
+      return platform.storage.getItem(key);
+    } catch {
+      return null;
     }
-    if (raw === null) return defaults;
-    const s = JSON.parse(raw) as Partial<UserSettings>;
-    if (fromV1) delete s.themeId;
-    return {
-      themeId:
-        typeof s.themeId === 'string' &&
-        (builtinTheme(s.themeId) !== null || s.themeId.startsWith(USER_THEME_PREFIX))
-          ? s.themeId
-          : defaults.themeId,
-      euroResistors:
-        typeof s.euroResistors === 'boolean' ? s.euroResistors : defaults.euroResistors,
-      euroGates: typeof s.euroGates === 'boolean' ? s.euroGates : defaults.euroGates,
-      showOhm: typeof s.showOhm === 'boolean' ? s.showOhm : defaults.showOhm,
-      conventionalCurrent:
-        typeof s.conventionalCurrent === 'boolean'
-          ? s.conventionalCurrent
-          : defaults.conventionalCurrent,
-      junctionDots: typeof s.junctionDots === 'boolean' ? s.junctionDots : defaults.junctionDots,
-      pausedDots: typeof s.pausedDots === 'boolean' ? s.pausedDots : defaults.pausedDots,
-      realTimeReadout:
-        typeof s.realTimeReadout === 'boolean' ? s.realTimeReadout : defaults.realTimeReadout,
-      fields: readFields(s) ?? defaults.fields,
-      wheelEdit: typeof s.wheelEdit === 'boolean' ? s.wheelEdit : defaults.wheelEdit,
-      wiresFollow: typeof s.wiresFollow === 'boolean' ? s.wiresFollow : defaults.wiresFollow,
-      spliceOnDrop: typeof s.spliceOnDrop === 'boolean' ? s.spliceOnDrop : defaults.spliceOnDrop,
-      smartGuides: typeof s.smartGuides === 'boolean' ? s.smartGuides : defaults.smartGuides,
-      routeWires: typeof s.routeWires === 'boolean' ? s.routeWires : defaults.routeWires,
-      quickPickBar: typeof s.quickPickBar === 'boolean' ? s.quickPickBar : defaults.quickPickBar,
-      quickPickWheel:
-        typeof s.quickPickWheel === 'boolean' ? s.quickPickWheel : defaults.quickPickWheel,
-      warnUnsaved: typeof s.warnUnsaved === 'boolean' ? s.warnUnsaved : defaults.warnUnsaved,
-      valueSize: VALUE_SIZES.some((v) => v.scale === s.valueSize)
-        ? (s.valueSize as number)
-        : defaults.valueSize,
-      textFont: readTextFont(s.textFont) ?? defaults.textFont,
-      language: typeof s.language === 'string' ? s.language : defaults.language,
-    };
-  } catch {
-    return defaults;
-  }
-}
-
-function readFields(s: Partial<UserSettings> & { showFields?: unknown }): FieldOptions | null {
-  // the first prototype had one switch for everything
-  if (s.showFields === true) return { ...ALL_FIELDS };
-  const v = s.fields as unknown;
-  if (typeof v !== 'object' || v === null) return null;
-  const o = v as Record<string, unknown>;
-  const out = { ...NO_FIELDS };
-  for (const k of Object.keys(out) as (keyof FieldOptions)[]) out[k] = o[k] === true;
-  return out;
-}
-
-function readTextFont(v: unknown): TextFont | null {
-  if (typeof v !== 'object' || v === null) return null;
-  const f = v as Partial<Record<keyof TextFont, unknown>>;
-  const family = f.family === 'serif' || f.family === 'mono' ? f.family : 'default';
-  return { family, bold: f.bold === true, italic: f.italic === true };
+  });
 }
 
 export function saveSettings(s: UserSettings): void {
   try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+    platform.storage.setItem(SETTINGS_KEY, JSON.stringify(s));
   } catch {
     // private mode or storage disabled: settings last for this page only
   }
 }
-
-/** Prefix of library theme ids in `settings.themeId`. */
-export const USER_THEME_PREFIX = 'user:';
-/**
- * The active library theme, kept in localStorage too so the first frame already has it (the
- * library itself loads from IndexedDB a moment later).
- */
-export const ACTIVE_THEME_KEY = 'circuitjs-next.activeTheme';
 
 /** The theme `themeId` names, from the library, the cached active theme or the built-ins. */
 export function themeFor(themeId: string, library: readonly SavedTheme[]): Theme {
@@ -375,7 +245,7 @@ export function themeFor(themeId: string, library: readonly SavedTheme[]): Theme
   const saved = library.find((t) => t.id === id);
   if (saved) return saved.theme;
   try {
-    const cached = JSON.parse(localStorage.getItem(ACTIVE_THEME_KEY) ?? 'null') as {
+    const cached = JSON.parse(platform.storage.getItem(ACTIVE_THEME_KEY) ?? 'null') as {
       id?: unknown;
       theme?: unknown;
     } | null;
@@ -397,7 +267,7 @@ function initialPaletteOpen(): boolean {
   // phones, and phones on their side
   if (window.innerWidth < 720 || window.innerHeight < 560) return false;
   try {
-    return localStorage.getItem(PALETTE_KEY) !== 'false';
+    return platform.storage.getItem(PALETTE_KEY) !== 'false';
   } catch {
     return true;
   }
@@ -461,6 +331,7 @@ export const useApp = create<AppState>(() => ({
   dcPanel: false,
   dialog: null,
   theme: themeFor(initialSettings.themeId, []),
+  followsHost: embedConfig === null ? null : embedConfig.themeId !== null,
   preview: null,
   library: [],
   editing: null,
@@ -471,10 +342,16 @@ export function setPaletteOpen(open: boolean): void {
   useApp.setState({ paletteOpen: open });
   if (window.innerWidth < 720) return;
   try {
-    localStorage.setItem(PALETTE_KEY, String(open));
+    platform.storage.setItem(PALETTE_KEY, String(open));
   } catch {
     // storage disabled: the choice lasts for this page
   }
+}
+
+/** Read the settings again (another editor tab in Obsidian changed them). */
+export function reloadSettings(): void {
+  const settings = loadSettings();
+  useApp.setState({ settings, theme: themeFor(settings.themeId, useApp.getState().library) });
 }
 
 export function updateSettings(patch: Partial<UserSettings>): void {

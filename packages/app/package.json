@@ -8,7 +8,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./embedConfig": "./src/embedConfig.ts",
-    "./sliders": "./src/sliders.ts"
+    "./sliders": "./src/sliders.ts",
+    "./settings": "./src/settings.ts",
+    "./drawing": "./src/drawing.ts",
+    "./stepClock": "./src/stepClock.ts"
   },
   "dependencies": {
     "@perun/elements": "workspace:*",

@@ -1,19 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 
-/** Offer text to the browser as a file download. */
+import { platform } from './platform/index.ts';
+
+/** Give the user text as a file (a download; in Obsidian, a file in the vault). */
 export function download(fileName: string, text: string, type: string): void {
-  downloadBlob(fileName, new Blob([text], { type }));
+  platform.saveFile(fileName, text, type);
 }
 
-/** Offer binary data (an image) as a file download. */
+/** Give the user binary data (an image) as a file. */
 export function downloadBlob(fileName: string, blob: Blob): void {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 10000);
+  platform.saveFile(fileName, blob, blob.type);
 }

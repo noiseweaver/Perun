@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 
-import { embedConfig } from './embedConfig.ts';
 import { controller } from './SimController.ts';
 import { useApp } from './store.ts';
+import { platform } from './platform/index.ts';
 
 /**
  * The circuit on screen, kept in local storage so reopening the app (iOS may close an installed
@@ -23,7 +23,7 @@ export interface LastCircuit {
 
 export function readLastCircuit(): LastCircuit | null {
   try {
-    const raw = localStorage.getItem(LAST_CIRCUIT_KEY);
+    const raw = platform.storage.getItem(LAST_CIRCUIT_KEY);
     if (raw === null) return null;
     const v = JSON.parse(raw) as Partial<LastCircuit>;
     if (typeof v.text !== 'string' || v.text === '' || typeof v.title !== 'string') return null;
@@ -61,7 +61,7 @@ export function saveLastCircuit(): void {
   const value = JSON.stringify({ text, title, savedAs, unsaved: controller.unsavedChanges });
   if (value === lastSaved) return;
   try {
-    localStorage.setItem(LAST_CIRCUIT_KEY, value);
+    platform.storage.setItem(LAST_CIRCUIT_KEY, value);
     lastSaved = value;
   } catch {
     // storage full or disabled: the circuit lasts for this page
@@ -80,12 +80,8 @@ export function allowLeave(): void {
  * (Options > Warn before closing with unsaved changes). Browsers show their own wording, and only
  * once the page has been clicked or typed in; iPhone and iPad Safari never ask.
  */
-function warnBeforeLeaving(e: BeforeUnloadEvent): void {
-  if (leaving || embedConfig !== null || !controller.unsavedChanges) return;
-  if (!useApp.getState().settings.warnUnsaved) return;
-  e.preventDefault();
-  // browsers from before preventDefault counted (Chrome before 119) ask when this is set
-  e.returnValue = true;
+function shouldAsk(): boolean {
+  return !leaving && controller.unsavedChanges && useApp.getState().settings.warnUnsaved;
 }
 
 /** Save while the app runs and whenever it goes to the background. Returns a stop function. */
@@ -98,11 +94,11 @@ export function installAutosave(): () => void {
   };
   document.addEventListener('visibilitychange', onHide);
   window.addEventListener('pagehide', saveLastCircuit);
-  window.addEventListener('beforeunload', warnBeforeLeaving);
+  const stopAsking = platform.askBeforeLeaving(shouldAsk);
   return () => {
     window.clearInterval(timer);
     document.removeEventListener('visibilitychange', onHide);
     window.removeEventListener('pagehide', saveLastCircuit);
-    window.removeEventListener('beforeunload', warnBeforeLeaving);
+    stopAsking();
   };
 }

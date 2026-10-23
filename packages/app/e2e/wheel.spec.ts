@@ -89,6 +89,13 @@ test('undo and redo under the wheel step back and forward and leave it open', as
   await page.mouse.move(c.x - 160, c.y);
   await page.mouse.down({ button: 'right' });
   await page.mouse.move(c.x - 160, c.y + 30, { steps: 2 });
+  // measured mid scale-in, the button is still short of where it ends up, over a wedge
+  await page.waitForFunction(() =>
+    document
+      .querySelector('.radial-wheel')
+      ?.getAnimations()
+      .every((a) => a.playState !== 'running'),
+  );
   const undo = await page.getByTestId('wheel-undo').boundingBox();
   if (!undo) throw new Error('no undo button');
   await page.mouse.move(undo.x + undo.width / 2, undo.y + undo.height / 2, { steps: 4 });

@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 
-import { Component, SliderComponent, setIcon, setTooltip } from 'obsidian';
+import { Component, setIcon, setTooltip } from 'obsidian';
+import type { SwitchElm } from '@perun/elements';
 import type { Theme } from '@perun/theme';
 import { CircuitPlayer } from './player.ts';
-import type { DrawSettings } from './settings.ts';
+import type { DrawingSettings } from '@perun/app/drawing';
 
 /** What a circuit in a note needs from the plugin. */
 export interface WidgetHost {
   theme(): Theme;
-  draw(): DrawSettings;
+  draw(): DrawingSettings;
   widgets: Set<CircuitWidget>;
 }
 
@@ -53,7 +54,17 @@ export class CircuitWidget extends Component {
     const player = this.player;
     canvas.setAttribute('role', 'img');
     canvas.setAttribute('aria-label', 'Circuit simulation');
+    this.clickSwitches(canvas, player);
     this.picture = root.createEl('img', { cls: 'perun-picture', attr: { alt: 'Circuit' } });
+
+    if (player.skipped > 0) {
+      // as the editor's notice: the rest of the circuit runs
+      const n = player.skipped;
+      root.createDiv({
+        cls: 'perun-skipped',
+        text: `${n} ${n === 1 ? 'item' : 'items'} in this circuit couldn't be read and ${n === 1 ? 'was' : 'were'} left out. Open in Perun lists ${n === 1 ? 'it' : 'them'}.`,
+      });
+    }
 
     const bar = root.createDiv({ cls: 'perun-bar' });
     this.playButton = button(bar, 'pause', 'Pause', () => {
@@ -117,6 +128,38 @@ export class CircuitWidget extends Component {
       player.stop();
     });
     this.updatePicture();
+  }
+
+  /**
+   * Switches, push buttons and logic inputs work in a note as in the editor: a click flips one,
+   * a push button is held while the pointer is down. Anywhere else the canvas scrolls the note.
+   */
+  private clickSwitches(canvas: HTMLCanvasElement, player: CircuitPlayer): void {
+    let held: SwitchElm | null = null;
+    const at = (e: PointerEvent): SwitchElm | null => {
+      const r = canvas.getBoundingClientRect();
+      return player.switchAt(e.clientX - r.left, e.clientY - r.top);
+    };
+    const letGo = (): void => {
+      if (held !== null) player.toggle(held);
+      held = null;
+    };
+    this.registerDomEvent(canvas, 'pointerdown', (e) => {
+      if (e.button !== 0) return;
+      const s = at(e);
+      if (s === null) return;
+      e.preventDefault();
+      player.toggle(s);
+      if (s.momentary) {
+        held = s;
+        canvas.setPointerCapture(e.pointerId);
+      }
+    });
+    this.registerDomEvent(canvas, 'pointerup', letGo);
+    this.registerDomEvent(canvas, 'pointercancel', letGo);
+    this.registerDomEvent(canvas, 'pointermove', (e) => {
+      canvas.toggleClass('is-over-switch', held !== null || at(e) !== null);
+    });
   }
 
   /** The sliders the circuit defines (as the editor's slider panel), then the two speeds. */
@@ -188,12 +231,25 @@ function slider(
   onInput: (v: number) => void,
 ): HTMLElement {
   const row = parent.createDiv({ cls: 'perun-control' });
-  row.createSpan({ cls: 'perun-control-label', text: label });
-  new SliderComponent(row)
-    .setLimits(min, max, 1)
-    .setInstant(true)
-    .setValue(value)
-    .onChange(onInput)
-    .sliderEl.setAttribute('aria-label', label);
+  row.createSpan({ cls: 'perun-control-label', text: label, attr: { title: label } });
+  // a plain range input in Obsidian's slider style: Obsidian's SliderComponent (since 1.13 or so)
+  // adds its own value readout next to the slider, which broke the row's layout
+  const input = row.createEl('input', {
+    cls: 'slider perun-control-slider',
+    type: 'range',
+    attr: { min, max, step: 1, 'aria-label': label },
+  });
+  // Obsidian's slider style fills the track up to the thumb by this ratio
+  const fill = (): void =>
+    input.style.setProperty(
+      '--slider-fill-ratio',
+      String((Number(input.value) - min) / (max - min)),
+    );
+  input.value = String(value);
+  fill();
+  input.addEventListener('input', () => {
+    fill();
+    onInput(Number(input.value));
+  });
   return row.createSpan({ cls: 'perun-control-value' });
 }

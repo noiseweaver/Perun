@@ -22,18 +22,24 @@ Circuits in your notes, running live, and the full Perun editor for circuit file
   Under each circuit, in a block or embedded: Pause/Run, Reset, Controls, and Open in Perun, which
   opens it in the editor in a tab (a block's edits are written back into the block, as XML).
   Controls shows the circuit's own sliders (the ones set up in the editor; open at first when
-  there are any) and its simulation and current speed. Circuits run only while they are on
-  screen. Printing and Export to PDF show a sharp still picture.
+  there are any) and its simulation and current speed. Switches, push buttons and logic inputs
+  can be clicked right in the note. Circuits run only while they are on screen. Printing and
+  Export to PDF show a sharp still picture.
 
 - **Circuit files.** A `.circuit` file opens the whole Perun app in a tab: palette, scopes,
   analysis, themes. Every edit is saved to the file (as XML, what Perun's File > Save writes), so
-  the file syncs and versions like any other. The command and ribbon button **New circuit** (and
+  the file syncs and versions like any other; File > Save a copy puts a copy next to it, and
+  exported images, CSV files and the like are saved into the vault the same way. Obsidian's own
+  hotkeys (Ctrl+P and the rest) work while the editor has focus. The command and ribbon button
+  **New circuit** (and
   New circuit on a folder's menu) create one. A circuit file saved by Perun or CircuitJS1 can be
   renamed to `.circuit` and opened.
 
 - **Themes.** Circuits use Perun's Obsidian Dark and Obsidian Light themes and switch with
-  Obsidian. Settings > Perun > Match Obsidian's light and dark mode turns that off, and blocks
-  then use the theme picked in the editor. The editor's settings (Options menu) are kept in the
+  Obsidian. Picking another theme in the editor (Options > Theme) turns that off, and every
+  editor and block then uses the picked theme; Match Obsidian's light and dark mode, at the top of
+  Options > Theme or in Settings > Perun, turns it on again. Opening a circuit that is already open
+  among the same tabs switches to that tab (Settings > Perun to turn off). The editor's settings (Options menu) are kept in the
   plugin's data in the vault, so they travel with it; circuit blocks follow its symbol settings
   (European resistors and gates, value size).
 
@@ -41,10 +47,13 @@ It works on desktop and on Obsidian for iPhone, iPad and Android.
 
 ## Install
 
-Until it is in Obsidian's community plugin list:
+Until it is in Obsidian's community plugin list, with the
+[BRAT](https://github.com/TfTHacker/obsidian42-brat) plugin: Add beta plugin, `noiseweaver/Perun`.
+BRAT installs the latest release and keeps it up to date. Or by hand:
 
-1. Get `main.js`, `manifest.json` and `styles.css`: build them (below) or download the
-   `perun-obsidian` artifact from a CI run on GitHub.
+1. Get `main.js`, `manifest.json` and `styles.css`: from a
+   [release](https://github.com/noiseweaver/Perun/releases), build them (below), or download
+   the `perun-obsidian` artifact from a CI run on GitHub.
 2. Put them in `<your vault>/.obsidian/plugins/perun/`.
 3. In Obsidian, Settings > Community plugins: turn community plugins on if needed, then turn on
    Perun.
@@ -58,7 +67,7 @@ pnpm --filter @perun/obsidian build    # packages/obsidian/dist
 
 `build.ts` builds the app with `vite build --mode embed`, puts it into one page with the example
 circuits, translations and license inlined (`generated/editor.html`), and bundles the plugin with
-that page inside (`dist/main.js`, about 5 MB).
+that page inside (`dist/main.js`, about 8 MB, most of it MathJax for formula boxes).
 
 ## How it works
 
@@ -68,5 +77,26 @@ without the editor. File embeds use Obsidian's embed registry, which isn't in it
 block's tab an `ItemView` that writes edits back into the block (`src/editorView.ts`); the app
 knows it is embedded from `window.perunEmbed` (packages/app/src/embedConfig.ts) and talks to the
 plugin with `postMessage`: the plugin sends the circuit and theme, the app sends the circuit back
-after each edit and its settings when they change. The frame's local storage is a copy of the
-plugin's (`src/shim.ts`).
+after each edit and its settings when they change, which the plugin keeps in its data.
+
+Everything the app does that depends on where it runs goes through one module,
+packages/app/src/platform/: stored settings and libraries, saving files, and leaving the page.
+`web.ts` is the website (local storage, IndexedDB, downloads); `obsidian.ts` keeps everything
+in the plugin's data and sends saved files to the plugin, which writes them into the vault next to
+the circuit. ESLint stops the app using local storage, IndexedDB or downloads directly, so a new
+feature that stores or saves something works in Obsidian without extra work. Blocks and the
+editor share the run loop and the settings-to-drawing step (packages/app/src/stepClock.ts and
+drawing.ts); a new user setting doesn't type-check until drawing.ts says whether circuits in notes
+draw with it.
+
+## Release
+
+Releases are made by hand: Actions > **Release Obsidian plugin** > Run workflow, with a version
+(or empty for the next patch). It builds the plugin with that version, tests it in the real
+Obsidian app (`tools/obsidian-test`), and publishes the GitHub release only if every check passes.
+The same test runs locally:
+
+```sh
+pnpm --filter @perun/obsidian build
+xvfb-run -a pnpm obsidian:test    # or just pnpm obsidian:test with a screen
+```

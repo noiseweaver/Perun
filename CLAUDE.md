@@ -54,6 +54,24 @@ never shifts or flickers as digits, the minus sign or the prefix change. Reserve
 width even for positive values. Use `getFixedUnitText` (packages/elements/src/view/units.ts) or
 the same pattern; HTML readouts need `white-space: pre` so the padding survives.
 
+## Works in Obsidian (owner's rule)
+
+Every feature works in the Obsidian plugin (packages/obsidian) too, or says why not. The plugin
+shows circuits in notes with the editor's own run loop and drawing (packages/app/src/stepClock.ts,
+drawing.ts) and opens the whole app in a frame for circuit files, so most features arrive by
+themselves if they follow these:
+
+- Files, stored data and the question before closing go through `platform`
+  (packages/app/src/platform): `saveFile`, `storage`, `records`, `askBeforeLeaving`. ESLint refuses
+  localStorage, indexedDB, download links and beforeunload anywhere else.
+- A new user setting goes in `SETTING_USE` (drawing.ts) as `drawn` (circuits look different:
+  frameState must use it, and notes follow it) or `editor` (only the editor's behaviour).
+  TypeScript refuses a setting that isn't listed.
+- The feature's docs/progress/ entry ends with an `Obsidian:` line: works, works differently (how),
+  or left out (why).
+- Releasing the plugin is a manual GitHub Actions run (Release Obsidian plugin), done when the owner
+  agrees; it tests the plugin in real Obsidian first (tools/obsidian-test/).
+
 ## Commands
 
 ```sh

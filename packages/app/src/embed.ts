@@ -9,13 +9,25 @@
 
 import { controller } from './SimController.ts';
 import { embedConfig, isEmbedMessage, type EmbedConfig, type EmbedMessage } from './embedConfig.ts';
-import { selectTheme } from './themes.ts';
+import { platform } from './platform/index.ts';
+import { recordsKey } from './platform/obsidian.ts';
+import { ACTIVE_THEME_KEY, SETTINGS_KEY } from './settings.ts';
+import { reloadSettings, useApp } from './store.ts';
+import { LIBRARY, loadLibrary, selectTheme } from './themes.ts';
 
 /** How often to look for edits to send to the host. */
 const WATCH_MS = 300;
 
 function post(msg: EmbedMessage): void {
   window.parent.postMessage(msg, '*');
+}
+
+/** Another editor tab changed a stored value: keep it, and show what it changes. */
+function took(key: string, value: string | null): void {
+  if (!platform.takeStored(key, value)) return;
+  if (key === SETTINGS_KEY) reloadSettings();
+  else if (key === ACTIVE_THEME_KEY || key === recordsKey(LIBRARY.database, LIBRARY.store))
+    void loadLibrary();
 }
 
 /** Open the host's circuit, then send edits back and follow the host's messages. */
@@ -32,7 +44,11 @@ export function startEmbedded(config: EmbedConfig): void {
     if (e.source !== window.parent || !isEmbedMessage(e.data)) return;
     const m = e.data;
     if (m.perun === 'load') open(m.text, m.title);
-    else if (m.perun === 'theme') selectTheme(m.themeId);
+    else if (m.perun === 'theme') {
+      useApp.setState({ followsHost: true });
+      selectTheme(m.themeId);
+    } else if (m.perun === 'follow') useApp.setState({ followsHost: m.on });
+    else if (m.perun === 'storage') took(m.key, m.value);
   });
 
   // An edit (or a circuit opened from the menus) bumps the version; running the simulation

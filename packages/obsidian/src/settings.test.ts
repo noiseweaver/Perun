@@ -7,9 +7,10 @@ import { blockTheme, drawSettings, obsidianThemeId, readData } from './settings.
 
 describe('plugin settings', () => {
   it('reads damaged data as the defaults', () => {
-    expect(readData(null)).toEqual({ followObsidian: true, storage: {} });
+    expect(readData(null)).toEqual({ followObsidian: true, reuseTabs: true, storage: {} });
     expect(readData({ followObsidian: 'no', storage: { a: 1, b: 'x' } })).toEqual({
       followObsidian: true,
+      reuseTabs: true,
       storage: { b: 'x' },
     });
   });
@@ -33,8 +34,25 @@ describe('plugin settings', () => {
       },
     });
     const s = drawSettings(d);
-    expect(s.frame.euroResistors).toBe(true);
-    expect(s.frame.valueScale).toBe(1.25);
+    expect(s.euroResistors).toBe(true);
+    expect(s.valueSize).toBe(1.25);
     expect(s.conventionalCurrent).toBe(true);
+    expect(s.pausedDots).toBe(true);
+    expect(s.textFont).toEqual({ family: 'default', bold: false, italic: false });
+  });
+
+  it('follows Show current when paused and the default text box font', () => {
+    const s = drawSettings(
+      readData({
+        storage: {
+          'circuitjs-next.settings.v2': JSON.stringify({
+            pausedDots: false,
+            textFont: { family: 'serif', bold: true, italic: 'yes' },
+          }),
+        },
+      }),
+    );
+    expect(s.pausedDots).toBe(false);
+    expect(s.textFont).toEqual({ family: 'serif', bold: true, italic: false });
   });
 });

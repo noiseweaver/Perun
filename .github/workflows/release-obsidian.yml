@@ -1,0 +1,84 @@
+name: Release Obsidian plugin
+
+# Run by hand (Actions > Release Obsidian plugin > Run workflow) when we agree to release. It
+# builds the plugin, tests it in the real Obsidian app (tools/obsidian-test), and publishes a
+# GitHub release with main.js, manifest.json and styles.css only if every check passes. BRAT and
+# Obsidian's plugin list install from these releases.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version, like 1.2.0 (empty: the next patch after the last release)'
+        required: false
+        default: ''
+
+concurrency:
+  group: release-obsidian
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WANTED: ${{ inputs.version }}
+        run: |
+          V="$WANTED"
+          if [ -z "$V" ]; then
+            last=$(gh release list --limit 1 --json tagName --jq '.[0].tagName // ""')
+            if [ -z "$last" ]; then
+              V=$(node -p "require('./packages/obsidian/manifest.json').version")
+            else
+              V=$(node -p "const [a, b, c] = process.argv[1].split('.').map(Number); [a, b, c + 1].join('.')" "$last")
+            fi
+          fi
+          if ! echo "$V" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Version must look like 1.2.0, not $V"
+            exit 1
+          fi
+          if gh release view "$V" > /dev/null 2>&1; then
+            echo "::error::Release $V already exists"
+            exit 1
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+      - run: pnpm check
+      - name: Build the plugin
+        run: pnpm --filter @perun/obsidian build
+        env:
+          PERUN_PLUGIN_VERSION: ${{ steps.version.outputs.version }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/perun-obsidian-test
+          key: obsidian-${{ hashFiles('tools/obsidian-test/src/run.ts') }}
+      # Obsidian is an Electron app: it needs the same system libraries as Chromium, and a screen
+      - run: pnpm exec playwright install-deps chromium
+      - name: Test in Obsidian
+        run: xvfb-run -a pnpm obsidian:test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: obsidian-test
+          path: test-results/obsidian
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ steps.version.outputs.version }}
+        working-directory: packages/obsidian/dist
+        run: |
+          gh release create "$V" main.js manifest.json styles.css \
+            --title "Perun for Obsidian $V" --generate-notes --target "$GITHUB_SHA"
