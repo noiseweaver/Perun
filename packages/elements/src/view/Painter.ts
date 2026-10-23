@@ -137,6 +137,11 @@ export interface DrawContext {
   readonly euroGates?: boolean;
   /** User setting: draw the ohm sign after resistances (upstream `showOhm`, off by default). */
   readonly showOhm: boolean;
+  /**
+   * User setting, not in upstream: potentiometers with their values on the side away from the
+   * wiper and a solid arrow kept off the ends of the body. Upstream's drawing if absent.
+   */
+  readonly tidyPots?: boolean;
   /** User setting, not in upstream: the font of text boxes (TextElm). Default font if absent. */
   readonly textFont?: TextFont;
   /**

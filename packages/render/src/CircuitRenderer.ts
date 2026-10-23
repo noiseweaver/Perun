@@ -37,6 +37,7 @@ export interface FrameState {
   euroResistors: boolean;
   euroGates: boolean;
   showOhm: boolean;
+  tidyPots: boolean;
   textFont: TextFont;
   /** Mark points where three or more element ends meet with a solid schematic dot. */
   junctionDots: boolean;
@@ -59,6 +60,7 @@ export const DEFAULT_FRAME: FrameState = {
   euroResistors: false,
   euroGates: false,
   showOhm: false,
+  tidyPots: true,
   textFont: { family: 'default', bold: false, italic: false },
   junctionDots: false,
   fields: NO_FIELDS,
@@ -429,6 +431,7 @@ export class CircuitRenderer {
         euroResistors: frame.euroResistors,
         euroGates: frame.euroGates,
         showOhm: frame.showOhm,
+        tidyPots: frame.tidyPots,
         textFont: frame.textFont,
         dotCount: () => 0,
       });
@@ -467,6 +470,7 @@ export class CircuitRenderer {
       euroResistors: frame.euroResistors,
       euroGates: frame.euroGates,
       showOhm: frame.showOhm,
+      tidyPots: frame.tidyPots,
       textFont: frame.textFont,
       dotCount: (slot, current) =>
         dots.advance(e, slot, current, frame.currentMult, frame.running && !ghost),

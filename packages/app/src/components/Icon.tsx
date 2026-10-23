@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Perun contributors
 // Icon paths from Google's Material Icons (Apache License 2.0), 24 px grid; `laser`, `eraser`,
-// `euroResistor`, `omega` and `junction` are drawn here.
+// `euroResistor`, `pot`, `omega` and `junction` are drawn here.
 
 const PATHS = {
   play: 'M8 5v14l11-7z',
@@ -128,6 +128,7 @@ const PATHS = {
   timeline:
     'M23 8c0 1.1-.9 2-2 2a1.7 1.7 0 0 1-.51-.07l-3.56 3.55c.05.16.07.34.07.52 0 1.1-.9 2-2 2s-2-.9-2-2c0-.18.02-.36.07-.52l-2.55-2.55c-.16.05-.34.07-.52.07s-.36-.02-.52-.07l-4.55 4.56c.05.16.07.33.07.51 0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2c.18 0 .35.02.51.07l4.56-4.55C8.02 9.36 8 9.18 8 9c0-1.1.9-2 2-2s2 .9 2 2c0 .18-.02.36-.07.52l2.55 2.55c.16-.05.34-.07.52-.07s.36.02.52.07l3.55-3.56A1.7 1.7 0 0 1 19 8c0-1.1.9-2 2-2s2 .9 2 2z',
   euroResistor: 'M1 11h4V8h14v3h4v2h-4v3H5v-3H1v-2zm6-1v4h10v-4H7z',
+  pot: 'M1 13h4v-3h14v3h4v2h-4v3H5v-3H1v-2zm6-1v4h10v-4H7zm4-10h2v4h2l-3 4-3-4h2z',
   omega:
     'M4 20h6v-3.3A5.5 5.5 0 0 1 6.5 11.5a5.5 5.5 0 0 1 11 0 5.5 5.5 0 0 1-3.5 5.2V20h6v-2h-3.1a7.5 7.5 0 0 0 2.6-6.5 7.5 7.5 0 0 0-15 0 7.5 7.5 0 0 0 2.6 6.5H4v2z',
   junction:

@@ -30,6 +30,7 @@ export interface SchematicOptions {
   euroResistors: boolean;
   euroGates: boolean;
   showOhm: boolean;
+  tidyPots: boolean;
   textFont: TextFont;
   junctionDots: boolean;
   valueScale: number;
@@ -44,6 +45,7 @@ export const DEFAULT_SCHEMATIC: SchematicOptions = {
   euroResistors: false,
   euroGates: false,
   showOhm: false,
+  tidyPots: true,
   textFont: { family: 'default', bold: false, italic: false },
   junctionDots: false,
   valueScale: 1,
@@ -92,6 +94,7 @@ export function drawSchematic(
     euroResistors: opts.euroResistors,
     euroGates: opts.euroGates,
     showOhm: opts.showOhm,
+    tidyPots: opts.tidyPots,
     textFont: opts.textFont,
     dotCount: () => 0,
   };

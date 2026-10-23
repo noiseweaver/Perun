@@ -78,6 +78,7 @@ export function ExportImageDialog() {
     euroResistors: settings.euroResistors,
     euroGates: settings.euroGates,
     showOhm: settings.showOhm,
+    tidyPots: settings.tidyPots,
     textFont: settings.textFont,
     junctionDots: settings.junctionDots,
     valueScale: settings.valueSize,
