@@ -62,6 +62,12 @@ time. Gady agreed to the five-step plan, with the real-Obsidian test run only wh
 - When we agree, run Release Obsidian plugin for the first release (1.0.0), then add
   `noiseweaver/Perun` in BRAT.
 
+- After main brought in the real-time speed readout, the Options menu grew tall enough to
+  scroll in the test window, and the theme check's clicks stopped landing: Playwright jumped the
+  mouse straight from Theme to an item, and the theme list closed on the way. The list works when
+  the mouse moves like a hand, so the test now moves across into the list first, then along it.
+  A failed check also names what it was waiting for.
+
 ## Open issues
 
 - The first run of the release workflow on GitHub's runners is untested (the Obsidian test passes

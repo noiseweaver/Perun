@@ -17,7 +17,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } fro
 import { homedir, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { chromium, type Browser, type Frame, type Page } from '@playwright/test';
+import { chromium, type Browser, type Frame, type Locator, type Page } from '@playwright/test';
 
 /** The Obsidian version tested against; raise it on purpose, after trying the new one. */
 const OBSIDIAN_VERSION = '1.14.4';
@@ -124,7 +124,13 @@ async function check(page: Page, name: string, run: () => Promise<void>): Promis
     results.push({ name, ok: true, detail: '' });
     console.log(`  ok    ${name}`);
   } catch (e) {
-    const detail = e instanceof Error ? (e.message.split('\n')[0] ?? '') : String(e);
+    // a Playwright timeout names what it waited for further down its call log
+    const lines = (e instanceof Error ? e.message : String(e)).split('\n');
+    const waited = lines
+      .find((l) => l.includes('waiting for'))
+      ?.replaceAll(String.fromCharCode(27), '')
+      .replace(/\[\d+m/g, '');
+    const detail = [lines[0] ?? '', waited?.trim()].filter(Boolean).join(' ');
     results.push({ name, ok: false, detail });
     console.log(`  FAIL  ${name}: ${detail}`);
   }
@@ -133,6 +139,22 @@ async function check(page: Page, name: string, run: () => Promise<void>): Promis
 
 function assert(ok: boolean, message: string): asserts ok {
   if (!ok) throw new Error(message);
+}
+
+/**
+ * Clicks an item in the submenu its trigger opened, moving the mouse the way a hand does: across
+ * into the submenu first, then along it. Playwright's one-step jump, or a diagonal over the
+ * parent menu's other items, closes the submenu before the mouse gets there.
+ */
+async function clickInSubmenu(page: Page, trigger: Locator, item: Locator): Promise<void> {
+  const from = await trigger.boundingBox();
+  const to = await item.boundingBox();
+  assert(from !== null && to !== null, 'the submenu is not on screen');
+  const x = to.x + to.width / 2;
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.move(x, from.y + from.height / 2, { steps: 8 });
+  await page.mouse.move(x, to.y + to.height / 2, { steps: 8 });
+  await item.click();
 }
 
 const pause = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
@@ -375,7 +397,7 @@ async function run(page: Page): Promise<void> {
     const frame = await openEditor(page);
     await frame.getByRole('button', { name: 'Options', exact: true }).click();
     await frame.getByTestId('menu-theme').click();
-    await frame.getByTestId('theme-dracula').click();
+    await clickInSubmenu(page, frame.getByTestId('menu-theme'), frame.getByTestId('theme-dracula'));
     await pause(1500);
     const dark = await backgrounds();
     assert(
@@ -389,7 +411,11 @@ async function run(page: Page): Promise<void> {
     // and back to Obsidian's
     await frame.getByRole('button', { name: 'Options', exact: true }).click();
     await frame.getByTestId('menu-theme').click();
-    await frame.getByTestId('menu-theme-follow').click();
+    await clickInSubmenu(
+      page,
+      frame.getByTestId('menu-theme'),
+      frame.getByTestId('menu-theme-follow'),
+    );
     await pause(1500);
     const again = await backgrounds();
     assert(
