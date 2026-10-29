@@ -296,6 +296,62 @@ describe('Editor', () => {
     ]);
   });
 
+  it('leaves a placed part unselected unless asked to open its properties', () => {
+    const { circuit, ed } = setup('$ 1 5.0E-6 10 50 5.0\nw 96 304 192 304 0\n');
+    const w = circuit.elements[0] as CircuitElm;
+    w.selected = true;
+    const r = ed.placeAt('ResistorElm', 200, 100, false);
+    expect(r?.selected).toBe(false);
+    expect(w.selected).toBe(false);
+    ed.selectPlaced = true;
+    const c = ed.placeAt('CapacitorElm', 400, 100, false);
+    expect(ed.selectedElements()).toEqual([c]);
+  });
+
+  describe('touch', () => {
+    const WIRE = '$ 1 5.0E-6 10 50 5.0\nw 96 96 288 96 0\nr 96 192 192 192 0 1000\n';
+
+    it('grabs a wire end a finger lands near, not only right on it', () => {
+      const { circuit, ed } = setup(WIRE);
+      const w = circuit.elements[0] as CircuitElm;
+      // 14 units short of the end and 10 below the wire: a mouse here grabs nothing
+      expect(ed.pick(274, 106).elm).toBeNull();
+      ed.touchReach = 20;
+      expect(ed.pick(274, 106)).toEqual({ elm: w, post: 1 });
+      ed.pointerDown(274, 106, NO_MODIFIERS);
+      expect(ed.tempMouseMode).toBe(MouseMode.DRAG_POST);
+      ed.pointerDrag(274, 170, NO_MODIFIERS);
+      ed.pointerUp(NO_MODIFIERS);
+      expect(pos(w)).toEqual([96, 96, 288, 160]);
+    });
+
+    it('moves the whole wire from its middle third', () => {
+      const { circuit, ed } = setup('$ 1 5.0E-6 10 50 5.0\nw 96 96 144 96 0\n');
+      const w = circuit.elements[0] as CircuitElm;
+      ed.wiresFollow = false;
+      ed.touchReach = 40;
+      ed.pointerDown(120, 100, NO_MODIFIERS);
+      expect(ed.tempMouseMode).toBe(MouseMode.SELECT);
+      ed.pointerDrag(120, 164, NO_MODIFIERS);
+      ed.pointerUp(NO_MODIFIERS);
+      expect(pos(w)).toEqual([96, 160, 144, 160]);
+    });
+
+    it('grabs a wire end with another part selected, and a tap on the end selects the wire', () => {
+      const { circuit, ed } = setup(WIRE);
+      const [w, r] = circuit.elements as [CircuitElm, CircuitElm];
+      ed.select(r);
+      ed.touchReach = 20;
+      ed.pointerDown(100, 100, NO_MODIFIERS);
+      expect(ed.tempMouseMode).toBe(MouseMode.DRAG_POST);
+      ed.pointerUp(NO_MODIFIERS);
+      // a tap: nothing split or moved, the wire is selected
+      expect(circuit.elements).toHaveLength(2);
+      expect(pos(w)).toEqual([96, 96, 288, 96]);
+      expect(ed.selectedElements()).toEqual([w]);
+    });
+  });
+
   it('saves a circuit it built that reads back the same', () => {
     const { circuit, ed } = setup();
     ed.setAddMode('DCVoltageElm');

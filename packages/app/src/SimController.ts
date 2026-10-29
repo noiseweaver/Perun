@@ -532,6 +532,7 @@ export class SimController {
     ed.spliceOnDrop = s.spliceOnDrop;
     ed.smartGuides = s.smartGuides;
     ed.routeWires = s.routeWires;
+    ed.selectPlaced = s.editAfterPlace;
   }
 
   private onStore(s: AppState, prev: AppState): void {
@@ -2482,6 +2483,10 @@ export class SimController {
       const rect = canvas.getBoundingClientRect();
       return { x: e.clientX - rect.left, y: e.clientY - rect.top };
     };
+    // a finger picks parts and grabs wire ends further away than the mouse, the same distance
+    // on screen at any zoom
+    const reachFor = (e: PointerEvent): number =>
+      e.pointerType === 'touch' ? TOUCH_REACH / (this.renderer?.viewport.scale ?? 1) : 0;
     const grid = (p: { x: number; y: number }): { x: number; y: number } => {
       const r = this.renderer;
       const c = r ? r.viewport.toCircuit(p.x, p.y) : p;
@@ -2875,6 +2880,7 @@ export class SimController {
       if (e.button !== 0 && e.button !== 1) return;
       if (this.renderer) this.renderer.stopElm = null;
       const g = grid(p);
+      ed.touchReach = reachFor(e);
       const touchPan =
         e.pointerType === 'touch' &&
         ed.mouseMode === MouseMode.SELECT &&
@@ -2918,6 +2924,7 @@ export class SimController {
       if (useWheel.getState().wheel?.pointerId === e.pointerId) return;
       this.mouse = p;
       this.mouseType = e.pointerType;
+      if (!ed.isDragging) ed.touchReach = reachFor(e);
       if (teachMove(e, p)) return;
       if (split === e.pointerId) {
         const f = 1 - p.y / Math.max(1, this.cssHeight);
@@ -3558,6 +3565,8 @@ const COMPACT_WIDTH = 600;
 const LEADER_SNAP = 20;
 const LEADER_GRAB = 7;
 const LEADER_GRAB_TOUCH = 14;
+/** CSS pixels a touch reaches past a part to pick it, or from a wire's end to grab it. */
+const TOUCH_REACH = 20;
 /** Finger distance ratio for one time scale step in a scope pinch. */
 const PINCH_STEP = 1.4;
 

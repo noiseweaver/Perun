@@ -133,6 +133,19 @@ export class Editor {
   smartGuides = true;
   /** A wire being drawn finds its way round parts (Alt: straight, as upstream). */
   routeWires = true;
+  /**
+   * A part dropped from the palette, the quick pick, the wheel or the search is selected, which
+   * opens its properties (user setting, off by default). Off, nothing is left selected.
+   */
+  selectPlaced = false;
+  /**
+   * How far past an element a press still picks it, in circuit units, and how far from a wire's
+   * end it grabs that end: 0 for a mouse or pen (upstream's few units), more for a finger (not
+   * in upstream). The app sets it before each press, from the zoom.
+   */
+  touchReach = 0;
+  /** This press grabbed a wire end or a box corner (not a ctrl-drag): a tap selects instead. */
+  private handleGrab = false;
   /** Alignment guides for the current drag. */
   guides: Guides = NO_GUIDES;
   /** The rest of the wire being drawn when it is routed: its first leg is `dragElm`. */
@@ -237,7 +250,7 @@ export class Editor {
       }
       this.elements.push(de);
       this.joinLeads([de]);
-      for (const e of this.elements) e.selected = e === de;
+      for (const e of this.elements) e.selected = this.selectPlaced && e === de;
     });
     this.host.placed?.(this.paletteDragClass);
     this.host.circuitChanged();
@@ -318,7 +331,7 @@ export class Editor {
     if (
       this.mouseElm !== null &&
       this.elements.includes(this.mouseElm) &&
-      this.mouseElm.getHandleGrabbedClose(gx, gy, POSTGRABSQ, MINPOSTGRABSIZE) >= 0
+      this.grabbedHandle(this.mouseElm, gx, gy) >= 0
     ) {
       elm = this.mouseElm;
     } else {
@@ -332,6 +345,34 @@ export class Editor {
           elm = ce;
         }
       }
+    }
+    const postSq = Math.max(26, this.touchReach * this.touchReach);
+    if (elm === null && this.touchReach > 0) {
+      // a finger: the nearest post within reach, else the nearest element within reach
+      let best = postSq;
+      for (const ce of this.elements) {
+        for (let j = 0; j !== ce.getPostCount(); j++) {
+          const pt = ce.getPost(j);
+          const d = distanceSq(pt.x, pt.y, gx, gy);
+          if (d < best) {
+            best = d;
+            elm = ce;
+            post = j;
+          }
+        }
+      }
+      if (elm !== null) return { elm, post };
+      best = postSq;
+      for (const ce of this.elements) {
+        const b = this.host.bbox(ce);
+        if (b === null || !inBox(grow(b, this.touchReach), gx, gy)) continue;
+        const d = ce.getMouseDistance(gx, gy);
+        if (d >= 0 && d < best) {
+          best = d;
+          elm = ce;
+        }
+      }
+      if (elm !== null) return { elm, post };
     }
     if (elm === null) {
       // not in any box, but maybe close to a post
@@ -353,12 +394,37 @@ export class Editor {
         }
       }
     } else {
+      let best = postSq;
       for (let i = 0; i !== elm.getPostCount(); i++) {
         const pt = elm.getPost(i);
-        if (distanceSq(pt.x, pt.y, gx, gy) < 26) post = i;
+        const d = distanceSq(pt.x, pt.y, gx, gy);
+        if (d < best) {
+          best = d;
+          post = i;
+        }
       }
     }
     return { elm, post };
+  }
+
+  /**
+   * The handle of `e` a press at (gx, gy) grabs, or -1. A finger reaches further for a wire's
+   * ends, up to a third of the wire, so the middle still moves the whole wire.
+   */
+  private grabbedHandle(e: CircuitElm, gx: number, gy: number): number {
+    if (this.touchReach === 0 || !(e instanceof WireElm))
+      return e.getHandleGrabbedClose(gx, gy, POSTGRABSQ, MINPOSTGRABSIZE);
+    const third = distanceSq(e.x, e.y, e.x2, e.y2) / 9;
+    const reach = Math.max(POSTGRABSQ, Math.min(this.touchReach * this.touchReach, third));
+    // the nearer end, so a short wire's ends don't take each other's touches
+    const near = e.closestHandle(gx, gy);
+    const p = near === 0 ? { x: e.x, y: e.y } : { x: e.x2, y: e.y2 };
+    if (distanceSq(p.x, p.y, gx, gy) > reach) {
+      e.lastHandleGrabbed = -1;
+      return -1;
+    }
+    e.lastHandleGrabbed = near;
+    return near;
   }
 
   private mouseSelect(gx: number, gy: number): void {
@@ -445,15 +511,19 @@ export class Editor {
       return 'switch';
     }
 
-    // grab a resize handle in select mode when it is far enough from the other end
+    // grab a resize handle in select mode when it is far enough from the other end; a finger
+    // grabs it even with other parts selected, unless it is one of them (not upstream)
+    this.handleGrab = false;
     if (
       grab === null &&
       mode === MouseMode.SELECT &&
       this.mouseElm !== null &&
-      this.mouseElm.getHandleGrabbedClose(gx, gy, POSTGRABSQ, MINPOSTGRABSIZE) >= 0 &&
-      !this.anySelectedButMouse()
-    )
+      this.grabbedHandle(this.mouseElm, gx, gy) >= 0 &&
+      (!this.anySelectedButMouse() || (this.touchReach > 0 && !this.mouseElm.selected))
+    ) {
       this.tempMouseMode = MouseMode.DRAG_POST;
+      this.handleGrab = true;
+    }
 
     if (this.tempMouseMode !== MouseMode.SELECT && this.tempMouseMode !== MouseMode.DRAG_SELECTED)
       this.clearSelection();
@@ -593,8 +663,20 @@ export class Editor {
         this.host.selectionChanged();
       } else this.select(this.mouseElm);
     }
+    // a tap on a wire end or a box corner selects, as a tap elsewhere on it does (not upstream)
+    if (this.handleGrab && !this.moved && this.mouseElm !== null) {
+      if (mods.shift) {
+        this.mouseElm.selected = !this.mouseElm.selected;
+        this.host.selectionChanged();
+      } else this.select(this.mouseElm);
+    }
     // ctrl-click on a wire splits it
-    if (this.tempMouseMode === MouseMode.DRAG_POST && this.draggingPost === -1 && !this.moved) {
+    if (
+      this.tempMouseMode === MouseMode.DRAG_POST &&
+      !this.handleGrab &&
+      this.draggingPost === -1 &&
+      !this.moved
+    ) {
       const m = this.mousePos;
       if (m !== null && this.mouseElm instanceof WireElm) {
         if (this.splitWireAt(this.snapGrid(m.x), this.snapGrid(m.y))) {
@@ -1553,6 +1635,10 @@ interface FlipInfo {
 
 function inBox(b: Rect, x: number, y: number): boolean {
   return x >= b.x1 && x <= b.x2 && y >= b.y1 && y <= b.y2;
+}
+
+function grow(b: Rect, d: number): Rect {
+  return { x1: b.x1 - d, y1: b.y1 - d, x2: b.x2 + d, y2: b.y2 + d };
 }
 
 function intersects(a: Rect, b: Rect): boolean {

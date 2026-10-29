@@ -32,6 +32,7 @@ export const SETTING_USE = {
   spliceOnDrop: 'editor',
   smartGuides: 'editor',
   routeWires: 'editor',
+  editAfterPlace: 'editor',
   quickPickBar: 'editor',
   quickPickWheel: 'editor',
   warnUnsaved: 'editor',

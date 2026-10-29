@@ -105,9 +105,22 @@ test('undo and redo under the wheel step back and forward and leave it open', as
   expect(await placed(page)).toEqual([]);
 });
 
+test('a placed part opens no properties until Options asks for them', async ({ page }) => {
+  const c = await open(page);
+  await page.mouse.move(c.x, c.y);
+  await page.keyboard.press('q');
+  await page.keyboard.press('3');
+  await expect.poll(() => placed(page)).toHaveLength(1);
+  await expect(page.getByTestId('inspector')).toBeHidden();
+});
+
 test('a part placed where the properties panel opens is brought back into view', async ({
   page,
 }) => {
+  // Options > Open properties after placing a part
+  await page.addInitScript(() =>
+    localStorage.setItem('circuitjs-next.settings.v2', JSON.stringify({ editAfterPlace: true })),
+  );
   await open(page);
   const before = await page.getByTestId('circuit-canvas').boundingBox();
   if (!before) throw new Error('no canvas');

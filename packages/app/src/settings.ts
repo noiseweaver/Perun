@@ -52,6 +52,8 @@ export interface UserSettings {
   smartGuides: boolean;
   /** A wire being drawn finds its way round parts (not in upstream; Alt draws it straight). */
   routeWires: boolean;
+  /** A part just placed is selected, which opens its properties (upstream leaves it unselected). */
+  editAfterPlace: boolean;
   /** The quick pick bar: the rail beside the canvas and the strip under it on phones. */
   quickPickBar: boolean;
   /** Q, a right-button flick or a long press on empty canvas opens the radial wheel. */
@@ -101,6 +103,7 @@ export function readSettings(get: (key: string) => string | null): UserSettings 
     spliceOnDrop: true,
     smartGuides: true,
     routeWires: true,
+    editAfterPlace: false,
     quickPickBar: true,
     quickPickWheel: true,
     warnUnsaved: true,
@@ -143,6 +146,8 @@ export function readSettings(get: (key: string) => string | null): UserSettings 
       spliceOnDrop: typeof s.spliceOnDrop === 'boolean' ? s.spliceOnDrop : defaults.spliceOnDrop,
       smartGuides: typeof s.smartGuides === 'boolean' ? s.smartGuides : defaults.smartGuides,
       routeWires: typeof s.routeWires === 'boolean' ? s.routeWires : defaults.routeWires,
+      editAfterPlace:
+        typeof s.editAfterPlace === 'boolean' ? s.editAfterPlace : defaults.editAfterPlace,
       quickPickBar: typeof s.quickPickBar === 'boolean' ? s.quickPickBar : defaults.quickPickBar,
       quickPickWheel:
         typeof s.quickPickWheel === 'boolean' ? s.quickPickWheel : defaults.quickPickWheel,

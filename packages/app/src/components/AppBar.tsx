@@ -529,6 +529,16 @@ export function AppBar() {
             title={t('Hold Alt while drawing for a straight wire')}
             testId="menu-route-wires"
           />
+          <CheckItem
+            label="Open properties after placing a part"
+            icon="edit"
+            checked={settings.editAfterPlace}
+            onCheckedChange={(v) => updateSettings({ editAfterPlace: v })}
+            title={t(
+              'Off: a placed part stays unselected so you can keep placing; tap or click it to edit it',
+            )}
+            testId="menu-edit-after-place"
+          />
           {/* the strip under the canvas is a phone's; elsewhere the palette has the quick picks */}
           {strip && (
             <CheckItem
