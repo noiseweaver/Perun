@@ -29,7 +29,11 @@ before publishing.
 
 ## Next
 
-- Release 1.0.2, sync the mirror, then Gady presses Publish in the plugin list dashboard.
+- Done: 1.0.2 released and mirrored; its scan has no errors. Gady published it, and Perun has
+  been in Obsidian's plugin list since 2026-10-29. Both READMEs now point there instead of BRAT.
+- Offered for later: Obsidian's own dialogs instead of the browser's alert and confirm, the
+  plugin's settings in Obsidian's settings search, and release attestations (the mirror would
+  build the plugin itself).
 
 ## Open issues
 
