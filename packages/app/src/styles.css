@@ -4435,6 +4435,70 @@ ul.theme-contrast {
   font-size: 12px;
 }
 
+/* ---- solver section of Simulation settings ------------------------------------------------- */
+
+/* with the solver section the dialog is taller than a laptop screen: it scrolls */
+.dialog-content.sim-settings-dialog {
+  top: 6%;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
+.solver-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ui-border);
+  scroll-margin-top: 8px;
+}
+
+.solver-guide {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ui-text-muted);
+}
+
+.solver-guide summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--ui-accent);
+}
+
+.solver-guide h4 {
+  margin: 12px 0 2px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ui-text);
+}
+
+.solver-guide p {
+  margin: 4px 0;
+}
+
+.solver-guide-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.solver-guide-picture {
+  flex: none;
+  color: var(--ui-accent);
+}
+
+.solver-guide-axis {
+  stroke: var(--ui-border);
+  stroke-width: 1;
+}
+
+@media (max-width: 480px) {
+  .solver-guide-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 .formula-legend {
   font-size: 12px;
   color: var(--ui-text-muted);

@@ -128,7 +128,13 @@ export { AMElm, FMElm, SweepElm } from './elm/SweepElm.ts';
 
 // The engine types loaders and runners need, so packages above elements need not depend on the
 // engine directly (eslint.config.js dependency direction).
-export { JavaRandom, Simulation, type CircuitNode } from '@perun/engine';
+export {
+  IntegrationMethod,
+  JavaRandom,
+  Simulation,
+  SolverType,
+  type CircuitNode,
+} from '@perun/engine';
 
 // Views: drawing through the Painter interface (render implements it).
 export * from './view/index.ts';

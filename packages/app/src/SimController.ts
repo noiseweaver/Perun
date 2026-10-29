@@ -59,6 +59,8 @@ import {
   paramEnv,
   type ParamDef,
   type ParamEnv,
+  type IntegrationMethod,
+  type SolverType,
 } from '@perun/elements';
 import { Circuit, OptionFlag, getCircuitAsComposite } from '@perun/format';
 import {
@@ -125,6 +127,12 @@ const STATUS_INTERVAL_MS = 100;
 const PACE_WINDOW_MS = 1000;
 
 /** The circuit's temperature settings (PLAN.md Phases 15 and 17). */
+/** Solver settings of Simulation settings (upstream has the matrix solver in Other Options). */
+export interface SolverSettings {
+  integration: IntegrationMethod;
+  solverType: SolverType;
+}
+
 export interface ThermalSettings {
   /** Ambient temperature in °C, where a ramp starts. */
   temperature: number;
@@ -1214,6 +1222,9 @@ export class SimController {
       case 'handle':
         text = docked ? 'Drag to stack or move' : 'Drag to move';
         break;
+      case 'ringing':
+        text = 'A trace flips on every time step: likely the solver, not the circuit';
+        break;
       default:
         return null;
     }
@@ -1251,6 +1262,9 @@ export class SimController {
         break;
       case 'freeze':
         s.setFrozen(s.frozen === null);
+        break;
+      case 'ringing':
+        this.openSolverGuide();
         break;
       case 'handle':
       case 'resize':
@@ -1704,6 +1718,15 @@ export class SimController {
   allScopes(item: 'stackAll' | 'unstackAll' | 'combineAll' | 'separateAll'): void {
     const mgr = this.circuit.scopes;
     this.scopeCommand('Scopes', () => mgr[item]());
+  }
+
+  /** Set when Simulation settings should open on the solver guide; the dialog takes it. */
+  solverGuideRequested = false;
+
+  /** Simulation settings, scrolled to the solver section with its guide open. */
+  openSolverGuide(): void {
+    this.solverGuideRequested = true;
+    useApp.setState({ dialog: 'simSettings' });
   }
 
   openScopeProperties(s: Scope): void {
@@ -2416,6 +2439,10 @@ export class SimController {
       ramp: this.circuit.sim.temperatureRamp,
       selfHeating: this.circuit.sim.selfHeating,
     },
+    solver: SolverSettings = {
+      integration: this.circuit.sim.integration,
+      solverType: this.circuit.sim.solverType,
+    },
   ): void {
     const sim = this.circuit.sim;
     const { temperature, ramp, selfHeating } = thermal;
@@ -2427,7 +2454,9 @@ export class SimController {
         sim.temperature === temperature &&
         sim.temperatureRamp?.to === ramp?.to &&
         sim.temperatureRamp?.duration === ramp?.duration &&
-        sim.selfHeating === selfHeating
+        sim.selfHeating === selfHeating &&
+        sim.integration === solver.integration &&
+        sim.solverType === solver.solverType
       )
         return false;
       sim.maxTimeStep = maxTimeStep;
@@ -2437,6 +2466,9 @@ export class SimController {
       sim.temperature = temperature;
       sim.temperatureRamp = ramp;
       sim.selfHeating = selfHeating;
+      // not in upstream: how parts integrate (docs/deviations/integration-method.md)
+      sim.integration = solver.integration;
+      sim.solverType = solver.solverType;
       return true;
     });
     this.circuitChanged();

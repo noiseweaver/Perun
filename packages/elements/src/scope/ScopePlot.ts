@@ -48,6 +48,15 @@ export class ScopePlot {
   acAlpha = 0.9999;
   /** The y[i-1] term of the AC coupling filter. */
   acLastOut = 0;
+  /**
+   * Not in upstream: solver ringing, the value turning around on every timestep (see
+   * `ringing`). The last step's change, how many steps in a row turned around, a slowly
+   * decaying peak of the value to judge a change against, and steps left to keep reporting it.
+   */
+  private ringDiff = 0;
+  private ringRun = 0;
+  private ringPeak = 0;
+  private ringHold = 0;
 
   constructor(e: CircuitElm | null, u: number, v = 0, manS?: number) {
     this.elm = e;
@@ -94,6 +103,7 @@ export class ScopePlot {
   timeStep(sim: Simulation): void {
     if (this.elm === null) return;
     let v = this.elm.getScopeValue(this.value);
+    this.watchRinging(v);
     // AC coupling filter: 1st order IIR high pass, y[i] = alpha x (y[i-1]+x[i]-x[i-1]). Computed
     // even when DC coupled to prime the data in case they switch to AC later
     const newAcOut = this.acAlpha * (this.acLastOut + v - this.lastValue);
@@ -108,6 +118,27 @@ export class ScopePlot {
       this.minValues[this.ptr] = this.maxValues[this.ptr] = v;
       this.lastUpdateTime += maxTimeStep * this.scopePlotSpeed;
     }
+  }
+
+  /**
+   * True while the value has been flipping up and down on every timestep, about 64 steps in a
+   * row by more than a thousandth of its peak: the trapezoidal rule's undamped mode, which no
+   * real signal follows at exactly the step rate (noise turns around only two thirds of the time).
+   * Stays true for 2000 steps after, so a card's notice doesn't blink.
+   */
+  get ringing(): boolean {
+    return this.ringHold > 0;
+  }
+
+  private watchRinging(v: number): void {
+    const d = v - this.lastValue;
+    const a = Math.abs(v);
+    this.ringPeak = a > this.ringPeak ? a : this.ringPeak * 0.9999;
+    if (d * this.ringDiff < 0 && Math.abs(d) > 1e-3 * this.ringPeak + 1e-12) this.ringRun++;
+    else this.ringRun = 0;
+    this.ringDiff = d;
+    if (this.ringRun >= 64) this.ringHold = 2000;
+    else if (this.ringHold > 0) this.ringHold--;
   }
 
   /** The unit symbol of this plot's values. */

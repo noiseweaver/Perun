@@ -77,7 +77,7 @@ export function cardPlotRect(slot: ScopeRect, undocked = false): ScopeRect {
  * on a docked one unless it is the only one) and undocked ones a resize grip.
  */
 export interface CardHit {
-  kind: 'settings' | 'close' | 'dock' | 'freeze' | 'chip' | 'tab' | 'handle' | 'resize';
+  kind: 'settings' | 'close' | 'dock' | 'freeze' | 'chip' | 'tab' | 'handle' | 'resize' | 'ringing';
   index: number;
   x: number;
   y: number;
@@ -411,6 +411,52 @@ function playIcon(g: ScopeGraphics, cx: number, cy: number): void {
 
 /** How long the plot flashes when it is frozen or let go (ms). */
 const FLASH_MS = 320;
+
+/**
+ * Not in upstream: a "Solver ringing?" pill in the plot's top right corner while a shown trace
+ * flips on every timestep (`Scope.isRinging`); a click opens the solver guide. A mini card gets
+ * a dot only.
+ */
+function drawRingingNotice(scope: Scope, g: ScopeGraphics, hits: CardHit[], mini: boolean): void {
+  const r = scope.rect;
+  if (mini) {
+    g.setColor('trigger');
+    g.fillOval(r.x + r.width - 9, r.y + 3, 6, 6);
+    return;
+  }
+  g.setTextStyle('label');
+  const label = 'Solver ringing?';
+  const w = g.measureWidth(label) + 24;
+  const x = r.x + r.width - w - 6;
+  const y = r.y + 6;
+  if (x < r.x + 4) {
+    g.setTextStyle('normal');
+    return;
+  }
+  const hit: CardHit = { kind: 'ringing', index: 0, x, y, width: w, height: 18 };
+  const mgr = scope.mgr;
+  const over =
+    mgr.mouseCursorX >= x &&
+    mgr.mouseCursorX < x + w &&
+    mgr.mouseCursorY >= y &&
+    mgr.mouseCursorY < y + 18;
+  g.save();
+  g.setGlobalAlpha(over ? 1 : 0.9);
+  g.setColor('trigger');
+  g.fillRoundRect(x, y, w, 18, 9);
+  g.restore();
+  // a zigzag, the flipping the notice is about
+  g.setColor('card');
+  g.strokePolyline(
+    new Float64Array([x + 6, x + 8, x + 10, x + 12, x + 14]),
+    new Float64Array([y + 9, y + 5, y + 13, y + 5, y + 9]),
+    5,
+    1.5,
+  );
+  g.drawString(label, x + 18, y + 13);
+  g.setTextStyle('normal');
+  if (mgr.cardButtons) hits.push(hit);
+}
 
 /** A fading wash over the plot just after a freeze (plot coordinates). */
 function drawFlash(scope: Scope, g: ScopeGraphics): void {
@@ -911,6 +957,8 @@ export function drawScopeCard(scope: Scope, g: ScopeGraphics): void {
   g.restore();
   scope.finishDraw();
 
+  if (scope.isRinging()) drawRingingNotice(scope, g, hits, mini);
+
   const readouts = vp.length > 0 ? scope.overlays.readouts(g) : [];
   const scale =
     vp.length > 0 && !scope.fftPlot.enabled ? getUnitText(scope.gridStepX, 's') + '/div' : null;
@@ -926,7 +974,17 @@ export function drawScopeCard(scope: Scope, g: ScopeGraphics): void {
       1.5,
     );
   }
-  drawCursor(scope, g);
+  // the ringing notice's tooltip, not the crosshair readout, while the mouse is on it
+  const mgr = scope.mgr;
+  const onNotice = hits.some(
+    (h) =>
+      h.kind === 'ringing' &&
+      mgr.mouseCursorX >= h.x &&
+      mgr.mouseCursorX < h.x + h.width &&
+      mgr.mouseCursorY >= h.y &&
+      mgr.mouseCursorY < h.y + h.height,
+  );
+  if (!onNotice) drawCursor(scope, g);
 }
 
 /** The strongest peak of a spectrum, marked with its frequency (in plot-area coordinates). */
