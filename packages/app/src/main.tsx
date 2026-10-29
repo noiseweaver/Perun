@@ -19,6 +19,8 @@ import './styles.css';
 
 // in the Obsidian plugin, the host's light or dark mode picks the theme before the first frame
 if (embedConfig?.themeId != null) selectTheme(embedConfig.themeId);
+// and Obsidian keeps the frame clear of the notch and the home indicator (styles.css)
+if (embedConfig !== null) document.documentElement.dataset['embedded'] = '';
 
 const root = document.getElementById('root');
 // like upstream, the interface starts once its language is loaded
