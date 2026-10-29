@@ -485,6 +485,73 @@ test.describe('undocked scopes', () => {
     }
   });
 
+  test('a card pressed behind another comes to the top, and stays there through undo', async ({
+    page,
+  }) => {
+    await page.goto('/?startCircuit=multivib-a.txt');
+    await ready(page);
+    expect(await undocked(page)).toHaveLength(4);
+    // lay the second card over the first, a little down and to the right
+    await page.evaluate(() => {
+      const [a, b] = window.perun?.controller.circuit.scopeElms() ?? [];
+      if (!a || !b) return;
+      // big enough to press beside each other on the canvas
+      a.x2 = a.x + 320;
+      a.y2 = a.y + 192;
+      a.setPoints();
+      b.move(a.x + 128 - b.x, a.y + 96 - b.y);
+      b.x2 = b.x + 320;
+      b.y2 = b.y + 192;
+      b.setPoints();
+    });
+    await page.waitForTimeout(100);
+    const slots = () =>
+      page.evaluate(() =>
+        (window.perun?.controller.circuit.scopeElms() ?? []).map((e) => ({ ...e.elmScope.slot })),
+      );
+    const [a, b] = await slots();
+    if (!a || !b) throw new Error('no undocked scopes');
+    expect(b.x).toBeLessThan(a.x + a.width);
+    expect(b.y).toBeLessThan(a.y + a.height);
+    // the middle of the overlap
+    const overlap = { x: (b.x + a.x + a.width) / 2, y: (b.y + a.y + a.height) / 2 };
+    const frontAt = () =>
+      page.evaluate(
+        ([x, y]) => {
+          const c = window.perun?.controller;
+          const top = c?.undockedAt(x, y);
+          return top ? (c?.circuit.scopeElms().indexOf(top) ?? -1) : -1;
+        },
+        [overlap.x, overlap.y] as const,
+      );
+    // placed later, drawn on top
+    expect(await frontAt()).toBe(1);
+    const box = await page.getByTestId('circuit-canvas').boundingBox();
+    if (!box) throw new Error('no canvas');
+    await page.mouse.click(box.x + (a.x + b.x) / 2, box.y + (a.y + b.y) / 2);
+    await expect.poll(frontAt).toBe(0);
+    // the order isn't an edit
+    expect(await page.evaluate(() => window.perun?.controller.editor.history.canUndo)).toBe(false);
+    // an edit and its undo read the circuit again; the raised card stays on top
+    const first = () =>
+      page.evaluate(() => {
+        const e = window.perun?.controller.circuit.scopeElms()[0];
+        return e ? `${e.x},${e.y}` : '';
+      });
+    const was = await first();
+    await page.evaluate(() => {
+      const c = window.perun?.controller;
+      const e = c?.circuit.scopeElms()[0];
+      if (!c || !e) return;
+      c.editor.history.record('Move', () => e.move(16, 0));
+    });
+    await page.keyboard.press('Control+z');
+    await expect.poll(first).toBe(was);
+    expect(await frontAt()).toBe(0);
+    await page.mouse.click(box.x + (a.x + a.width + b.x + b.width) / 2, box.y + b.y + 40);
+    await expect.poll(frontAt).toBe(1);
+  });
+
   test('an upstream file with undocked scopes loads them', async ({ page }) => {
     await page.goto('/?startCircuit=multivib-a.txt');
     await ready(page);
