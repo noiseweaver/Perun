@@ -152,6 +152,7 @@ export const EXTRA_KEYS = [
   'Values on the side away from the wiper, and an arrow that stays clear of the pins. Off: drawn as in CircuitJS',
   'Open properties after placing a part',
   'Off: a placed part stays unselected so you can keep placing; tap or click it to edit it',
+  'Put back: an end would have sat on a part without connecting to it',
 ] as const;
 
 export const EXTRA: Record<string, readonly string[]> = {
@@ -302,6 +303,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Valors al costat oposat al cursor i una fletxa que no arriba als terminals. Desactivat: com a CircuitJS',
     'Obre les propietats després de col·locar una peça',
     'Desactivat: la peça col·locada no queda seleccionada i pots continuar col·locant; toca-la o fes-hi clic per editar-la',
+    "Desfet: un extrem hauria quedat sobre una peça sense connectar-s'hi",
   ],
   csx: [
     'O aplikaci Perun',
@@ -450,6 +452,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Hodnoty na straně odvrácené od jezdce a šipka, která se nedotýká vývodů. Vypnuto: jako v CircuitJS',
     'Otevřít vlastnosti po umístění součástky',
     'Vypnuto: umístěná součástka zůstane nevybraná, takže můžete pokračovat; klepnutím nebo kliknutím ji upravíte',
+    'Vráceno zpět: konec by ležel na součástce, aniž by se k ní připojil',
   ],
   da: [
     'Om Perun',
@@ -598,6 +601,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Værdier på siden væk fra skyderen og en pil, der holder sig fri af benene. Fra: som i CircuitJS',
     'Åbn egenskaber efter placering af en komponent',
     'Fra: en placeret komponent forbliver ikke valgt, så du kan blive ved med at placere; tryk eller klik på den for at redigere den',
+    'Sat tilbage: en ende ville have ligget på en komponent uden at være forbundet til den',
   ],
   de: [
     'Über Perun',
@@ -746,6 +750,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Werte auf der dem Schleifer abgewandten Seite und ein Pfeil, der den Anschlüssen fernbleibt. Aus: wie in CircuitJS',
     'Eigenschaften nach dem Platzieren öffnen',
     'Aus: ein platziertes Bauteil bleibt unausgewählt, damit du weiter platzieren kannst; tippe oder klicke darauf, um es zu bearbeiten',
+    'Zurückgesetzt: ein Ende hätte auf einem Bauteil gelegen, ohne damit verbunden zu sein',
   ],
   es: [
     'Acerca de Perun',
@@ -894,6 +899,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Valores en el lado opuesto al cursor y una flecha que no llega a los terminales. Desactivado: como en CircuitJS',
     'Abrir las propiedades al colocar un componente',
     'Desactivado: el componente colocado queda sin seleccionar para seguir colocando; tócalo o haz clic para editarlo',
+    'Deshecho: un extremo habría quedado sobre un componente sin conectarse a él',
   ],
   fi: [
     'Tietoja Perunista',
@@ -1042,6 +1048,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Arvot liukukoskettimesta poispäin olevalla puolella ja nuoli, joka pysyy irti liitännöistä. Pois: kuten CircuitJS:ssä',
     'Avaa ominaisuudet osan sijoittamisen jälkeen',
     'Pois: sijoitettu osa jää valitsematta, joten voit jatkaa sijoittamista; napauta tai napsauta sitä muokataksesi',
+    'Palautettu: pää olisi jäänyt osan päälle kytkeytymättä siihen',
   ],
   fr: [
     'À propos de Perun',
@@ -1190,6 +1197,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Valeurs du côté opposé au curseur et une flèche qui reste à l’écart des broches. Désactivé : comme dans CircuitJS',
     'Ouvrir les propriétés après avoir placé un composant',
     'Désactivé : le composant placé reste désélectionné pour continuer à placer ; touchez-le ou cliquez dessus pour le modifier',
+    'Annulé : une extrémité se serait trouvée sur un composant sans y être connectée',
   ],
   it: [
     'Informazioni su Perun',
@@ -1338,6 +1346,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Valori sul lato opposto al cursore e una freccia che resta lontana dai terminali. Disattivato: come in CircuitJS',
     'Apri le proprietà dopo aver posizionato un componente',
     'Disattivato: il componente posizionato resta non selezionato per continuare a posizionare; toccalo o fai clic per modificarlo',
+    "Annullato: un'estremità sarebbe rimasta su un componente senza collegarsi",
   ],
   ja: [
     'Perun について',
@@ -1486,6 +1495,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '値をワイパーの反対側に表示し、矢印は端子に近づきません。オフ: CircuitJS と同じ表示',
     '部品を置いたらプロパティを開く',
     'オフ：置いた部品は選択されないので、続けて配置できます。編集するにはタップまたはクリックします',
+    '元に戻しました：端が部品の上に乗ったまま接続されないところでした',
   ],
   kr: [
     'Perun 정보',
@@ -1634,6 +1644,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '값을 와이퍼 반대쪽에 표시하고 화살표가 단자에 닿지 않게 합니다. 끄면 CircuitJS와 같습니다',
     '부품을 놓은 뒤 속성 열기',
     '끄기: 놓은 부품은 선택되지 않아 계속 배치할 수 있습니다. 편집하려면 탭하거나 클릭하세요',
+    '되돌렸습니다: 끝이 부품 위에 놓였지만 연결되지 않았을 것입니다',
   ],
   nb: [
     'Om Perun',
@@ -1782,6 +1793,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Verdier på siden bort fra sleperen, og en pil som holder seg unna beina. Av: som i CircuitJS',
     'Åpne egenskaper etter at en komponent er plassert',
     'Av: en plassert komponent forblir uvalgt, så du kan fortsette å plassere; trykk eller klikk på den for å redigere den',
+    'Satt tilbake: en ende ville ha ligget på en komponent uten å være koblet til den',
   ],
   pl: [
     'O aplikacji Perun',
@@ -1930,6 +1942,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Wartości po stronie przeciwnej do suwaka i strzałka, która nie dochodzi do wyprowadzeń. Wyłączone: jak w CircuitJS',
     'Otwórz właściwości po umieszczeniu elementu',
     'Wyłączone: umieszczony element pozostaje niezaznaczony, więc możesz dalej umieszczać; dotknij go lub kliknij, aby go edytować',
+    'Cofnięto: koniec leżałby na elemencie, nie będąc z nim połączony',
   ],
   pt: [
     'Sobre o Perun',
@@ -2078,6 +2091,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Valores no lado oposto ao cursor e uma seta que fica longe dos terminais. Desligado: como no CircuitJS',
     'Abrir as propriedades depois de colocar um componente',
     'Desligado: o componente colocado fica sem seleção para continuar a colocar; toque ou clique nele para o editar',
+    'Reposto: uma ponta ficaria sobre um componente sem ligar a ele',
   ],
   ru: [
     'О Perun',
@@ -2226,6 +2240,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     'Значения на стороне, противоположной движку, и стрелка, не заходящая на выводы. Выкл.: как в CircuitJS',
     'Открывать свойства после размещения детали',
     'Выкл.: размещённая деталь остаётся невыделенной, чтобы можно было продолжать; коснитесь или щёлкните её, чтобы изменить',
+    'Отменено: конец оказался бы на детали, не соединившись с ней',
   ],
   zh: [
     '关于 Perun',
@@ -2374,6 +2389,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '数值显示在滑动端的另一侧，箭头不会靠近引脚。关闭：与 CircuitJS 相同',
     '放置元件后打开属性',
     '关闭：放置的元件不会被选中，可以继续放置；点按或点击它即可编辑',
+    '已撤回：一个端点会落在元件上却没有连接',
   ],
   'zh-tw': [
     '關於 Perun',
@@ -2522,6 +2538,7 @@ export const EXTRA: Record<string, readonly string[]> = {
     '數值顯示在滑動端的另一側，箭頭不會靠近接腳。關閉：與 CircuitJS 相同',
     '放置元件後開啟屬性',
     '關閉：放置的元件不會被選取，可以繼續放置；點按或點擊它即可編輯',
+    '已撤回：一個端點會落在元件上卻沒有連接',
   ],
 };
 

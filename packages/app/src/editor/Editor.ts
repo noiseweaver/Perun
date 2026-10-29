@@ -19,6 +19,7 @@ import {
   type Rect,
 } from '@perun/elements';
 import type { Circuit } from '@perun/format';
+import { badPosts } from '@perun/render';
 import {
   alignOffsets,
   alignUnits,
@@ -73,7 +74,13 @@ export interface EditorHost {
   visibleArea(): Rect;
   /** An element of this palette class was placed (the quick pick's recent list). */
   placed?(className: string): void;
+  /** Tell the user something about the edit that just happened (a short message). */
+  notice?(text: string): void;
 }
+
+/** Shown when an edit is put back because it would have left a bad connection. */
+export const BAD_CONNECTION_NOTICE =
+  'Put back: an end would have sat on a part without connecting to it';
 
 /** Placement, selection, dragging and the edit commands, in circuit coordinates. DOM free. */
 export class Editor {
@@ -146,6 +153,8 @@ export class Editor {
   touchReach = 0;
   /** This press grabbed a wire end or a box corner (not a ctrl-drag): a tap selects instead. */
   private handleGrab = false;
+  /** Bad connections before this edit (a file can bring some): left as they are. */
+  private badBefore = new Set<string>();
   /** Alignment guides for the current drag. */
   guides: Guides = NO_GUIDES;
   /** The rest of the wire being drawn when it is routed: its first leg is `dragElm`. */
@@ -243,15 +252,21 @@ export class Editor {
       this.host.selectionChanged();
       return null;
     }
-    this.history.record('Add', () => {
-      if (!this.spliceIntoWire(de)) {
-        this.splitWireAt(de.x, de.y);
-        this.splitWireAt(de.x2, de.y2);
-      }
-      this.elements.push(de);
-      this.joinLeads([de]);
-      for (const e of this.elements) e.selected = this.selectPlaced && e === de;
-    });
+    this.badBefore = this.badKeys();
+    this.history.begin('Add');
+    if (!this.spliceIntoWire(de)) {
+      this.splitWireAt(de.x, de.y);
+      this.splitWireAt(de.x2, de.y2);
+    }
+    this.elements.push(de);
+    this.joinLeads([de]);
+    if (!this.joinBadPosts(new Set([de]), null)) {
+      this.putBack();
+      return null;
+    }
+    for (const e of this.elements) e.selected = this.selectPlaced && e === de;
+    this.history.touch();
+    this.history.commit();
     this.host.placed?.(this.paletteDragClass);
     this.host.circuitChanged();
     this.host.selectionChanged();
@@ -529,6 +544,7 @@ export class Editor {
       this.clearSelection();
 
     if (grab !== null && grab.post >= 0) this.draggingPost = grab.post;
+    this.badBefore = this.badKeys();
     this.history.begin(this.tempMouseMode === MouseMode.ADD_ELM ? 'Add' : 'Move');
     this.initDragGridX = gx;
     this.initDragGridY = gy;
@@ -762,6 +778,15 @@ export class Editor {
             ? [draggedPost]
             : [];
     if (this.joinLeads(touched)) circuitChanged = true;
+    if (circuitChanged || this.moved) {
+      const added = de !== null && this.elements.includes(de) ? [de, ...extras] : [];
+      if (!this.joinBadPosts(new Set(added), draggedPost)) {
+        this.putBack();
+        this.host.selectionChanged();
+        return;
+      }
+      if (this.healed) circuitChanged = true;
+    }
     if (circuitChanged) {
       this.history.touch();
       this.host.circuitChanged();
@@ -951,6 +976,84 @@ export class Editor {
   }
 
   // ---- smart editing (not in upstream) -------------------------------------------------------
+
+  private badKeys(): Set<string> {
+    return new Set(badPosts(this.elements).map((b) => `${b.x},${b.y}`));
+  }
+
+  /** The last joinBadPosts changed something. */
+  private healed = false;
+
+  /**
+   * Join every bad connection this edit made (not upstream): an end left on a part, not on one
+   * of its pins, would look connected and not be. A post on a wire splits the wire there; a wire
+   * end moves onto the part's nearest pin; a part just placed (`placed`) moves so its pin is on
+   * the pin, and a part end just dragged (`stretched`) stretches onto it. False when one can't
+   * be joined that way: the caller puts the edit back.
+   */
+  private joinBadPosts(placed: ReadonlySet<CircuitElm>, stretched: CircuitElm | null): boolean {
+    this.healed = false;
+    let last = '';
+    for (let round = 0; round < 32; round++) {
+      const b = badPosts(this.elements).find((p) => !this.badBefore.has(`${p.x},${p.y}`));
+      if (b === undefined) {
+        this.removeZeroLengthElements();
+        return true;
+      }
+      // the same end bad again: nothing moved it
+      const key = `${b.x},${b.y},${this.elements.indexOf(b.owner)},${b.post}`;
+      if (key === last) return false;
+      last = key;
+      this.healed = true;
+      if (this.splitWireAt(b.x, b.y)) continue;
+      const pin = nearestPin(b.on, b.x, b.y);
+      if (pin === null) return false;
+      const dx = pin.x - b.x;
+      const dy = pin.y - b.y;
+      const o = b.owner;
+      const isPoint = (n: number): boolean =>
+        n < 2 && (n === 0 ? o.x === b.x && o.y === b.y : o.x2 === b.x && o.y2 === b.y);
+      if (o instanceof WireElm && !(o instanceof RoutedWireElm) && isPoint(b.post))
+        o.movePoint(b.post, dx, dy);
+      else if (placed.has(o)) {
+        // a routed wire's legs move together
+        for (const e of placed) e.move(dx, dy);
+      } else if (o === stretched && isPoint(b.post)) o.movePoint(b.post, dx, dy);
+      else return false;
+    }
+    return false;
+  }
+
+  /**
+   * Run `fn` as one edit (`History.record`), then join the bad connections it made, or put the
+   * edit back when one can't be joined. `placed`: the elements it added, free to move as one.
+   */
+  private guardedRecord(
+    label: string,
+    fn: () => unknown,
+    placed: () => Iterable<CircuitElm> = () => [],
+  ): boolean {
+    this.badBefore = this.badKeys();
+    this.history.begin(label);
+    if (fn() === false) {
+      this.history.commit();
+      return true;
+    }
+    this.history.touch();
+    if (!this.joinBadPosts(new Set(placed()), null)) {
+      this.putBack();
+      return false;
+    }
+    this.history.commit();
+    return true;
+  }
+
+  /** Undo the edit in progress: it would have left a bad connection. */
+  private putBack(): void {
+    this.history.revert();
+    this.host.circuitChanged();
+    this.host.notice?.(BAD_CONNECTION_NOTICE);
+  }
 
   /**
    * A two-post part lying along a wire, both posts on it, takes the wire's place between them:
@@ -1353,55 +1456,61 @@ export class Editor {
   paste(dump: string = this.clipboard): boolean {
     if (dump.length === 0) return false;
     let ok = true;
-    this.history.record('Paste', () => {
-      for (const e of this.elements) e.selected = false;
-      const oldbb = this.boundsOf(this.elements);
-      let added: CircuitElm[];
-      try {
-        added = this.circuit.readRetain(dump);
-      } catch {
-        ok = false;
-        return false;
-      }
-      if (added.length === 0) {
-        ok = false;
-        return false;
-      }
-      for (const e of added) e.selected = true;
-      const newbb = this.boundsOf(added);
-      if (oldbb !== null && newbb !== null) {
-        let dx = 0;
-        let dy = 0;
-        const area = this.host.visibleArea();
-        const ow = oldbb.x2 - oldbb.x1;
-        const oh = oldbb.y2 - oldbb.y1;
-        const nw = newbb.x2 - newbb.x1;
-        const nh = newbb.y2 - newbb.y1;
-        const spacew = area.x2 - area.x1 - ow - nw;
-        const spaceh = area.y2 - area.y1 - oh - nh;
-        if (!intersects(oldbb, newbb)) {
-          dx = this.snapGrid(oldbb.x1 - newbb.x1);
-          dy = this.snapGrid(oldbb.y1 - newbb.y1);
+    let pasted: CircuitElm[] = [];
+    const kept = this.guardedRecord(
+      'Paste',
+      () => {
+        for (const e of this.elements) e.selected = false;
+        const oldbb = this.boundsOf(this.elements);
+        let added: CircuitElm[];
+        try {
+          added = this.circuit.readRetain(dump);
+        } catch {
+          ok = false;
+          return false;
         }
-        if (spacew > spaceh)
-          dx = this.snapGrid(oldbb.x1 + ow - newbb.x1 + this.circuit.sim.gridSize);
-        else dy = this.snapGrid(oldbb.y1 + oh - newbb.y1 + this.circuit.sim.gridSize);
-        // near the mouse if it's on the canvas and nothing would land on top of something
-        const m = this.mousePos;
-        if (m !== null) {
-          const mdx = this.snapGrid(m.x - (newbb.x1 + nw / 2));
-          const mdy = this.snapGrid(m.y - (newbb.y1 + nh / 2));
-          if (added.every((e) => e.allowMove(mdx, mdy, this.elements))) {
-            dx = mdx;
-            dy = mdy;
+        if (added.length === 0) {
+          ok = false;
+          return false;
+        }
+        pasted = added;
+        for (const e of added) e.selected = true;
+        const newbb = this.boundsOf(added);
+        if (oldbb !== null && newbb !== null) {
+          let dx = 0;
+          let dy = 0;
+          const area = this.host.visibleArea();
+          const ow = oldbb.x2 - oldbb.x1;
+          const oh = oldbb.y2 - oldbb.y1;
+          const nw = newbb.x2 - newbb.x1;
+          const nh = newbb.y2 - newbb.y1;
+          const spacew = area.x2 - area.x1 - ow - nw;
+          const spaceh = area.y2 - area.y1 - oh - nh;
+          if (!intersects(oldbb, newbb)) {
+            dx = this.snapGrid(oldbb.x1 - newbb.x1);
+            dy = this.snapGrid(oldbb.y1 - newbb.y1);
           }
+          if (spacew > spaceh)
+            dx = this.snapGrid(oldbb.x1 + ow - newbb.x1 + this.circuit.sim.gridSize);
+          else dy = this.snapGrid(oldbb.y1 + oh - newbb.y1 + this.circuit.sim.gridSize);
+          // near the mouse if it's on the canvas and nothing would land on top of something
+          const m = this.mousePos;
+          if (m !== null) {
+            const mdx = this.snapGrid(m.x - (newbb.x1 + nw / 2));
+            const mdy = this.snapGrid(m.y - (newbb.y1 + nh / 2));
+            if (added.every((e) => e.allowMove(mdx, mdy, this.elements))) {
+              dx = mdx;
+              dy = mdy;
+            }
+          }
+          for (const e of added) e.move(dx, dy);
         }
-        for (const e of added) e.move(dx, dy);
-      }
-    });
+      },
+      () => pasted,
+    );
     this.host.circuitChanged();
     this.host.selectionChanged();
-    return ok;
+    return ok && kept;
   }
 
   private boundsOf(els: readonly CircuitElm[]): Rect | null {
@@ -1449,7 +1558,7 @@ export class Editor {
   }
 
   private flipCommand(label: string, menuElm: CircuitElm | null, fn: (fi: FlipInfo) => void): void {
-    this.history.record(label, () => {
+    this.guardedRecord(label, () => {
       const fi = this.prepareFlip(menuElm);
       if (fi.els.length === 0) return false;
       fn({ ...fi, count: this.countSelected() });
@@ -1635,6 +1744,21 @@ interface FlipInfo {
 
 function inBox(b: Rect, x: number, y: number): boolean {
   return x >= b.x1 && x <= b.x2 && y >= b.y1 && y <= b.y2;
+}
+
+/** The post of `e` nearest (x, y), or null if it has none. */
+function nearestPin(e: CircuitElm, x: number, y: number): Pt | null {
+  let best: Pt | null = null;
+  let bestD = Infinity;
+  for (let i = 0; i !== e.getPostCount(); i++) {
+    const p = e.getPost(i);
+    const d = distanceSq(p.x, p.y, x, y);
+    if (d < bestD) {
+      bestD = d;
+      best = { x: p.x, y: p.y };
+    }
+  }
+  return best;
 }
 
 function grow(b: Rect, d: number): Rect {

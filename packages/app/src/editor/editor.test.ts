@@ -4,7 +4,14 @@
 import { BoxElm, ResistorElm, SwitchElm, viewFor, WireElm, type CircuitElm } from '@perun/elements';
 import { Circuit } from '@perun/format';
 import { describe, expect, it } from 'vitest';
-import { Editor, MouseMode, NO_MODIFIERS, type EditorHost } from './Editor.ts';
+import { badPosts } from '@perun/render';
+import {
+  BAD_CONNECTION_NOTICE,
+  Editor,
+  MouseMode,
+  NO_MODIFIERS,
+  type EditorHost,
+} from './Editor.ts';
 
 function setup(text = '$ 1 5.0E-6 10 50 5.0\n') {
   const circuit = new Circuit();
@@ -306,6 +313,68 @@ describe('Editor', () => {
     ed.selectPlaced = true;
     const c = ed.placeAt('CapacitorElm', 400, 100, false);
     expect(ed.selectedElements()).toEqual([c]);
+  });
+
+  describe('no bad connections', () => {
+    // a resistor short enough to have no leads to join, its middle at (128, 96)
+    const R = 'r 96 96 160 96 0 1000\n';
+
+    it('moves a wire end dropped on a part onto its nearest pin', () => {
+      const { circuit, ed } = setup(`$ 1 5.0E-6 10 50 5.0\n${R}w 224 192 288 192 0\n`);
+      const w = circuit.elements[1] as CircuitElm;
+      drag(ed, 224, 192, 128, 96);
+      expect(pos(w)).toEqual([96, 96, 288, 192]);
+      expect(badPosts(circuit.elements)).toEqual([]);
+      ed.history.undo();
+      expect(pos(circuit.elements[1] as CircuitElm)).toEqual([224, 192, 288, 192]);
+    });
+
+    it('joins a wire drawn to end on a part', () => {
+      const { circuit, ed } = setup(`$ 1 5.0E-6 10 50 5.0\n${R}`);
+      ed.routeWires = false;
+      ed.setAddMode('WireElm');
+      drag(ed, 128, 192, 128, 96);
+      expect(pos(circuit.elements[1] as CircuitElm)).toEqual([128, 192, 96, 96]);
+      expect(badPosts(circuit.elements)).toEqual([]);
+    });
+
+    it('moves a dropped part so its pin lands on the pin it was dropped on', () => {
+      const { circuit, ed } = setup(`$ 1 5.0E-6 10 50 5.0\n${R}`);
+      const r = ed.placeAt('ResistorElm', 128, 128, true);
+      expect(r && pos(r)).toEqual([96, 96, 96, 160]);
+      expect(badPosts(circuit.elements)).toEqual([]);
+    });
+
+    it('splits a wire a moved part leaves its pin on', () => {
+      const { circuit, ed } = setup(
+        '$ 1 5.0E-6 10 50 5.0\nw 64 96 192 96 0\nr 128 192 128 256 0 1000\n',
+      );
+      drag(ed, 128, 224, 128, 128);
+      expect(circuit.elements).toHaveLength(3);
+      expect(badPosts(circuit.elements)).toEqual([]);
+    });
+
+    it('puts a move back that would leave a pin on a part, and says why', () => {
+      const { circuit, ed } = setup(`$ 1 5.0E-6 10 50 5.0\n${R}r 128 192 128 256 0 1000\n`);
+      const notices: string[] = [];
+      (ed as unknown as { host: EditorHost }).host.notice = (t) => notices.push(t);
+      drag(ed, 128, 224, 128, 128);
+      expect(circuit.elements.map(pos)).toEqual([
+        [96, 96, 160, 96],
+        [128, 192, 128, 256],
+      ]);
+      expect(notices).toEqual([BAD_CONNECTION_NOTICE]);
+      expect(ed.history.canUndo).toBe(false);
+    });
+
+    it('leaves the bad connections a file came with', () => {
+      const { circuit, ed } = setup(
+        `$ 1 5.0E-6 10 50 5.0\n${R}w 128 96 128 160 0\nr 304 96 368 96 0 1000\n`,
+      );
+      expect(badPosts(circuit.elements)).toHaveLength(1);
+      drag(ed, 336, 96, 336, 160);
+      expect(pos(circuit.elements[2] as CircuitElm)).toEqual([304, 160, 368, 160]);
+    });
   });
 
   describe('touch', () => {

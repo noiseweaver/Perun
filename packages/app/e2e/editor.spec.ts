@@ -73,9 +73,10 @@ test('clicking an element selects it and dragging moves it', async ({ page }) =>
   await open(page, LOOP);
   await clickCircuit(page, 176, 96);
   await expect(page.getByTestId('inspector-title')).toHaveText('Resistor');
-  await dragCircuit(page, [176, 96], [176, 160]);
+  // up, clear of the source (down, its post would sit on the source without joining it)
+  await dragCircuit(page, [176, 96], [176, 64]);
   const r = (await elements(page)).find((e) => e.cls === 'ResistorElm');
-  expect(r?.pos).toEqual([96, 160, 256, 160]);
+  expect(r?.pos).toEqual([96, 64, 256, 64]);
   expect(r?.selected).toBe(true);
   // undo puts it back
   await page.getByTestId('undo').click();
@@ -83,7 +84,7 @@ test('clicking an element selects it and dragging moves it', async ({ page }) =>
   expect(back?.pos).toEqual([96, 96, 256, 96]);
   await page.getByTestId('redo').click();
   expect((await elements(page)).find((e) => e.cls === 'ResistorElm')?.pos).toEqual([
-    96, 160, 256, 160,
+    96, 64, 256, 64,
   ]);
 });
 

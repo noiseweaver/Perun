@@ -28,7 +28,7 @@ export {
   type BottomAreaState,
   type UndockedScopeItem,
 } from './ScopeRenderer.ts';
-export { findPosts, type PostInfo } from './posts.ts';
+export { badPosts, findPosts, type BadPost, type PostInfo } from './posts.ts';
 export { placeUndocked, scopeAnchor } from './scopeAnchor.ts';
 export {
   DEFAULT_SCHEMATIC,

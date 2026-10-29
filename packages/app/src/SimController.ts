@@ -791,6 +791,7 @@ export class SimController {
       circuitChanged: () => this.circuitChanged(),
       selectionChanged: () => this.publishEditor(),
       restore: (xml) => this.restore(xml),
+      notice: (text) => showToast(t(text)),
       placed: (className) => {
         notePlaced(className);
         // the panel opens over the next frames; check again once it has
