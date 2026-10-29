@@ -54,9 +54,8 @@ and nothing is sent.
 
 ## Install
 
-Until it is in Obsidian's community plugin list, with the
-[BRAT](https://github.com/TfTHacker/obsidian42-brat) plugin: Add beta plugin, `noiseweaver/Perun`.
-BRAT installs the latest release and keeps it up to date. Or by hand:
+In Obsidian, Settings > Community plugins > Browse: search for Perun, then Install and Enable
+([Perun in the plugin list](https://obsidian.md/plugins?id=perun)). Or by hand:
 
 1. Get `main.js`, `manifest.json`, `styles.css` and `perun-files.json`: from a
    [release](https://github.com/noiseweaver/Perun/releases), build them (below), or download
