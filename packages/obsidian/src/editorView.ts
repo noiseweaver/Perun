@@ -66,6 +66,8 @@ class EditorFrame {
   private readonly host: EditorHost;
   private readonly onChanged: (text: string) => void;
   private readonly folder: () => string;
+  /** On a phone: watches the frame's size, which changes as the phone turns. */
+  private resizes: ResizeObserver | null = null;
 
   /** `folder` is where exports go: the circuit's own folder. */
   constructor(
@@ -145,6 +147,21 @@ class EditorFrame {
     Object.assign(frame, { perunHost: host });
     frame.srcdoc = editorSrcdoc(config);
     this.frame = frame;
+    if (Platform.isPhone) {
+      this.resizes = new ResizeObserver(() => this.fitNotch());
+      this.resizes.observe(frame);
+    }
+  }
+
+  /**
+   * Obsidian pads the left of its views for the camera cutout of a phone on its side, whichever
+   * way it is turned, and the app in the frame leaves the cutout to Obsidian. When the cutout is on
+   * the right, keep the app clear of it there (styles.css).
+   */
+  private fitNotch(): void {
+    // turned clockwise, the top of the phone to the right: 270, or -90 as iOS once reported it
+    const angle = screen.orientation?.angle ?? 0;
+    this.parent.toggleClass('perun-notch-right', angle === 270 || angle === -90);
   }
 
   private post(m: EmbedMessage): void {
@@ -162,6 +179,8 @@ class EditorFrame {
   }
 
   destroy(): void {
+    this.resizes?.disconnect();
+    this.resizes = null;
     this.frame?.remove();
     this.frame = null;
     this.shown = null;

@@ -37,6 +37,21 @@
   --md-shape-xl: 28px;
   --md-shape-full: 999px;
   --md-motion: cubic-bezier(0.2, 0, 0, 1);
+  /* the notch, rounded corners and home indicator to keep clear of */
+  --safe-top: env(safe-area-inset-top);
+  --safe-right: env(safe-area-inset-right);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --safe-left: env(safe-area-inset-left);
+}
+
+/* in the Obsidian plugin's frame, Obsidian already keeps its views clear of the notch and the home
+   indicator, so the app adding the insets again doubled the padding. iOS also counts an open
+   keyboard in the frame's bottom inset, which squeezed the editor to a strip above it. */
+:root[data-embedded] {
+  --safe-top: 0px;
+  --safe-right: 0px;
+  --safe-bottom: 0px;
+  --safe-left: 0px;
 }
 
 * {
@@ -97,7 +112,7 @@ textarea,
   flex-direction: column;
   height: 100%;
   /* clear the notch and the home indicator; the status bar only matters installed (below) */
-  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  padding: 0 var(--safe-right) var(--safe-bottom) var(--safe-left);
   box-sizing: border-box;
 }
 
@@ -106,7 +121,7 @@ textarea,
    left an empty band above the app bar. */
 @media (display-mode: standalone), (display-mode: fullscreen) {
   .app {
-    padding-top: env(safe-area-inset-top);
+    padding-top: var(--safe-top);
   }
 }
 
@@ -115,7 +130,7 @@ textarea,
    app's background (pwa.ts sets the attribute) */
 @media (orientation: portrait) and (max-width: 600px) {
   :root[data-ios-app] .app {
-    padding-top: calc(env(safe-area-inset-top) + 18px);
+    padding-top: calc(var(--safe-top) + 18px);
   }
 }
 
@@ -3167,7 +3182,7 @@ textarea.field-input {
   left: 0;
   right: 0;
   bottom: 0;
-  top: calc(env(safe-area-inset-top) + 40px);
+  top: calc(var(--safe-top) + 40px);
   display: flex;
   flex-direction: column;
   margin: 0 auto;
@@ -3176,7 +3191,7 @@ textarea.field-input {
   background: var(--md-surface-container-high);
   color: var(--ui-text);
   box-shadow: var(--md-elevation-3);
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: var(--safe-bottom);
   transition: transform 180ms var(--md-motion);
   animation: sheet-up 240ms var(--md-motion);
 }

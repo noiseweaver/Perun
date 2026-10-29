@@ -118,9 +118,39 @@ body:not(.is-mobile) .mod-root .view-content.perun-editor {
   padding-bottom: calc(var(--status-bar-font-size, 12px) * 2.25);
 }
 
-/* phones and tablets: keep the editor's controls clear of Obsidian's floating navigation bar */
+/* phones and tablets: keep the editor's controls clear of Obsidian's floating navigation bar.
+   While the keyboard is open the bar slides away under it, so the room goes back to the editor
+   (any keyboard height times 1000 takes the whole reserve). Keeping it squeezed the editor on an
+   iPhone to a strip at the top, over a blank band: the bottom inset that --navbar-bottom-offset
+   reads seems to grow by the keyboard's height there. */
 .is-mobile.is-floating-nav .view-content.perun-editor {
-  padding-bottom: calc(var(--navbar-height) + var(--navbar-bottom-offset));
+  padding-bottom: max(
+    0px,
+    calc(var(--navbar-height) + var(--navbar-bottom-offset) - var(--keyboard-height) * 1000)
+  );
+}
+
+/* a phone on its side is short of height: the editor's own bar names the circuit and has its menus,
+   so Obsidian's title bar above it goes (the navigation bar below stays). Obsidian pads the left
+   of its views for the camera cutout; when the cutout is on the right, keep the editor clear of it
+   there (EditorFrame.fitNotch). */
+@media (orientation: landscape) {
+  .is-phone
+    .workspace-leaf-content:is([data-type='perun-circuit'], [data-type='perun-block'])
+    > .view-header {
+    display: none;
+  }
+
+  .is-phone
+    .mod-root
+    .workspace-leaf-content:is([data-type='perun-circuit'], [data-type='perun-block'])
+    > .view-content.perun-editor {
+    margin-top: var(--safe-area-inset-top);
+  }
+
+  .is-phone .view-content.perun-editor.perun-notch-right {
+    padding-right: var(--safe-area-inset-right);
+  }
 }
 
 .perun-frame {
