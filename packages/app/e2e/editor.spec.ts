@@ -73,9 +73,10 @@ test('clicking an element selects it and dragging moves it', async ({ page }) =>
   await open(page, LOOP);
   await clickCircuit(page, 176, 96);
   await expect(page.getByTestId('inspector-title')).toHaveText('Resistor');
-  await dragCircuit(page, [176, 96], [176, 160]);
+  // up, clear of the source (down, its post would sit on the source without joining it)
+  await dragCircuit(page, [176, 96], [176, 64]);
   const r = (await elements(page)).find((e) => e.cls === 'ResistorElm');
-  expect(r?.pos).toEqual([96, 160, 256, 160]);
+  expect(r?.pos).toEqual([96, 64, 256, 64]);
   expect(r?.selected).toBe(true);
   // undo puts it back
   await page.getByTestId('undo').click();
@@ -83,7 +84,7 @@ test('clicking an element selects it and dragging moves it', async ({ page }) =>
   expect(back?.pos).toEqual([96, 96, 256, 96]);
   await page.getByTestId('redo').click();
   expect((await elements(page)).find((e) => e.cls === 'ResistorElm')?.pos).toEqual([
-    96, 160, 256, 160,
+    96, 64, 256, 64,
   ]);
 });
 
@@ -341,6 +342,24 @@ test.describe('on a touch screen', () => {
     expect(after?.scale).toBe(before?.scale);
     expect(after?.x).toBeCloseTo((before?.x ?? 0) + 100, 0);
     expect(after?.y).toBeCloseTo((before?.y ?? 0) + 60, 0);
+  });
+  test('a finger grabs a wire end it lands near, not only right on it', async ({ page }) => {
+    await open(page, LOOP + 'w 256 96 352 96 0\n');
+    const end = await at(page, 352, 96);
+    const cdp = await page.context().newCDPSession(page);
+    // 14 px below and short of the end: off the drawn wire
+    const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', dy: number) =>
+      cdp.send('Input.dispatchTouchEvent', {
+        type,
+        touchPoints: type === 'touchEnd' ? [] : [{ x: end.x - 8, y: end.y + 14 + dy }],
+      });
+    await touch('touchStart', 0);
+    for (let i = 1; i <= 6; i++) await touch('touchMove', 15 * i);
+    await touch('touchEnd', 0);
+    const wire = (await elements(page)).at(-1);
+    // the end went down, the other end stayed on the resistor
+    expect(wire?.pos.slice(0, 3)).toEqual([256, 96, 352]);
+    expect(wire?.pos[3]).toBeGreaterThan(96);
   });
   test('a long press opens the element menu and selects no text', async ({ page }) => {
     await open(page, LOOP);

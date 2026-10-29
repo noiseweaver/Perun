@@ -90,6 +90,13 @@ export class History {
     this.push(new SnapshotCommand(p.label, this.target, p.before, this.target.save()));
   }
 
+  /** Put the circuit back as the pending edit found it, and drop the edit. */
+  revert(): void {
+    const p = this.pending;
+    this.pending = null;
+    if (p) this.target.restore(p.before);
+  }
+
   /** Drop the pending edit without recording it. */
   cancel(): void {
     this.pending = null;
